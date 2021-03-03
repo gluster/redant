@@ -1,4 +1,7 @@
-import os
+import sys
+
+# sys.path.append("./odinControl")
+
 from rexe.rexe import Rexe
 
 from redant_resources import (
