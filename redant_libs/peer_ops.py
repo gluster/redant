@@ -4,7 +4,7 @@ R = Rexe(conf_path="./Utilities/conf.yaml")
 
 def peer_probe(server, node):
     """
-    nodes: The node in the cluster where peer probe is to be run
+    node: The node in the cluster where peer probe is to be run
     server: The server to probe
     """
 
