@@ -12,3 +12,20 @@ tests: holds the test cases. Add any new test cases here.<br>
 2. Create a **Utilities** folder and add **conf.yaml** file [This is temporary as well just for testing. Once we are ready with the components we just need to connect them.]
  OR
  You can also call the conf.yaml from the odinControl. I have used it here just to indicate the independence of each component. But reusability of existing files won't hurt. :sweat_smile:
+
+
+### STEP-BY_STEP procedure to run:
+1. git clone [your fork for this repo]
+2. cd [the-fork>]
+3. git clone [odinControl](git@github.com:srijan-sivakumar/odinControl.git)
+4. cd odinControl && mkdir rexe && cp rexe.py rexe/rexe.py touch rexe/__init__.py
+5. cd ..
+6. mkdir Utilities && touch Utilities/conf.yaml
+7. Add the following:
+
+```javascript
+host_list: [server IPs]
+user: "user"
+passwd: "pass"
+```
+8. python3 redant_libs/peer_ops.py
