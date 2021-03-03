@@ -1,6 +1,18 @@
 import os
 from rexe.rexe import Rexe
+
+from redant_resources import (
+    Redant_Resources,
+    logger
+)
+
+import pprint   # to print the output in a better way and hence more understandable
+
 R = Rexe(conf_path="./Utilities/conf.yaml")
+RR = Redant_Resources(log_file_path='./redant.log',log_file_level='D')
+
+pp = pprint.PrettyPrinter(indent=4)
+
 
 def peer_probe(server, node):
     """
@@ -9,21 +21,37 @@ def peer_probe(server, node):
     """
 
 
+    logger.info("Redant test framework started")
     cmd = 'gluster peer probe '+server
+
+    #TODO: remove the print 
     print("Running ",cmd," on node ", node)
-    
+
+    logger.info("Running "+cmd+" on node "+node)
+
     ret = R.execute_command(node=node, cmd=cmd)
-    print("Command running properly!")
-    print(ret)
+    
+    #TODO: remove the print
+    pp.pprint(ret)
+
+    logger.info(ret)
+
+    return ret
 
 def peer_status():
     """
     Checks the status of the peers
     """
 
-    cmd = 'gluster peer status'
+    cmd = 'gluster peer status --xml'
+    logger.info("Running "+cmd)
+
     ret = R.execute_command(node='10.70.43.228', cmd=cmd)
-    print(ret)
+  
+    #TODO: remove the print
+    pp.pprint(ret)
+    
+
     return ret
 
 
