@@ -1,6 +1,7 @@
 import sys
 
-# sys.path.append("./odinControl")
+
+sys.path.append("./odinControl")
 
 from rexe.rexe import Rexe as R
 from rexe.rexe import (

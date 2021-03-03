@@ -1,6 +1,7 @@
 import sys
 
-# sys.path.append("./odinControl")
+sys.path.append("./odinControl")
+
 
 from rexe.rexe import Rexe
 
@@ -37,7 +38,7 @@ def peer_probe(server, node):
 
 
     logger.info("Redant test framework started")
-    cmd = 'gluster peer probe '+server+" --xml "
+    cmd = 'gluster --xml peer probe '+server
 
     #TODO: remove the print 
     print("Running ",cmd," on node ", node)
@@ -58,7 +59,7 @@ def peer_status():
     Checks the status of the peers
     """
 
-    cmd = 'gluster peer status --xml'
+    cmd = 'gluster --xml peer status'
     logger.info("Running "+cmd)
 
     ret = R.execute_command(node='10.70.43.228', cmd=cmd)
@@ -74,7 +75,7 @@ def pool_list(node):
 
     runs the command gluster pool list on `node`
     """
-    cmd = 'gluster pool list --xml' 
+    cmd = 'gluster --xml pool list' 
 
     logger.info("Running the command "+cmd)
     
