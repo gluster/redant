@@ -37,7 +37,7 @@ def peer_probe(server, node):
 
 
     logger.info("Redant test framework started")
-    cmd = 'gluster peer probe '+server
+    cmd = 'gluster peer probe '+server+" --xml "
 
     #TODO: remove the print 
     print("Running ",cmd," on node ", node)
@@ -74,7 +74,7 @@ def pool_list(node):
 
     runs the command gluster pool list on `node`
     """
-    cmd = 'gluster pool list'
+    cmd = 'gluster pool list --xml' 
 
     logger.info("Running the command "+cmd)
     
