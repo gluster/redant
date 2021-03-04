@@ -27,7 +27,7 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
                 - transport_type : tcp|rdma|tcp,rdma|None
                 - ...
     Returns:
-        a dictionary from the stdout xml output.
+        a dictionary generated from the stdout xml output.
     """
     replica_count = arbiter_count = stripe_count = None
     disperse_count = disperse_data_count = redundancy_count = None
@@ -87,7 +87,7 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
     if force:
         cmd = cmd + " force"
 
-    ret =  R.execute_command(node="10.70.43.63",cmd=cmd)
+    ret =  R.execute_command(node=mnode,cmd=cmd)
     
     #TODO: to be removed later
     print(ret)
@@ -106,7 +106,7 @@ def volume_start(mnode,volname,force=False):
             will get executed with force option. If it is set to False,
             then start volume will get executed without force option
     Returns:
-        a dictionary from the stdout xml output.
+        a dictionary generated from the stdout xml output.
     """
 
     RR.rlogger.info("Starting gluster volume")
@@ -116,7 +116,7 @@ def volume_start(mnode,volname,force=False):
     else:
         cmd = "gluster volume start %s --mode=script --xml" %volname
 
-    ret = R.execute_command(node="10.70.43.63",cmd=cmd)
+    ret = R.execute_command(node=mnode,cmd=cmd)
 
     #TODO: to be removed later
     print(ret)
@@ -134,7 +134,7 @@ def volume_stop(mnode,volname,force=False):
             will get executed with force option. If it is set to False,
             then start volume will get executed without force option
     Returns:
-        a dictionary from the stdout xml output.
+        a dictionary generated from the stdout xml output.
     """
 
     RR.rlogger.info("Volume Stop Command initiated")
@@ -144,7 +144,7 @@ def volume_stop(mnode,volname,force=False):
     else:
         cmd = "gluster volume stop %s --mode=script --xml" %volname
 
-    ret = R.execute_command(node="10.70.43.63",cmd=cmd)
+    ret = R.execute_command(node=mnode,cmd=cmd)
     
     #TODO: to be removed later
     print(ret)
@@ -153,11 +153,53 @@ def volume_stop(mnode,volname,force=False):
     
     return ret
 
+def volume_delete(mnode,volname):
+    """Deletes the gluster volume if given volume exists in
+       gluster and deletes the directories in the bricks
+       associated with the given volume
+    Args:
+        mnode (str): Node on which cmd has to be executed.
+        volname (str): volume name
+    Returns:
+        a dictionary generated from the stdout xml output.
+    """
+
+    RR.rlogger.info("Volume Delete Command initiated")
+    cmd = 'gluster volume delete %s --mode=script --xml' % volname
+    ret = R.execute_command(node=mnode,cmd=cmd)
+    RR.rlogger.info(ret)
+    return ret
+    
+    
+
+def volume_info(mnode,volname='all'):
+    """Gives volume information
+    Args:
+        node (str): Node on which cmd has to be executed.
+        volname (str): volume name
+    Returns:
+        a dictionary with volume information.
+    """
+
+    RR.rlogger.info("Volume Delete Command initiated")
+    cmd = 'gluster volume info %s --xml' % volname
+    ret = R.execute_command(node=mnode,cmd=cmd)
+    volume_info = ret['msg']
+
+    RR.rlogger.info(ret)
+    ret_val = volume_info['volInfo']['volumes']['volume']
+
+    return ret_val
+
+
 
 
 if __name__ == "__main__":
     R.establish_connection()
+    mnode = "10.70.43.63"
     bricks_list = ["gluster2:/gluster/brick1"]
-    #volume_create("10.70.43.63","test-vol",bricks_list,force=True)
-    #volume_start("10.70.43.63","test-vol")
-    #volume_stop("10.70.43.63","test-vol")
+    #volume_create(mnode,"test-vol",bricks_list,force=True)
+    #volume_start(mnode,"test-vol")
+    #volume_stop(mnode,"test-vol")
+    #volume_info(mnode)
+    #volume_delete(mnode,"test-vol")
