@@ -1,4 +1,7 @@
 from rexe import Rexe
+from redant_resources import Redant_Resources as RR
+
+#TODO: this is for testing. When test runner will be ready it will be removed.
 R = Rexe(conf_path="./example/conf.yaml")
 
 
@@ -78,12 +81,19 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
            "--mode=script" % (volname, replica, arbiter, stripe,
                               disperse, disperse_data, redundancy,
                               transport, ' '.join(bricks_list)))
-
+    
+    RR.rlogger.info("Volume creation started")
+    
     if force:
         cmd = cmd + " force"
 
     ret =  R.execute_command(node="10.70.43.63",cmd=cmd)
+    
+    #TODO: to be removed later
     print(ret)
+    
+    RR.rlogger.info(ret)
+    
     return ret
 
 def volume_start(mnode,volname,force=False):
@@ -99,13 +109,19 @@ def volume_start(mnode,volname,force=False):
         a dictionary from the stdout xml output.
     """
 
+    RR.rlogger.info("Starting gluster volume")
+
     if force:
         cmd = "gluster volume start %s force --mode=script --xml" % volname
     else:
         cmd = "gluster volume start %s --mode=script --xml" %volname
 
     ret = R.execute_command(node="10.70.43.63",cmd=cmd)
+
+    #TODO: to be removed later
     print(ret)
+
+    RR.rlogger.info(ret)
     return ret
 
 def volume_stop(mnode,volname,force=False):
@@ -121,13 +137,20 @@ def volume_stop(mnode,volname,force=False):
         a dictionary from the stdout xml output.
     """
 
+    RR.rlogger.info("Volume Stop Command initiated")
+
     if force:
         cmd = "gluster volume stop %s force --mode=script --xml" % volname
     else:
         cmd = "gluster volume stop %s --mode=script --xml" %volname
 
     ret = R.execute_command(node="10.70.43.63",cmd=cmd)
+    
+    #TODO: to be removed later
     print(ret)
+
+    RR.rlogger.info(ret)
+    
     return ret
 
 
