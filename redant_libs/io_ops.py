@@ -45,7 +45,7 @@ def create_file_using_touch(self, file_name):
     #ret, _, _ = g.run(self.client, cmd)
     
 
-    ret = R.execute_command(node="10.70.43.63", cmd)
+    ret = R.execute_command(node="10.70.43.63", cmd=cmd)
 
     #TODO: to be removed
     pp.pprint(ret)
@@ -62,7 +62,7 @@ def create_dir(self,dir_name):
     #ret, _, _ = g.run(self.mounts[0].client_system, cmd)
     
 
-    ret = R.execute_command(node="10.70.43.63", cmd)
+    ret = R.execute_command(node="10.70.43.63", cmd=cmd)
 
     #TODO: to be removed
     pp.pprint(ret)
@@ -79,7 +79,7 @@ def list_files_on_root_dir():
     #ret, out, _ = g.run(self.mounts[0].client_system, cmd)
     
 
-    ret = R.execute_command(node="10.70.43.63", cmd)
+    ret = R.execute_command(node="10.70.43.63", cmd=cmd)
 
     #TODO: to be removed
     pp.pprint(ret)
