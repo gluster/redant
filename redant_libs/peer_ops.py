@@ -53,6 +53,46 @@ def peer_probe(server, node):
 
     return ret
 
+def peer_detach(node, server, force=False):
+    """Detach the specified server.
+
+    Args:
+        node (str): Node on which command has to be executed.
+        server (str): Server to be detached from the cluster
+
+    Kwargs:
+        force (bool): option to detach peer. Defaults to False.
+
+    Returns:
+        tuple: Tuple containing three elements (ret, out, err).
+            The first element 'ret' is of type 'int' and is the return value
+            of command execution.
+
+            The second element 'out' is of type 'str' and is the stdout value
+            of the command execution.
+
+            The third element 'err' is of type 'str' and is the stderr value
+            of the command execution.
+    """
+
+    RR.rlogger.info("Peer detach initiated")
+
+    #TODO: to be removed
+    pp.pprint("Peer detach initiated")
+    if force:
+        cmd = "gluster peer detach %s force --mode=script" % server
+    else:
+        cmd = "gluster peer detach %s --mode=script" % server
+
+    ret = R.execute_command(node, cmd)
+
+    #TODO: to be removed
+    pp.pprint(ret)
+    
+    RR.rlogger.info(ret)
+    return 
+
+
 def peer_status():
     """
     Checks the status of the peers
@@ -101,6 +141,7 @@ if __name__ == "__main__":
     
     """
 
+    peer_detach(node='10.70.43.228',server='10.70.43.101')
     peer_probe('10.70.43.101','10.70.43.228')
     peer_status()
     pool_list('10.70.43.101')
