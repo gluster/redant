@@ -91,9 +91,9 @@ def list_files_on_root_dir():
 
 if __name__ == "__main__":
     R.establish_connection()
-    volume_mount("10.70.43.63","test-vol","test_dir")
-    create_file_using_touch("test_file")
-    create_dir("test_dir")
-    list_files_on_root_dir()
+    #volume_mount("10.70.43.63","test-vol","test_dir")
+    #create_file_using_touch("test_file")
+    #create_dir("test_dir")
+    #list_files_on_root_dir()
    
     
