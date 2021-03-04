@@ -1,16 +1,16 @@
 import sys
 
-# sys.path.append("./odinControl")
+sys.path.append("./odinControl")
+
+print(sys.path,"\n\n\n")
 
 from rexe.rexe import Rexe
 
-from redant_resources import (
-    Redant_Resources,
-    logger
-)
+from redant_resources import Redant_Resources as RR
 
 import pprint   # to print the output in a better way and hence more understandable
 
+#TODO: test runner thread will provide the path. Using the below object temporarily
 R = Rexe(conf_path="./Utilities/conf.yaml")
 
 """
@@ -24,7 +24,7 @@ passwd: passwd
 
 """
 
-RR = Redant_Resources(log_file_path='./redant.log',log_file_level='D')
+# RR = Redant_Resources(log_file_path='./redant.log',log_file_level='D')
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -36,36 +36,76 @@ def peer_probe(server, node):
     """
 
 
-    logger.info("Redant test framework started")
-    cmd = 'gluster peer probe '+server
+    RR.rlogger.info("Redant test framework started")
+    cmd = 'gluster --xml peer probe '+server
 
     #TODO: remove the print 
     print("Running ",cmd," on node ", node)
 
-    logger.info("Running "+cmd+" on node "+node)
+    RR.rlogger.info("Running "+cmd+" on node "+node)
 
     ret = R.execute_command(node=node, cmd=cmd)
     
     #TODO: remove the print
     pp.pprint(ret)
 
-    logger.info(ret)
+    RR.rlogger.info(ret)
 
     return ret
+
+def peer_detach(node, server, force=False):
+    """Detach the specified server.
+
+    Args:
+        node (str): Node on which command has to be executed.
+        server (str): Server to be detached from the cluster
+
+    Kwargs:
+        force (bool): option to detach peer. Defaults to False.
+
+    Returns:
+        tuple: Tuple containing three elements (ret, out, err).
+            The first element 'ret' is of type 'int' and is the return value
+            of command execution.
+
+            The second element 'out' is of type 'str' and is the stdout value
+            of the command execution.
+
+            The third element 'err' is of type 'str' and is the stderr value
+            of the command execution.
+    """
+
+    RR.rlogger.info("Peer detach initiated")
+
+    #TODO: to be removed
+    pp.pprint("Peer detach initiated")
+    if force:
+        cmd = "gluster peer detach %s force --mode=script" % server
+    else:
+        cmd = "gluster peer detach %s --mode=script" % server
+
+    ret = R.execute_command(node, cmd)
+
+    #TODO: to be removed
+    pp.pprint(ret)
+    
+    RR.rlogger.info(ret)
+    return 
+
 
 def peer_status():
     """
     Checks the status of the peers
     """
 
-    cmd = 'gluster peer status --xml'
-    logger.info("Running "+cmd)
+    cmd = 'gluster --xml peer status'
+    RR.rlogger.info("Running "+cmd)
 
     ret = R.execute_command(node='10.70.43.228', cmd=cmd)
   
     #TODO: remove the print
     pp.pprint(ret)
-    
+    RR.rlogger.info(ret)  
 
     return ret
 
@@ -74,16 +114,16 @@ def pool_list(node):
 
     runs the command gluster pool list on `node`
     """
-    cmd = 'gluster pool list'
+    cmd = 'gluster --xml pool list' 
 
-    logger.info("Running the command "+cmd)
+    RR.rlogger.info("Running the command "+cmd)
     
     ret = R.execute_command(node=node, cmd=cmd)
 
     #TODO: remove the print
     pp.pprint(ret)
 
-    logger.info(ret)
+    RR.rlogger.info(ret)
 
     return ret
 
@@ -101,6 +141,7 @@ if __name__ == "__main__":
     
     """
 
+    peer_detach(node='10.70.43.228',server='10.70.43.101')
     peer_probe('10.70.43.101','10.70.43.228')
     peer_status()
     pool_list('10.70.43.101')
