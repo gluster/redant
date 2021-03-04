@@ -2,16 +2,15 @@ import sys
 
 sys.path.append("./odinControl")
 
+print(sys.path,"\n\n\n")
 
 from rexe.rexe import Rexe
 
-from redant_resources import (
-    Redant_Resources,
-    logger
-)
+from redant_resources import Redant_Resources as RR
 
 import pprint   # to print the output in a better way and hence more understandable
 
+#TODO: test runner thread will provide the path. Using the below object temporarily
 R = Rexe(conf_path="./Utilities/conf.yaml")
 
 """
@@ -25,7 +24,7 @@ passwd: passwd
 
 """
 
-RR = Redant_Resources(log_file_path='./redant.log',log_file_level='D')
+# RR = Redant_Resources(log_file_path='./redant.log',log_file_level='D')
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -37,20 +36,20 @@ def peer_probe(server, node):
     """
 
 
-    logger.info("Redant test framework started")
+    RR.rlogger.info("Redant test framework started")
     cmd = 'gluster --xml peer probe '+server
 
     #TODO: remove the print 
     print("Running ",cmd," on node ", node)
 
-    logger.info("Running "+cmd+" on node "+node)
+    RR.rlogger.info("Running "+cmd+" on node "+node)
 
     ret = R.execute_command(node=node, cmd=cmd)
     
     #TODO: remove the print
     pp.pprint(ret)
 
-    logger.info(ret)
+    RR.rlogger.info(ret)
 
     return ret
 
@@ -60,13 +59,13 @@ def peer_status():
     """
 
     cmd = 'gluster --xml peer status'
-    logger.info("Running "+cmd)
+    RR.rlogger.info("Running "+cmd)
 
     ret = R.execute_command(node='10.70.43.228', cmd=cmd)
   
     #TODO: remove the print
     pp.pprint(ret)
-    
+    RR.rlogger.info(ret)  
 
     return ret
 
@@ -77,14 +76,14 @@ def pool_list(node):
     """
     cmd = 'gluster --xml pool list' 
 
-    logger.info("Running the command "+cmd)
+    RR.rlogger.info("Running the command "+cmd)
     
     ret = R.execute_command(node=node, cmd=cmd)
 
     #TODO: remove the print
     pp.pprint(ret)
 
-    logger.info(ret)
+    RR.rlogger.info(ret)
 
     return ret
 
