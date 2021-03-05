@@ -80,9 +80,9 @@ def peer_detach(node, server, force=False):
     #TODO: to be removed
     pp.pprint("Peer detach initiated")
     if force:
-        cmd = "gluster peer detach %s force --mode=script" % server
+        cmd = "gluster --xml peer detach %s force --mode=script" % server
     else:
-        cmd = "gluster peer detach %s --mode=script" % server
+        cmd = "gluster --xml peer detach %s --mode=script" % server
 
     ret = R.execute_command(node, cmd)
 
