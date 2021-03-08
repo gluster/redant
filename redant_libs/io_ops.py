@@ -15,24 +15,6 @@ R = Rexe(conf_path="./Utilities/conf.yaml")
 
 pp = pprint.PrettyPrinter(indent=4)
 
-
-""" def volume_mount(mnode , volname , dir,force=False):
-    RR.rlogger.info("Volume Mount Command initiated")
-
-    if force:
-        cmd = "mount -t --force glusterfs "+mnode+":/"+volname+" /"+dir
-    else:
-        cmd = "mount -t glusterfs "+mnode+":/"+volname+" /"+dir
-
-    ret = R.execute_command(node="10.70.43.63",cmd=cmd)
-    
-    #TODO: to be removed later
-    print(ret)
-
-    RR.rlogger.info(ret)
-    
-    return ret """
-
 def create_file_using_touch(self, file_name):
 
     """Creates a regular empty file"""

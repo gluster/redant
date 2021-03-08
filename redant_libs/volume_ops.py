@@ -4,6 +4,39 @@ from redant_resources import Redant_Resources as RR
 #TODO: this is for testing. When test runner will be ready it will be removed.
 R = Rexe(conf_path="./example/conf.yaml")
 
+def volume_mount(mnode , volname , path,force=False):
+    """Mounting file path onto volume on server
+    Args:
+        mnode(str): client on which command has to be executed.
+        volname(str): Name of the volume to be mounted
+        path(str): path on client node to be mounted onto volume
+        force
+    Kwargs:
+        force (bool): If this option is set to True, then mount volume
+            will get executed with force option. If it is set to False,
+            then mount volume will get executed without force option
+    """
+
+
+    RR.rlogger.info("Volume Mount Command initiated")
+    
+    #TODO: 'node' variable should be removed later
+    node = "10.70.43.63"
+
+    if force:
+        cmd = "mount -t --force glusterfs %s:/%s %s" % (node,volname,path)
+    else:
+        cmd = "mount -t glusterfs %s:/%s %s" % (node,volname,path)
+
+    ret = R.execute_command(node=mnode,cmd=cmd)
+
+    #TODO: to be removed later
+    print(ret)
+
+    RR.rlogger.info(ret)
+    
+    return ret 
+
 
 def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
     """Create the gluster volume with specified configuration
@@ -130,9 +163,9 @@ def volume_stop(mnode,volname,force=False):
         mnode (str): Node on which cmd has to be executed.
         volname (str): volume name
     Kwargs:
-        force (bool): If this option is set to True, then start volume
+        force (bool): If this option is set to True, then stop volume
             will get executed with force option. If it is set to False,
-            then start volume will get executed without force option
+            then stop volume will get executed without force option
     Returns:
         a dictionary generated from the stdout xml output.
     """
@@ -167,6 +200,7 @@ def volume_delete(mnode,volname):
     RR.rlogger.info("Volume Delete Command initiated")
     cmd = 'gluster volume delete %s --mode=script --xml' % volname
     ret = R.execute_command(node=mnode,cmd=cmd)
+
     RR.rlogger.info(ret)
     return ret
     
@@ -184,6 +218,7 @@ def volume_info(mnode,volname='all'):
     RR.rlogger.info("Volume Delete Command initiated")
     cmd = 'gluster volume info %s --xml' % volname
     ret = R.execute_command(node=mnode,cmd=cmd)
+
     volume_info = ret['msg']
 
     RR.rlogger.info(ret)
