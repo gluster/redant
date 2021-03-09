@@ -24,6 +24,7 @@ class Logging:
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
         logger.addHandler(log_file_handler)
+        return logger
 
     @staticmethod
     def get_logger_handle():
