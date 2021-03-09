@@ -1,10 +1,9 @@
 from os import path
 import concurrent.futures
-import argparse
-from redant_libs.support_libs.relog import logger  
 import paramiko
 import yaml
 import xmltodict
+from redant_libs.support_libs.relog import logger  
 
 def is_file_accessible(path, mode='rw+'):
     """
