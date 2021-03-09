@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 class Logging:
 
     @staticmethod
-    def set_logging_options(cls, log_file_path, log_file_level):
+    def set_logging_options(log_file_path, log_file_level):
         """
         This function is for configuring the logger
         """
@@ -26,6 +26,6 @@ class Logging:
         relogger.addHandler(log_file_handler)
 
     @staticmethod
-    def get_logger_handle(cls):
+    def get_logger_handle():
         return relogger
 
