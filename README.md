@@ -16,12 +16,12 @@ tests: holds the test cases. Add any new test cases here.<br>
 
 ### STEP-BY_STEP procedure to run:
 1. git clone `[your fork for this repo]`
-2. cd `[the-fork]`
-3. git clone [odinControl](https://github.com/srijan-sivakumar/odinControl.git)
-4. cd `odinControl` && mkdir `rexe` && cp `rexe.py` `rexe/rexe.py` && touch `rexe/__init__.py`
-5. cd ..
-6. mkdir `Utilities` && touch `Utilities/conf.yaml`
-7. Add the following in `conf.yaml`:
+2. Create a virtual environment : `virtualenv <virtual_env_name>`
+3. Activate the virtual-env : `source <virtual_env_name>/bin/activate`
+4. cd `[the-fork]`
+5. Run `pip3 install -r requirements.txt`
+7. mkdir `Utilities` && touch `Utilities/conf.yaml`
+8. Add the following in `conf.yaml`:
 
 ```javascript
 host_list: [server IPs]
