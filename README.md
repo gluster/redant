@@ -28,4 +28,7 @@ host_list: [server IPs]
 user: "user"
 passwd: "pass"
 ```
-8. python3 `redant_libs/peer_ops.py`
+
+9. Use the thread_runner.py to run the sample test case.
+`python3 thread_runner.py -t tests/test_sample_tc.py -tf test_fn -c <path_to_conf_file>`.
+10. Log files can be found at /tmp/redant.log [ default path ]. For more options, run `python3 thread_runner.py --help`
