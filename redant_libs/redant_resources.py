@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("./odinControl")
 
-from redant_logging import Logging
+from redant_libs.support_libs.relog import Logging
     
 class Redant_Resources(Logging):
    
