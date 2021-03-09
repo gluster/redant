@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 class Logging:
 
     @staticmethod
-    def set_logging_options(log_file_path, log_file_level):
+    def set_logging_options(log_file_path="/tmp/redant.log", log_file_level="I"):
         """
         This function is for configuring the logger
         """
