@@ -1,7 +1,7 @@
 from os import path
 import concurrent.futures
 import argparse
-from relog import logger  
+from redant_libs.support_libs.relog import logger  
 import paramiko
 import yaml
 import xmltodict
