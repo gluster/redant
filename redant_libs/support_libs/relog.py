@@ -5,8 +5,8 @@ import logging.handlers
 logger = logging.getLogger(__name__)
 class Logging:
 
-    @classmethod
-    def set_logging_options(cls, log_file_path, log_file_level):
+    @staticmethod
+    def set_logging_options(log_file_path="/tmp/redant.log", log_file_level="I"):
         """
         This function is for configuring the logger
         """
@@ -24,6 +24,9 @@ class Logging:
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
         logger.addHandler(log_file_handler)
+        return logger
 
+    @staticmethod
+    def get_logger_handle():
         return logger
 
