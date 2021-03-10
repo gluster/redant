@@ -1,8 +1,8 @@
-from rexe import Rexe
-from redant_resources import Redant_Resources as RR
+from redant_libs.support_libs.rexe import Rexe
+from redant_libs.redant_resources import Redant_Resources as RR
 
 #TODO: this is for testing. When test runner will be ready it will be removed.
-R = Rexe(conf_path="./example/conf.yaml")
+R = Rexe(conf_path="./Utilities/conf.yaml")
 
 
 def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
