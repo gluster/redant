@@ -1,8 +1,3 @@
-import sys
-
-sys.path.append("./odinControl")
-
-print(sys.path,"\n\n\n")
 
 from redant_libs.support_libs.rexe import Rexe
 
@@ -34,23 +29,30 @@ def peer_probe(server, node):
     node: The node in the cluster where peer probe is to be run
     server: The server to probe
     """
+    try:
 
+        RR.rlogger.info("Redant test framework started")
+        cmd = 'gluster --xml peer probe '+server
 
-    RR.rlogger.info("Redant test framework started")
-    cmd = 'gluster --xml peer probe '+server
+        #TODO: remove the print 
+        print("Running ",cmd," on node ", node)
 
-    #TODO: remove the print 
-    print("Running ",cmd," on node ", node)
+        RR.rlogger.info("Running "+cmd+" on node "+node)
 
-    RR.rlogger.info("Running "+cmd+" on node "+node)
+        ret = R.execute_command(node=node, cmd=cmd)
+        
+        #TODO: remove the print
+        pp.pprint(ret)
 
-    ret = R.execute_command(node=node, cmd=cmd)
-    
-    #TODO: remove the print
-    pp.pprint(ret)
+        RR.rlogger.info(ret)
 
-    RR.rlogger.info(ret)
+        # For testing you can explicitly change the error_code to something other than 0 as shown below
+        # ret['error_code'] = 2 
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
 
+    except Exception as error:
+        RR.rlogger.error(error)
     return ret
 
 def peer_detach(node, server, force=False):
@@ -74,38 +76,53 @@ def peer_detach(node, server, force=False):
             The third element 'err' is of type 'str' and is the stderr value
             of the command execution.
     """
+    try:
+        RR.rlogger.info("Peer detach initiated")
 
-    RR.rlogger.info("Peer detach initiated")
+        #TODO: to be removed
+        pp.pprint("Peer detach initiated")
+        if force:
+            cmd = "gluster --xml peer detach %s force --mode=script" % server
+        else:
+            cmd = "gluster --xml peer detach %s --mode=script" % server
 
-    #TODO: to be removed
-    pp.pprint("Peer detach initiated")
-    if force:
-        cmd = "gluster --xml peer detach %s force --mode=script" % server
-    else:
-        cmd = "gluster --xml peer detach %s --mode=script" % server
+        ret = R.execute_command(node, cmd)
 
-    ret = R.execute_command(node, cmd)
+        #TODO: to be removed
+        pp.pprint(ret)
+        
+        RR.rlogger.info(ret)
 
-    #TODO: to be removed
-    pp.pprint(ret)
-    
-    RR.rlogger.info(ret)
-    return 
+        ret['error_code'] = 2
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
+
+    except Exception as error:
+        RR.rlogger.error(error)
+
+    return ret
 
 
 def peer_status():
     """
     Checks the status of the peers
     """
+    try:
+        cmd = 'gluster --xml peer status'
+        RR.rlogger.info("Running "+cmd)
 
-    cmd = 'gluster --xml peer status'
-    RR.rlogger.info("Running "+cmd)
+        ret = R.execute_command(node='10.70.43.228', cmd=cmd)
 
-    ret = R.execute_command(node='10.70.43.228', cmd=cmd)
-  
-    #TODO: remove the print
-    pp.pprint(ret)
-    RR.rlogger.info(ret)  
+        #TODO: remove the print
+        pp.pprint(ret)
+        RR.rlogger.info(ret)  
+
+      
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
+    
+    except Exception as error:
+        RR.rlogger.error(error)
 
     return ret
 
@@ -114,16 +131,24 @@ def pool_list(node):
 
     runs the command gluster pool list on `node`
     """
-    cmd = 'gluster --xml pool list' 
+    try:
+        cmd = 'gluster --xml pool list' 
 
-    RR.rlogger.info("Running the command "+cmd)
+        RR.rlogger.info("Running the command "+cmd)
+        
+        ret = R.execute_command(node=node, cmd=cmd)
+
+        #TODO: remove the print
+        pp.pprint(ret)
+
+        RR.rlogger.info(ret)
+
+ 
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
     
-    ret = R.execute_command(node=node, cmd=cmd)
-
-    #TODO: remove the print
-    pp.pprint(ret)
-
-    RR.rlogger.info(ret)
+    except Exception as error:
+        RR.rlogger.error(error)
 
     return ret
 
