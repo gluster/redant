@@ -81,7 +81,7 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
                               disperse, disperse_data, redundancy,
                               transport, ' '.join(bricks_list)))
     
-    RR.rlogger.info("Creating gluster volume...")
+    RR.rlogger.debug("Creating gluster volume...")
     
     if force:
         cmd = cmd + " force"
@@ -110,7 +110,7 @@ def volume_start(mnode,volname,force=False):
     Logging is done and exceptions are raised if required
     """
 
-    RR.rlogger.info("Starting gluster volume...")
+    RR.rlogger.debug("Starting gluster volume...")
 
     if force:
         cmd = "gluster volume start %s force --mode=script --xml" % volname
@@ -141,7 +141,7 @@ def volume_stop(mnode,volname,force=False):
     Logging is done and exceptions are raised if required
     """
 
-    RR.rlogger.info("Stopping gluster volume...")
+    RR.rlogger.debug("Stopping gluster volume...")
 
     if force:
         cmd = "gluster volume stop %s force --mode=script --xml" % volname
@@ -170,7 +170,7 @@ def volume_delete(mnode,volname):
     Logging is done and exceptions are raised if required
     """
 
-    RR.rlogger.info("Deleting gluster volume...")
+    RR.rlogger.debug("Deleting gluster volume...")
     cmd = 'gluster volume delete %s --mode=script --xml' % volname
     ret = R.execute_command(node=mnode,cmd=cmd)
     
@@ -191,7 +191,7 @@ def volume_info(mnode,volname='all'):
     Logging is done and exceptions are raised if required
     """
 
-    RR.rlogger.info("Volume Info Command initiated.")
+    RR.rlogger.debug("Volume Info Command initiated.")
     cmd = 'gluster volume info %s --xml' % volname
     ret = R.execute_command(node=mnode,cmd=cmd)
     
