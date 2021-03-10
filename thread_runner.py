@@ -35,6 +35,7 @@ if __name__ == "__main__":
 
     # The test function is imported.
     test_class = getattr(module, test_class_str)
+    test_object = test_class(remote_executor) 
     test_func_str = args.test_fn
-    test_func = getattr(test_class, test_func_str)
+    test_func = getattr(test_object, test_func_str)
     test_func()
