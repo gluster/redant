@@ -32,12 +32,12 @@ def peer_probe(server, node):
     try:
 
         RR.rlogger.info("Redant test framework started")
-        cmd = 'gluster --xml peer probe %s'%server
+        cmd = 'gluster --xml peer probe %s' % server
 
         #TODO: remove the print 
-        print("Running %s on node %s"%(cmd, node))
+        print("Running %s on node %s" % (cmd, node))
 
-        RR.rlogger.info("Running %s on node %s"%(cmd,node))
+        RR.rlogger.info("Running %s on node %s" % (cmd,node))
 
         ret = R.execute_command(node=node, cmd=cmd)
         
@@ -109,7 +109,7 @@ def peer_status():
     """
     try:
         cmd = 'gluster --xml peer status'
-        RR.rlogger.info("Running %s"%cmd)
+        RR.rlogger.info("Running %s" % cmd)
 
         ret = R.execute_command(node='10.70.43.228', cmd=cmd)
 
@@ -134,7 +134,7 @@ def pool_list(node):
     try:
         cmd = 'gluster --xml pool list' 
 
-        RR.rlogger.info("Running the command %s"%cmd)
+        RR.rlogger.info("Running the command %s" % cmd)
         
         ret = R.execute_command(node=node, cmd=cmd)
 
