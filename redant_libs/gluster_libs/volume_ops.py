@@ -81,8 +81,6 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
                               disperse, disperse_data, redundancy,
                               transport, ' '.join(bricks_list)))
     
-    RR.rlogger.debug("Creating gluster volume...")
-    
     if force:
         cmd = cmd + " force"
 
@@ -94,8 +92,6 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
     if int(ret['msg']['opRet'])!=0:
         RR.rlogger.error(ret['msg']['opErrstr'])
         raise Exception(ret['msg']['opErrstr'])
-    
-    RR.rlogger.debug("Volume created successfully.")
 
 
 def volume_start(mnode,volname,force=False):
@@ -109,8 +105,6 @@ def volume_start(mnode,volname,force=False):
             then start volume will get executed without force option
     Logging is done and exceptions are raised if required
     """
-
-    RR.rlogger.debug("Starting gluster volume...")
 
     if force:
         cmd = "gluster volume start %s force --mode=script --xml" % volname
@@ -126,8 +120,6 @@ def volume_start(mnode,volname,force=False):
     #TODO: to be removed later
     print(ret)
 
-    RR.rlogger.debug("Volume started successfully.")
-
 
 def volume_stop(mnode,volname,force=False):
     """Starts the gluster volume
@@ -140,8 +132,6 @@ def volume_stop(mnode,volname,force=False):
             then start volume will get executed without force option
     Logging is done and exceptions are raised if required
     """
-
-    RR.rlogger.debug("Stopping gluster volume...")
 
     if force:
         cmd = "gluster volume stop %s force --mode=script --xml" % volname
@@ -157,8 +147,6 @@ def volume_stop(mnode,volname,force=False):
     #TODO: to be removed later
     print(ret)
 
-    RR.rlogger.debug("Volume stopped successfully.")
-
 
 def volume_delete(mnode,volname):
     """Deletes the gluster volume if given volume exists in
@@ -169,16 +157,13 @@ def volume_delete(mnode,volname):
         volname (str): volume name
     Logging is done and exceptions are raised if required
     """
-
-    RR.rlogger.debug("Deleting gluster volume...")
+    
     cmd = 'gluster volume delete %s --mode=script --xml' % volname
     ret = R.execute_command(node=mnode,cmd=cmd)
     
     if int(ret['msg']['opRet'])!=0:
         RR.rlogger.error(ret['msg']['opErrstr'])
-        raise Exception(ret['msg']['opErrstr'])
-    
-    RR.rlogger.debug("Volume deleted successfully.")   
+        raise Exception(ret['msg']['opErrstr'])  
     
 
 def volume_info(mnode,volname='all'):
@@ -190,8 +175,7 @@ def volume_info(mnode,volname='all'):
         a dictionary with volume information.
     Logging is done and exceptions are raised if required
     """
-
-    RR.rlogger.debug("Volume Info Command initiated.")
+    
     cmd = 'gluster volume info %s --xml' % volname
     ret = R.execute_command(node=mnode,cmd=cmd)
     
@@ -200,8 +184,6 @@ def volume_info(mnode,volname='all'):
         raise Exception(ret['msg']['opErrstr'])
         
     volume_info = ret['msg']
-
-    RR.rlogger.debug("Volume Info command successfully executed.")
     
     ret_val = volume_info['volInfo']['volumes']['volume']
 
