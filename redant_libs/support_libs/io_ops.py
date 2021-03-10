@@ -1,12 +1,13 @@
 import sys
+import os
 
 sys.path.append("./odinControl")
 
 print(sys.path,"\n\n\n")
 
-from rexe.rexe import Rexe
+from redant_libs.support_libs.rexe import Rexe
 
-from redant_resources import Redant_Resources as RR
+from redant_libs.redant_resources import Redant_Resources as RR
 
 import pprint   # to print the output in a better way and hence more understandable
 
@@ -47,6 +48,14 @@ def create_file_using_touch(self, file_name):
     pp.pprint(ret)
     
     RR.rlogger.info(ret)
+
+    if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
+    
+    except Exception as e:
+        RR.rlogger.error(e)
+
+    
     return ret
 
 
@@ -54,7 +63,8 @@ def create_dir(self,dir_name):
 
     RR.rlogger.info("Creating Directory")
     
-    cmd = 'mkdir -p /root_dir/'+dir_name+'{1..3}'
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+    cmd = 'mkdir -p /'+ ROOT_DIR + '/'+ dir_name
       
 
     ret = R.execute_command(node="192.168.122.161", cmd=cmd)
@@ -63,14 +73,24 @@ def create_dir(self,dir_name):
     pp.pprint(ret)
     
     RR.rlogger.info(ret)
+
+    if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
+    
+    except Exception as e:
+        RR.rlogger.error(e)
+
+    
     return ret
 
 
 def list_files_on_root_dir():
 
     RR.rlogger.info("List the files on root directory")
+
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     
-    cmd = 'ls /root_dir'
+    cmd = 'ls /'+ ROOT_DIR
 
     ret = R.execute_command(node="192.168.122.161", cmd=cmd)
 
@@ -78,6 +98,14 @@ def list_files_on_root_dir():
     pp.pprint(ret)
     
     RR.rlogger.info(ret)
+
+    if ret['error_code'] != 0:
+            raise Exception(ret['msg']['opErrstr'])
+    
+    except Exception as e:
+        RR.rlogger.error(e)
+
+    
     return ret
 
 
