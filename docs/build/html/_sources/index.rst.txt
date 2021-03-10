@@ -86,8 +86,19 @@ STEP-BY_STEP procedure to run:
 .. code-block:: bash
 
    $ python3 thread_runner.py --help
-   
+
+Table Of Contents
+=================
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

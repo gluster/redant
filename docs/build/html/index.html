@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redant &#8212; Redant 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="redant">
+<h1>Redant<a class="headerlink" href="#redant" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="structure">
+<h2>Structure<a class="headerlink" href="#structure" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>redant_libs: consists of the libs and ops that will help in running the test cases.</p></li>
+<li><p>tests: holds the test cases. Add any new test cases here.</p></li>
+</ul>
+</div>
+<div class="section" id="to-start-working">
+<h2>To start Working<a class="headerlink" href="#to-start-working" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Clone the odinControl inside the RedAnt_Test. [This is temporary. Once odinControl is converted into a python package we won’t need this step]. You can directly call the rexe from the odinControl or use a directory rexe where you can put <strong>__init__.py</strong> and <strong>rexe.py</strong> and hence call the file.</p></li>
+<li><p>Create a <strong>Utilities</strong> folder and add <strong>conf.yaml</strong> file [This is temporary as well just for testing. Once we are ready with the components we just need to connect them.]
+OR
+You can also call the conf.yaml from the odinControl. I have used it here just to indicate the independence of each component. But reusability of existing files won’t hurt. :sweat_smile:</p></li>
+</ol>
+</div>
+<div class="section" id="step-by-step-procedure-to-run">
+<h2>STEP-BY_STEP procedure to run:<a class="headerlink" href="#step-by-step-procedure-to-run" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Clone the repo.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ git clone <span class="o">[</span>your fork <span class="k">for</span> this repo<span class="o">]</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create a virtual environment</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ virtualenv &lt;virtual_env_name&gt;
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Activate the virtual-env</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">source</span> &lt;virtual_env_name&gt;/bin/activate
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> <span class="o">[</span>the-fork<span class="o">]</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip3 install -r requirements.txt
+</pre></div>
+</div>
+<ol class="arabic simple" start="6">
+<li></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ mkdir Utilities <span class="o">&amp;&amp;</span> touch Utilities/conf.yaml
+</pre></div>
+</div>
+<ol class="arabic simple" start="7">
+<li><p>Add the following in <em>conf.yaml</em>:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>host_list: <span class="o">[</span>server IPs<span class="o">]</span>
+user: <span class="s2">&quot;user&quot;</span>
+passwd: <span class="s2">&quot;pass&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="8">
+<li><p>Use the thread_runner.py to run the sample test case.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ python3 thread_runner.py -t tests/test_sample_tc.py -tf test_fn -c &lt;path_to_conf_file&gt;.
+</pre></div>
+</div>
+<ol class="arabic simple" start="9">
+<li><p>Log files can be found at /tmp/redant.log [ default path ]. For more options, run</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ python3 thread_runner.py --help
+</pre></div>
+</div>
+</div>
+<div class="section" id="table-of-contents">
+<h2>Table Of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Redant</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, RedHat.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
