@@ -95,8 +95,7 @@ def volume_create(mnode,volname,bricks_list,force=False, **kwargs):
         RR.rlogger.error(ret['msg']['opErrstr'])
         raise Exception(ret['msg']['opErrstr'])
     
-    RR.rlogger.info("Volume created successfully.")
-    RR.rlogger.debug(ret)
+    RR.rlogger.debug("Volume created successfully.")
 
 
 def volume_start(mnode,volname,force=False):
@@ -127,8 +126,7 @@ def volume_start(mnode,volname,force=False):
     #TODO: to be removed later
     print(ret)
 
-    RR.rlogger.info("Volume started successfully.")
-    RR.rlogger.debug(ret)
+    RR.rlogger.debug("Volume started successfully.")
 
 
 def volume_stop(mnode,volname,force=False):
@@ -159,8 +157,7 @@ def volume_stop(mnode,volname,force=False):
     #TODO: to be removed later
     print(ret)
 
-    RR.rlogger.info("Volume stopped successfully.")
-    RR.rlogger.debug(ret)
+    RR.rlogger.debug("Volume stopped successfully.")
 
 
 def volume_delete(mnode,volname):
@@ -181,8 +178,7 @@ def volume_delete(mnode,volname):
         RR.rlogger.error(ret['msg']['opErrstr'])
         raise Exception(ret['msg']['opErrstr'])
     
-    RR.rlogger.info("Volume deleted successfully.")
-    RR.rlogger.debug(ret)    
+    RR.rlogger.debug("Volume deleted successfully.")   
     
 
 def volume_info(mnode,volname='all'):
@@ -205,8 +201,7 @@ def volume_info(mnode,volname='all'):
         
     volume_info = ret['msg']
 
-    RR.rlogger.info("Volume Info command successfully executed.")
-    RR.rlogger.debug(ret)
+    RR.rlogger.debug("Volume Info command successfully executed.")
     
     ret_val = volume_info['volInfo']['volumes']['volume']
 
