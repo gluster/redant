@@ -4,9 +4,9 @@ sys.path.append("./odinControl")
 
 print(sys.path,"\n\n\n")
 
-from rexe.rexe import Rexe
+from redant_libs.support_libs.rexe import Rexe
 
-from redant_resources import Redant_Resources as RR
+from redant_libs.redant_resources import Redant_Resources as RR
 
 import pprint   # to print the output in a better way and hence more understandable
 
