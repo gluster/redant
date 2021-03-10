@@ -2,3 +2,6 @@ odinControl
 Utilities
 *.log
 *__pycache__
+*.vscode/
+*.html 
+docs/_build/
