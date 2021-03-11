@@ -1,10 +1,6 @@
 import sys
 import os
 
-sys.path.append("./odinControl")
-
-print(sys.path,"\n\n\n")
-
 from redant_libs.support_libs.rexe import Rexe
 
 from redant_libs.redant_resources import Redant_Resources as RR
@@ -14,7 +10,7 @@ import pprint   # to print the output in a better way and hence more understanda
 #TODO: test runner thread will provide the path. Using the below object temporarily
 R = Rexe(conf_path="./Utilities/conf.yaml")
 
-pp = pprint.PrettyPrinter(indent=4)
+#pp = pprint.PrettyPrinter(indent=4)
 
 
 """ def volume_mount(mnode , volname , dir,force=False):
@@ -34,7 +30,7 @@ pp = pprint.PrettyPrinter(indent=4)
     
     return ret """
 
-def create_file_using_touch(self, file_name):
+def touch(self, file_name):
 
     try:
         """Creates a regular empty file"""
@@ -60,7 +56,7 @@ def create_file_using_touch(self, file_name):
     return ret
 
 
-def create_dir(self,dir_name):
+def mkdir(self,dir_name):
 
     try:
         RR.rlogger.info("Creating Directory")
@@ -86,7 +82,7 @@ def create_dir(self,dir_name):
     return ret
 
 
-def list_files_on_root_dir():
+def ls():
 
     try:
         RR.rlogger.info("List the files on root directory")
@@ -113,10 +109,12 @@ def list_files_on_root_dir():
 
 
 
+
+
 if __name__ == "__main__":
     R.establish_connection()
     #volume_mount("10.70.43.228","test-vol","test_dir")
-    create_file_using_touch("test_file")
-    create_dir("test_dir")
-    list_files_on_root_dir()
+    touch("test_file")
+    mkdir("test_dir")
+    ls()
    
