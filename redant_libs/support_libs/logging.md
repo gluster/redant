@@ -26,7 +26,8 @@ parameter i.e. the log-level.
 	|   Info    |    'I'	|
 	|   Error   |    'E'    |
 	|   Warning |    'W'    |
-        |   Critical |   'C'    |
+	|  Critical |    'C'    |
+
 
 3. One important design consideration is the usage of the logger APIs. Now the usual 
 way is to invoke logger.debug or logger.info depending on the logging levels, but
