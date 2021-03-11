@@ -11,7 +11,7 @@ One time effort -
 4. Fetch the latest changes. `git fetch upstream`.
 5. Rebase it to the local clone. `git rebase upstream/main`
 
-Now, step 1-3 once done need not be repeated more than once as once they're done, you can just run the fetch and rebase just to update your local with
+Now, step 1-3 once done need not be repeated more than once as once they're done, you can just execute the fetch and rebase command to update your local with
 remote upstream. [ Don't forget to update your forked upstream with these latest changes in the `main` ]
 
 The following steps are to be done every time a new PR is being acted upon.
