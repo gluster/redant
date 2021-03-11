@@ -6,7 +6,7 @@ Before going to as to what is a mixin and how it works, we need to address the w
 What was the issue which prompted the use of mixin.
 
 Now if one checks the dependency flow without mixin ( Refer the image below ), it shows
-that the Rexe object ( i.e. remote executioner ) was created by the thread runner and then
+that the Rexe object ( i.e. remote executioner ) was created by the runner thread and then
 passed to the test case to be used.
 
 ![](https://github.com/srijan-sivakumar/Redant/raw/main/images/without_mixin.jpg)
