@@ -36,21 +36,22 @@ pp = pprint.PrettyPrinter(indent=4)
 
 def create_file_using_touch(self, file_name):
 
-    """Creates a regular empty file"""
-    RR.rlogger.info("Creating File")
+    try:
+        """Creates a regular empty file"""
+        RR.rlogger.info("Creating File")
 
     
-    cmd = "touch {}".format(file_name)
+        cmd = "touch {}".format(file_name)
 
-    ret = R.execute_command(node="192.168.122.161", cmd=cmd)
+        ret = R.execute_command(node="192.168.122.161", cmd=cmd)
 
-    #TODO: to be removed
-    pp.pprint(ret)
+        #TODO: to be removed
+        pp.pprint(ret)
     
-    RR.rlogger.info(ret)
+        RR.rlogger.info(ret)
 
-    if ret['error_code'] != 0:
-            raise Exception(ret['msg']['opErrstr'])
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg'])
     
     except Exception as e:
         RR.rlogger.error(e)
@@ -61,21 +62,22 @@ def create_file_using_touch(self, file_name):
 
 def create_dir(self,dir_name):
 
-    RR.rlogger.info("Creating Directory")
+    try:
+        RR.rlogger.info("Creating Directory")
     
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    cmd = 'mkdir -p /'+ ROOT_DIR + '/'+ dir_name
+        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        cmd = 'mkdir -p /'+ ROOT_DIR + '/'+dir_name
       
 
-    ret = R.execute_command(node="192.168.122.161", cmd=cmd)
+        ret = R.execute_command(node="192.168.122.161", cmd=cmd)
 
-    #TODO: to be removed
-    pp.pprint(ret)
+        #TODO: to be removed
+        pp.pprint(ret)
     
-    RR.rlogger.info(ret)
+        RR.rlogger.info(ret)
 
-    if ret['error_code'] != 0:
-            raise Exception(ret['msg']['opErrstr'])
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg'])
     
     except Exception as e:
         RR.rlogger.error(e)
@@ -86,21 +88,22 @@ def create_dir(self,dir_name):
 
 def list_files_on_root_dir():
 
-    RR.rlogger.info("List the files on root directory")
+    try:
+        RR.rlogger.info("List the files on root directory")
 
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     
-    cmd = 'ls /'+ ROOT_DIR
+        cmd = 'ls /'+ ROOT_DIR
 
-    ret = R.execute_command(node="192.168.122.161", cmd=cmd)
+        ret = R.execute_command(node="192.168.122.161", cmd=cmd)
 
-    #TODO: to be removed
-    pp.pprint(ret)
+        #TODO: to be removed
+        pp.pprint(ret)
     
-    RR.rlogger.info(ret)
+        RR.rlogger.info(ret)
 
-    if ret['error_code'] != 0:
-            raise Exception(ret['msg']['opErrstr'])
+        if ret['error_code'] != 0:
+            raise Exception(ret['msg'])
     
     except Exception as e:
         RR.rlogger.error(e)
