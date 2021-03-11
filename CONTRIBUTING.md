@@ -7,7 +7,7 @@
 One time effort -
 1. Fork the repository.
 2. Clone it in your local system.
-3. Add an upstream remote to fetch latest changes. `git remote add upstream git@github.com:srijan-sivakumar/redant`.git`
+3. Add an upstream remote to fetch latest changes. `git remote add upstream git@github.com:srijan-sivakumar/redant.git`
 4. Fetch the latest changes. `git fetch upstream`.
 5. Rebase it to the local clone. `git rebase upstream/main`
 
