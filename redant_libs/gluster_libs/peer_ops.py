@@ -1,6 +1,6 @@
 class peer_ops:
 
-    def peer_probe(server, node):
+    def peer_probe(self, server, node):
         """
         node: The node in the cluster where peer probe is to be run
         server: The server to probe
@@ -21,7 +21,7 @@ class peer_ops:
             self.rlog(error, 'E')
         return ret
 
-    def peer_detach(node, server, force=False):
+    def peer_detach(self, node, server, force=False):
         """Detach the specified server.
 
         Args:
@@ -59,7 +59,7 @@ class peer_ops:
         return ret
 
 
-    def peer_status(node):
+    def peer_status(self, node):
         """
         Checks the status of the peers
         """
@@ -74,7 +74,7 @@ class peer_ops:
             self.rlog(error, 'E')
         return ret
 
-    def pool_list(node):
+    def pool_list(self, node):
         """
         runs the command gluster pool list on `node`
         """
