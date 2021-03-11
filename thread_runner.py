@@ -4,7 +4,7 @@ The thread runner is responsible for the execution of a given TC.
 import inspect
 import importlib
 import argparse
-from redant_libs.support_libs.relog import Logging
+from redant_libs.support_libs.relog import Logger
 from redant_libs.support_libs.rexe import Rexe
 
 if __name__ == "__main__":
@@ -21,10 +21,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Create the logger object.
-    logger = Logging.set_logging_options(args.log_path, args.log_level)
+    logger = Logger.set_logging_options(args.log_path, args.log_level)
 
     # Create remote connection with the servers and clients.
-    logger.debug("Creating the remote connection")
+    Logger.rlog("Creating the remote connection", 'D')
     remote_executor = Rexe(args.conf_path)
     remote_executor.establish_connection()
 

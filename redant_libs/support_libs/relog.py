@@ -3,10 +3,12 @@ import logging.handlers
 
 
 logger = logging.getLogger(__name__)
-class Logging:
+class Logger:
 
+    log_function_mapping = {'I' : logger.info, 'D' : logger.debug, 'W' : logger.warning,
+                            'E' : logger.error, 'C': logger.critical}
     @staticmethod
-    def set_logging_options(log_file_path="/tmp/redant.log", log_file_level="I"):
+    def set_logging_options(log_file_path: str="/tmp/redant.log", log_file_level: str="I"):
         """
         This function is for configuring the logger
         """
@@ -25,6 +27,10 @@ class Logging:
         log_file_handler.setFormatter(log_format)
         logger.addHandler(log_file_handler)
         return logger
+
+    @classmethod
+    def rlog(cls, log_message: str, log_level: str='I'):
+        cls.log_function_mapping[log_level](log_message)
 
     @staticmethod
     def get_logger_handle():

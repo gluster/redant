@@ -3,7 +3,7 @@ import concurrent.futures
 import paramiko
 import yaml
 import xmltodict
-from redant_libs.support_libs.relog import logger  
+from redant_libs.support_libs.relog import Logger  
 
 def is_file_accessible(path, mode='rw+'):
     """
@@ -25,7 +25,7 @@ class Rexe:
         self.parse_conf_file()
         if command_file_path != "":
             self.parse_exec_file()
-        logger.debug(f"Conf file data : {self.conf_data}")
+        Logger.rlog(f"Conf file data : {self.conf_data}", 'D')
 
     def parse_conf_file(self):
         """
@@ -43,18 +43,18 @@ class Rexe:
         """
         Function to parse the exec file
         """
-        logger.debug("Parsing exec file")
+        Logger.rlog("Parsing exec file", 'D')
         self.exec_file_handle = open(self.command_file_path)
         self.exec_data = yaml.load(self.exec_file_handle, Loader=yaml.FullLoader)
         self.conf_file_handle.close()
-        logger.debug(f"Exec file data : {self.exec_data}")
+        Logger.rlog(f"Exec file data : {self.exec_data}", 'D')
 
     def establish_connection(self):
         """
         Function to establish connection with the given
         set of hosts.
         """
-        logger.debug("establish connection")
+        Logger.rlog("establish connection", 'D')
         self.node_dict = {}
         self.connect_flag = True
         
@@ -63,9 +63,9 @@ class Rexe:
             node_ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
                 node_ssh_client.connect(hostname=node, username=self.host_user, password=self.host_passwd)
-                logger.debug(f"SSH connection to {node} is successful.")
+                Logger.rlog(f"SSH connection to {node} is successful.", 'D')
             except paramiko.ssh_exception.AuthenticationException:
-                logger.error("Authentication failure. Please check conf.")
+                Logger.rlog("Authentication failure. Please check conf.", 'E')
                 self.connect_flag = False
             self.node_dict[node] = node_ssh_client
 
@@ -95,7 +95,7 @@ class Rexe:
         ret_dict['cmd'] = cmd
         ret_dict['error_code'] = stdout.channel.recv_exit_status()
         
-        logger.debug(ret_dict)
+        Logger.rlog(ret_dict, 'D')
         return ret_dict
 
     def execute_command_multinode(self, node_list, cmd):
@@ -111,7 +111,7 @@ class Rexe:
                     ret_val.append(future_handle.result())
                 except Exception as exc:
                     print(f"Generated exception : {exc}")
-        logger.info(ret_val)
+        Logger.rlog(ret_val)
         return ret_val
 
     def execute_command_file(self):
@@ -123,7 +123,7 @@ class Rexe:
             return -1
         for command_node in self.exec_data:
             if command_node not in self.host_list and command_node not in self.host_generic:
-                logger.info(f"The command node {command_node} is not in host list.")
+                Logger.rlog(f"The command node {command_node} is not in host list.")
                 continue
             commands_list = self.exec_data[command_node]
             if command_node == 'allp':
