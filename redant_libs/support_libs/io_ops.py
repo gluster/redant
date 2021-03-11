@@ -10,7 +10,7 @@ import pprint   # to print the output in a better way and hence more understanda
 #TODO: test runner thread will provide the path. Using the below object temporarily
 R = Rexe(conf_path="./Utilities/conf.yaml")
 
-#pp = pprint.PrettyPrinter(indent=4)
+pp = pprint.PrettyPrinter(indent=4)
 
 
 """ def volume_mount(mnode , volname , dir,force=False):
@@ -106,9 +106,6 @@ def ls():
 
     
     return ret
-
-
-
 
 
 if __name__ == "__main__":
