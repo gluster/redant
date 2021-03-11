@@ -4,8 +4,7 @@ The thread runner is responsible for the execution of a given TC.
 import inspect
 import importlib
 import argparse
-from redant_libs.support_libs.relog import Logger
-from redant_libs.support_libs.rexe import Rexe
+from redant_libs.redant_mixin import redant_mixin
 
 if __name__ == "__main__":
     # Test runner passes the arguments which are paramount for running a specific TC.
@@ -20,22 +19,17 @@ if __name__ == "__main__":
                         default="I", type=str)
     args = parser.parse_args()
 
-    # Create the logger object.
-    logger = Logger.set_logging_options(args.log_path, args.log_level)
+    # Creating mixin class and initializing logging and rexe parameters.
+    re_mixin = redant_mixin(args.conf_path)
+    re_mixin.set_logging_options(args.log_path, args.log_level)
+    re_mixin.establish_connection()
 
-    # Create remote connection with the servers and clients.
-    Logger.rlog("Creating the remote connection", 'D')
-    remote_executor = Rexe(args.conf_path)
-    remote_executor.establish_connection()
-
-    # Load the test case function to be called.
-    module_name = args.tc_path.replace("/", ".").strip(".py")
-    module = importlib.import_module(module_name)
-    test_class_str = inspect.getmembers(module, inspect.isclass)[0][0]
-
-    # The test function is imported.
-    test_class = getattr(module, test_class_str)
-    test_object = test_class(remote_executor) 
+    # the test case is loaded dynamically and it's members accessed.
+    test_case_module_name = args.tc_path.replace("/", ".").strip(".py")
+    test_case_module = importlib.import_module(test_case_module_name)
+    test_class_str = inspect.getmembers(test_case_module, inspect.isclass)[0][0]
+    test_class = getattr(test_case_module, test_class_str)
+    test_object = test_class(re_mixin) 
     test_func_str = args.test_fn
     test_func = getattr(test_object, test_func_str)
     test_func()
