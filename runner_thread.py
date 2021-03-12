@@ -4,7 +4,7 @@ The thread runner is responsible for the execution of a given TC.
 import inspect
 import importlib
 import argparse
-from redant_libs.redant_mixin import redant_mixin
+from redant_libs.redant_mixin import RedantMixin
 
 if __name__ == "__main__":
     # Arguments passed bu the test runner for this TC.
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     ARGS = PARSER.parse_args()
 
     # Creating mixin class and initializing logging and rexe parameters.
-    RE_MIXIN = redant_mixin(ARGS.conf_path)
+    RE_MIXIN = RedantMixin(ARGS.conf_path)
     RE_MIXIN.set_logging_options(ARGS.log_path, ARGS.log_level)
     RE_MIXIN.establish_connection()
 
