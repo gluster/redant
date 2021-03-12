@@ -51,35 +51,36 @@ class VolumeOps:
         replica = arbiter = stripe = disperse = disperse_data = redundancy = ''
         transport = ''
         if replica_count is not None:
-            replica = "replica %d" % replica_count
+            replica = f"replica {replica_count}"
 
         if arbiter_count is not None:
-            arbiter = "arbiter %d" % arbiter_count
+            arbiter = f"arbiter {arbiter_count}"
 
         if stripe_count is not None:
-            stripe = "stripe %d" % stripe_count
+            stripe = f"stripe {stripe_count}"
 
         if disperse_count is not None:
-            disperse = "disperse %d" % disperse_count
+            disperse = f"disperse {disperse_count}"
 
         if disperse_data_count is not None:
-            disperse_data = "disperse-data %d" % disperse_data_count
+            disperse_data = f"disperse-data {disperse_data_count}"
 
         if redundancy_count is not None:
-            redundancy = "redundancy %d" % redundancy_count
+            redundancy = f"redundancy {redundancy_count}"
 
         if transport_type is not None:
-            transport = "transport %s" % transport_type
-
-        cmd = ("gluster volume create %s %s %s %s %s %s %s %s %s --xml "
-               "--mode=script" % (volname, replica, arbiter, stripe,
-                                  disperse, disperse_data, redundancy,
-                                  transport, ' '.join(bricks_list)))
+            transport = f"transport {transport_type}"
+        
+        bricks_list_string = ' '.join(bricks_list)
+        cmd = (f"gluster volume create {volname} {replica} "
+               f"{arbiter} {stripe} {disperse} {disperse_data} "
+               f"{redundancy} {transport} {bricks_list_string} --xml "
+               "--mode=script")
         
         if force:
             cmd = cmd + " force"
         
-        self.rlog("Running %s on node %s" % (cmd,node), 'I')
+        self.rlog(f"Running {cmd} on node {node}", 'I')
         
         ret =  self.execute_command(node=node,cmd=cmd)
         
@@ -87,7 +88,7 @@ class VolumeOps:
             self.rlog(ret['msg']['opErrstr'],'E')
             raise Exception(ret['msg']['opErrstr'])
         else:    
-            self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+            self.rlog(f"Successfully ran {cmd} on {node}",'I')
 
 
     def volume_start(self,node,volname,force=False):
@@ -103,11 +104,11 @@ class VolumeOps:
         """
 
         if force:
-            cmd = "gluster volume start %s force --mode=script --xml" % volname
+            cmd = f"gluster volume start {volname} force --mode=script --xml"
         else:
-            cmd = "gluster volume start %s --mode=script --xml" %volname
+            cmd = f"gluster volume start {volname} --mode=script --xml"
             
-        self.rlog("Running %s on node %s" % (cmd,node), 'I')
+        self.rlog(f"Running {cmd} on node {node}", 'I')
         
         ret = self.execute_command(node=node,cmd=cmd)
         
@@ -115,7 +116,7 @@ class VolumeOps:
             self.rlog(ret['msg']['opErrstr'],'E')
             raise Exception(ret['msg']['opErrstr'])   
         else:    
-            self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+            self.rlog(f"Successfully ran {cmd} on {node}",'I')
 
 
     def volume_stop(self,node,volname,force=False):
@@ -131,11 +132,11 @@ class VolumeOps:
         """
 
         if force:
-            cmd = "gluster volume stop %s force --mode=script --xml" % volname
+            cmd = f"gluster volume stop {volname} force --mode=script --xml"
         else:
-            cmd = "gluster volume stop %s --mode=script --xml" %volname
+            cmd = f"gluster volume stop {volname} --mode=script --xml"
         
-        self.rlog("Running %s on node %s" % (cmd,node), 'I')
+        self.rlog(f"Running {cmd} on node {node}", 'I')
         
         ret = self.execute_command(node=node,cmd=cmd)
         
@@ -143,7 +144,7 @@ class VolumeOps:
             self.rlog(ret['msg']['opErrstr'],'E')
             raise Exception(ret['msg']['opErrstr'])
         else:
-            self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+            self.rlog(f"Successfully ran {cmd} on {node}",'I')
 
 
     def volume_delete(self,node,volname):
@@ -156,9 +157,9 @@ class VolumeOps:
         Logging is done and exceptions are raised if required
         """
         
-        cmd = 'gluster volume delete %s --mode=script --xml' % volname
+        cmd = f"gluster volume delete {volname} --mode=script --xml"
         
-        self.rlog("Running %s on node %s" % (cmd,node), 'I')
+        self.rlog(f"Running {cmd} on node {node}", 'I')
         
         ret = self.execute_command(node=node,cmd=cmd)
         
@@ -166,7 +167,7 @@ class VolumeOps:
             self.rlog(ret['msg']['opErrstr'],'E')
             raise Exception(ret['msg']['opErrstr'])  
         else:    
-            self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+            self.rlog(f"Successfully ran {cmd} on {node}",'I')
         
 
     def volume_info(self,node,volname='all'):
@@ -179,9 +180,9 @@ class VolumeOps:
         Logging is done and exceptions are raised if required
         """
         
-        cmd = 'gluster volume info %s --xml' % volname
+        cmd = f"gluster volume info {volname} --xml"
         
-        self.rlog("Running %s on node %s" % (cmd,node), 'I')
+        self.rlog(f"Running {cmd} on node {node}", 'I')
         
         ret = self.execute_command(node=node,cmd=cmd)
         
@@ -189,7 +190,7 @@ class VolumeOps:
             self.rlog(ret['msg']['opErrstr'],'E')
             raise Exception(ret['msg']['opErrstr'])
         else:    
-            self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+            self.rlog(f"Successfully ran {cmd} on {node}",'I')
             
         volume_info = ret['msg']
         
