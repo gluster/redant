@@ -16,7 +16,7 @@ class io_ops:
             self.log(ret)    
         
             if ret['error_code'] != 0:
-                raise Exception(ret['msg'])
+                raise Exception(ret['msg']['opErrstr'])
         
         except Exception as e:
             self.rlog(e) 
@@ -34,7 +34,7 @@ class io_ops:
             self.rlog(ret)
 
             if ret['error_code'] != 0:
-                raise Exception(ret['msg'])
+                raise Exception(ret['msg']['opErrstr'])
         
         except Exception as e:
             self.rlog(e)    
@@ -52,7 +52,7 @@ class io_ops:
             self.rlog(ret)
 
             if ret['error_code'] != 0:
-                raise Exception(ret['msg'])
+                raise Exception(ret['msg']['opErrstr'])
         
         except Exception as e:
             self.rlog(e)    
@@ -70,7 +70,7 @@ class io_ops:
             self.rlog(ret)
 
             if ret['error_code'] != 0:
-                raise Exception(ret['msg'])
+                raise Exception(ret['msg']['opErrstr'])
         
         except Exception as e:
             self.rlog(e)    
