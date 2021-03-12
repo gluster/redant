@@ -1,6 +1,8 @@
 class VolumeOps:
 
-    def volume_create(self,node,volname,bricks_list,force=False, **kwargs):
+    def volume_create(self,node: str,volname: str,
+                      bricks_list: list,force: bool=False,
+                      **kwargs):
         """Create the gluster volume with specified configuration
         Args:
             node(str): server on which command has to be executed
@@ -91,7 +93,7 @@ class VolumeOps:
             self.rlog(f"Successfully ran {cmd} on {node}",'I')
 
 
-    def volume_start(self,node,volname,force=False):
+    def volume_start(self,node: str,volname: str,force: bool=False):
         """Starts the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
@@ -119,7 +121,7 @@ class VolumeOps:
             self.rlog(f"Successfully ran {cmd} on {node}",'I')
 
 
-    def volume_stop(self,node,volname,force=False):
+    def volume_stop(self,node: str,volname: str,force: bool=False):
         """Starts the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
@@ -147,7 +149,7 @@ class VolumeOps:
             self.rlog(f"Successfully ran {cmd} on {node}",'I')
 
 
-    def volume_delete(self,node,volname):
+    def volume_delete(self,node: str,volname: str):
         """Deletes the gluster volume if given volume exists in
            gluster and deletes the directories in the bricks
            associated with the given volume
@@ -170,7 +172,7 @@ class VolumeOps:
             self.rlog(f"Successfully ran {cmd} on {node}",'I')
         
 
-    def volume_info(self,node,volname='all'):
+    def volume_info(self,node: str,volname: str='all') -> dict:
         """Gives volume information
         Args:
             node (str): Node on which cmd has to be executed.
