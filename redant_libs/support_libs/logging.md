@@ -51,18 +51,18 @@ self.rlog(msg, log level)
 For *INFO* level you can omit the level as it is by default **INFO**<br>
 On starting the execution of cmd on a node:<br>
 ```js
- self.rlog("Running %s on node %s" % (cmd,node))
+ self.rlog( f"Running { cmd } on node { node }")
 ```
 On completing the execution:
 ```js
- self.rlog("Successfully ran %s on %s " % (cmd, node))
+ self.rlog( f"Successfully ran { cmd } on { node } ")
 ```
 ## Log levels
 =============
 
 * Everything in the ops library has to be in info mode.
 * Everything in the test cases has to be in error mode.
-* Everything other than ops to be in debug mode.
+* Use debug in remote command executioner.
 
 
 # TODO:
