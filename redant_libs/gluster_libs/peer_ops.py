@@ -9,14 +9,14 @@ class peer_ops:
         
             cmd = 'gluster --xml peer probe %s' % server
 
-            self.rlog("Running %s on node %s" % (cmd,node))
+            self.rlog("Running %s on node %s" % (cmd,node), 'I')
             ret = self.execute_command(node=node, cmd=cmd)
 
 
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
             else:
-                self.rlog("Successfully ran %s on %s " % (cmd, node))
+                self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
 
         except Exception as error:
             self.rlog(error, 'E')
@@ -51,7 +51,7 @@ class peer_ops:
             else:
                 cmd = "gluster --xml peer detach %s --mode=script" % server
             
-            self.rlog("Running %s on node %s" % (cmd,node))
+            self.rlog("Running %s on node %s" % (cmd,node), 'I')
 
             ret = self.execute_command(node, cmd)
 
@@ -60,7 +60,7 @@ class peer_ops:
                 raise Exception(ret['msg']['opErrstr'])
 
             else:
-                self.rlog("Successfully ran %s on node %s" % (cmd,node))
+                self.rlog("Successfully ran %s on node %s" % (cmd,node), 'I')
 
         except Exception as error:
 
@@ -77,7 +77,7 @@ class peer_ops:
 
             cmd = 'gluster --xml peer status'
 
-            self.rlog("Running %s on node %s" % (cmd,node))
+            self.rlog("Running %s on node %s" % (cmd,node), 'I')
 
             ret = self.execute_command(node, cmd)
 
@@ -85,7 +85,7 @@ class peer_ops:
                 raise Exception(ret['msg']['opErrstr'])
 
             else:
-                self.rlog("Successfully ran %s on node %s" % (cmd,node))
+                self.rlog("Successfully ran %s on node %s" % (cmd,node), 'I')
 
                 
         except Exception as error:
@@ -100,7 +100,7 @@ class peer_ops:
         try:
             cmd = 'gluster --xml pool list' 
 
-            self.rlog("Running %s on node %s" % (cmd,node))
+            self.rlog("Running %s on node %s" % (cmd,node), 'I')
 
             ret = self.execute_command(node, cmd)
 
@@ -108,10 +108,10 @@ class peer_ops:
                 raise Exception(ret['msg']['opErrstr'])
 
             else:
-                self.rlog("Successfully ran %s on node %s" % (cmd,node))
+                self.rlog("Successfully ran %s on node %s" % (cmd,node), 'I')
 
         except Exception as error:
             self.rlog(error, 'E')
-            
+
         return ret
 
