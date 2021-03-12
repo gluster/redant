@@ -1,77 +1,97 @@
-import sys
-import os
-
 class io_ops:
 
-    def volume_mount(self ,node , server , volname , dir,force=False):
+    def volume_mount(self ,node :str ,server :str ,volname :str, dir :str ,force : bool=False):
+        '''Mounts the gluster volumes
+        
+        node: The node in the cluster where volume mount is to be run
+        server: HOST_NAME or IP address
+        volname: Name of volume to be mounted
+        dir: The path of the mount directory(mount point)
+        '''
+
         try:
-            self.log("Volume Mount Command initiated")
+            self.rlog("Volume Mount Command initiated" , "I")
             
             if force:
-                cmd = "mount -t --force glusterfs %s:/%s /%s" % (server,volname,dir)
+                cmd = f"mount -t --force glusterfs {server}:/{volname} /{dir}"
             else:
-                cmd = "mount -t glusterfs %s:/%s /%s" % (server,volname,dir)
+                cmd = f"mount -t glusterfs {server}:/{volname} /{dir}"
+            self.rlog(f"Running {cmd} on node {node}", 'I')
             ret = self.execute_command(node=node,cmd=cmd)    
-            
-            self.log(ret)    
-        
+                    
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
         
         except Exception as e:
-            self.rlog(e) 
+            self.rlog(e , 'E') 
         return ret 
 
-    def touch(self, file_name , node):
+    def touch(self ,file_name :str ,node :str):
+        """Creates a regular empty file
+        
+        file_name: The name of the file to be created
+        node: The node in the cluster where the command is to be run
+        """
 
-        try:
-            """Creates a regular empty file"""
-            self.rlog("Creating File") 
+        try:            
+            self.rlog("Creating File" , "I") 
 
             cmd = "touch {}".format(file_name)
+            self.rlog(f"Running {cmd} on node {node}", 'I')
             ret = self.execute_command(node=node, cmd=cmd)
-
-            self.rlog(ret)
-
+            
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
         
         except Exception as e:
-            self.rlog(e)    
+            self.rlog(e , 'E')    
         return ret
 
-    def mkdir(self,dir_name, node):
+    def mkdir(self ,dir_name : str ,node :str):
+        '''Creates a directory
+        
+        dir_name: The name of the directory to be created
+        node: The node in the cluster where the command is to be run
+        '''
 
         try:
-            self.rlog("Creating Directory")
-        
-            ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-            cmd = 'mkdir -p /%s/%s' % (ROOT_DIR , dir_name)  
+            self.rlog("Creating Directory" , "I")        
+            
+            cmd = f'mkdir -p /{dir_name}'
+            self.rlog(f"Running {cmd} on node {node}", 'I')
             ret = self.execute_command(node=node, cmd=cmd)
-        
-            self.rlog(ret)
-
+            
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
         
         except Exception as e:
-            self.rlog(e)    
+            self.rlog(e, 'E')    
         return ret
 
-    def ls(self , node):
+    def ls(self ,node :str):
+        '''List the directory contents
+        
+        node: The node in the cluster where the command is to be run
+        '''
 
         try:
-            self.rlog("List the files on root directory")
-
-            ROOT_DIR = os.path.dirname(os.path.abspath(__file__))    
-            cmd = 'ls /%s'% ROOT_DIR
+            self.rlog("List the files on root directory" , "I")
+              
+            cmd = 'ls'
+            self.rlog(f"Running {cmd} on node {node}", 'I')
             ret = self.execute_command(node=node, cmd=cmd)
-
-            self.rlog(ret)
 
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
         
         except Exception as e:
-            self.rlog(e)    
+            self.rlog(e , 'E')    
         return ret
