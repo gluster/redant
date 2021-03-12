@@ -7,29 +7,34 @@ import argparse
 from redant_libs.redant_mixin import redant_mixin
 
 if __name__ == "__main__":
-    # Test runner passes the arguments which are paramount for running a specific TC.
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--conf_path', dest='conf_path', help="Configuration file path",
+    # Arguments passed bu the test runner for this TC.
+    PARSER = argparse.ArgumentParser()
+    PARSER.add_argument('-c', '--conf_path', dest='conf_path',
+                        help="Configuration file path",
                         default="/home/conf.yaml", type=str)
-    parser.add_argument('-t', '--test_case_path', dest='tc_path', help="Path of the test case to be run from tests directory. Start with tests/", type=str)
-    parser.add_argument('-tf', '--test_function', dest='test_fn', help="Name of the test function to run", type=str)
-    parser.add_argument('-l', '--log_path', dest='log_path', help="Logfile path",
-                        default="/tmp/redant.log", type=str)
-    parser.add_argument('-ll', '--log_level', dest='log_level', help="Log Level",
-                        default="I", type=str)
-    args = parser.parse_args()
+    PARSER.add_argument('-t', '--test_case_path', dest='tc_path',
+                        help="Relative path of TC.", type=str)
+    PARSER.add_argument('-tf', '--test_function', dest='test_fn',
+                        help="Name of the test function to run", type=str)
+    PARSER.add_argument('-l', '--log_path', dest='log_path',
+                        help="Logfile path", default="/tmp/redant.log",
+                        type=str)
+    PARSER.add_argument('-ll', '--log_level', dest='log_level',
+                        help="Log Level", default="I", type=str)
+    ARGS = PARSER.parse_args()
 
     # Creating mixin class and initializing logging and rexe parameters.
-    re_mixin = redant_mixin(args.conf_path)
-    re_mixin.set_logging_options(args.log_path, args.log_level)
-    re_mixin.establish_connection()
+    RE_MIXIN = redant_mixin(ARGS.conf_path)
+    RE_MIXIN.set_logging_options(ARGS.log_path, ARGS.log_level)
+    RE_MIXIN.establish_connection()
 
     # the test case is loaded dynamically and it's members accessed.
-    test_case_module_name = args.tc_path.replace("/", ".").strip(".py")
-    test_case_module = importlib.import_module(test_case_module_name)
-    test_class_str = inspect.getmembers(test_case_module, inspect.isclass)[0][0]
-    test_class = getattr(test_case_module, test_class_str)
-    test_object = test_class(re_mixin) 
-    test_func_str = args.test_fn
-    test_func = getattr(test_object, test_func_str)
-    test_func()
+    TC_MODULE_STR = ARGS.tc_path.replace("/", ".").strip(".py")
+    TC_MODULE = importlib.import_module(TC_MODULE_STR)
+    TC_CLASS_STR = inspect.getmembers(TC_MODULE,
+                                      inspect.isclass)[0][0]
+    TC_CLASS = getattr(TC_MODULE, TC_CLASS_STR)
+    TC_OBJ = TC_CLASS(RE_MIXIN)
+    TC_FUNC_STR = ARGS.test_fn
+    TC_FUNC = getattr(TC_OBJ, TC_FUNC_STR)
+    TC_FUNC()
