@@ -6,16 +6,17 @@ class peer_ops:
         server: The server to probe
         """
         try:
-            self.rlog("Redant test framework started")
+        
             cmd = 'gluster --xml peer probe %s' % server
 
             self.rlog("Running %s on node %s" % (cmd,node))
             ret = self.execute_command(node=node, cmd=cmd)
-        
-            self.rlog(ret)
+
 
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran %s on %s " % (cmd, node))
 
         except Exception as error:
             self.rlog(error, 'E')
@@ -43,19 +44,28 @@ class peer_ops:
                 of the command execution.
         """
         try:
-            self.rlog("Peer detach initiated")
+            
             if force:
                 cmd = "gluster --xml peer detach %s force --mode=script" % server
+
             else:
                 cmd = "gluster --xml peer detach %s --mode=script" % server
-            ret = self.execute_command(node, cmd)
-            self.rlog(ret)
+            
+            self.rlog("Running %s on node %s" % (cmd,node))
 
-            ret['error_code'] = 2
+            ret = self.execute_command(node, cmd)
+
+            
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+
+            else:
+                self.rlog("Successfully ran %s on node %s" % (cmd,node))
+
         except Exception as error:
+
             self.rlog(error, 'E')
+
         return ret
 
 
@@ -64,14 +74,23 @@ class peer_ops:
         Checks the status of the peers
         """
         try:
+
             cmd = 'gluster --xml peer status'
-            self.rlog("Running %s" % cmd)
+
+            self.rlog("Running %s on node %s" % (cmd,node))
+
             ret = self.execute_command(node, cmd)
-            self.rlog(ret)  
-            if ret['error_code'] != 0:
+
+            if ret['error_code'] != 0: 
                 raise Exception(ret['msg']['opErrstr'])
+
+            else:
+                self.rlog("Successfully ran %s on node %s" % (cmd,node))
+
+                
         except Exception as error:
             self.rlog(error, 'E')
+
         return ret
 
     def pool_list(self, node):
@@ -80,12 +99,19 @@ class peer_ops:
         """
         try:
             cmd = 'gluster --xml pool list' 
-            self.rlog("Running the command %s" % cmd)
+
+            self.rlog("Running %s on node %s" % (cmd,node))
+
             ret = self.execute_command(node, cmd)
-            self.rlog(ret)
+
             if ret['error_code'] != 0:
                 raise Exception(ret['msg']['opErrstr'])
+
+            else:
+                self.rlog("Successfully ran %s on node %s" % (cmd,node))
+
         except Exception as error:
             self.rlog(error, 'E')
+            
         return ret
 
