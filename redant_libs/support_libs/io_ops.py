@@ -8,9 +8,9 @@ class io_ops:
             self.log("Volume Mount Command initiated")
             
             if force:
-                cmd = "mount -t --force glusterfs %s:/%s /%s" %s (server,volname,dir)
+                cmd = "mount -t --force glusterfs %s:/%s /%s" % (server,volname,dir)
             else:
-                cmd = "mount -t glusterfs %s:/%s /%s" %s (server,volname,dir)
+                cmd = "mount -t glusterfs %s:/%s /%s" % (server,volname,dir)
             ret = self.execute_command(node=node,cmd=cmd)    
             
             self.log(ret)    
@@ -43,10 +43,10 @@ class io_ops:
     def mkdir(self,dir_name, node):
 
         try:
-            self.rlog"Creating Directory")
+            self.rlog("Creating Directory")
         
             ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-            cmd = 'mkdir -p /'+ ROOT_DIR + '/'+dir_name  
+            cmd = 'mkdir -p /%s/%s' % (ROOT_DIR , dir_name)  
             ret = self.execute_command(node=node, cmd=cmd)
         
             self.rlog(ret)
@@ -64,7 +64,7 @@ class io_ops:
             self.rlog("List the files on root directory")
 
             ROOT_DIR = os.path.dirname(os.path.abspath(__file__))    
-            cmd = 'ls /'+ ROOT_DIR
+            cmd = 'ls /%s'% ROOT_DIR
             ret = self.execute_command(node=node, cmd=cmd)
 
             self.rlog(ret)
