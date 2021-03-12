@@ -36,6 +36,30 @@ this seems to be a little less generic, so `rlog` was created to handle this.
  The internal mapping to the logger's API calls will be done by rlog with the help of
 a dictionary.
 
+# Logging format:
+
+All log messages MUST include:
+* The cmd that is/was executed
+* The machine(s) on which the command is/was executed
+
+Ex: peer_ops
+
+On starting the execution of cmd on a node:
+```js
+ self.rlog("Running %s on node %s" % (cmd,node), 'I')
+```
+On completing the execution:
+```js
+ self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+```
+## Log levels
+=============
+
+* Everything in the ops library has to be in info mode.
+* Everything in the test cases has to be in error mode.
+* Everything other than ops to be in debug mode.
+
+
 # TODO:
 1. Making the logger more object oriented. Re-think the current design of how
 the class is.
