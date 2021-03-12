@@ -19,11 +19,29 @@ The following steps are to be done every time a new PR is being acted upon.
 2. Run steps 4-5 mentioned in the One time effort.
 3. Checkout to a new branch for making changes. `git checkout -b issueXYZ origin/main`
 4. Do the changes.
-5. Add the changed files before commit. `git add <path-to-file(s)>`
-6. Sign your commits with `git commit -s`. This will open an editor. Add the header/subject ( A one liner which will be the header for the PR )
+5. Run the command
+```js
+autopep8 -i <PATH_TO_THE_FILE>/<filename>.py
+```
+---
+**NOTE**
+
+Along with this run pylint and flake8 manually as well and remove the errors. <br>
+To run the same:
+
+```js
+flake8 <PATH_TO_THE_FILE>/<filename>.py
+pylint <PATH_TO_THE_FILE>/<filename>.py
+
+```
+
+---
+
+6. Add the changed files before commit. `git add <path-to-file(s)>`
+7. Sign your commits with `git commit -s`. This will open an editor. Add the header/subject ( A one liner which will be the header for the PR )
 followed by what was changed and why. Also add the line `Updates: #XYZ` or `Fixes: #XYZ` depending on whether this PR will fix an issue raised or
 just update a long running issue.
-7. Push the changes by running. `git push origin HEAD`
+8. Push the changes by running. `git push origin HEAD`
 
 Now, once the PR is opened, tag the reviewers and if the PR requires new changes follow the below steps,
 1. Fetch and rebase the local main.
