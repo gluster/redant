@@ -1,91 +1,97 @@
-import sys
+class io_ops:
 
-sys.path.append("./odinControl")
+    def volume_mount(self ,node :str ,server :str ,volname :str, dir :str ,force : bool=False):
+        '''Mounts the gluster volumes
+        
+        node: The node in the cluster where volume mount is to be run
+        server: HOST_NAME or IP address
+        volname: Name of volume to be mounted
+        dir: The path of the mount directory(mount point)
+        '''
 
-print(sys.path,"\n\n\n")
+        try:
+            self.rlog("Volume Mount Command initiated" , "I")
+            
+            if force:
+                cmd = f"mount -t --force glusterfs {server}:/{volname} /{dir}"
+            else:
+                cmd = f"mount -t glusterfs {server}:/{volname} /{dir}"
+            self.rlog(f"Running {cmd} on node {node}", 'I')
+            ret = self.execute_command(node=node,cmd=cmd)    
+                    
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
+        
+        except Exception as e:
+            self.rlog(e , 'E') 
+        return ret 
 
-from rexe.rexe import Rexe
+    def touch(self ,file_name :str ,node :str):
+        """Creates a regular empty file
+        
+        file_name: The name of the file to be created
+        node: The node in the cluster where the command is to be run
+        """
 
-from redant_resources import Redant_Resources as RR
+        try:            
+            self.rlog("Creating File" , "I") 
 
-import pprint   # to print the output in a better way and hence more understandable
+            cmd = "touch {}".format(file_name)
+            self.rlog(f"Running {cmd} on node {node}", 'I')
+            ret = self.execute_command(node=node, cmd=cmd)
+            
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
+        
+        except Exception as e:
+            self.rlog(e , 'E')    
+        return ret
 
-#TODO: test runner thread will provide the path. Using the below object temporarily
-R = Rexe(conf_path="./Utilities/conf.yaml")
+    def mkdir(self ,dir_name : str ,node :str):
+        '''Creates a directory
+        
+        dir_name: The name of the directory to be created
+        node: The node in the cluster where the command is to be run
+        '''
 
-pp = pprint.PrettyPrinter(indent=4)
+        try:
+            self.rlog("Creating Directory" , "I")        
+            
+            cmd = f'mkdir -p /{dir_name}'
+            self.rlog(f"Running {cmd} on node {node}", 'I')
+            ret = self.execute_command(node=node, cmd=cmd)
+            
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
+        
+        except Exception as e:
+            self.rlog(e, 'E')    
+        return ret
 
+    def ls(self ,node :str):
+        '''List the directory contents
+        
+        node: The node in the cluster where the command is to be run
+        '''
 
-""" def volume_mount(mnode , volname , dir,force=False):
-    RR.rlogger.info("Volume Mount Command initiated")
+        try:
+            self.rlog("List the files on root directory" , "I")
+              
+            cmd = 'ls'
+            self.rlog(f"Running {cmd} on node {node}", 'I')
+            ret = self.execute_command(node=node, cmd=cmd)
 
-    if force:
-        cmd = "mount -t --force glusterfs "+mnode+":/"+volname+" /"+dir
-    else:
-        cmd = "mount -t glusterfs "+mnode+":/"+volname+" /"+dir
-
-    ret = R.execute_command(node="10.70.43.63",cmd=cmd)
-    
-    #TODO: to be removed later
-    print(ret)
-
-    RR.rlogger.info(ret)
-    
-    return ret """
-
-def create_file_using_touch(self, file_name):
-
-    """Creates a regular empty file"""
-    RR.rlogger.info("Creating File")
-
-    
-    cmd = "touch {}".format(file_name)
-
-    ret = R.execute_command(node="192.168.122.161", cmd=cmd)
-
-    #TODO: to be removed
-    pp.pprint(ret)
-    
-    RR.rlogger.info(ret)
-    return ret
-
-
-def create_dir(self,dir_name):
-
-    RR.rlogger.info("Creating Directory")
-    
-    cmd = 'mkdir -p /root_dir/'+dir_name+'{1..3}'
-      
-
-    ret = R.execute_command(node="192.168.122.161", cmd=cmd)
-
-    #TODO: to be removed
-    pp.pprint(ret)
-    
-    RR.rlogger.info(ret)
-    return ret
-
-
-def list_files_on_root_dir():
-
-    RR.rlogger.info("List the files on root directory")
-    
-    cmd = 'ls /root_dir'
-
-    ret = R.execute_command(node="192.168.122.161", cmd=cmd)
-
-    #TODO: to be removed
-    pp.pprint(ret)
-    
-    RR.rlogger.info(ret)
-    return ret
-
-
-
-if __name__ == "__main__":
-    R.establish_connection()
-    #volume_mount("10.70.43.228","test-vol","test_dir")
-    create_file_using_touch("test_file")
-    create_dir("test_dir")
-    list_files_on_root_dir()
-   
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog("Successfully ran {cmd} on {node} ", 'I')
+        
+        except Exception as e:
+            self.rlog(e , 'E')    
+        return ret
