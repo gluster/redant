@@ -42,15 +42,20 @@ All log messages MUST include:
 * The cmd that is/was executed
 * The machine(s) on which the command is/was executed
 
-Ex: peer_ops
+Ex: 
 
-On starting the execution of cmd on a node:
 ```js
- self.rlog("Running %s on node %s" % (cmd,node), 'I')
+self.rlog(msg, log level)
+
+```
+For *INFO* level you can omit the level as it is by default **INFO**<br>
+On starting the execution of cmd on a node:<br>
+```js
+ self.rlog("Running %s on node %s" % (cmd,node))
 ```
 On completing the execution:
 ```js
- self.rlog("Successfully ran %s on %s " % (cmd, node),'I')
+ self.rlog("Successfully ran %s on %s " % (cmd, node))
 ```
 ## Log levels
 =============
