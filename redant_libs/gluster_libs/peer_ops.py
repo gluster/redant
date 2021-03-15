@@ -1,147 +1,98 @@
-import sys
+class peer_ops:
 
-sys.path.append("./odinControl")
+    def peer_probe(self, server: str, node: str):
+        """
+        node: The node in the cluster where peer probe is to be run
+        server: The server to probe
+        """
+        try:
 
-print(sys.path,"\n\n\n")
+            cmd = 'gluster --xml peer probe %s' % server
 
-from redant_libs.support_libs.rexe import Rexe
+            self.rlog(f"Running {cmd} on node {node}")
+            ret = self.execute_command(node=node, cmd=cmd)
 
-from redant_libs.redant_resources import Redant_Resources as RR
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog(f"Successfully ran {cmd} on {node}")
+        except Exception as error:
+            self.rlog(error, 'E')
+        return ret
 
-import pprint   # to print the output in a better way and hence more understandable
+    def peer_detach(self, node: str, server: str, force: bool = False):
+        """Detach the specified server.
 
-#TODO: test runner thread will provide the path. Using the below object temporarily
-R = Rexe(conf_path="./Utilities/conf.yaml")
+        Args:
+            node (str): Node on which command has to be executed.
+            server (str): Server to be detached from the cluster
 
-"""
-For testing temporarily  
+        Kwargs:
+            force (bool): option to detach peer. Defaults to False.
 
-Utilities/conf.yaml
+        Returns:
+            tuple: Tuple containing three elements (ret, out, err).
+                The first element 'ret' is of type 'int' and
+                is the return value
+                of command execution.
 
-host_list: IPs
-user: user
-passwd: passwd
+                The second element 'out' is of type 'str'
+                and is the stdout value
+                of the command execution.
 
-"""
+                The third element 'err' is of type 'str'
+                and is the stderr value
+                of the command execution.
+        """
+        try:
+            if force:
+                cmd = f"gluster --xml peer detach {server} force --mode=script"
+            else:
+                cmd = f"gluster --xml peer detach {server} --mode=script"
+            self.rlog(f"Running {cmd} on node {node}")
+            ret = self.execute_command(node, cmd)
 
-# RR = Redant_Resources(log_file_path='./redant.log',log_file_level='D')
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog(f"Successfully {cmd} on node {node}")
+        except Exception as error:
+            self.rlog(error, 'E')
+        return ret
 
-pp = pprint.PrettyPrinter(indent=4)
+    def peer_status(self, node: str):
+        """
+        Checks the status of the peers
+        """
+        try:
+            cmd = 'gluster --xml peer status'
 
+            self.rlog(f"Running {cmd} on node {node}")
 
-def peer_probe(server, node):
-    """
-    node: The node in the cluster where peer probe is to be run
-    server: The server to probe
-    """
+            ret = self.execute_command(node, cmd)
 
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog(f"Successfully ran {cmd} on node {node}")
 
-    RR.rlogger.info("Redant test framework started")
-    cmd = 'gluster --xml peer probe '+server
+        except Exception as error:
+            self.rlog(error, 'E')
+        return ret
 
-    #TODO: remove the print 
-    print("Running ",cmd," on node ", node)
+    def pool_list(self, node: str):
+        """
+        runs the command gluster pool list on `node`
+        """
+        try:
+            cmd = 'gluster --xml pool list'
+            self.rlog(f"Running {cmd} on node {node}")
+            ret = self.execute_command(node, cmd)
 
-    RR.rlogger.info("Running "+cmd+" on node "+node)
-
-    ret = R.execute_command(node=node, cmd=cmd)
-    
-    #TODO: remove the print
-    pp.pprint(ret)
-
-    RR.rlogger.info(ret)
-
-    return ret
-
-def peer_detach(node, server, force=False):
-    """Detach the specified server.
-
-    Args:
-        node (str): Node on which command has to be executed.
-        server (str): Server to be detached from the cluster
-
-    Kwargs:
-        force (bool): option to detach peer. Defaults to False.
-
-    Returns:
-        tuple: Tuple containing three elements (ret, out, err).
-            The first element 'ret' is of type 'int' and is the return value
-            of command execution.
-
-            The second element 'out' is of type 'str' and is the stdout value
-            of the command execution.
-
-            The third element 'err' is of type 'str' and is the stderr value
-            of the command execution.
-    """
-
-    RR.rlogger.info("Peer detach initiated")
-
-    #TODO: to be removed
-    pp.pprint("Peer detach initiated")
-    if force:
-        cmd = "gluster --xml peer detach %s force --mode=script" % server
-    else:
-        cmd = "gluster --xml peer detach %s --mode=script" % server
-
-    ret = R.execute_command(node, cmd)
-
-    #TODO: to be removed
-    pp.pprint(ret)
-    
-    RR.rlogger.info(ret)
-    return 
-
-
-def peer_status():
-    """
-    Checks the status of the peers
-    """
-
-    cmd = 'gluster --xml peer status'
-    RR.rlogger.info("Running "+cmd)
-
-    ret = R.execute_command(node='10.70.43.228', cmd=cmd)
-  
-    #TODO: remove the print
-    pp.pprint(ret)
-    RR.rlogger.info(ret)  
-
-    return ret
-
-def pool_list(node):
-    """
-
-    runs the command gluster pool list on `node`
-    """
-    cmd = 'gluster --xml pool list' 
-
-    RR.rlogger.info("Running the command "+cmd)
-    
-    ret = R.execute_command(node=node, cmd=cmd)
-
-    #TODO: remove the print
-    pp.pprint(ret)
-
-    RR.rlogger.info(ret)
-
-    return ret
-
-if __name__ == "__main__":
-    
-    
-    R.establish_connection()
-
-    """
-    Add libraries to test the code 
-
-    run the command: python3 redant_libs/peer_ops.py
-
-    Test the libraries
-    
-    """
-
-    peer_detach(node='10.70.43.228',server='10.70.43.101')
-    peer_probe('10.70.43.101','10.70.43.228')
-    peer_status()
-    pool_list('10.70.43.101')
+            if ret['error_code'] != 0:
+                raise Exception(ret['msg']['opErrstr'])
+            else:
+                self.rlog(f"Successfully ran {cmd} on node {node}")
+        except Exception as error:
+            self.rlog(error, 'E')
+        return ret
