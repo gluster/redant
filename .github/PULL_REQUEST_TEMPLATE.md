@@ -2,6 +2,7 @@
 
 * [ ] Have you followed the guidelines in our [Contributing document](https://github.com/srijan-sivakumar/Redant/blob/main/CONTRIBUTING.md)? 
 * [ ] Have you checked to ensure there aren't other open [Pull Requests](https://github.com/srijan-sivakumar/Redant/pulls) for the same update/change?
+* [ ] I signed my commits
 
 
 ### New Feature Submissions:
