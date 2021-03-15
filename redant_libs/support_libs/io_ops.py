@@ -1,6 +1,6 @@
 class io_ops:
 
-    def volume_mount(self, node: str, server: str, volname: str, dir: str, force: bool = False):
+    def volume_mount(self, node: str, server: str, volname: str, dir: str):
         '''Mounts the gluster volumes
 
         node: The node in the cluster where volume mount is to be run
