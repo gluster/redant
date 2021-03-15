@@ -83,8 +83,8 @@ class io_ops:
 
     def run(self, node: str, cmd: str):
         '''Used for non-standard IO commands
-        cmd: The non-standard command which is to be run 
         node: The node in the cluster where the command is to be run
+        cmd: The non-standard command which is to be run 
         '''
 
         try:
