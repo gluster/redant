@@ -19,7 +19,8 @@ class Parser():
         Args:
             filepath (str): Path for the config file.
         Rerturns:
-            Hahsmap for config file as a dictionary.
+            dict: Hashmap for config file as a dictionary.
+            None: None on failure.
         """
         try:
             configfd = open(filepath, 'r')

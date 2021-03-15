@@ -32,7 +32,7 @@ class ParamsHandler:
             server_name: name of the server as in config file.
                          example: server_vm1
         Returns:
-            ip address of the given server
+            str: ip address of the given server
         Example:
             get_server_ip("server_vm1")
         """
@@ -50,7 +50,7 @@ class ParamsHandler:
         Returns:
             ip address of the given client
         Example:
-            get_client_ip("client_vm1")
+            str: get_client_ip("client_vm1")
         """
         index = client_name[9:]
         client_ip = cls.config_hashmap['clients'][int(index)-1]
@@ -61,7 +61,7 @@ class ParamsHandler:
         """
         Gives the list of all server ip
         Returns:
-            list of all server ip address
+            list: list of all server ip address
         """
         server_ip_list = cls.config_hashmap['servers']
         return server_ip_list
@@ -71,7 +71,7 @@ class ParamsHandler:
         """
         Gives the list of all client ip
         Returns:
-            list of all client ip address
+            list: list of all client ip address
         """
         client_ip_list = cls.config_hashmap['clients']
         return client_ip_list
@@ -84,7 +84,7 @@ class ParamsHandler:
             server_name (str): name of the server as in config file.
                          example: server_vm1
         Returns:
-            ilist of brick root of the given server
+            list: list of brick root of the given server
         Example:
             get_brick_root_list("server_vm1")
         """
@@ -98,7 +98,7 @@ class ParamsHandler:
         """
         Returns the flag for volume_create_force option
         Returns:
-            flag value(True/False) for volume_create_force option
+            bool: flag value(True/False) for volume_create_force option
         """
         gluster_info = cls.config_hashmap['gluster']
         volume_create_force = gluster_info['volume_create_force']
