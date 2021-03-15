@@ -1,15 +1,15 @@
 """
 This file contains one class - VolumeOps which
-performs holds volume related apis which will
-be called from the test case.
+holds volume related APIs which will be called
+from the test case.
 """
 
 
 class VolumeOps:
     """
-    VolumeOpsVolumeOps class provides apis to perform operations
-    related to volumes like creation,deletion,starting,
-    stopping volumes etc
+    VolumeOps class provides APIs to perform operations
+    related to volumes like create,delete,start,stop,
+    fetch information.
     """
 
     def volume_create(self, node: str, volname: str,
@@ -36,7 +36,6 @@ class VolumeOps:
                     - redundancy_count : (int)|None
                     - transport_type : tcp|rdma|tcp,rdma|None
                     - ...
-        Logging is done and exceptions are raised if required
         """
 
         replica = arbiter = stripe = disperse = disperse_data = redundancy = ''
@@ -91,7 +90,6 @@ class VolumeOps:
             force (bool): If this option is set to True, then start volume
                 will get executed with force option. If it is set to False,
                 then start volume will get executed without force option
-        Logging is done and exceptions are raised if required
         """
 
         if force:
@@ -119,7 +117,6 @@ class VolumeOps:
             force (bool): If this option is set to True, then start volume
                 will get executed with force option. If it is set to False,
                 then start volume will get executed without force option
-        Logging is done and exceptions are raised if required
         """
 
         if force:
@@ -140,12 +137,10 @@ class VolumeOps:
     def volume_delete(self, node: str, volname: str):
         """
         Deletes the gluster volume if given volume exists in
-        gluster and deletes the directories in the bricks
-        associated with the given volume
+        gluster.
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
-        Logging is done and exceptions are raised if required
         """
 
         cmd = f"gluster volume delete {volname} --mode=script --xml"
@@ -168,7 +163,6 @@ class VolumeOps:
             volname (str): volume name
         Returns:
             a dictionary with volume information.
-        Logging is done and exceptions are raised if required
         """
 
         cmd = f"gluster volume info {volname} --xml"
