@@ -1,18 +1,24 @@
 ### All Submissions:
 
-* [ ] Have you followed the guidelines in our [Contributing document](https://github.com/srijan-sivakumar/Redant/blob/main/CONTRIBUTING.md)? 
-* [ ] Have you checked to ensure there aren't other open [Pull Requests](https://github.com/srijan-sivakumar/Redant/pulls) for the same update/change?
-* [ ] I signed my commits
+Desciption:
 
+(If it closes the issue)
+Fixes: #
+(If it just updates the Issue)
+Updates: #
 
-### New Feature Submissions:
+Signed-off-by:
+<!--
+Thank you for contributing to Redant! 
 
-1. [ ] Did you add an issue in the [ISSUES](https://github.com/srijan-sivakumar/Redant/issues)?
-2. [ ] Have you lint your code locally prior to submission as explained in the [Contributing document](https://github.com/srijan-sivakumar/Redant/blob/main/CONTRIBUTING.md)?
-3. [ ] If your code is using logging, did you check the [LOGGING.md](https://github.com/srijan-sivakumar/Redant/blob/main/redant_libs/support_libs/logging.md)?
+Contributing Conventions:
 
-### Changes to Core Features:
+1. Include descriptive PR titles with [<component-name>] prepended.
+2. Build and test your changes before submitting a PR. 
+3. If logging then check the logging.md file in redant_libs/support_libs
+4. Remember to check the linting issues beforehand as well to prevent your checks from failing.
+5. Sign your commits
 
-* [ ] Have you added an explanation of what your changes do and why you'd like us to include them?
-* [ ] Have you written new tests for your core changes, as applicable?
-* [ ] Have you successfully ran tests with your changes locally?
+By following the community's contribution conventions upfront, the review process will 
+be accelerated and your PR merged more quickly.
+-->
