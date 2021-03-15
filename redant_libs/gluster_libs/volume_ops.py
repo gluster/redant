@@ -8,9 +8,32 @@ from the test case.
 class VolumeOps:
     """
     VolumeOps class provides APIs to perform operations
-    related to volumes like create,delete,start,stop,
+    related to volumes like mount,create,delete,start,stop,
     fetch information.
     """
+
+    def volume_mount(self, node: str, server: str, volname: str, path: str):
+        """
+        Mounts the gluster volume to the client's filesystem.
+        Args:
+            node (str): The client node in the cluster where volume
+                        mount is to be run
+            server (str): Hostname or IP address
+            volname (str): Name of volume to be mounted
+            path (str): The path of the mount directory(mount point)
+        """
+
+        cmd = f"mount -t glusterfs {server}:/{volname} /{path}"
+
+        self.rlog(f"Running {cmd} on node {node}")
+
+        ret = self.execute_command(node=node, cmd=cmd)
+
+        if int(ret['msg']['opRet']) != 0:
+            self.rlog(ret['msg']['opErrstr'], 'E')
+            raise Exception(ret['msg']['opErrstr'])
+
+        self.rlog("Successfully ran {cmd} on {node}")
 
     def volume_create(self, node: str, volname: str,
                       bricks_list: list, force: bool = False,

@@ -1,27 +1,5 @@
 class io_ops:
 
-    def volume_mount(self, node: str, server: str, volname: str, dir: str):
-        '''Mounts the gluster volumes
-        node: The node in the cluster where volume mount is to be run
-        server: Hostname or IP address
-        volname: Name of volume to be mounted
-        dir: The path of the mount directory(mount point)
-        '''
-
-        try:
-            cmd = f"mount -t glusterfs {server}:/{volname} /{dir}"
-            self.rlog(f"Running {cmd} on node {node}")
-            ret = self.execute_command(node=node, cmd=cmd)
-
-            if ret['error_code'] != 0:
-                raise Exception(ret['msg']['opErrstr'])
-            else:
-                self.rlog("Successfully ran {cmd} on {node} ")
-
-        except Exception as error:
-            self.rlog(error, 'E')
-        return ret
-
     def touch(self, file_name: str, node: str):
         """Creates a regular empty file
         file_name: The name of the file to be created
