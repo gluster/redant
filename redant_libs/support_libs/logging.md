@@ -36,6 +36,35 @@ this seems to be a little less generic, so `rlog` was created to handle this.
  The internal mapping to the logger's API calls will be done by rlog with the help of
 a dictionary.
 
+# Logging format:
+
+All log messages MUST include:
+* The cmd that is/was executed
+* The machine(s) on which the command is/was executed
+
+Ex: 
+
+```js
+self.rlog(msg, log level)
+
+```
+For *INFO* level you can omit the level as it is by default **INFO**<br>
+On starting the execution of cmd on a node:<br>
+```js
+ self.rlog( f"Running { cmd } on node { node }")
+```
+On completing the execution:
+```js
+ self.rlog( f"Successfully ran { cmd } on { node } ")
+```
+## Log levels
+=============
+
+* Everything in the ops library has to be in info mode.
+* Everything in the test cases has to be in error mode.
+* Use debug in remote command executioner.
+
+
 # TODO:
 1. Making the logger more object oriented. Re-think the current design of how
 the class is.
