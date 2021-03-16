@@ -16,8 +16,6 @@ class Parent_Test(ABC):
     COMPONENT: str
     TEST_NAME: str
 
-
-
     def init(self):
         """
         Establishes connection by calling core_init
