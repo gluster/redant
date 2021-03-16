@@ -1,4 +1,4 @@
-# Redant
+# redant
 
 ### Structure:
 
@@ -7,7 +7,7 @@ tests: holds the test cases. Add any new test cases here.<br>
 
 ### To start Working:
 
-1. Clone Redant repo.
+1. Clone redant repo.
 
 2. Create a **Utilities** folder and add **conf.yaml** file.
 
