@@ -16,12 +16,6 @@ class Parent_Test(ABC):
     COMPONENT: str
     TEST_NAME: str
 
-    def configure(self, component_arg: str, test_name_arg: str):
-        """
-        Initializes COMPONENT and TEST_NAME
-        """
-        self.COMPONENT = component_arg
-        self.TEST_NAME = test_name_arg
 
     def core_init(self):
         """
