@@ -3,11 +3,11 @@ This module is the gluster_test_main module which
 takes care of:
 1) Config file parsing (by gluster_test_parser).
 2) Tests-to-run list preparation (by test_list_builder).
-3) Invocation of the component which manages test execution (test_runner).
+3) Invocation of the runner_thread which runs the testcase.
 """
 
 import argparse
-from gluster_params_handler import ParamsHandler
+from parsing.redant_params_handler import ParamsHandler
 
 
 def pars_args():

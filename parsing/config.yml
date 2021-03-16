@@ -68,11 +68,11 @@ clients_info:
     *client_vm2: &client2
         super_user: 'root'
     *client_vm3: &client3
-        super_user: 'Admin'
-        platform: 'windows'
+        super_user: 'root'
+        platform: 'fedora'
     *client_vm4: &client4
-        super_user: 'Administrator'
-        platform: 'windows'
+        super_user: 'root'
+        platform: 'fedora'
 
 # This section contains details about the gluster volumes, mounts etc.
 # For defining volumes, mounts and/or anything realted to gluster, it has to be
