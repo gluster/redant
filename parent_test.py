@@ -17,14 +17,6 @@ class Parent_Test(ABC):
     TEST_NAME: str
 
 
-    def core_init(self):
-        """
-        Establishes ssh connection
-        Since added in redant_mixin so
-        can call establish_connection directly
-        """
-
-        self.establish_connection()
 
     def init(self):
         """
