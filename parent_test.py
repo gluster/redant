@@ -18,13 +18,10 @@ class Parent_Test(ABC):
 
     def init(self):
         """
-        Establishes connection by calling core_init
         Creates volume
         And runs the specific component in the
         test case
         """
-
-        self.core_init()
         self.rlog(f"{self.TEST_NAME} from {self.COMPONENT} inits")
 
     def run_test(self):
