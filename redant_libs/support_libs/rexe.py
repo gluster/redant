@@ -70,8 +70,8 @@ class Rexe:
                     username=self.host_user,
                     password=self.host_passwd)
                 self.rlog(f"SSH connection to {node} is successful.", 'D')
-            except paramiko.ssh_exception.AuthenticationException:
-                self.rlog("Authentication failure. Please check conf.", 'E')
+            except Exception as e:
+                self.rlog(f"Connection failure. Exception : {e}", 'E')
                 self.connect_flag = False
             self.node_dict[node] = node_ssh_client
 
