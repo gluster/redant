@@ -25,7 +25,6 @@ class TestListBuilder:
         that are going to be executed and returns
         the same.
         """
-        list_of_tests: list = []
         tests_to_run: list = []
 
         try:
@@ -36,12 +35,9 @@ class TestListBuilder:
                 if not abs_dir_path.endswith(".py"):
                     list_of_files: list = glob.glob(f"{abs_dir_path}/*.py")
 
-                    list_of_tests.append(list_of_files)
+                    tests_to_run.extend(list_of_files)
                 else:
-                    list_of_tests.append([abs_dir_path])
-
-            for test in list_of_tests:
-                tests_to_run.extend(test)
+                    tests_to_run.extend([abs_dir_path])
 
         except Exception as e:
             print(e)
