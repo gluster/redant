@@ -31,7 +31,7 @@ To run the same:
 
 ```js
 flake8 <PATH_TO_THE_FILE>/<filename>.py
-pylint <PATH_TO_THE_FILE>/<filename>.py
+pylint -j 4 --rcfile=.pylintrc <PATH_TO_THE_FILE>/<filename>.py
 
 ```
 
