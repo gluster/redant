@@ -30,8 +30,10 @@ The 'servers\_info' consists of brick\_root for each server which is a list
 of all the mount points in the client. 
 The brick\_root list has to be specified in the following way:<br>
 `brick_root: ["/bricks1","/bricks2"]`<br>
+username and password can also be defined for creating ssh connection.
 
 <h3>4. clients\_info</h3>
  'clients\_info' is info about each client in  the cluster.
  The info should contain platform(linux),super_user name(root
  in case of linux) as mentioned in the config file.
+ username and password can also be defined for creating ssh connection.

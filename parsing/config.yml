@@ -37,11 +37,14 @@ clients:
 # 'servers_info' is info about each server in the cluster.
 # the brick_root is a list where multiple mount points can be added.
 # brick_root i.e dirname of brick mount point.
+# user and password are also defined for creating ssh connection
 # This section has to be defined.
 
 servers_info:
     *server_vm1: &server1
         brick_root: ["/bricks"] #Example- brick_root: ["/bricks","/gluster"]
+        user: "root"
+        passwd: "redhat"
     *server_vm2: &server2
         brick_root: ["/bricks"]
     *server_vm3: &server3
@@ -68,9 +71,12 @@ servers_info:
 # 'clients_info' is info about each client in  the cluster.
 # The info should contain platform(linux),super_user name(root
 # in case of linux).
+# user and password can be defined for creating ssh connection
 # This section has to be defined.
 clients_info:
     *client_vm1: &client1
+        user: "root"
+        passwd: "redhat"
     *client_vm2: &client2
         super_user: 'root'
     *client_vm3: &client3
