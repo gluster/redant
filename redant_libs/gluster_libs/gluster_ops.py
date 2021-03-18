@@ -11,7 +11,7 @@ class GlusterOps:
     the glusterd service on either the client or the sever.
     """
 
-    def gluster_start(self, node: str):
+    def glusterd_start(self, node: str):
         """
         Starts the glusterd service on the specified node.
         Args:
@@ -30,14 +30,14 @@ class GlusterOps:
 
         self.rlog("Successfully ran {cmd} on {node}")
 
-    def gluster_stop(self, node: str):
+    def glusterd_stop(self, node: str):
         """
         Stops the glusterd service on the specified node.
         Args:
             node (str): The node on which the glusterd service
                         is to be stopped.
         """
-        cmd = "systemctl sto glusterd"
+        cmd = "systemctl stop glusterd"
 
         self.rlog(f"Running {cmd} on {node}")
 
