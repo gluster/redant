@@ -1,5 +1,7 @@
 # redant
 
+Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1D8zUSmg-00ey711gsqvS6G9i_fGN2cE0EbG4u1TOsaQ/edit?usp=sharing)
+
 ### Structure:
 
 redant_libs: consists of the libs and ops that will help in running the test cases.<br>
