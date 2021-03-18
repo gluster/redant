@@ -29,4 +29,5 @@ jobs:
         run: |
           pylint $(pwd)
           pylint $(pwd)/redant_libs/
+          pylint $(pwd)/tests/
 

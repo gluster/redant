@@ -83,7 +83,7 @@ class Rexe:
         if not self.connect_flag:
             ret_dict['Flag'] = False
             return ret_dict
-        stdout, stderr = self.node_dict[node].exec_command(cmd)
+        _, stdout, stderr = self.node_dict[node].exec_command(cmd)
         if stdout.channel.recv_exit_status() != 0:
             ret_dict['Flag'] = False
             ret_dict['msg'] = stdout.readlines()
