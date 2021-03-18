@@ -14,7 +14,7 @@ tests: holds the test cases. Add any new test cases here.<br>
 2. Create a **Utilities** folder and add **conf.yaml** file.
 
 
-### STEP-BY_STEP procedure to run:
+### STEP-BY-STEP procedure to run:
 1. git clone `[your fork for this repo]`
 2. Create a virtual environment : `virtualenv <virtual_env_name>`
 3. Activate the virtual-env : `source <virtual_env_name>/bin/activate`
