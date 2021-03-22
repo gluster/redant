@@ -12,18 +12,23 @@ import os
 
 class TestListBuilder:
     """
-    This class contains create_test_list
-    which helps in creeting a list of
-    tests that has to be run
+    The test list builder is concerned with parsing
+    avialable TCs and their options so as to pass on the
+    TC related data to the test_runner.
     """
     tests_to_run: list = []
 
     @classmethod
     def create_test_list(cls, path: str) -> list:
         """
-        This function creates a list of test cases
-        that are going to be executed and returns
-        the same.
+        This method creates a list of TCs wrt the given directory
+        path.
+        Args:
+            path (str): The directory path which contains the TCs
+            to be run.
+        Returns:
+            A list containing absolute paths of the TCs inside the
+            given directory path.
         """
         try:
 
@@ -36,3 +41,11 @@ class TestListBuilder:
             print(e)
 
         return cls.tests_to_run
+
+    @classmethod
+    def get_test_module_info(cls, tc_path: str) -> dict:
+        """
+        This method instantiates the TC class object and stores the test
+        function variables to be invoked in a list.
+        """
+        pass
