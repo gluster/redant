@@ -10,7 +10,7 @@ from parsing.redant_params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 
 
-def is_file_accessible(path: str, mode: str='r') -> bool:
+def is_file_accessible(path: str, mode: str = 'r') -> bool:
     """
     To check if the given file is accessible or not
     so as to prevent parsing failures.
@@ -72,6 +72,7 @@ def main():
     test_cases_list = TestListBuilder.create_test_list([args.test_dir])
     print(test_cases_list)
     return 0
+
 
 if __name__ == '__main__':
     main()
