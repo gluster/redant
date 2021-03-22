@@ -11,8 +11,6 @@ class ParentTest:
 
     TEST_RES: states the result of the test case
 
-    COMPONENT: component which is to be tested
-    TEST_NAME: name of the test to run
     """
 
     def __init__(self, passed: bool):
