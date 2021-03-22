@@ -1,7 +1,7 @@
-from redant_libs.redant_mixin import RedantMixin as rm
+# from redant_libs.redant_mixin import RedantMixin as rm
 
 
-class Parent_Test:
+class ParentTest:
 
     """
     This class contains the standard info and methods which are needed by
@@ -15,14 +15,7 @@ class Parent_Test:
     TEST_NAME: name of the test to run
     """
 
-    PASS: bool
-
-    TEST_RES: bool
-
-    COMPONENT: str
-    TEST_NAME: str
-
-    def __init__(self, passed: bool, component: str, test_name: str):
+    def __init__(self, passed: bool):
         """
         Creates volume
         And runs the specific component in the
@@ -30,12 +23,6 @@ class Parent_Test:
         """
         self.PASS = passed
         self.TEST_RES = self.PASS
-        self.COMPONENT = component
-        self. TEST_NAME = test_name
-        rm.rlog(f"{self.TEST_NAME} from {self.COMPONENT} inits")
-
-    def init(self):
-        pass
 
     def run_test(self):
         pass
@@ -44,4 +31,3 @@ class Parent_Test:
         """
         Closes connection for now.
         """
-        rm.rlog(f"{self.TEST_NAME} terminates")
