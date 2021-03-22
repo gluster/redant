@@ -16,17 +16,6 @@ class TestClass(ParentTest):
     the form of steps.
     """
 
-    def __init__(self, redant: object):
-        """
-        Initializer which provides a point of contact to the
-        redant framework.
-        Args:
-            redant (object): mixin object passed as reference.
-                             Point of contact for the redant
-                             framework.
-        """
-        super().__init__(redant=redant)
-
     @classmethod
     def test_fn(cls):
         """
