@@ -3,7 +3,7 @@ This component has a test-case for peers addition and deletion.
 """
 
 
-class testcase:
+class TestCase:
     """
     This TestCase class contains a function to test
     for peer probe , pool list and peer detach.
@@ -30,17 +30,17 @@ class testcase:
         """
         try:
 
-            self.remote_exec.gluster_start("192.168.122.220")
+            self.remote_exec.glusterd_start("192.168.122.220")
 
             self.remote_exec.peer_probe(
-                "192.168.122.161", "192.168.122.220", force=True)
+                "192.168.122.161", "192.168.122.220")
 
             self.remote_exec.pool_list("192.168.122.220")
 
             self.remote_exec.peer_detach(
-                "192.168.122.220", "192.168.122.161", force=True)
+                "192.168.122.220", "192.168.122.161")
 
-            self.remote_exec.gluster_stop("192.168.122.220")
+            self.remote_exec.glusterd_stop("192.168.122.220")
 
         except Exception as e:
             print(f"Test is failed:{e}")
