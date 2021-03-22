@@ -6,12 +6,16 @@ from the test case.
 
 
 class peer_ops:
+<<<<<<< HEAD
     """
     peer_ops class provides APIs to perform operations
     like adding and deleting the peers,checking the status
     and list of peers in the pool.
     """
 
+=======
+    
+>>>>>>> 6148f5b (Fixed the docstring)
     def peer_probe(self, server: str, node: str):
         """
         Adds a new peer to the cluster
