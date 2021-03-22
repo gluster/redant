@@ -1,0 +1,52 @@
+Redant Maintainers
+=====================
+
+The intention of this file is not to establish who owns what parts of the
+code base, but to provide a set of names that developers can consult when they
+have a question about a particular subset and also to provide a set of names
+to be CC'd when submitting a patch to obtain appropriate review.
+
+In general, if you have a question about inclusion of a patch, you should
+consult gluster-devel@gluster.org and not any specific individual privately.
+
+Descriptions of section entries:
+
+	M: Main contact that knows and takes care of this area
+	L: Mailing list that is relevant to this area
+	W: Web-page with status/info
+	S: Status, one of the following:
+	   Supported:	Someone is actually paid to look after this.
+	   Maintained:	Someone actually looks after it.
+	   Odd Fixes:	It has a maintainer but they don't have time to do
+			much other than throw the odd patch in. See below.
+	   Orphan:	No current maintainer [but maybe you could take the
+			role as you write your new code].
+	   Obsolete:	Old code. Something tagged obsolete generally means
+			it has been replaced by a better system and you
+			should be using that.
+    P: Peer for a component
+
+
+Project Architects
+--------------------------
+M: Barak Sason Rofman <bsasonro@redhat.com>
+P: Srijan Sivakumar <ssivakum@redhat.com>
+
+Development:
+M: Srijan Sivakumar <ssivakum@redhat.com>
+M: Nikhil Ladha <nladha@redhat.com>
+P: Ayush Ujjwal <aujjwal@redhat.com>
+P: Nishith Vihar Sakinala <nsakinal@redhat.com>
+P: Neeraj Pratap Singh <neesingh@redhat.com>
+
+Special Thanks
+--------------
+
+Redant would not be possible without the contributions of:
+
+Barak Sason Rofman <bsasonro@redhat.com>
+Srijan Sivakumar <ssivakum@redhat.com>
+Nikhil Ladha <nladha@redhat.com>
+Ayush Ujjwal <aujjwal@redhat.com>
+Nishith Vihar Sakinala <nsakinal@redhat.com>
+Neeraj Pratap Singh <neesingh@redhat.com>
