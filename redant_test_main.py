@@ -18,13 +18,23 @@ def pars_args():
     parser.add_argument("-c", "--config",
                         help="Config file(s) to read.",
                         action="store", dest="config_file",
-                        default=None)
+                        default=None, type=str, required=True)
+    parser.add_argument("-t", "--test-dir",
+                        help="The test directory where TC(s) exist",
+                        dest="test_dir", default=None, type=str, required=True)
+    parser.add_argument("-l", "--log-dir",
+                        help="The directory wherein log will be stored.",
+                        dest="log_fir", default="/tmp/redant", type=str)
     return parser.parse_args()
 
 
 def main():
     """
-    All the apis for the required functions will be called here
+    Invocation order being.
+    1. Parsing the command line arguments.
+    2. Parsing the config file to get the configuration details.
+    3. Invoking the test_list_builder to build the TC run order.
+    4. Passing the details to the test_runner.
     """
     args = pars_args()
 

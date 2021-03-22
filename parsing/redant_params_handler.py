@@ -3,7 +3,7 @@ This module contains one class - ParamsHandler,
 which contains APIs for configuration parameter
 parsing.
 """
-from redant_test_parser import Parser
+from parsing.redant_test_parser import Parser
 
 
 class ParamsHandler:
