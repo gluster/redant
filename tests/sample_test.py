@@ -4,8 +4,10 @@ It contains one class - TestCase wich would
 hold the functions to be run in the test case.
 """
 
+from parent_test import ParentTest
 
-class TestClass:
+
+class TestClass(ParentTest):
 
     """
     The TestCase class contains the functionsto be
@@ -23,7 +25,7 @@ class TestClass:
                              Point of contact for the redant
                              framework.
         """
-        self.redant = redant
+        super().__init__(redant=redant)
 
     @classmethod
     def test_fn(cls):
