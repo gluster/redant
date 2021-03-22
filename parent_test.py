@@ -28,3 +28,4 @@ class ParentTest:
         """
         Closes connection for now.
         """
+        pass

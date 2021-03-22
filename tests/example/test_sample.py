@@ -8,16 +8,14 @@ from parent_test import ParentTest
 
 
 class TestClass(ParentTest):
-
     """
-    The TestCase class contains the functionsto be
+    The TestCase class contains the functions to be
     run in the test case. Every function should contain
     the flow of the function(APIs which are called) in
     the form of steps.
     """
 
-    @classmethod
-    def test_fn(cls):
+    def test_fn(self):
         """
         Function calling required APIs for performing required test.
         Steps:

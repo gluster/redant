@@ -32,7 +32,7 @@ if __name__ == "__main__":
     TC_MODULE_STR = ARGS.tc_path.replace("/", ".").strip(".py")
     TC_MODULE = importlib.import_module(TC_MODULE_STR)
     TC_CLASS_STR = inspect.getmembers(TC_MODULE,
-                                      inspect.isclass)[0][0]
+                                      inspect.isclass)[1][0]
     TC_CLASS = getattr(TC_MODULE, TC_CLASS_STR)
     TC_OBJ = TC_CLASS(RE_MIXIN)
     TC_FUNC_STR = ARGS.test_fn
