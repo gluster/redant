@@ -7,14 +7,39 @@ This module takes care of:
 
 import argparse
 from parsing.redant_params_handler import ParamsHandler
+from test_list_builder import TestListBuilder
+
+
+def is_file_accessible(path: str, mode: str='r') -> bool:
+    """
+    To check if the given file is accessible or not
+    so as to prevent parsing failures.
+    Args:
+        path (str): The file path whose accessibility is
+                    to be checked.
+        mode (str): The file access mode which would needs
+                    to be validated for the given path.
+    Returns:
+        True: The file at the given path is accessible for
+              the specified mode.
+        False: The file is not accessible for the specified
+               mode.
+    """
+    try:
+        f = open(path, mode)
+        f.close()
+    except IOError:
+        return False
+    return True
 
 
 def pars_args():
-    """Parse arguments with argparse module
+    """
+    Function to handle command line parsing for the redant.
     """
 
     parser = argparse.ArgumentParser(
-        description='Create config hashmap based on config file')
+        description='Redant test framework main script.')
     parser.add_argument("-c", "--config",
                         help="Config file(s) to read.",
                         action="store", dest="config_file",
@@ -38,9 +63,15 @@ def main():
     """
     args = pars_args()
 
-    if args.config_file:
+    if is_file_accessible(args.config_file):
         ParamsHandler.get_config_hashmap(args.config_file)
+    else:
+        print(f"The config file at {args.config_file} is not accessible.")
+        return -1
 
+    test_cases_list = TestListBuilder.create_test_list([args.test_dir])
+    print(test_cases_list)
+    return 0
 
 if __name__ == '__main__':
     main()
