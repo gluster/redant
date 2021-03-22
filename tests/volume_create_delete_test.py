@@ -10,15 +10,17 @@ class TestCase:
     for volume creation and deletion
     """
 
-    def __init__(self, remote_exec: object):
+    def __init__(self, redant: object):
         """
-        This init function initializes the remote_exec
+        This init function initializes the redant
         class variable which is mixin object passed as a
         reference by runner_thread.
         Args:
-            remote_exec (object): mixin object passed as reference.
+            redant (object): mixin object passed as reference.
+                             Point of contact for the redant
+                             framework.
         """
-        self.remote_exec = remote_exec
+        self.redant = redant
 
     def volume_create_delete_test(self):
         """
@@ -30,14 +32,14 @@ class TestCase:
         """
         try:
 
-            self.remote_exec.gluster_start("10.70.43.63")
+            self.redant.gluster_start("10.70.43.63")
 
-            self.remote_exec.volume_create("10.70.43.63", "test-vol",
-                                           ["10.70.43.63:/brick1"],
-                                           force=True)
-            self.remote_exec.volume_delete("10.70.43.63", "test-vol")
+            self.redant.volume_create("10.70.43.63", "test-vol",
+                                      ["10.70.43.63:/brick1"],
+                                      force=True)
+            self.redant.volume_delete("10.70.43.63", "test-vol")
 
-            self.remote_exec.gluster_stop("10.70.43.63")
+            self.redant.gluster_stop("10.70.43.63")
             print("Test Passed")
 
         except Exception as error:

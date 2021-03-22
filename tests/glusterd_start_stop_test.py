@@ -10,15 +10,17 @@ class TestCase:
     for glusterd service operations
     """
 
-    def __init__(self, remote_exec: object):
+    def __init__(self, redant: object):
         """
-        This init function initializes the remote_exec
+        This init function initializes the redant
         class variable which is mixin object passed as a
         reference by runner_thread.
         Args:
-            remote_exec (object): mixin object passed as reference.
+            redant (object): mixin object passed as reference.
+                             Point of contact for the redant
+                             framework.
         """
-        self.remote_exec = remote_exec
+        self.redant = redant
 
     def gluster_start_stop_test(self):
         """
@@ -28,8 +30,8 @@ class TestCase:
         """
         try:
             for _ in range(10):
-                self.remote_exec.gluster_start("10.70.43.63")
-                self.remote_exec.gluster_stop("10.70.43.63")
+                self.redant.gluster_start("10.70.43.63")
+                self.redant.gluster_stop("10.70.43.63")
             print("Test Passed")
 
         except Exception as error:
