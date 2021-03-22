@@ -29,14 +29,16 @@ class testcase:
         5) glusterd is stopped
         """
         try:
-            
+
             self.remote_exec.gluster_start("192.168.122.220")
 
-            self.remote_exec.peer_probe("192.168.122.161", "192.168.122.220", force=True)
+            self.remote_exec.peer_probe(
+                "192.168.122.161", "192.168.122.220", force=True)
 
             self.remote_exec.pool_list("192.168.122.220")
 
-            self.remote_exec.peer_detach("192.168.122.220", "192.168.122.161", force=True)
+            self.remote_exec.peer_detach(
+                "192.168.122.220", "192.168.122.161", force=True)
 
             self.remote_exec.gluster_stop("192.168.122.220")
 
