@@ -9,15 +9,15 @@ class TestCase:
     for peer probe , pool list and peer detach.
     """
 
-    def __init__(self, remote_exec: object):
+    def __init__(self, redant: object):
         """
         This init function initializes the remote_exec
         class variable which is mixin object passed as a
         reference by runner_thread.
         Args:
-            remote_exec (object): mixin object passed as reference.
+            redant (object): mixin object passed as reference.
         """
-        self.remote_exec = remote_exec
+        self.redant = redant
 
     def test_peer_probe_detach(self):
         """
@@ -30,17 +30,17 @@ class TestCase:
         """
         try:
 
-            self.remote_exec.glusterd_start("192.168.122.220")
+            self.redant.glusterd_start("192.168.122.220")
 
-            self.remote_exec.peer_probe(
+            self.redant.peer_probe(
                 "192.168.122.161", "192.168.122.220")
 
-            self.remote_exec.pool_list("192.168.122.220")
+            self.redant.pool_list("192.168.122.220")
 
-            self.remote_exec.peer_detach(
+            self.redant.peer_detach(
                 "192.168.122.220", "192.168.122.161")
 
-            self.remote_exec.glusterd_stop("192.168.122.220")
+            self.redant.glusterd_stop("192.168.122.220")
 
         except Exception as e:
             print(f"Test is failed:{e}")
