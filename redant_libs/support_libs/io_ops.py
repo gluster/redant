@@ -15,7 +15,7 @@ class io_ops:
     def touch(self, file_path: str, node: str):
         """Creates a regular empty file
         Args:
-            file_name (str): The name of the file to be created
+            file_path (str): The name of the file to be created
             node (str): The node in the cluster where the command is to be run
         """
 
@@ -33,7 +33,7 @@ class io_ops:
     def mkdir(self, dir_path: str, node: str):
         '''Creates a directory
         Args:
-            dir_name (str): The name of the directory to be created
+            dir_path (str): The name of the directory to be created
             node (str): The node in the cluster where the command is to be run
         '''
 
