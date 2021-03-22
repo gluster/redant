@@ -2,7 +2,7 @@
 This module takes care of:
 1) Config file parsing (by gluster_test_parser).
 2) Tests-to-run list preparation (by test_list_builder).
-3) Invocation of the runner_thread which runs the testcase.
+3) Invocation of the test_runner.
 """
 
 import argparse
