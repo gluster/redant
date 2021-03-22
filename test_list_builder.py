@@ -8,7 +8,6 @@ to be executed in the current session.
 
 """
 import os
-import glob
 
 
 class TestListBuilder:
@@ -17,29 +16,23 @@ class TestListBuilder:
     which helps in creeting a list of
     tests that has to be run
     """
+    tests_to_run: list = []
 
     @classmethod
-    def create_test_list(cls, dir_path: list) -> list:
+    def create_test_list(cls, path: str) -> list:
         """
         This function creates a list of test cases
         that are going to be executed and returns
         the same.
         """
-        tests_to_run: list = []
-
         try:
 
-            for path in dir_path:
-                abs_dir_path: str = os.path.abspath(path)
-
-                if not abs_dir_path.endswith(".py"):
-                    list_of_files: list = glob.glob(f"{abs_dir_path}/*.py")
-
-                    tests_to_run.extend(list_of_files)
-                else:
-                    tests_to_run.extend([abs_dir_path])
+            for root, _, files in os.walk(path):
+                for tfile in files:
+                    if tfile.endswith(".py") and tfile.startswith("test"):
+                        cls.tests_to_run.append(os.path.join(root, tfile))
 
         except Exception as e:
             print(e)
 
-        return tests_to_run
+        return cls.tests_to_run

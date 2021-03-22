@@ -69,7 +69,7 @@ def main():
         print(f"The config file at {args.config_file} is not accessible.")
         return -1
 
-    test_cases_list = TestListBuilder.create_test_list([args.test_dir])
+    test_cases_list = TestListBuilder.create_test_list(args.test_dir)
     print(test_cases_list)
     return 0
 
