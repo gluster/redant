@@ -27,21 +27,26 @@ Descriptions of section entries:
     P: Peer for a component
 
 
-General Project Architects
+Project Architects
 --------------------------
-M: Srijan Sivakumar <ssivakum@redhat.com>
 M: Barak Sason Rofman <bsasonro@redhat.com>
-M: Ayush Ujjwal <aujjwal@redhat.com>
-M: Nishith Vihar Sakinala <nsakinal@redhat.com>
-M: Neeraj Pratap Singh <neesingh@redhat.com>
+P: Srijan Sivakumar <ssivakum@redhat.com>
+
+Development:
+M: Srijan Sivakumar <ssivakum@redhat.com>
+M: Nikhil Ladha <nladha@redhat.com>
+P: Ayush Ujjwal <aujjwal@redhat.com>
+P: Nishith Vihar Sakinala <nsakinal@redhat.com>
+P: Neeraj Pratap Singh <neesingh@redhat.com>
 
 Special Thanks
 --------------
 
 Redant would not be possible without the contributions of:
 
-M: Srijan Sivakumar <ssivakum@redhat.com>
-M: Barak Sason Rofman <bsasonro@redhat.com>
-M: Ayush Ujjwal <aujjwal@redhat.com>
-M: Nishith Vihar Sakinala <nsakinal@redhat.com>
-M: Neeraj Pratap Singh <neesingh@redhat.com>
+Barak Sason Rofman <bsasonro@redhat.com>
+Srijan Sivakumar <ssivakum@redhat.com>
+Nikhil Ladha <nladha@redhat.com>
+Ayush Ujjwal <aujjwal@redhat.com>
+Nishith Vihar Sakinala <nsakinal@redhat.com>
+Neeraj Pratap Singh <neesingh@redhat.com>
