@@ -1,5 +1,3 @@
-# from redant_libs.redant_mixin import RedantMixin as rm
-
 
 class ParentTest:
 
@@ -13,13 +11,14 @@ class ParentTest:
 
     """
 
-    def __init__(self, passed: bool):
+    def __init__(self, redant: object):
         """
         Creates volume
         And runs the specific component in the
         test case
         """
-        self.PASS = passed
+        self.PASS = True
+        self.redant = redant
         self.TEST_RES = self.PASS
 
     def run_test(self):
