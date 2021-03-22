@@ -3,24 +3,14 @@ This file contains a test-case which tests
 volume operations like creation and deletion
 """
 
+from tests.parent_test import ParentTest
 
-class TestCase:
+
+class TestCase(ParentTest):
     """
     The test case contains one function to test
     for volume creation and deletion
     """
-
-    def __init__(self, redant: object):
-        """
-        This init function initializes the redant
-        class variable which is mixin object passed as a
-        reference by runner_thread.
-        Args:
-            redant (object): mixin object passed as reference.
-                             Point of contact for the redant
-                             framework.
-        """
-        self.redant = redant
 
     def volume_create_delete_test(self):
         """

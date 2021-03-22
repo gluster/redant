@@ -2,22 +2,14 @@
 This component has a test-case for peers addition and deletion.
 """
 
+from tests.parent_test import ParentTest
 
-class TestCase:
+
+class TestCase(ParentTest):
     """
     This TestCase class contains a function to test
     for peer probe , pool list and peer detach.
     """
-
-    def __init__(self, redant: object):
-        """
-        This init function initializes the remote_exec
-        class variable which is mixin object passed as a
-        reference by runner_thread.
-        Args:
-            redant (object): mixin object passed as reference.
-        """
-        self.redant = redant
 
     def test_peer_probe_detach(self):
         """

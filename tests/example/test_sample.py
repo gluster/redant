@@ -4,7 +4,7 @@ It contains one class - TestCase wich would
 hold the functions to be run in the test case.
 """
 
-from parent_test import ParentTest
+from tests.parent_test import ParentTest
 
 
 class TestClass(ParentTest):
