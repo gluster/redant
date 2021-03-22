@@ -29,21 +29,16 @@ class testcase:
         5) glusterd is stopped
         """
         try:
-            print("Test is running")
+            
+            self.remote_exec.gluster_start("192.168.122.220")
 
-            server_ip1 = self.remote_exec.get_server_ip("server_vm1")
-            server_ip2 = self.remote_exec.get_server_ip("server_vm2")
-            flag = self.remote_exec.volume_create_force_option()
+            self.remote_exec.peer_probe("192.168.122.161", "192.168.122.220", force=True)
 
-            self.remote_exec.gluster_start(server_ip1)
+            self.remote_exec.pool_list("192.168.122.220")
 
-            self.remote_exec.peer_probe(server_ip2, server_ip1, force=flag)
+            self.remote_exec.peer_detach("192.168.122.220", "192.168.122.161", force=True)
 
-            self.remote_exec.pool_list(server_ip1)
-
-            self.remote_exec.peer_detach(server_ip1, server_ip2, force=flag)
-
-            self.remote_exec.gluster_stop(server_ip1)
+            self.remote_exec.gluster_stop("192.168.122.220")
 
         except Exception as e:
             print(f"Test is failed:{e}")
