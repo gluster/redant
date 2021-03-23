@@ -69,13 +69,14 @@ def main():
         print(f"The config file at {args.config_file} is not accessible.")
         return -1
 
+    # Obtain the client and server dict.
+    mach_conn_dict = ParamsHandler.get_nodes_info()
+    
+    # Building the test list and obtaining the TC details.
     test_cases_dict = TestListBuilder.create_test_dict(args.test_dir)
-   
-    server_list = []
-    client_list = []    
-
-    # invoke the redant_test_runner
-    TestRunner.init(test_cases_dict, server_list, client_list)
+    
+    # invoke the redant_test_runner.
+    TestRunner.init(test_cases_dict, mach_conn_dict)
     TestRunner.run_tests()
 
     return 0

@@ -4,52 +4,15 @@ import yaml
 import xmltodict
 
 
-def is_file_accessible(path, mode='rw+'):
-    """
-    Check if the file or directory at `path` can
-    be accessed by the program using `mode` open flags.
-    """
-    try:
-        f = open(path, mode)
-        f.close()
-    except IOError:
-        return False
-    return True
-
-
 class Rexe:
-    def __init__(self, conf_path, command_file_path=""):
+    def __init__(self, host_dict):
         self.host_generic = ['alls', 'allp']
-        self.conf_path = conf_path
-        self.command_file_path = command_file_path
-        self.parse_conf_file()
-        if command_file_path != "":
-            self.parse_exec_file()
-        self.rlog(f"Conf file data : {self.conf_data}", 'D')
-
-    def parse_conf_file(self):
-        """
-        Function to parse the config file to get
-        the host details, host username and host password.
-        """
-        self.conf_file_handle = open(self.conf_path)
-        self.conf_data = yaml.load(
-            self.conf_file_handle, Loader=yaml.FullLoader)
-        self.conf_file_handle.close()
-        self.host_list = self.conf_data['host_list']
-        self.host_user = self.conf_data['user']
-        self.host_passwd = self.conf_data['passwd']
-
-    def parse_exec_file(self):
-        """
-        Function to parse the exec file
-        """
-        self.rlog("Parsing exec file", 'D')
-        self.exec_file_handle = open(self.command_file_path)
-        self.exec_data = yaml.load(
-            self.exec_file_handle, Loader=yaml.FullLoader)
-        self.conf_file_handle.close()
-        self.rlog(f"Exec file data : {self.exec_data}", 'D')
+        self.host_dict = {}
+        for element in host_dict:
+            self.host_dict[element['hostname']] = {}
+            self.host_dict[element['hostname']]['user'] = element['user']
+            self.host_dict[element['hostname']]['passwd'] = element['passwd']
+            self.host_dict[element['hostname']]['ip'] = element['ip']
 
     def establish_connection(self):
         """
@@ -60,15 +23,15 @@ class Rexe:
         self.node_dict = {}
         self.connect_flag = True
 
-        for node in self.host_list:
+        for node in self.host_dict:
             node_ssh_client = paramiko.SSHClient()
             node_ssh_client.set_missing_host_key_policy(
                 paramiko.AutoAddPolicy())
             try:
                 node_ssh_client.connect(
-                    hostname=node,
-                    username=self.host_user,
-                    password=self.host_passwd)
+                    hostname=self.host_dict[node]['ip'],
+                    username=self.host_dict[node]['user'],
+                    password=self.host_dict[node]['passwd'])
                 self.rlog(f"SSH connection to {node} is successful.", 'D')
             except Exception as e:
                 self.rlog(f"Connection failure. Exception : {e}", 'E')
@@ -121,31 +84,3 @@ class Rexe:
                     print(f"Generated exception : {exc}")
         self.rlog(ret_val)
         return ret_val
-
-    def execute_command_file(self):
-        """
-        Function to execute the commands provided in the
-        command file.
-        """
-        if self.command_file_path == "":
-            return -1
-        for command_node in self.exec_data:
-            if (command_node not in self.host_list
-                    and command_node not in self.host_generic):
-                self.rlog(
-                    f"The command node {command_node} is not in host list.")
-                continue
-            commands_list = self.exec_data[command_node]
-            if command_node == 'allp':
-                # This is for parallel execution of commands in all nodes.
-                for command in commands_list:
-                    self.execute_command_multinode(self.host_list, command)
-            elif command_node == 'alls':
-                # Sequential execution of commands in all nodes.
-                for command in commands_list:
-                    for node in self.host_list:
-                        self.execute_command(node, command)
-            else:
-                for command in commands_list:
-                    self.execute_command(command_node, command)
-            return 0

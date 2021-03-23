@@ -12,10 +12,9 @@ class TestRunner:
     """
 
     @classmethod
-    def init(cls, test_run_dict, server_list, client_list, base_log_path="/tmp"):
+    def init(cls, test_run_dict, mach_conn_dict, base_log_path="/tmp"):
         cls.test_run_dict = test_run_dict
-        cls.server_list = server_list
-        cls.client_list = client_list
+        cls.mach_conn_dict = mach_conn_dict
 
     @classmethod
     def run_tests(cls):
@@ -24,12 +23,17 @@ class TestRunner:
         # Running non-disruptive cases first.
         for test in cls.test_run_dict["nonDisruptive"]:
             tc_class = cls.test_run_dict["nonDisruptive"][test]["testClass"]
-            runner_thread_obj = RunnerThread(tc_class, cls.client_list,
-                                             cls.server_list, "/tmp", 'I')
-            print(cls.test_run_dict["nonDisruptive"][test])
+            runner_thread_obj = RunnerThread(tc_class,
+                                             cls.mach_conn_dict["clients"],
+                                             cls.mach_conn_dict["servers"],
+                                             "/tmp", 'I')
+            value = runner_thread_obj.run_thread()
+            print(value)
         for test in cls.test_run_dict["disruptive"]:
             tc_class = cls.test_run_dict["disruptive"][test]["testClass"]
-            runner_thread_obj = RunnerThread(tc_class, cls.client_list,
-                                             cls.server_list, "/tmp", 'I')
-            print(cls.test_run_dict["disruptive"][test])
-        #runner_thread_obj = RunnerThread(cls.tst_run_dict[
+            runner_thread_obj = RunnerThread(tc_class,
+                                             cls.mach_conn_dict["clients"],
+                                             cls.mach_conn_dict["servers"],
+                                             "/tmp/redant.log", 'I')
+            value = runner_thread_obj.run_thread()
+            print(value)

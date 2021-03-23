@@ -12,14 +12,6 @@ servers:
     - &server_vm2 server-vm2
     - &server_vm3 server-vm3
     - &server_vm4 server-vm4
-    - &server_vm5 server-vm5
-    - &server_vm6 server-vm6
-    - &server_vm7 server-vm7
-    - &server_vm8 server-vm8
-    - &server_vm9 server-vm9
-    - &server_vm10 server-vm10
-    - &server_vm11 server-vm11
-    - &server_vm12 server-vm12
 
 # 'clients' is list of Hostnames/IP's of clients in the cluster.
 # This section has to be defined.
@@ -31,8 +23,6 @@ servers:
 clients:
     - &client_vm1 client-vm1 #Example- &client_vm1 0.0.0.0
     - &client_vm2 client-vm2
-    - &client_vm3 client-vm3
-    - &client_vm4 client-vm4
 
 # 'servers_info' is info about each server in the cluster.
 # the brick_root is a list where multiple mount points can be added.
@@ -47,26 +37,16 @@ servers_info:
         passwd: "redhat"
     *server_vm2: &server2
         brick_root: ["/bricks"]
+        user: "root"
+        passwd: "redhat"
     *server_vm3: &server3
         brick_root: ["/bricks"]
+        user: "root"
+        passwd: "redhat"
     *server_vm4: &server4
         brick_root: ["/bricks"]
-    *server_vm5: &server5
-        brick_root: ["/bricks"]
-    *server_vm6: &server6
-        brick_root: ["/bricks"]
-    *server_vm7: &server7
-        brick_root: ["/bricks"]
-    *server_vm8: &server8
-        brick_root: ["/bricks"]
-    *server_vm9: &server9
-        brick_root: ["/bricks"]
-    *server_vm10: &server10
-        brick_root: ["/bricks"]
-    *server_vm11: &server11
-        brick_root: ["/bricks"]
-    *server_vm12: &server12
-        brick_root: ["/bricks"]
+        user: "root"
+        passwd: "redhat"
 
 # 'clients_info' is info about each client in  the cluster.
 # The info should contain platform(linux),super_user name(root
@@ -78,13 +58,8 @@ clients_info:
         user: "root"
         passwd: "redhat"
     *client_vm2: &client2
-        super_user: 'root'
-    *client_vm3: &client3
-        super_user: 'root'
-        platform: 'linux'
-    *client_vm4: &client4
-        super_user: 'root'
-        platform: 'linux'
+        user: 'root'
+        passwd: "redhat"
 
 # This section contains details about the gluster volumes, mounts etc.
 # For defining volumes, mounts and/or anything realted to gluster, it has to be
@@ -173,8 +148,8 @@ gluster:
 
     # 'extra_servers' - To be used in case of add new servers to the cluster
     #                   in case of add-brick, replace-brick, attach-tier etc.
-            extra_servers: [ *server_vm9, *server_vm10,
-                             *server_vm11, *server_vm12 ]
+            #extra_servers: [ *server_vm9, *server_vm10,
+            #                 *server_vm11, *server_vm12 ]
 
     # 'tier' -  Tiering related info. set 'create_tier' to 'true' to attach
     #           tier during volume setup when the tests calls glusto-tests
@@ -259,35 +234,3 @@ gluster:
             mountpoint: ''
             options: ''
             num_of_mounts: 1
-        - &mount3
-            protocol: 'smb'
-            server: *server_vm2
-            volname: testvol
-            client:
-                host: *client_vm3
-            mountpoint: ''
-            options: ''
-            smbuser: 'user1'
-            smbpasswd: 'xyz'
-            num_of_mounts: 3
-        - &mount4
-            protocol: 'smb'
-            server: *server_vm4
-            volname: testvol
-            client:
-                host: *client_vm4
-            mountpoint: ''
-            options: ''
-            smbuser: 'user2'
-            smbpasswd: 'abc'
-        - &mount5
-            protocol: 'cifs'
-            server: *server_vm1
-            volname: testvol
-            client:
-                host: *client_vm2
-            mountpoint: ''
-            options: ''
-            smbuser: 'user2'
-            smbpasswd: 'abc'
-

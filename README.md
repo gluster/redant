@@ -11,7 +11,7 @@ tests: holds the test cases. Add any new test cases here.<br>
 
 1. Clone redant repo.
 
-2. Create a **Utilities** folder and add **conf.yaml** file.
+2. Populate the conf.yaml with relevant server and client details..
 
 
 ### STEP-BY-STEP procedure to run:
@@ -20,15 +20,7 @@ tests: holds the test cases. Add any new test cases here.<br>
 3. Activate the virtual-env : `source <virtual_env_name>/bin/activate`
 4. cd `[the-fork]`
 5. Run `pip3 install -r requirements.txt`
-7. mkdir `Utilities` && touch `Utilities/conf.yaml`
-8. Add the following in `conf.yaml`:
-
-```javascript
-host_list: [server IPs]
-user: "user"
-passwd: "pass"
-```
-
-9. Use the runner_thread.py to run the sample test case.
-`python3 runner_thread.py -t tests/test_sample_tc.py -tf test_fn -c <path_to_conf_file>`.
-10. Log files can be found at /tmp/redant.log [ default path ]. For more options, run `python3 runner_thread.py --help`
+6. To run the sample TC, just run the below cmd after populating the
+config file with relevant values.
+`python3 redant_test_main.py -c parsing/config.yml -t tests/example/`
+7. Log files can be found at /tmp/redant.log [ default path ]. For more options, run `python3 redant_test_main.py --help`
