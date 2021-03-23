@@ -6,8 +6,6 @@ class ParentTest:
     This class contains the standard info and methods which are needed by
     most of the tests
 
-    PASS: states the pass value i.e True
-    FAIL: states the fail value i.e False
     TEST_RES: states the result of the test case
 
     """
