@@ -2,6 +2,7 @@
 This file contains a test-case which tests
 volume operations like creation and deletion
 """
+#nonDisruptive;dist,rep,arb,disp
 
 from tests.parent_test import ParentTest
 

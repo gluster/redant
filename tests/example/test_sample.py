@@ -4,7 +4,7 @@ It contains one class - TestCase wich would
 hold the functions to be run in the test case.
 """
 
-#disruptive;distributed,replicated,ariter,dispersed
+#disruptive;dist,rep,arb,disp,dist-rep,dist-arb,dist-disp
 
 from tests.parent_test import ParentTest
 

@@ -1,6 +1,7 @@
 """
 This component has a test-case for peers addition and deletion.
 """
+#nonDisruptive;dist,rep,arb,disp,dist-rep,dist-arb
 
 from tests.parent_test import ParentTest
 
