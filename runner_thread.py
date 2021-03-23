@@ -23,18 +23,20 @@ if __name__ == "__main__":
                         help="Log Level", default="I", type=str)
     ARGS = PARSER.parse_args()
 
-    # Creating mixin class and initializing logging and rexe parameters.
-    RE_MIXIN = RedantMixin(ARGS.conf_path)
-    RE_MIXIN.set_logging_options(ARGS.log_path, ARGS.log_level)
-    RE_MIXIN.establish_connection()
-
     # the test case is loaded dynamically and it's members accessed.
-    TC_MODULE_STR = ARGS.tc_path.replace("/", ".").strip(".py")
+    TC_MODULE_STR = ARGS.tc_path.replace("/", ".")[:-3]
     TC_MODULE = importlib.import_module(TC_MODULE_STR)
     TC_CLASS_STR = inspect.getmembers(TC_MODULE,
                                       inspect.isclass)[1][0]
     TC_CLASS = getattr(TC_MODULE, TC_CLASS_STR)
-    TC_OBJ = TC_CLASS(RE_MIXIN)
-    TC_FUNC_STR = ARGS.test_fn
-    TC_FUNC = getattr(TC_OBJ, TC_FUNC_STR)
-    TC_FUNC()
+    TC_OBJ = TC_CLASS(client_list, server_list, log_path, log_level)
+    RUN_TEST_FUNC = getattr(TC_OBJ, "run_test")
+    TERMINATE_TEST_FUNC = getattr(TC_OBJ, "terminate")
+    RUN_TEST_FUNC()
+    TERMINATE_TEST_FUNC()
+
+    if TC_OBJ.TEST_RES:
+    #TODO: Proper test result collection
+        print("The test passed")
+    else:
+        print("Test failed.")
