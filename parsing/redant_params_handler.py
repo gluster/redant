@@ -77,6 +77,76 @@ class ParamsHandler:
         return client_ip_list
 
     @classmethod
+    def get_nodes_info(cls) -> dict:
+        """
+        Returns a dictionary consisting of server info
+        Returns:
+            dict: dictionary consisting of server info
+        format of dictionary:
+        {
+            servers: [
+                        {
+                            "hostname" : server_vm1
+                            "ip" : 10.4.28.93
+                            "user" : root
+                            "passwd" : redhat
+                        },
+                        {
+                            "hostname" : server_vm2
+                            "ip" : 23.43.12.87
+                            "user" : root
+                            "passwd" : redhat
+                        }
+            ]
+            clients: [
+                        {
+                            "hostname" : client_vm1
+                            "ip" : 10.3.28.92
+                            "user" : root
+                            "passwd" : redhat
+                        },
+                        {
+                            "hostname" : client_vm2
+                            "ip" : 15.12.43.98
+                            "user" : root
+                            "passwd" : redhat
+                        }
+           ]
+        }
+        """
+
+        nodes_info = {}
+
+        servers_ip_list = cls.get_server_ip_list()
+        clients_ip_list = cls.get_client_ip_list()
+
+        s_info = cls.config_hashmap["servers_info"]
+        c_info = cls.config_hashmap["clients_info"]
+
+        nodes_info['servers'] = []
+        nodes_info['clients'] = []
+
+        for i, ip in enumerate(servers_ip_list):
+            servers_info = {}
+            servers_info["hostname"] = f"server_vm{i+1}"
+            servers_info["ip"] = ip
+            servers_info["user"] = s_info[ip]["user"]
+            servers_info["passwd"] = s_info[ip]["passwd"]
+
+            nodes_info["servers"].append(servers_info)
+
+        for i, ip in enumerate(clients_ip_list):
+            clients_info = {}
+            clients_info["hostname"] = f"client_vm{i+1}"
+            clients_info["ip"] = ip
+            clients_info["user"] = c_info[ip]["user"]
+            clients_info["passwd"] = c_info[ip]["passwd"]
+
+            nodes_info["clients"].append(clients_info)
+
+        return nodes_info
+
+    @classmethod
     def get_brick_root_list(cls, server_name: str) -> list:
         """
         Returns the list of brick root given the server name
