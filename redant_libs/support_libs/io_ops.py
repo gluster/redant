@@ -37,7 +37,7 @@ class io_ops:
             node (str): The node in the cluster where the command is to be run
         '''
 
-        cmd = f'mkdir -p /{dir_path}'
+        cmd = f'mkdir {dir_path}'
 
         self.rlog(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
