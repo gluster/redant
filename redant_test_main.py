@@ -8,7 +8,7 @@ This module takes care of:
 import argparse
 from parsing.redant_params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
-
+from redant_test_runner import TestRunner
 
 def is_file_accessible(path: str, mode: str = 'r') -> bool:
     """
@@ -70,7 +70,14 @@ def main():
         return -1
 
     test_cases_dict = TestListBuilder.create_test_dict(args.test_dir)
-    print(test_cases_dict)
+   
+    server_list = []
+    client_list = []    
+
+    # invoke the redant_test_runner
+    TestRunner.init(test_cases_dict, server_list, client_list)
+    TestRunner.run_tests()
+
     return 0
 
 

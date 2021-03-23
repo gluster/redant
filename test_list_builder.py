@@ -8,6 +8,8 @@ to be executed in the current session.
 
 """
 import os
+import inspect
+import importlib
 from comment_parser.comment_parser import extract_comments
 
 
@@ -34,7 +36,10 @@ class TestListBuilder:
                 "disruptive" : {
                                  1: {
                                       "volType" : [replicated,..],
-                                      "modulePath" : "../test_sample.py",
+                                      "modulePath" : "../glusterd/test_sample.py",
+                                      "moduleName" : "test_sample.py",
+                                      "componentName" : "glusterd"
+                                      "testClass" : <class>
                                     },
                                  2: {
                                        ...
@@ -43,7 +48,10 @@ class TestListBuilder:
                 "nonDisruptive" : {
                                     1: {
                                          "volType" : [replicated,..],
-                                         "modulePath" : "../test_sample.py",
+                                         "modulePath" : "../DHT/test_sample.py",
+                                         "moduleName" : "test_sample.py",
+                                         "componentName" : "DHT"
+                                         "testClass" : <class>
                                        },
                                     2: {
                                          ...
@@ -66,19 +74,28 @@ class TestListBuilder:
         cls.tests_run_dict["nonDisruptive"] = {}
         disruptive_count = 0
         non_disruptive_count = 0
-        # Extracting the test case flags.
+        # Extracting the test case flags and adding module level info.
         for test_case_path in cls.tests_to_run:
             test_flags = cls._get_test_module_info(test_case_path)
             if test_flags["tcNature"] == "disruptive":
                 cls.tests_run_dict["disruptive"][disruptive_count] = {}
                 cls.tests_run_dict["disruptive"][disruptive_count]["volType"]= test_flags["volType"]
                 cls.tests_run_dict["disruptive"][disruptive_count]["modulePath"] = test_case_path
+                cls.tests_run_dict["disruptive"][disruptive_count]["moduleName"] = test_case_path.split("/")[-1]
+                cls.tests_run_dict["disruptive"][disruptive_count]["componentName"] = test_case_path.split("/")[-2]
+                test_class = cls._get_test_class(test_case_path)
+                cls.tests_run_dict["disruptive"][disruptive_count]["testClass"] = test_class
                 disruptive_count += 1
             else:
                 cls.tests_run_dict["nonDisruptive"][non_disruptive_count] = {}
                 cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["volType"] = test_flags["volType"]
                 cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["modulePath"] = test_case_path
+                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["moduleName"] = test_case_path.split("/")[-1]
+                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["componentName"] = test_case_path.split("/")[-2]
+                test_class = cls._get_test_class(test_case_path)
+                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["testClass"] = test_class
                 non_disruptive_count += 1
+
         return cls.tests_run_dict
 
     @classmethod
@@ -105,3 +122,16 @@ class TestListBuilder:
         tc_flags["volType"] = flags.split(';')[1].split(',')
 
         return tc_flags
+
+    @classmethod
+    def _get_test_class(cls, tc_path: str):
+        """
+        Method to import the module and inspect the class to be stored
+        for creating objects later.
+        """
+        tc_module_str = tc_path.replace("/", ".")[:-3]
+        tc_module = importlib.import_module(tc_module_str)
+        tc_class_str = inspect.getmembers(tc_module,
+                                          inspect.isclass)[1][0]
+        tc_class = getattr(tc_module, tc_class_str)
+        return tc_class
