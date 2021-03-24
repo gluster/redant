@@ -10,7 +10,7 @@ class ParentTest:
 
     """
 
-    def __init__(self, mname: str, client_list: list, server_list: list,
+    def __init__(self, mname: str, client_details: list, server_details: list,
                  volume_type: str, log_path: str, log_level: str = 'I'):
         """
         Creates volume
@@ -19,14 +19,20 @@ class ParentTest:
         """
         
         self.TEST_RES = True
-        self.client_list = client_list
-        self.server_list = server_list
         self.volume_type = volume_type
-        self._configure(mname, log_path, log_level)
+        self.server_list = []
+        self.client_list = []
+        self._configure(mname, server_details, client_details, log_path,
+                        log_level)
+        for server in server_details:
+            self.server_list.append(server["hostname"])
+        for client in client_details:
+            self.client_list.append(client["hostname"])
 
-    def _configure(self, mname: str, log_path: str, log_level: str):
-        machines = self.client_list + self.server_list
-        self.redant = RedantMixin(machines)
+    def _configure(self, mname: str, server_details: dict,
+                   client_details: dict, log_path: str, log_level: str):
+        machine_detail = self.client_details + self.server_details
+        self.redant = RedantMixin(machine_detail)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
 
