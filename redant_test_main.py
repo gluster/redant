@@ -5,6 +5,7 @@ This module takes care of:
 3) Invocation of the test_runner.
 """
 
+import os
 import argparse
 from parsing.redant_params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
@@ -32,6 +33,73 @@ def is_file_accessible(path: str, mode: str = 'r') -> bool:
         return False
     return True
 
+def log_dir_check(path: str, component_dict: dict, test_dict: dict):
+    """
+    Sanity check function for redant logging directory.
+    Args:
+        path (str): The directory path.
+        component_dict (dict): The dict containing component lists
+        example,
+               {
+                 "functional" : ["component1", "component2", ...],
+                 "performance" : ["component1", "component2", ...],
+                 "example" : ["component1", "component2", ...]
+               }
+        test_dict (dict): Dictionary containing list of TCs
+        example,
+                {
+                  "disruptive" : [
+                                   {
+                                     "volType" : ["volT1", "volT2",..],
+                                     "modulePath" : "module_path",
+                                     "moduleName" : "module_name",
+                                     "componentName" : "component_name",
+                                     "testClass" : "test_class",
+                                     "testType" : "test_type"
+                                   },
+                                   {
+                                     ...
+                                   }
+                                 ],
+                 "nonDisruptive" : [
+                                     {
+                                       "volType" : ["volT1", "volT2",..],
+                                       "modulePath" : "module_path",
+                                       "moduleName" : "module_name",
+                                       "componentName" : "component_name",
+                                       "testClass" : "test_class",
+                                       "testType" : "test_type"
+                                     },
+                                     {
+                                       ...
+                                     }
+                                   ]
+                }
+    Returns:
+        None
+    """
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+    # Component wise directory creation.
+    for test_type in component_dict:
+        test_type_path = path+"/"+test_type
+        if not os.path.isdir(test_type_path):
+            os.makedirs(test_type_path)
+        components = component_dict[test_type]
+        for component in components:
+            if not os.path.isdir(test_type_path+"/"+component):
+                os.makedirs(test_type_path+"/"+component)
+
+    # TC wise directory creation.
+    for test in test_dict["disruptive"]:
+        test_case_dir = path+"/"+test["modulePath"][5:-3]
+        if not os.path.isdir(test_case_dir):
+            os.makedirs(test_case_dir)
+    for test in test_dict["nonDisruptive"]:
+        test_case_dir = path+"/"+test["modulePath"][5:-3]
+        if not os.path.isdir(test_case_dir):
+            os.makedirs(test_case_dir)
 
 def pars_args():
     """
@@ -47,9 +115,16 @@ def pars_args():
     parser.add_argument("-t", "--test-dir",
                         help="The test directory where TC(s) exist",
                         dest="test_dir", default=None, type=str, required=True)
+    parser.add_argument("-sp", "--specific-test-path",
+                        help="Path of the specific test to be run from tests/",
+                        dest="spec_test", default=None, type=str,
+                        required=False)
     parser.add_argument("-l", "--log-dir",
                         help="The directory wherein log will be stored.",
-                        dest="log_fir", default="/tmp/redant", type=str)
+                        dest="log_dir", default="/tmp/redant", type=str)
+    parser.add_argument("-ll", "--log-level",
+                        help="The log level.",
+                        dest="log_level", default="I", type=str)
     return parser.parse_args()
 
 
@@ -73,10 +148,16 @@ def main():
     mach_conn_dict = ParamsHandler.get_nodes_info()
     
     # Building the test list and obtaining the TC details.
-    test_cases_dict = TestListBuilder.create_test_dict(args.test_dir)
-    
+    test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir)
+    test_cases_dict = test_cases_tuple[0]
+    test_cases_component = test_cases_tuple[1]
+
+    # Sanity check for log base dir.
+    log_dir_check(args.log_dir, test_cases_component, test_cases_dict)
+
     # invoke the redant_test_runner.
-    TestRunner.init(test_cases_dict, mach_conn_dict)
+    TestRunner.init(test_cases_dict, mach_conn_dict, args.log_dir,
+                    args.log_level)
     TestRunner.run_tests()
 
     return 0

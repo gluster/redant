@@ -17,7 +17,7 @@ class TestClass(ParentTest):
     the form of steps.
     """
 
-    def test_fn(self):
+    def run_test(self):
         """
         Function calling required APIs for performing required test.
         Steps:

@@ -10,7 +10,8 @@ class ParentTest:
 
     """
 
-    def __init__(self, client_list: list, server_list: list, log_path: str, log_level: str = 'I'):
+    def __init__(self, mname: str, client_list: list, server_list: list,
+                 volume_type: str, log_path: str, log_level: str = 'I'):
         """
         Creates volume
         And runs the specific component in the
@@ -20,12 +21,13 @@ class ParentTest:
         self.TEST_RES = True
         self.client_list = client_list
         self.server_list = server_list
-        self._configure(log_path, log_level)
+        self.volume_type = volume_type
+        self._configure(mname, log_path, log_level)
 
-    def _configure(self, log_path: str, log_level: str):
+    def _configure(self, mname: str, log_path: str, log_level: str):
         machines = self.client_list + self.server_list
         self.redant = RedantMixin(machines)
-        self.redant.set_logging_options(log_path, log_level)
+        self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
 
 

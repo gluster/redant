@@ -20,10 +20,14 @@ class TestListBuilder:
     TC related data to the test_runner.
     """
     tests_to_run: list = []
-    tests_run_dict: dict = {}
+    tests_run_dict: dict = {"disruptive" : [],
+                            "nonDisruptive" : []}
+    tests_component_dir: dict = {"functional" : set([]),
+                                 "performance" : set([]),
+                                 "example" : set([])}
 
     @classmethod
-    def create_test_dict(cls, path: str) -> dict:
+    def create_test_dict(cls, path: str) -> tuple:
         """
         This method creates a dict of TCs wrt the given directory
         path.
@@ -31,32 +35,39 @@ class TestListBuilder:
             path (str): The directory path which contains the TCs
             to be run.
         Returns:
-            A dict of the following format
-            {
-                "disruptive" : {
-                                 1: {
+            A Tuple of the following format
+            ({
+                "disruptive" : [
+                                   {
                                       "volType" : [replicated,..],
                                       "modulePath" : "../glusterd/test_sample.py",
                                       "moduleName" : "test_sample.py",
-                                      "componentName" : "glusterd"
-                                      "testClass" : <class>
+                                      "componentName" : "glusterd",
+                                      "testClass" : <class>,
+                                      "testType" : "functional/performance/example"
                                     },
-                                 2: {
+                                    {
                                        ...
                                     }
-                               },
-                "nonDisruptive" : {
-                                    1: {
+                                ],
+                "nonDisruptive" : [
+                                    {
                                          "volType" : [replicated,..],
                                          "modulePath" : "../DHT/test_sample.py",
                                          "moduleName" : "test_sample.py",
-                                         "componentName" : "DHT"
-                                         "testClass" : <class>
-                                       },
-                                    2: {
+                                         "componentName" : "DHT",
+                                         "testClass" : <class>,
+                                         "testType" : "functional/performance/example"
+                                    },
+                                    {
                                          ...
-                                       }
-                                  }
+                                    }
+                                  ]
+            },
+            {
+                "functional" : ["component1", "component2",...],
+                "performance" : ["component1", "component2", ...],
+                "example" : ["component1"...]
             }
         """
         # Obtaining list of paths to the TCs under given directory.
@@ -70,33 +81,25 @@ class TestListBuilder:
             print(e)
             return {}
 
-        cls.tests_run_dict["disruptive"] = {}
-        cls.tests_run_dict["nonDisruptive"] = {}
-        disruptive_count = 0
-        non_disruptive_count = 0
         # Extracting the test case flags and adding module level info.
         for test_case_path in cls.tests_to_run:
             test_flags = cls._get_test_module_info(test_case_path)
-            if test_flags["tcNature"] == "disruptive":
-                cls.tests_run_dict["disruptive"][disruptive_count] = {}
-                cls.tests_run_dict["disruptive"][disruptive_count]["volType"]= test_flags["volType"]
-                cls.tests_run_dict["disruptive"][disruptive_count]["modulePath"] = test_case_path
-                cls.tests_run_dict["disruptive"][disruptive_count]["moduleName"] = test_case_path.split("/")[-1]
-                cls.tests_run_dict["disruptive"][disruptive_count]["componentName"] = test_case_path.split("/")[-2]
-                test_class = cls._get_test_class(test_case_path)
-                cls.tests_run_dict["disruptive"][disruptive_count]["testClass"] = test_class
-                disruptive_count += 1
-            else:
-                cls.tests_run_dict["nonDisruptive"][non_disruptive_count] = {}
-                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["volType"] = test_flags["volType"]
-                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["modulePath"] = test_case_path
-                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["moduleName"] = test_case_path.split("/")[-1]
-                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["componentName"] = test_case_path.split("/")[-2]
-                test_class = cls._get_test_class(test_case_path)
-                cls.tests_run_dict["nonDisruptive"][non_disruptive_count]["testClass"] = test_class
-                non_disruptive_count += 1
+            test_dict = {}
+            test_dict["volType"] = test_flags["volType"]
+            test_dict["modulePath"] = test_case_path
+            test_dict["moduleName"] = test_case_path.split("/")[-1]
+            test_dict["componentName"] = test_case_path.split("/")[-2]
+            test_dict["testClass"] = cls._get_test_class(test_case_path)
+            test_dict["testType"] = test_case_path.split("/")[-3]
+            cls.tests_component_dir[test_dict["testType"]].add(\
+                test_case_path.split("/")[-2])
+            cls.tests_run_dict[test_flags["tcNature"]].append(test_dict)
 
-        return cls.tests_run_dict
+        # Cleaning up the component list
+        for test_type in cls.tests_component_dir:
+            cls.tests_component_dir[test_type] =\
+                list(cls.tests_component_dir[test_type])
+        return (cls.tests_run_dict, cls.tests_component_dir)
 
     @classmethod
     def _get_test_module_info(cls, tc_path: str) -> dict:
