@@ -2,12 +2,14 @@
 The thread runner is responsible for the execution of a given TC.
 """
 
+
 class RunnerThread:
     """
     Runner thread will be encapsulating the functionalities for generically
     invoking a TC, creating the TC object and then invoking the required
     functions for running it.
     """
+
     def __init__(self, mname: str, tc_class, client_list: list,
                  server_list: list, volume_type: str, log_path: str,
                  log_level: str):

@@ -11,6 +11,7 @@ from parsing.redant_params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from redant_test_runner import TestRunner
 
+
 def is_file_accessible(path: str, mode: str = 'r') -> bool:
     """
     To check if the given file is accessible or not
@@ -32,6 +33,7 @@ def is_file_accessible(path: str, mode: str = 'r') -> bool:
     except IOError:
         return False
     return True
+
 
 def log_dir_check(path: str, component_dict: dict, test_dict: dict):
     """
@@ -101,6 +103,7 @@ def log_dir_check(path: str, component_dict: dict, test_dict: dict):
         if not os.path.isdir(test_case_dir):
             os.makedirs(test_case_dir)
 
+
 def pars_args():
     """
     Function to handle command line parsing for the redant.
@@ -126,7 +129,7 @@ def pars_args():
                         help="The log level.",
                         dest="log_level", default="I", type=str)
     parser.add_argument("-cc", "--concurrency-count",
-                        help="Number of concurrent tests to run in case of non disruptive scenario",
+                        help="Number of concurrent test runs",
                         dest="semaphore_count", default=4, type=int)
     return parser.parse_args()
 
@@ -149,7 +152,7 @@ def main():
 
     # Obtain the client and server dict.
     mach_conn_dict = ParamsHandler.get_nodes_info()
-    
+
     # Building the test list and obtaining the TC details.
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir)
     test_cases_dict = test_cases_tuple[0]
@@ -160,7 +163,6 @@ def main():
 
     # Pre test run test list builder is modified.
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
-    print(test_cases_dict)
 
     # invoke the redant_test_runner.
     TestRunner.init(test_cases_dict, mach_conn_dict, args.log_dir,

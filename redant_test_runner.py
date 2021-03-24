@@ -5,7 +5,8 @@ to be run and invoking them.
 import uuid
 from colorama import Fore, Style
 from runner_thread import RunnerThread
-from threading import *
+from threading import Thread, Semaphore
+
 
 class TestRunner:
     """
@@ -48,7 +49,8 @@ class TestRunner:
         thread_flag = True
         for test in cls.concur_test:
             cls.threadList.append(Thread(target=cls._run_test,
-                                         args = (test, thread_flag,)))
+                                         args=(test, thread_flag,)))
+
     @classmethod
     def _run_test(cls, test_dict: dict, thread_flag: bool):
         """
@@ -58,9 +60,9 @@ class TestRunner:
         if thread_flag:
             cls.semaphore.acquire()
         tc_class = test_dict["testClass"]
-        tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/"+\
-                      test_dict["moduleName"][:-3]+"-"+test_dict["volType"]\
-                      +".log"
+        tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
+            test_dict["moduleName"][:-3]+"-"+test_dict["volType"]\
+            + ".log"
         runner_thread_obj = RunnerThread(str(uuid.uuid1().int), tc_class,
                                          cls.mach_conn_dict["clients"],
                                          cls.mach_conn_dict["servers"],

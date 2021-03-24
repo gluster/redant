@@ -1,5 +1,6 @@
 from redant_libs.redant_mixin import RedantMixin
 
+
 class ParentTest:
 
     """
@@ -17,7 +18,7 @@ class ParentTest:
         And runs the specific component in the
         test case
         """
-        
+
         self.TEST_RES = True
         self.volume_type = volume_type
         self.server_list = []
@@ -35,7 +36,6 @@ class ParentTest:
         self.redant = RedantMixin(machine_detail)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
-
 
     def run_test(self):
         pass

@@ -21,11 +21,11 @@ class TestListBuilder:
     TC related data to the test_runner.
     """
     tests_to_run: list = []
-    tests_run_dict: dict = {"disruptive" : [],
-                            "nonDisruptive" : []}
-    tests_component_dir: dict = {"functional" : set([]),
-                                 "performance" : set([]),
-                                 "example" : set([])}
+    tests_run_dict: dict = {"disruptive": [],
+                            "nonDisruptive": []}
+    tests_component_dir: dict = {"functional": set([]),
+                                 "performance": set([]),
+                                 "example": set([])}
 
     @classmethod
     def create_test_dict(cls, path: str) -> tuple:
@@ -38,32 +38,32 @@ class TestListBuilder:
         Returns:
             A Tuple of the following format
             ({
-                "disruptive" : [
-                                   {
-                                      "volType" : [replicated,..],
-                                      "modulePath" : "../glusterd/test_sample.py",
-                                      "moduleName" : "test_sample.py",
-                                      "componentName" : "glusterd",
-                                      "testClass" : <class>,
-                                      "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                       ...
-                                    }
-                                ],
-                "nonDisruptive" : [
-                                    {
-                                         "volType" : [replicated,..],
-                                         "modulePath" : "../DHT/test_sample.py",
-                                         "moduleName" : "test_sample.py",
-                                         "componentName" : "DHT",
-                                         "testClass" : <class>,
-                                         "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                         ...
-                                    }
-                                  ]
+              "disruptive" : [
+                              {
+                                "volType" : [replicated,..],
+                                "modulePath" : "../glusterd/test_sample.py",
+                                "moduleName" : "test_sample.py",
+                                "componentName" : "glusterd",
+                                "testClass" : <class>,
+                                "testType" : "functional/performance/example"
+                              },
+                              {
+                              ...
+                              }
+                             ],
+              "nonDisruptive" : [
+                                 {
+                                   "volType" : [replicated,..],
+                                   "modulePath" : "../DHT/test_sample.py",
+                                   "moduleName" : "test_sample.py",
+                                   "componentName" : "DHT",
+                                   "testClass" : <class>,
+                                   "testType" : "functional"
+                                 },
+                                 {
+                                 ...
+                                 }
+                                ]
             },
             {
                 "functional" : ["component1", "component2",...],
@@ -92,7 +92,7 @@ class TestListBuilder:
             test_dict["componentName"] = test_case_path.split("/")[-2]
             test_dict["testClass"] = cls._get_test_class(test_case_path)
             test_dict["testType"] = test_case_path.split("/")[-3]
-            cls.tests_component_dir[test_dict["testType"]].add(\
+            cls.tests_component_dir[test_dict["testType"]].add(
                 test_case_path.split("/")[-2])
             cls.tests_run_dict[test_flags["tcNature"]].append(test_dict)
 
@@ -114,85 +114,83 @@ class TestListBuilder:
             test_dict (dict)
             example:
             {
-
-                "disruptive" : [
-                                   {
-                                      "volType" : ["type1", "type2", ...],
-                                      "modulePath" : "../glusterd/test_sample.py",
-                                      "moduleName" : "test_sample.py",
-                                      "componentName" : "glusterd",
-                                      "testClass" : <class>,
-                                      "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                       ...
-                                    }
-                                ],
-                "nonDisruptive" : [
-                                    {
-                                         "volType" : ["type1", "type2", ...],
-                                         "modulePath" : "../DHT/test_sample.py",
-                                         "moduleName" : "test_sample.py",
-                                         "componentName" : "DHT",
-                                         "testClass" : <class>,
-                                         "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                         ...
-                                    }
-                                  ]
+              "disruptive" : [
+                              {
+                                "volType" : ["type1", "type2", ...],
+                                "modulePath" : "../glusterd/test_sample.py",
+                                "moduleName" : "test_sample.py",
+                                "componentName" : "glusterd",
+                                "testClass" : <class>,
+                                "testType" : "functional/performance/example"
+                              },
+                              {
+                              ...
+                              }
+                             ],
+              "nonDisruptive" : [
+                                 {
+                                   "volType" : ["type1", "type2", ...],
+                                   "modulePath" : "../DHT/test_sample.py",
+                                   "moduleName" : "test_sample.py",
+                                   "componentName" : "DHT",
+                                   "testClass" : <class>,
+                                   "testType" : "functional/performance"
+                                 },
+                                 {
+                                 ...
+                                 }
+                                ]
             }
 
         Returns:
             new_test_dict (dict)
             example:
             {
-
-                "disruptive" : [
-                                   {
-                                      "volType" : "type1",
-                                      "modulePath" : "../glusterd/test_sample.py",
-                                      "moduleName" : "test_sample.py",
-                                      "componentName" : "glusterd",
-                                      "testClass" : <class>,
-                                      "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                      "volType" : "type2",
-                                      "modulePath" : "../glusterd/test_sample.py",
-                                      "moduleName" : "test_sample.py",
-                                      "componentName" : "glusterd",
-                                      "testClass" : <class>,
-                                      "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                       ...
-                                    }
-                                ],
-                "nonDisruptive" : [
-                                    {
-                                         "volType" : "type1",
-                                         "modulePath" : "../DHT/test_sample.py",
-                                         "moduleName" : "test_sample.py",
-                                         "componentName" : "DHT",
-                                         "testClass" : <class>,
-                                         "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                         "volType" : "type2",
-                                         "modulePath" : "../DHT/test_sample.py",
-                                         "moduleName" : "test_sample.py",
-                                         "componentName" : "DHT",
-                                         "testClass" : <class>,
-                                         "testType" : "functional/performance/example"
-                                    },
-                                    {
-                                         ...
-                                    }
-                                  ]
+              "disruptive" : [
+                              {
+                                "volType" : "type1",
+                                "modulePath" : "../glusterd/test_sample.py",
+                                "moduleName" : "test_sample.py",
+                                "componentName" : "glusterd",
+                                "testClass" : <class>,
+                                "testType" : "functional/performance/example"
+                              },
+                              {
+                                "volType" : "type2",
+                                "modulePath" : "../glusterd/test_sample.py",
+                                "moduleName" : "test_sample.py",
+                                "componentName" : "glusterd",
+                                "testClass" : <class>,
+                                "testType" : "functional/performance/example"
+                              },
+                              {
+                              ...
+                              }
+                             ],
+              "nonDisruptive" : [
+                                 {
+                                   "volType" : "type1",
+                                   "modulePath" : "../DHT/test_sample.py",
+                                   "moduleName" : "test_sample.py",
+                                   "componentName" : "DHT",
+                                   "testClass" : <class>,
+                                   "testType" : "functional/performance"
+                                 },
+                                 {
+                                   "volType" : "type2",
+                                   "modulePath" : "../DHT/test_sample.py",
+                                   "moduleName" : "test_sample.py",
+                                   "componentName" : "DHT",
+                                   "testClass" : <class>,
+                                   "testType" : "functional/performance"
+                                 },
+                                 {
+                                 ...
+                                 }
+                                ]
             }
         """
-        new_test_dict = {"disruptive" : [], "nonDisruptive" : []}
+        new_test_dict = {"disruptive": [], "nonDisruptive": []}
         for test_concur_state in test_dict:
             for test in test_dict[test_concur_state]:
                 for vol_type in test["volType"]:
