@@ -13,16 +13,17 @@ class TestCase(ParentTest):
     for glusterd service operations
     """
 
-    def gluster_start_stop_test(self):
+    def run_test(self):
         """
         The following steps are undertaken in the testcase:
         1) glusterd service is started on the server.
         4) glusterd service is stopped.
         """
+        server = self.server_list[0]
         try:
             for _ in range(10):
-                self.redant.gluster_start("10.70.43.63")
-                self.redant.gluster_stop("10.70.43.63")
+                self.redant.glusterd_start(server)
+                self.redant.glusterd_stop(server)
             print("Test Passed")
 
         except Exception as error:
