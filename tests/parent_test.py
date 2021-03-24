@@ -31,7 +31,7 @@ class ParentTest:
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
-        machine_detail = self.client_details + self.server_details
+        machine_detail = client_details + server_details
         self.redant = RedantMixin(machine_detail)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
