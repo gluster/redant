@@ -125,6 +125,9 @@ def pars_args():
     parser.add_argument("-ll", "--log-level",
                         help="The log level.",
                         dest="log_level", default="I", type=str)
+    parser.add_argument("-cc", "--concurrency-count",
+                        help="Number of concurrent tests to run in case of non disruptive scenario",
+                        dest="semaphore_count", default=4, type=int)
     return parser.parse_args()
 
 
@@ -152,12 +155,16 @@ def main():
     test_cases_dict = test_cases_tuple[0]
     test_cases_component = test_cases_tuple[1]
 
-    # Sanity check for log base dir.
+    # Creating log dirs.
     log_dir_check(args.log_dir, test_cases_component, test_cases_dict)
+
+    # Pre test run test list builder is modified.
+    test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
+    print(test_cases_dict)
 
     # invoke the redant_test_runner.
     TestRunner.init(test_cases_dict, mach_conn_dict, args.log_dir,
-                    args.log_level)
+                    args.log_level, args.semaphore_count)
     TestRunner.run_tests()
 
     return 0

@@ -46,7 +46,22 @@ class Rexe:
         if not self.connect_flag:
             ret_dict['Flag'] = False
             return ret_dict
-        _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+        try:
+            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+        except Exception as e:
+            # Reconnection to be done.
+            node_ssh_client = paramiko.SSHClient()
+            node_ssh_client.set_missing_host_key_policy(
+                paramiko.AutoAddPolicy())
+            try:
+                node_ssh_client.connect(
+                    hostname=self.host_dict[node]['ip'],
+                    username=self.host_dict[node]['user'],
+                    password=self.host_dict[node]['passwd'])
+                self.rlog(f"SSH connection to {node} is successful.", 'D')
+                self.node_dict[node] = node_ssh_client
+            except Exception as e:
+                self.rlog(f"Connection failure. Exception : {e}", 'E')
         if stdout.channel.recv_exit_status() != 0:
             ret_dict['Flag'] = False
             ret_dict['msg'] = stdout.readlines()

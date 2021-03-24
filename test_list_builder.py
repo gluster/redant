@@ -10,6 +10,7 @@ to be executed in the current session.
 import os
 import inspect
 import importlib
+import copy
 from comment_parser.comment_parser import extract_comments
 
 
@@ -100,6 +101,105 @@ class TestListBuilder:
             cls.tests_component_dir[test_type] =\
                 list(cls.tests_component_dir[test_type])
         return (cls.tests_run_dict, cls.tests_component_dir)
+
+    @classmethod
+    def pre_test_run_list_modify(cls, test_dict: dict) -> dict:
+        """
+        The test list dictionary is currently condensed so as to
+        make it easy for creating log dirs and other operations like
+        obtaining test class information. But test runs will be based on the
+        type of the volume being mentioned for a given test case. Hence the
+        list will be modified accordingly.
+        Args:
+            test_dict (dict)
+            example:
+            {
+
+                "disruptive" : [
+                                   {
+                                      "volType" : ["type1", "type2", ...],
+                                      "modulePath" : "../glusterd/test_sample.py",
+                                      "moduleName" : "test_sample.py",
+                                      "componentName" : "glusterd",
+                                      "testClass" : <class>,
+                                      "testType" : "functional/performance/example"
+                                    },
+                                    {
+                                       ...
+                                    }
+                                ],
+                "nonDisruptive" : [
+                                    {
+                                         "volType" : ["type1", "type2", ...],
+                                         "modulePath" : "../DHT/test_sample.py",
+                                         "moduleName" : "test_sample.py",
+                                         "componentName" : "DHT",
+                                         "testClass" : <class>,
+                                         "testType" : "functional/performance/example"
+                                    },
+                                    {
+                                         ...
+                                    }
+                                  ]
+            }
+
+        Returns:
+            new_test_dict (dict)
+            example:
+            {
+
+                "disruptive" : [
+                                   {
+                                      "volType" : "type1",
+                                      "modulePath" : "../glusterd/test_sample.py",
+                                      "moduleName" : "test_sample.py",
+                                      "componentName" : "glusterd",
+                                      "testClass" : <class>,
+                                      "testType" : "functional/performance/example"
+                                    },
+                                    {
+                                      "volType" : "type2",
+                                      "modulePath" : "../glusterd/test_sample.py",
+                                      "moduleName" : "test_sample.py",
+                                      "componentName" : "glusterd",
+                                      "testClass" : <class>,
+                                      "testType" : "functional/performance/example"
+                                    },
+                                    {
+                                       ...
+                                    }
+                                ],
+                "nonDisruptive" : [
+                                    {
+                                         "volType" : "type1",
+                                         "modulePath" : "../DHT/test_sample.py",
+                                         "moduleName" : "test_sample.py",
+                                         "componentName" : "DHT",
+                                         "testClass" : <class>,
+                                         "testType" : "functional/performance/example"
+                                    },
+                                    {
+                                         "volType" : "type2",
+                                         "modulePath" : "../DHT/test_sample.py",
+                                         "moduleName" : "test_sample.py",
+                                         "componentName" : "DHT",
+                                         "testClass" : <class>,
+                                         "testType" : "functional/performance/example"
+                                    },
+                                    {
+                                         ...
+                                    }
+                                  ]
+            }
+        """
+        new_test_dict = {"disruptive" : [], "nonDisruptive" : []}
+        for test_concur_state in test_dict:
+            for test in test_dict[test_concur_state]:
+                for vol_type in test["volType"]:
+                    temp_test_dict = copy.deepcopy(test)
+                    temp_test_dict["volType"] = copy.deepcopy(vol_type)
+                    new_test_dict[test_concur_state].append(temp_test_dict)
+        return new_test_dict
 
     @classmethod
     def _get_test_module_info(cls, tc_path: str) -> dict:
