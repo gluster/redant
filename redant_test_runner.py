@@ -25,7 +25,6 @@ class TestRunner:
     def run_tests(cls):
         # TODO Concurrency to be added based on the test types.
         for test in cls.test_run_dict["nonDisruptive"]:
-            print(test)
             tc_class = test["testClass"]
             for volume in test["volType"]:
                 tc_log_path = cls.base_log_path+test["modulePath"][5:-3]+"/"+\
@@ -38,6 +37,10 @@ class TestRunner:
                 value = runner_thread_obj.run_thread()
                 result_text = test["moduleName"][:-3]+"-"+volume
                 if value:
+                    result_text += " PASS"
+                    print(Fore.GREEN + result_text)
+                    print(Style.RESET_ALL)
+                else:
                     result_text += " FAIL"
                     print(Fore.RED + result_text)
                     print(Style.RESET_ALL)
@@ -56,4 +59,8 @@ class TestRunner:
                 if value:
                     result_text += " PASS"
                     print(Fore.GREEN + result_text)
+                    print(Style.RESET_ALL)
+                else:
+                    result_text += " FAIL"
+                    print(Fore.RED + result_text)
                     print(Style.RESET_ALL)
