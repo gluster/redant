@@ -8,26 +8,18 @@ import logging
 import logging.handlers
 
 
-LOGGER = logging.getLogger(__name__)
-
-
-# pylint: disable=W0603
-class Logger:
+class Logger(logging.Logger):
     """
     The framework's logger class. It handles three levels of logging
-    Info, Debug and Error. Having a has-a relationship curently with the logger
-    object and wrapping it's functionalities.
+    Info, Debug and Error.
     """
-    log_function_mapping = {'I': LOGGER.info, 'D': LOGGER.debug,
-                            'E': LOGGER.error}
 
-    @staticmethod
-    def set_logging_options(log_file_path: str = "/tmp/redant.log",
-                            log_file_level: str = "I"):
+    def init_logger(self, mname: str, log_file_path: str,
+                 log_file_level: str = "I"):
         """
         This function is for configuring the logger
         """
-        global LOGGER
+        self.logger = logging.getLogger(mname)
         valid_log_level = ['I', 'D', 'E']
         log_level_dict = {'I': logging.INFO, 'D': logging.DEBUG,
                           'E': logging.ERROR}
@@ -37,25 +29,19 @@ class Logger:
         if log_file_level not in valid_log_level:
             print("Invalid log level given, Taking Log Level as Info.")
             log_file_level = 'I'
-        LOGGER.setLevel(log_level_dict[log_file_level])
+        self.logger.setLevel(log_level_dict[log_file_level])
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
-        LOGGER.addHandler(log_file_handler)
-        return LOGGER
+        self.logger.addHandler(log_file_handler)
+        self.log_function_mapping = {'I': self.logger.info,
+                                     'D': self.logger.debug,
+                                     'E': self.logger.error}
 
-    @classmethod
-    def rlog(cls, log_message: str, log_level: str = 'I'):
+    def rlog(self, log_message: str, log_level: str = 'I'):
         """
         Logger function used across the framework for logging.
         Created in a way so that people only have to deal with one
         single logger function istead of multiple as is the default
         manner.
         """
-        cls.log_function_mapping[log_level](log_message)
-
-    @staticmethod
-    def get_logger_handle():
-        """
-        Getter function for logging.
-        """
-        return LOGGER
+        self.log_function_mapping[log_level](log_message)
