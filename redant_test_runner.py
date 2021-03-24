@@ -26,7 +26,7 @@ class TestRunner:
             runner_thread_obj = RunnerThread(tc_class,
                                              cls.mach_conn_dict["clients"],
                                              cls.mach_conn_dict["servers"],
-                                             "/tmp", 'I')
+                                             "/tmp/redant.log", 'I')
             value = runner_thread_obj.run_thread()
             print(value)
         for test in cls.test_run_dict["disruptive"]:
