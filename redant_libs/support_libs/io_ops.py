@@ -12,14 +12,14 @@ class io_ops:
     contents and to handle non-standard IO commands.
     """
 
-    def touch(self, file_name: str, node: str):
+    def touch(self, file_path: str, node: str):
         """Creates a regular empty file
         Args:
-            file_name (str): The name of the file to be created
+            file_path (str): The name of the file to be created
             node (str): The node in the cluster where the command is to be run
         """
 
-        cmd = "touch {}".format(file_name)
+        cmd = f"touch {file_path}"
 
         self.rlog(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
@@ -30,14 +30,14 @@ class io_ops:
 
         self.rlog("Successfully ran {cmd} on {node}")
 
-    def mkdir(self, dir_name: str, node: str):
+    def mkdir(self, dir_path: str, node: str):
         '''Creates a directory
         Args:
-            dir_name (str): The name of the directory to be created
+            dir_path (str): The name of the directory to be created
             node (str): The node in the cluster where the command is to be run
         '''
 
-        cmd = f'mkdir -p /{dir_name}'
+        cmd = f'mkdir {dir_path}'
 
         self.rlog(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
@@ -48,13 +48,14 @@ class io_ops:
 
         self.rlog("Successfully ran {cmd} on {node}")
 
-    def ls(self, node: str):
+    def ls(self, node: str, path: str):
         '''List the directory contents
         Args:
             node (str): The node in the cluster where the command is to be run
+            path (str): Lists all files in the current directory path
         '''
 
-        cmd = 'ls'
+        cmd = f'ls {path}'
 
         self.rlog(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
