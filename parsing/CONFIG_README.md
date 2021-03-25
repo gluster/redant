@@ -10,8 +10,8 @@ service and provide a storage environment to which the clients mount their
 filesystem.
 A single server in the config file has to be specified with a reference name 
 followed by ip address in the following way:<br>
-`&server_vm1 0.0.0.0`<br>
-server_vm1 is a reference to its ip address which can be used to refer to its 
+`&server-vm1 0.0.0.0`<br>
+server-vm1 is a reference to its ip address which can be used to refer to its 
 ip address in the further config file or in the test cases. 1 should be replaced
 by other integers in the increasing order while specifying further servers
 
