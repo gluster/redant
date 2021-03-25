@@ -25,6 +25,7 @@ class TestRunner:
         cls.concur_test = test_run_dict["nonDisruptive"]
         cls.non_concur_test = test_run_dict["disruptive"]
         cls.threadList = []
+        cls.test_results = {}
         cls._prepare_thread_tests()
 
     @classmethod
@@ -33,15 +34,20 @@ class TestRunner:
         The non-disruptive tests are invoked followed by the disruptive
         tests.
         """
-        cls.test_results = []
         for test_thread in cls.threadList:
             test_thread.start()
         for test_thread in cls.threadList:
             test_thread.join()
         thread_flag = False
+        
         for test in cls.non_concur_test:
+        
+            cls.test_results[test['moduleName'][:-3]] = []
+        
+        for test in cls.non_concur_test:
+            
             test_res = cls._run_test(test, thread_flag)
-            cls.test_results.append(test_res)
+            cls.test_results[test['moduleName'][:-3]].append(test_res)
 
         return cls.test_results
 
@@ -51,7 +57,17 @@ class TestRunner:
         This method creates the threadlist for non disruptive tests
         """
         thread_flag = True
+        
         for test in cls.concur_test:
+        
+            cls.test_results[test['moduleName'][:-3]] = []
+        
+        for test in cls.concur_test:
+            cls.test_results[test['moduleName'][:-3]].append({
+                'volType': test['volType'],
+                'timeTaken': 0,
+                'testResult':'PASS'
+            })
             cls.threadList.append(Thread(target=cls._run_test,
                                          args=(test, thread_flag,)))
 
@@ -77,14 +93,16 @@ class TestRunner:
                                          cls.log_level, test_dict["moduleName"][:-3])
         test_result = runner_thread_obj.run_thread()
         
-        test_result['time taken'] = time.time() - start
+        test_result['timeTaken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
-        if test_result['result']:
+        if test_result['testResult']:
+            test_result['testResult'] = "PASS"
             result_text += " PASS"
             print(Fore.GREEN + result_text)
             print(Style.RESET_ALL)
         else:
             result_text += " FAIL"
+            test_result['testResult'] = "FAIL"
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
         if thread_flag:
