@@ -27,4 +27,5 @@ class TestCase(ParentTest):
             print("Test Passed")
 
         except Exception as error:
+            self.TEST_RES = False
             print(f"Test Failed:{error}")

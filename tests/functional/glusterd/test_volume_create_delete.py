@@ -2,7 +2,7 @@
 This file contains a test-case which tests
 volume operations like creation and deletion
 """
-#nonDisruptive;dist,rep,arb,disp
+#disruptive;dist,rep,arb,disp
 
 from tests.parent_test import ParentTest
 
@@ -13,7 +13,7 @@ class TestCase(ParentTest):
     for volume creation and deletion
     """
 
-    def volume_create_delete_test(self):
+    def run_test(self):
         """
         The following steps are undertaken in the testcase:
         1) glusterd service is started on the server.
@@ -22,16 +22,18 @@ class TestCase(ParentTest):
         4) glusterd service is stopped.
         """
         try:
+            server = self.server_list[0]
 
-            self.redant.gluster_start("10.70.43.63")
+            self.redant.glusterd_start(server)
 
-            self.redant.volume_create("10.70.43.63", "test-vol",
-                                      ["10.70.43.63:/brick1"],
+            self.redant.volume_create(server, "test-vol",
+                                      [f"{server}:/brick1"],
                                       force=True)
-            self.redant.volume_delete("10.70.43.63", "test-vol")
+            self.redant.volume_delete(server, "test-vol")
 
-            self.redant.gluster_stop("10.70.43.63")
+            self.redant.glusterd_stop(server)
             print("Test Passed")
 
         except Exception as error:
+            self.TEST_RES = False
             print(f"Test Failed:{error}")
