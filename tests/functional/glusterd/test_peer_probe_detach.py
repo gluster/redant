@@ -36,4 +36,5 @@ class TestCase(ParentTest):
             self.redant.glusterd_stop(server1)
 
         except Exception as e:
+            self.TEST_RES = False
             print(f"Test is failed:{e}")
