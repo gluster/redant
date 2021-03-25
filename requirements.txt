@@ -12,3 +12,4 @@ autopep8==1.5.5
 pylint==2.7.2
 comment-parser==1.2.3
 colorama==0.4.4
+prettytable==2.1.0
