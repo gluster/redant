@@ -24,10 +24,10 @@ tests: holds the test cases. Add any new test cases here.<br>
 config file with relevant values.
 `python3 redant_test_main.py -c parsing/config.yml -t tests/example/`
 7. Log files can be found at /tmp/redant.log [ default path ].
-For more options, run `python3 redant_test_main.py --help`
+For more options, run `python3 redant_main.py --help`
 
 The logging is specific to a TC run. So when a user gives a specific base dir
-for logging when invoking `redant_test__main.py`, that directory will inturn
+for logging when invoking `redant_main.py`, that directory will inturn
 contain the following dirs,
  -> functional
  -> performance

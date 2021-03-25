@@ -9,7 +9,7 @@ import os
 import argparse
 from parsing.redant_params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
-from redant_test_runner import TestRunner
+from test_runner import TestRunner
 
 
 def is_file_accessible(path: str, mode: str = 'r') -> bool:
@@ -164,7 +164,7 @@ def main():
     # Pre test run test list builder is modified.
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
 
-    # invoke the redant_test_runner.
+    # invoke the test_runner.
     TestRunner.init(test_cases_dict, mach_conn_dict, args.log_dir,
                     args.log_level, args.semaphore_count)
     TestRunner.run_tests()
