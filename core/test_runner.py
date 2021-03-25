@@ -6,7 +6,7 @@ import uuid
 from colorama import Fore, Style
 from runner_thread import RunnerThread
 from threading import Thread, Semaphore
-
+import time
 
 class TestRunner:
     """
@@ -33,13 +33,17 @@ class TestRunner:
         The non-disruptive tests are invoked followed by the disruptive
         tests.
         """
+        cls.test_results = []
         for test_thread in cls.threadList:
             test_thread.start()
         for test_thread in cls.threadList:
             test_thread.join()
         thread_flag = False
         for test in cls.non_concur_test:
-            cls._run_test(test, thread_flag)
+            test_res = cls._run_test(test, thread_flag)
+            cls.test_results.append(test_res)
+
+        return cls.test_results
 
     @classmethod
     def _prepare_thread_tests(cls):
@@ -63,14 +67,19 @@ class TestRunner:
         tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
             test_dict["moduleName"][:-3]+"-"+test_dict["volType"]\
             + ".log"
+        
+        # to calculate time spent to execute the test
+        start = time.time()
         runner_thread_obj = RunnerThread(str(uuid.uuid1().int), tc_class,
                                          cls.mach_conn_dict["clients"],
                                          cls.mach_conn_dict["servers"],
                                          test_dict["volType"], tc_log_path,
-                                         cls.log_level)
+                                         cls.log_level, test_dict["moduleName"][:-3])
         test_result = runner_thread_obj.run_thread()
+        
+        test_result['time taken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
-        if test_result:
+        if test_result['result']:
             result_text += " PASS"
             print(Fore.GREEN + result_text)
             print(Style.RESET_ALL)
@@ -80,3 +89,5 @@ class TestRunner:
             print(Style.RESET_ALL)
         if thread_flag:
             cls.semaphore.release()
+
+        return test_result

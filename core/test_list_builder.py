@@ -204,6 +204,7 @@ class TestListBuilder:
                     temp_test_dict = copy.deepcopy(test)
                     temp_test_dict["volType"] = copy.deepcopy(vol_type)
                     new_test_dict[test_concur_state].append(temp_test_dict)
+                    new_test_dict['timeTaken'] = 0
         return new_test_dict
 
     @classmethod
