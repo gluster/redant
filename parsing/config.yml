@@ -4,14 +4,14 @@ log_file: /var/log/tests/gluster_tests.log
 # This section has to be defined.
 # Below x denotes integer
 # server-vm[x] has to be replaced by ip-address
-# server_vm[x] can be used to refer to its ip-address in this file using
-# *server_vm[x] wherever required and can also be used in test cases using 
-# just "server_vm[x]"
+# server-vm[x] can be used to refer to its ip-address in this file using
+# *server-vm[x] wherever required and can also be used in test cases using 
+# just "server-vm[x]"
 servers:
-    - &server_vm1 server-vm1 #Example- &server_vm1 0.0.0.0
-    - &server_vm2 server-vm2
-    - &server_vm3 server-vm3
-    - &server_vm4 server-vm4
+    - &server-vm1 server-vm1 #Example- &server-vm1 0.0.0.0
+    - &server-vm2 server-vm2
+    - &server-vm3 server-vm3
+    - &server-vm4 server-vm4
 
 # 'clients' is list of Hostnames/IP's of clients in the cluster.
 # This section has to be defined.
@@ -31,19 +31,19 @@ clients:
 # This section has to be defined.
 
 servers_info:
-    *server_vm1: &server1
+    *server-vm1: &server1
         brick_root: ["/bricks"] #Example- brick_root: ["/bricks","/gluster"]
         user: "root"
         passwd: "redhat"
-    *server_vm2: &server2
+    *server-vm2: &server2
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    *server_vm3: &server3
+    *server-vm3: &server3
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    *server_vm4: &server4
+    *server-vm4: &server4
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
@@ -144,12 +144,12 @@ gluster:
         - &vol1
             name: testvol
             voltype: *distributed_dispersed
-            servers: [ *server_vm1, *server_vm2, *server_vm3, *server_vm4 ]
+            servers: [ *server-vm1, *server-vm2, *server-vm3, *server-vm4 ]
 
     # 'extra_servers' - To be used in case of add new servers to the cluster
     #                   in case of add-brick, replace-brick, attach-tier etc.
-            #extra_servers: [ *server_vm9, *server_vm10,
-            #                 *server_vm11, *server_vm12 ]
+            #extra_servers: [ *server-vm9, *server-vm10,
+            #                 *server-vm11, *server-vm12 ]
 
     # 'tier' -  Tiering related info. set 'create_tier' to 'true' to attach
     #           tier during volume setup when the tests calls glusto-tests
@@ -219,7 +219,7 @@ gluster:
     mounts:
         - &mount1
             protocol: 'glusterfs'
-            server: *server_vm1
+            server: *server-vm1
             volname: testvol
             client:
                 host: *client_vm1
@@ -227,7 +227,7 @@ gluster:
             options: ''
         - &mount2
             protocol: 'nfs'
-            server: *server_vm1
+            server: *server-vm1
             volname: testvol
             client:
                 host: *client_vm2

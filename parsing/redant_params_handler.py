@@ -30,11 +30,11 @@ class ParamsHandler:
         Gives the server ip given the server name
         Args:
             server_name: name of the server as in config file.
-                         example: server_vm1
+                         example: server-vm1
         Returns:
             str: ip address of the given server
         Example:
-            get_server_ip("server_vm1")
+            get_server_ip("server-vm1")
         """
         index = server_name[9:]
         server_ip = cls.config_hashmap['servers'][int(index)-1]
@@ -86,13 +86,13 @@ class ParamsHandler:
         {
             servers: [
                         {
-                            "hostname" : server_vm1
+                            "hostname" : server-vm1
                             "ip" : 10.4.28.93
                             "user" : root
                             "passwd" : redhat
                         },
                         {
-                            "hostname" : server_vm2
+                            "hostname" : server-vm2
                             "ip" : 23.43.12.87
                             "user" : root
                             "passwd" : redhat
@@ -128,7 +128,7 @@ class ParamsHandler:
 
         for i, ip in enumerate(servers_ip_list):
             servers_info = {}
-            servers_info["hostname"] = f"server_vm{i+1}"
+            servers_info["hostname"] = f"server-vm{i+1}"
             servers_info["ip"] = ip
             servers_info["user"] = s_info[ip]["user"]
             servers_info["passwd"] = s_info[ip]["passwd"]
@@ -152,11 +152,11 @@ class ParamsHandler:
         Returns the list of brick root given the server name
         Args:
             server_name (str): name of the server as in config file.
-                         example: server_vm1
+                         example: server-vm1
         Returns:
             list: list of brick root of the given server
         Example:
-            get_brick_root_list("server_vm1")
+            get_brick_root_list("server-vm1")
         """
         server_ip = cls.get_server_ip(server_name)
         servers_info = cls.config_hashmap['servers_info']
