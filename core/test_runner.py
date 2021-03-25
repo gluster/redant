@@ -90,7 +90,7 @@ class TestRunner:
                                          cls.mach_conn_dict["clients"],
                                          cls.mach_conn_dict["servers"],
                                          test_dict["volType"], tc_log_path,
-                                         cls.log_level, test_dict["moduleName"][:-3])
+                                         cls.log_level)
         test_result = runner_thread_obj.run_thread()
         
         test_result['timeTaken'] = time.time() - start

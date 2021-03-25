@@ -11,7 +11,7 @@ class RunnerThread:
 
     def __init__(self, mname: str, tc_class, client_list: list,
                  server_list: list, volume_type: str, log_path: str,
-                 log_level: str, module_name: str):
+                 log_level: str):
         # Creating the test case object from the test case.
         self.tc_obj = tc_class(mname, client_list, server_list, volume_type,
                                log_path, log_level)
