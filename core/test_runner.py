@@ -91,21 +91,21 @@ class TestRunner:
                                          cls.mach_conn_dict["servers"],
                                          test_dict["volType"], tc_log_path,
                                          cls.log_level)
-        test_result = runner_thread_obj.run_thread()
+        test_stats = runner_thread_obj.run_thread()
         
-        test_result['timeTaken'] = time.time() - start
+        test_stats['timeTaken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
-        if test_result['testResult']:
-            test_result['testResult'] = "PASS"
+        if test_stats['testResult']:
+            test_stats['testResult'] = "PASS"
             result_text += " PASS"
             print(Fore.GREEN + result_text)
             print(Style.RESET_ALL)
         else:
             result_text += " FAIL"
-            test_result['testResult'] = "FAIL"
+            test_stats['testResult'] = "FAIL"
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
         if thread_flag:
             cls.semaphore.release()
 
-        return test_result
+        return test_stats
