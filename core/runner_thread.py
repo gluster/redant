@@ -17,7 +17,7 @@ class RunnerThread:
                                log_path, log_level)
         self.run_test_func = getattr(self.tc_obj, "run_test")
         self.terminate_test_func = getattr(self.tc_obj, "terminate")
-        self.complete_test_stats = {
+        self.test_stats = {
             'timeTaken':0,
             'volType': volume_type
         }
@@ -28,5 +28,5 @@ class RunnerThread:
         """
         self.run_test_func()
         self.terminate_test_func()
-        self.complete_test_stats['testResult'] = self.tc_obj.TEST_RES
-        return self.complete_test_stats
+        self.test_stats['testResult'] = self.tc_obj.TEST_RES
+        return self.test_stats
