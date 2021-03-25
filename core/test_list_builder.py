@@ -1,7 +1,7 @@
 """
 
 This component is responsible for creating a list
-of tests-to-run to be used by the redant_test_runner component.
+of tests-to-run to be used by the test_runner component.
 Input for this component : the tests-to-run list which was parsed
 from the cli and the return: list of all the tests which are going
 to be executed in the current session.

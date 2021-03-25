@@ -7,7 +7,7 @@ This module takes care of:
 
 import os
 import argparse
-from parsing.redant_params_handler import ParamsHandler
+from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 
