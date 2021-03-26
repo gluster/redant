@@ -11,6 +11,7 @@ import os
 import inspect
 import importlib
 import copy
+import sys
 from comment_parser.comment_parser import extract_comments
 
 
@@ -100,6 +101,7 @@ class TestListBuilder:
         for test_type in cls.tests_component_dir:
             cls.tests_component_dir[test_type] =\
                 list(cls.tests_component_dir[test_type])
+
         return (cls.tests_run_dict, cls.tests_component_dir)
 
     @classmethod
@@ -231,6 +233,7 @@ class TestListBuilder:
         for creating objects later.
         """
         tc_module_str = tc_path.replace("/", ".")[:-3]
+        sys.path.insert(1, ".")
         tc_module = importlib.import_module(tc_module_str)
         tc_class_str = inspect.getmembers(tc_module,
                                           inspect.isclass)[1][0]

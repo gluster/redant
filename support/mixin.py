@@ -2,12 +2,12 @@
     Module Name:
     Purpose: Refer to the redhat_mixin.md for more information
 """
-from ops.support_ops.rexe import Rexe
-from ops.support_ops.relog import Logger
-from ops.support_ops.io_ops import io_ops
-from ops.gluster_ops.peer_ops import peer_ops
-from ops.gluster_ops.volume_ops import VolumeOps
-from ops.gluster_ops.gluster_ops import GlusterOps
+from support.ops.support_ops.rexe import Rexe
+from support.ops.support_ops.relog import Logger
+from support.ops.support_ops.io_ops import io_ops
+from support.ops.gluster_ops.peer_ops import peer_ops
+from support.ops.gluster_ops.volume_ops import VolumeOps
+from support.ops.gluster_ops.gluster_ops import GlusterOps
 
 
 # pylint: disable=W0107
