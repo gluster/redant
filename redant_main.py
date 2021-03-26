@@ -174,7 +174,7 @@ def main():
 
     ResultHandler.display_test_results(all_test_results)
 
-    print(f"\nTotal time taken by the framework: {time.time()-start} s")
+    print(f"\nTotal time taken by the framework: {time.time()-start} sec")
     return 0
 
 
