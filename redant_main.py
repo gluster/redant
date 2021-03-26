@@ -11,6 +11,7 @@ from core.parsing.params_handler import ParamsHandler
 from core.test_list_builder import TestListBuilder
 from core.test_runner import TestRunner
 from result_handler import ResultHandler
+import time
 
 def is_file_accessible(path: str, mode: str = 'r') -> bool:
     """
@@ -142,6 +143,8 @@ def main():
     3. Invoking the test_list_builder to build the TC run order.
     4. Passing the details to the test_runner.
     """
+
+    start = time.time()
     args = pars_args()
 
     if is_file_accessible(args.config_file):
@@ -171,6 +174,7 @@ def main():
 
     ResultHandler.display_test_results(all_test_results)
 
+    print(f"\nTotal time taken by the framework: {time.time()-start} s")
     return 0
 
 
