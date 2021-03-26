@@ -43,11 +43,9 @@ class TestRunner:
         thread_flag = False
         
         for test in cls.non_concur_test:
-        
             cls.test_results[test['moduleName'][:-3]] = []
         
-        for test in cls.non_concur_test:
-            
+        for test in cls.non_concur_test:   
             cls._run_test(test, thread_flag)
             
 
@@ -61,7 +59,6 @@ class TestRunner:
         thread_flag = True
         
         for test in cls.concur_test:
-        
             cls.test_results[test['moduleName'][:-3]] = []
         
         for test in cls.concur_test:
