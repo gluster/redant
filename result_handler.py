@@ -26,7 +26,7 @@ class ResultHandler:
             print(Fore.BLUE + item)
             print(Style.RESET_ALL)
             
-            table = PrettyTable(['Volume Type','Test Result','Time taken'])
+            table = PrettyTable(['Volume Type','Test Result','Time taken (sec)'])
             for each_vol_test in test_results[item]:
                 
                 table.add_row([each_vol_test['volType'], each_vol_test['testResult'],each_vol_test['timeTaken']])
