@@ -38,7 +38,7 @@ class TestRunner:
             test_thread.start()
 
         for test_thread in cls.threadList:
-            join = test_thread.join()
+            test_thread.join()
 
         thread_flag = False
         
