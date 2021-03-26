@@ -35,9 +35,19 @@ class TestRunner:
         tests.
         """
         for test_thread in cls.threadList:
-            test_thread.start()
+            start = time.perf_counter()
+            test_thread[2].start()
+
         for test_thread in cls.threadList:
-            test_thread.join()
+            test_thread[2].join()
+            end = time.perf_counter()
+            test_thread.append(end-start)
+
+        for test_thread in cls.threadList:
+            for each_type in cls.test_results[test_thread[0]]:
+                if each_type['volType'] == test_thread[1]:
+                    each_type['timeTaken'] = test_thread[3]
+
         thread_flag = False
         
         for test in cls.non_concur_test:
@@ -68,8 +78,8 @@ class TestRunner:
                 'timeTaken': 0,
                 'testResult':'PASS'
             })
-            cls.threadList.append(Thread(target=cls._run_test,
-                                         args=(test, thread_flag,)))
+            cls.threadList.append([test['moduleName'][:-3], test['volType'] , Thread(target=cls._run_test,
+                                         args=(test, thread_flag,))])
 
     @classmethod
     def _run_test(cls, test_dict: dict, thread_flag: bool):
