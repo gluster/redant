@@ -1,4 +1,4 @@
-# Redant Mixin
+# Mixin
 
 ## The why ?
 
@@ -44,7 +44,7 @@ multiple different objects for different libraries.
 
 ## Adding a new support or ops module.
 
-The following is a sample template for adding a support or ops module inside redant_libs.
+The following is a sample template for adding a support or ops module.
 
 ```
 # Required imports
@@ -65,19 +65,19 @@ Now, one might notice that we haven't defined or declared func3 inside this modu
 I would've simply added them in imports but NO! It won't be imported by us. For our sake, let's say that
 `func3` is actually defined in a module called `sample_ops2`'s class `sample_op2_class`.
 
-Once the above support library is created, one needs to add the module inside the `redant_mixin` and 
-let the `redant_mixin` class inherit from this newly added class.
+Once the above support library is created, one needs to add the module inside the `mixin` and 
+let the `mixin` class inherit from this newly added class.
 
 ```
-from redant_libs.support_libs.rexe import Rexe
-from redant_libs.gluster_libs.sample_ops1 import sample_ops_class # the newly added module
-from redant_libs.gluster_libs.sample_ops2 import sample_ops2_class 
+from support.ops.support_ops.rexe import Rexe
+from support.ops.gluster_ops.sample_ops1 import sample_ops_class # the newly added module
+from support.ops.gluster_ops.sample_ops2 import sample_ops2_class 
 
-class redant_mixin(Rexe, sample_ops_class, sample_ops2_class):
+class mixin(Rexe, sample_ops_class, sample_ops2_class):
 	pass
 ```
 
-This is the mixin magic. The `redant_mixin` objects would then be able to handle the relation
+This is the mixin magic. The `mixin` objects would then be able to handle the relation
 between the `sample_ops_class` and `sample_ops2_class`. Hence allowing us to pass on this mixin object
 to a test case to be used for invocation of all the library calls from the test case without importing
 the ops modules inside a TC.

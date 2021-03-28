@@ -1,4 +1,4 @@
-from redant_libs.redant_mixin import RedantMixin
+from support.mixin import RedantMixin
 
 
 class ParentTest:

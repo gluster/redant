@@ -27,7 +27,7 @@ jobs:
           flake8 $(pwd) --count --max-complexity=10 --max-line-length=79 --statistics
       - name: Lint with Pylint
         run: |
-          pylint $(pwd)
-          pylint $(pwd)/redant_libs/
+          pylint $(pwd)/core/
+          pylint $(pwd)/support/
           pylint $(pwd)/tests/
 

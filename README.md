@@ -4,8 +4,9 @@ Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1
 
 ### Structure:
 
-redant_libs: consists of the libs and ops that will help in running the test cases.<br>
-tests: holds the test cases. Add any new test cases here.<br>
+core: contains the core redant framework which includes parsing,test_list_builder,test_runner,runner_thread and redant_main.<br>
+support: consists of the libs and ops that will help in running the test cases and the mixin class.<br>
+tests: holds the test cases as performace and functional tests and includes parent test. Add any new test cases here.<br>
 
 ### To start Working:
 
@@ -21,8 +22,9 @@ tests: holds the test cases. Add any new test cases here.<br>
 4. cd `[the-fork]`
 5. Run `pip3 install -r requirements.txt`
 6. To run the sample TC, just run the below cmd after populating the
-config file with relevant values.
-`python3 redant_test_main.py -c parsing/config.yml -t tests/example/`
+config file with relevant values. The command has to be run from the main redant
+reository. The tests path should be given with respect to the redant directory.
+`python3 /core/redant_main.py -c /core/parsing/config.yml -t tests/example/`
 7. Log files can be found at /tmp/redant.log [ default path ].
 For more options, run `python3 redant_main.py --help`
 
