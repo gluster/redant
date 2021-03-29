@@ -28,8 +28,7 @@ def pars_args():
                         dest="test_dir", default=None, type=str, required=True)
     parser.add_argument("-sp", "--specific-test-path",
                         help="Path of the specific test to be run from tests/",
-                        dest="spec_test", default=None, type=str,
-                        required=False)
+                        dest="spec_test", action='store_true', required=False)
     parser.add_argument("-l", "--log-dir",
                         help="The directory wherein log will be stored.",
                         dest="log_dir", default="/tmp/redant", type=str)
@@ -58,7 +57,8 @@ def main():
     mach_conn_dict = ParamsHandler.get_nodes_info()
 
     # Building the test list and obtaining the TC details.
-    test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir)
+    test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
+                                                        args.spec_test)
     test_cases_dict = test_cases_tuple[0]
     test_cases_component = test_cases_tuple[1]
 

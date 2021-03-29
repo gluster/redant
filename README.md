@@ -44,3 +44,10 @@ So for example to see the log files of a test case which is,
 one would have to go to the directory,
 `<base_log_dir>/functional/glusterd/test_sample_glusterd/`, which will inturn
 contain the log files specific to volume type.
+
+In addition to running TCs from within a suite, either performance or
+functional or even under a more granular level of component, one can select to
+run a specific TC also. To do this, one simply has to use the `-sp` flag while
+invoking redant and instead of the directory path provide the path of the TC.
+For example,
+`python3 core/redant_main.py core/parsing/config.yml -t tests/example/sample_component/test_sample.py -sp`

@@ -29,13 +29,15 @@ class TestListBuilder:
                                  "example": set([])}
 
     @classmethod
-    def create_test_dict(cls, path: str) -> tuple:
+    def create_test_dict(cls, path: str, single_tc: bool=False) -> tuple:
         """
         This method creates a dict of TCs wrt the given directory
         path.
         Args:
             path (str): The directory path which contains the TCs
             to be run.
+            single_tc (bool): If the user wants to run a single TC instead
+            of the complete suite.
         Returns:
             A Tuple of the following format
             ({
@@ -73,15 +75,18 @@ class TestListBuilder:
             }
         """
         # Obtaining list of paths to the TCs under given directory.
-        try:
-            for root, _, files in os.walk(path):
-                for tfile in files:
-                    if tfile.endswith(".py") and tfile.startswith("test"):
-                        cls.tests_to_run.append(os.path.join(root, tfile))
+        if not single_tc:
+            try:
+                for root, _, files in os.walk(path):
+                    for tfile in files:
+                        if tfile.endswith(".py") and tfile.startswith("test"):
+                            cls.tests_to_run.append(os.path.join(root, tfile))
 
-        except Exception as e:
-            print(e)
-            return {}
+            except Exception as e:
+                print(e)
+                return {}
+        else:
+            cls.tests_to_run.append(path)
 
         # Extracting the test case flags and adding module level info.
         for test_case_path in cls.tests_to_run:
