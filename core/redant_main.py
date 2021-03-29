@@ -10,7 +10,7 @@ import argparse
 from core.parsing.params_handler import ParamsHandler
 from core.test_list_builder import TestListBuilder
 from core.test_runner import TestRunner
-from result_handler import ResultHandler
+from core.result_handler import ResultHandler
 import time
 
 def pars_args():
@@ -39,6 +39,9 @@ def pars_args():
     parser.add_argument("-cc", "--concurrency-count",
                         help="Number of concurrent test runs",
                         dest="semaphore_count", default=4, type=int)
+    parser.add_argument("-rf", "--result-file",
+                        help="Result file. By default it will be None",
+                        dest="result_path", default=None, type=str)
     return parser.parse_args()
 
 
@@ -79,9 +82,13 @@ def main():
                     args.log_level, args.semaphore_count)
     all_test_results = TestRunner.run_tests()
 
-    ResultHandler.display_test_results(all_test_results)
-
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
+    
+    if args.result_path == None:
+        ResultHandler.display_test_results(all_test_results)
+    else:
+        ResultHandler.store_results(all_test_results, args.result_path)
+
 
 
 
