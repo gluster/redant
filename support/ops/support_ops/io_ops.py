@@ -18,9 +18,8 @@ class io_ops:
 
         Args:
             node (str): The node in the cluster where the command is to be run
-            file_path (str): The name of the file to be created            
+            file_path (str): The name of the file to be created
         """
-
         cmd = f"touch {file_path}"
 
         self.rlog(f"Running {cmd} on node {node}")
@@ -33,15 +32,15 @@ class io_ops:
 
         self.rlog(f"Successfully ran {cmd} on {node}")
 
-
-    def mkdir(self, node: str, dir_path: str, parents: bool=False, mode: str=None):
+    def mkdir(self, node: str, dir_path: str, parents: bool = False,
+              mode: str = None):
         '''
         Creates a directory
 
         Args:
-            node (str): The node in the cluster where the command is to be run
-            dir_path (str): The name of the directory to be created
-            parents (bool, optional): Create parent directories if do not exist.
+            node (str): The node in the cluster where the command is to be run.
+            dir_path (str): The name of the directory to be created.
+            parents (bool, optional): Create parent directories if not exist.
             mode (str, optional): The initial mode of the directory.
         '''
 
@@ -64,16 +63,15 @@ class io_ops:
 
         self.rlog(f"Successfully ran {cmd} on {node}")
 
-
-    def rmdir(self, node: str, dir_path: str, force: bool=False):
+    def rmdir(self, node: str, dir_path: str, force: bool = False):
         """
         Remove a directory.
 
         Args:
             node (str): The hostname of the node where command is to be run.
             dir_path (str): The path to the file.
-            force (bool, optional): Remove directory with recursive file delete.
-        """
+            force (bool, optional):Remove directory with recursive file delete.
+            """
         cmd_list = ['rmdir']
         if force:
             cmd_list = ["rm"]
@@ -91,7 +89,6 @@ class io_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.rlog("Successfully ran {cmd} on {node}")
-
 
     def ls(self, node: str, path: str):
         '''
@@ -114,7 +111,6 @@ class io_ops:
 
         self.rlog(f"Successfully ran {cmd} on {node}")
 
-
     def file_exists(self, node: str, file_path: str):
         """
         Check if file exists at path on node
@@ -123,7 +119,7 @@ class io_ops:
             node (str): The hostname of the node  on which command is to be run
             file_path (str): The path of the file
         """
-    
+
         cmd = f"ls -ld {file_path}"
 
         self.rlog(f"Running {cmd} on node {node}")
@@ -135,7 +131,6 @@ class io_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.rlog("Successfully ran {cmd} on {node}")
-
 
     def run(self, node: str, cmd: str):
         '''
