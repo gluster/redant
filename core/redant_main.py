@@ -5,7 +5,6 @@ This module takes care of:
 3) Invocation of the test_runner.
 """
 
-import os
 import sys
 import argparse
 from parsing.params_handler import ParamsHandler
@@ -66,7 +65,8 @@ def main():
     # Creating log dirs.
     sys.path.insert(1, ".")
     from support.ops.support_ops.relog import Logger
-    Logger.log_dir_creation(args.log_dir, test_cases_component, test_cases_dict)
+    Logger.log_dir_creation(args.log_dir, test_cases_component,
+                            test_cases_dict)
 
     # Pre test run test list builder is modified.
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)

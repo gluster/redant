@@ -1,6 +1,5 @@
 import concurrent.futures
 import paramiko
-import yaml
 import xmltodict
 
 
@@ -61,7 +60,7 @@ class Rexe:
                 self.rlog(f"SSH connection to {node} is successful.", 'D')
                 self.node_dict[node] = node_ssh_client
             except Exception as e:
-                self.rlog(f"Connection failure. Exception : {e}", 'E')
+                self.rlog(f"Connection failure. Exception {e}", 'E')
         if stdout.channel.recv_exit_status() != 0:
             ret_dict['Flag'] = False
             ret_dict['msg'] = stdout.readlines()

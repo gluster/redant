@@ -50,44 +50,44 @@ class Logger(logging.Logger):
     @classmethod
     def log_dir_creation(cls, path: str, component_dict: dict,
                          test_dict: dict):
-        """                                                                         
+        """
         Module for Redant logg dir creation.
-        Args:                                                                       
-            path (str): The directory path.                                            
-            component_dict (dict): The dict containing component lists                 
-            example,                                                                   
-                   {                                                                   
-                     "functional" : ["component1", "component2", ...],                 
-                     "performance" : ["component1", "component2", ...],                
-                     "example" : ["component1", "component2", ...]                     
-                   }                                                                   
-            test_dict (dict): Dictionary containing list of TCs                        
-            example,                                                                   
-                    {                                                                  
-                      "disruptive" : [                                                 
-                                       {                                               
-                                         "volType" : ["volT1", "volT2",..],            
-                                         "modulePath" : "module_path",                 
-                                         "moduleName" : "module_name",                 
-                                         "componentName" : "component_name",           
-                                         "testClass" : "test_class",                   
-                                         "testType" : "test_type"                      
-                                       },                                              
-                                       {                                               
-                                         ...                                           
-                                       }                                               
-                                     ],                                                
-                     "nonDisruptive" : [                                               
-                                         {                                             
-                                           "volType" : ["volT1", "volT2",..],          
-                                           "modulePath" : "module_path",               
-                                           "moduleName" : "module_name",               
-                                           "componentName" : "component_name",         
-                                           "testClass" : "test_class",                 
-                                           "testType" : "test_type"                    
-                                         },                                            
-                                         {                                             
+        Args:
+            path (str): The directory path.
+            component_dict (dict): The dict containing component lists
+            example,
+                   {
+                     "functional" : ["component1", "component2", ...],
+                     "performance" : ["component1", "component2", ...],
+                     "example" : ["component1", "component2", ...]
+                   }
+            test_dict (dict): Dictionary containing list of TCs
+            example,
+                    {
+                      "disruptive" : [
+                                       {
+                                         "volType" : ["volT1", "volT2",..],
+                                         "modulePath" : "module_path",
+                                         "moduleName" : "module_name",
+                                         "componentName" : "component_name",
+                                         "testClass" : "test_class",
+                                         "testType" : "test_type"
+                                       },
+                                       {
                                            ...
+                                       }
+                                     ],
+                     "nonDisruptive" : [
+                                         {
+                                           "volType" : ["volT1", "volT2",..],
+                                           "modulePath" : "module_path",
+                                           "moduleName" : "module_name",
+                                           "componentName" : "component_name",
+                                           "testClass" : "test_class",
+                                           "testType" : "test_type"
+                                         },
+                                         {
+                                             ...
                                          }
                                       ]
                    }
