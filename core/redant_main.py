@@ -83,12 +83,8 @@ def main():
     all_test_results = TestRunner.run_tests()
 
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
-    
-    if args.result_path == None:
-        ResultHandler.display_test_results(all_test_results)
-    else:
-        ResultHandler.store_results(all_test_results, args.result_path)
 
+    ResultHandler.handle_results(all_test_results, args.result_path)
 
 
 
