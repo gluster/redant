@@ -28,7 +28,7 @@ class GlusterOps:
             self.rlog(ret['error_msg'], 'E')
             raise Exception(ret['error_msg'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
 
     def glusterd_stop(self, node: str):
         """
@@ -47,7 +47,7 @@ class GlusterOps:
             self.rlog(ret['error_msg'], 'E')
             raise Exception(ret['error_msg'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
 
     def is_glusterd_active(self, node: str) -> bool:
         """
@@ -75,7 +75,7 @@ class GlusterOps:
             ret1 = self.execute_command(node=node, cmd=cmd2)
             if ret1['error_code'] == 0:
                 is_active = -1
-                self.rlog("Successfully ran {cmd2} on {node}")
+                self.rlog(f"Successfully ran {cmd2} on {node}")
 
-        self.rlog("Successfully ran {cmd1} on {node}")
+        self.rlog(f"Successfully ran {cmd1} on {node}")
         return is_active

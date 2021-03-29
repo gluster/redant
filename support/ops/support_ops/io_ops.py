@@ -28,7 +28,7 @@ class io_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
 
     def mkdir(self, dir_path: str, node: str):
         '''Creates a directory
@@ -46,7 +46,7 @@ class io_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
 
     def ls(self, node: str, path: str):
         '''List the directory contents
@@ -64,7 +64,7 @@ class io_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
 
     def run(self, node: str, cmd: str):
         '''Used for non-standard IO commands
@@ -80,4 +80,4 @@ class io_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")

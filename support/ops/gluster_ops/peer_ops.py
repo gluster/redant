@@ -43,7 +43,7 @@ class peer_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
         return ret
 
     def peer_detach(self, node: str, server: str, force: bool = False):
@@ -82,7 +82,7 @@ class peer_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
         return ret
 
     def peer_status(self, node: str):
@@ -116,7 +116,7 @@ class peer_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
         return ret
 
     def pool_list(self, node: str):
@@ -148,5 +148,5 @@ class peer_ops:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
         return ret

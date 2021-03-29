@@ -33,7 +33,7 @@ class VolumeOps:
             self.rlog(ret['msg']['opErrstr'], 'E')
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog("Successfully ran {cmd} on {node}")
+        self.rlog(f"Successfully ran {cmd} on {node}")
 
     def volume_create(self, node: str, volname: str,
                       bricks_list: list, force: bool = False,
