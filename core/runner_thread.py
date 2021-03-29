@@ -2,7 +2,6 @@
 The thread runner is responsible for the execution of a given TC.
 """
 
-
 class RunnerThread:
     """
     Runner thread will be encapsulating the functionalities for generically
@@ -18,6 +17,10 @@ class RunnerThread:
                                log_path, log_level)
         self.run_test_func = getattr(self.tc_obj, "run_test")
         self.terminate_test_func = getattr(self.tc_obj, "terminate")
+        self.test_stats = {
+            'timeTaken':0,
+            'volType': volume_type
+        }
 
     def run_thread(self):
         """
@@ -25,4 +28,5 @@ class RunnerThread:
         """
         self.run_test_func()
         self.terminate_test_func()
-        return self.tc_obj.TEST_RES
+        self.test_stats['testResult'] = self.tc_obj.TEST_RES
+        return self.test_stats

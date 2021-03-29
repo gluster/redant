@@ -7,10 +7,11 @@ This module takes care of:
 
 import sys
 import argparse
-from parsing.params_handler import ParamsHandler
-from test_list_builder import TestListBuilder
-from test_runner import TestRunner
-
+from core.parsing.params_handler import ParamsHandler
+from core.test_list_builder import TestListBuilder
+from core.test_runner import TestRunner
+from core.result_handler import ResultHandler
+import time
 
 def pars_args():
     """
@@ -38,6 +39,9 @@ def pars_args():
     parser.add_argument("-cc", "--concurrency-count",
                         help="Number of concurrent test runs",
                         dest="semaphore_count", default=4, type=int)
+    parser.add_argument("-rf", "--result-file",
+                        help="Result file. By default it will be None",
+                        dest="result_path", default=None, type=str)
     return parser.parse_args()
 
 
@@ -49,6 +53,8 @@ def main():
     3. Invoking the test_list_builder to build the TC run order.
     4. Passing the details to the test_runner.
     """
+
+    start = time.time()
     args = pars_args()
 
     ParamsHandler.get_config_hashmap(args.config_file)
@@ -74,7 +80,12 @@ def main():
     # invoke the test_runner.
     TestRunner.init(test_cases_dict, mach_conn_dict, args.log_dir,
                     args.log_level, args.semaphore_count)
-    TestRunner.run_tests()
+    all_test_results = TestRunner.run_tests()
+
+    print(f"\nTotal time taken by the framework: {time.time()-start} sec")
+
+    ResultHandler.handle_results(all_test_results, args.result_path)
+
 
 
 if __name__ == '__main__':

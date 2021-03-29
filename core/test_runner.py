@@ -4,9 +4,9 @@ to be run and invoking them.
 """
 import uuid
 from colorama import Fore, Style
-from runner_thread import RunnerThread
+from core.runner_thread import RunnerThread
 from threading import Thread, Semaphore
-
+import time
 
 class TestRunner:
     """
@@ -25,6 +25,7 @@ class TestRunner:
         cls.concur_test = test_run_dict["nonDisruptive"]
         cls.non_concur_test = test_run_dict["disruptive"]
         cls.threadList = []
+        cls.test_results = {}
         cls._prepare_thread_tests()
 
     @classmethod
@@ -35,11 +36,20 @@ class TestRunner:
         """
         for test_thread in cls.threadList:
             test_thread.start()
+
         for test_thread in cls.threadList:
             test_thread.join()
+
         thread_flag = False
+        
         for test in cls.non_concur_test:
+            cls.test_results[test['moduleName'][:-3]] = []
+        
+        for test in cls.non_concur_test:   
             cls._run_test(test, thread_flag)
+            
+
+        return cls.test_results
 
     @classmethod
     def _prepare_thread_tests(cls):
@@ -47,10 +57,13 @@ class TestRunner:
         This method creates the threadlist for non disruptive tests
         """
         thread_flag = True
+        
+        for test in cls.concur_test:
+            cls.test_results[test['moduleName'][:-3]] = []
+        
         for test in cls.concur_test:
             cls.threadList.append(Thread(target=cls._run_test,
                                          args=(test, thread_flag,)))
-
     @classmethod
     def _run_test(cls, test_dict: dict, thread_flag: bool):
         """
@@ -63,20 +76,29 @@ class TestRunner:
         tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
             test_dict["moduleName"][:-3]+"-"+test_dict["volType"]\
             + ".log"
+        
+        # to calculate time spent to execute the test
+        start = time.time()
         runner_thread_obj = RunnerThread(str(uuid.uuid1().int), tc_class,
                                          cls.mach_conn_dict["clients"],
                                          cls.mach_conn_dict["servers"],
                                          test_dict["volType"], tc_log_path,
                                          cls.log_level)
-        test_result = runner_thread_obj.run_thread()
+        test_stats = runner_thread_obj.run_thread()
+        
+        test_stats['timeTaken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
-        if test_result:
+        if test_stats['testResult']:
+            test_stats['testResult'] = "PASS"
             result_text += " PASS"
             print(Fore.GREEN + result_text)
             print(Style.RESET_ALL)
         else:
             result_text += " FAIL"
+            test_stats['testResult'] = "FAIL"
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
         if thread_flag:
             cls.semaphore.release()
+
+        cls.test_results[test_dict['moduleName'][:-3]].append(test_stats)
