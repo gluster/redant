@@ -50,4 +50,4 @@ functional or even under a more granular level of component, one can select to
 run a specific TC also. To do this, one simply has to use the `-sp` flag while
 invoking redant and instead of the directory path provide the path of the TC.
 For example,
-`python3 core/redant_main.py core/parsing/config.yml -t tests/example/sample_component/test_sample.py -sp`
+`python3 core/redant_main.py -c core/parsing/config.yml -t tests/example/sample_component/test_sample.py -sp`
