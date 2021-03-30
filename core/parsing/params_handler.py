@@ -3,7 +3,7 @@ This module contains one class - ParamsHandler,
 which contains APIs for configuration parameter
 parsing.
 """
-from core.parsing.test_parser import Parser
+from parsing.test_parser import Parser
 
 
 class ParamsHandler:

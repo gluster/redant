@@ -7,10 +7,10 @@ This module takes care of:
 
 import sys
 import argparse
-from core.parsing.params_handler import ParamsHandler
-from core.test_list_builder import TestListBuilder
-from core.test_runner import TestRunner
-from core.result_handler import ResultHandler
+from parsing.params_handler import ParamsHandler
+from test_list_builder import TestListBuilder
+from test_runner import TestRunner
+from result_handler import ResultHandler
 import time
 
 def pars_args():

@@ -4,7 +4,7 @@ to be run and invoking them.
 """
 import uuid
 from colorama import Fore, Style
-from core.runner_thread import RunnerThread
+from runner_thread import RunnerThread
 from threading import Thread, Semaphore
 import time
 
