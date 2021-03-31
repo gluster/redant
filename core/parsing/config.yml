@@ -139,17 +139,11 @@ gluster:
 
     # 'volumes' is list of all the volumes that we need to refer in the
     # testcases. Each item in the list is the details about the volume.
-    # The volume should have 'name', 'voltype', 'servers' info defined.
+    # The volume should have 'name', 'voltype' info defined.
     volumes:
         - &vol1
             name: testvol
             voltype: *distributed_dispersed
-            servers: [ *server-vm1, *server-vm2, *server-vm3, *server-vm4 ]
-
-    # 'extra_servers' - To be used in case of add new servers to the cluster
-    #                   in case of add-brick, replace-brick, attach-tier etc.
-            #extra_servers: [ *server-vm9, *server-vm10,
-            #                 *server-vm11, *server-vm12 ]
 
     # 'tier' -  Tiering related info. set 'create_tier' to 'true' to attach
     #           tier during volume setup when the tests calls glusto-tests
@@ -209,28 +203,3 @@ gluster:
     #       volume_setup for setting up volume.
             uss:
                 enable: False
-                
-
-    # 'mounts' is list of all mount points info.Each item in the list is the
-    # details about the mountpoint. i.e 'protocol', 'server', 'volname',
-    # 'client_info'('host', 'super_user', 'platform'), mountpoint,
-    # mount options.In case of cifs/smb mount 'smbuser', 'smbpasswd' is also
-    # required.
-    mounts:
-        - &mount1
-            protocol: 'glusterfs'
-            server: *server-vm1
-            volname: testvol
-            client:
-                host: *client_vm1
-            mountpoint: ''
-            options: ''
-        - &mount2
-            protocol: 'nfs'
-            server: *server-vm1
-            volname: testvol
-            client:
-                host: *client_vm2
-            mountpoint: ''
-            options: ''
-            num_of_mounts: 1
