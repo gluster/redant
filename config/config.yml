@@ -1,5 +1,3 @@
-log_file: /var/log/tests/gluster_tests.log
-
 # 'servers' is list of IP's of servers in the cluster.
 # This section has to be defined.
 # Below x denotes integer
@@ -141,17 +139,14 @@ gluster:
     # testcases. Each item in the list is the details about the volume.
     # The volume should have 'name', 'voltype' info defined.
     volumes:
-        - &vol1
-            name: testvol
-            voltype: *distributed_dispersed
-
+    
     # 'tier' -  Tiering related info. set 'create_tier' to 'true' to attach
     #           tier during volume setup when the tests calls glusto-tests
     #           volume_setup for setting up volume.
     #           'tier_type' defines the tier volume type.
-            tier:
-                create_tier: False
-                tier_type: *distributed_replicated
+        tier:
+            create_tier: False
+            tier_type: *distributed_replicated
 
     # 'quota' - Quota related info. setting 'enable' to 'True' enables quota
     #           during volume setup when the tests calls glusto-tests
@@ -159,21 +154,21 @@ gluster:
     #           Other details of  quota like 'limit_usage', 'limit_objects',
     #           'alert_time', 'soft_timeout', 'hard_timeout' can be defined
     #           in this section and referred in test cases using 'g.config'.
-            quota:
-                enable: False
-                limit_usage:
-                    path: "/"
-                    size: 100GB
-                    percent:
-                limit_objects:
-                    path: "/"
-                    number:
-                    percent:
-                alert_time: 0
-                soft_timeout: 0
-                hard_timeout: 0
-            inode_quota:
-                enable: False
+        quota:
+            enable: False
+            limit_usage:
+                path: "/"
+                size: 100GB
+                percent:
+            limit_objects:
+                path: "/"
+                number:
+                percent:
+            alert_time: 0
+            soft_timeout: 0
+            hard_timeout: 0
+        inode_quota:
+            enable: False
 
     # 'bitrot'- Bitrot related info. setting  'enable' to 'True' will enable
     #           bitrot during volume setup when the tests calls glusto-tests
@@ -181,25 +176,25 @@ gluster:
     #           Other bitrot options like 'scrub_throttle', 'scrub_frequency'
     #           and any other bitrot related info can be defined here and
     #           referred in tets cases using 'g.config'.
-            bitrot:
-                enable: False
-                scrub_throttle: 'aggressive'
-                scrub_frequency: 'hourly'
+        bitrot:
+            enable: False
+            scrub_throttle: 'aggressive'
+            scrub_frequency: 'hourly'
 
     # 'options'- Define volume options and it's values to be set during volume
     #           setup when the tests calls glusto-tests volume_setup for
     #           setting up the volume.
-            options:
-                performance.readdir-ahead: "on"
+        options:
+            performance.readdir-ahead: "on"
 
     # 'snapshot'- snapshot related info.
-            snapshot:
-                use_snapshot: True
-                snap_jobname: 'snap_job'
-                snap_schedule: 2
+        snapshot:
+            use_snapshot: True
+            snap_jobname: 'snap_job'
+            snap_schedule: 2
 
     # 'uss'- USS related info. setting  'enable' to 'True' will enable
     #       USS during volume setup when the tests calls glusto-tests
     #       volume_setup for setting up volume.
-            uss:
-                enable: False
+        uss:
+            enable: False
