@@ -24,17 +24,41 @@ class VolumeOps:
             path (str): The path of the mount directory(mount point)
         """
 
-        cmd = f"mount -t glusterfs {server}:/{volname} /{path}"
+        cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
         self.rlog(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
-        if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
-            raise Exception(ret['msg']['opErrstr'])
+        if int(ret["error_code"]) != 0:
+            self.rlog(ret["error_msg"], 'E')
+            raise Exception(ret["error_msg"])
 
         self.rlog(f"Successfully ran {cmd} on {node}")
+        
+    def volume_unmount(self, path: str, node: str=None):
+        """
+        Unmounts the gluster volume .
+        Args:
+            node (str): The client node in the cluster where volume
+                        unmount is to be run
+            server (str): Hostname or IP address
+            volname (str): Name of volume to be mounted
+            path (str): The path of the mount directory(mount point)
+        """
+        
+        cmd = f"umount {path}"
+        
+        self.rlog(f"Running {cmd} on node {node}")
+
+        ret = self.execute_command(node=node, cmd=cmd)
+
+        if int(ret["error_code"]) != 0:
+            self.rlog(ret["error_msg"], 'E')
+            raise Exception(ret["error_msg"])
+
+        self.rlog(f"Successfully ran {cmd} on {node}")
+        
 
     def volume_create(self, volname: str, bricks_list: list,
                       node : str=None, force: bool = False,
