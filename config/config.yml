@@ -64,25 +64,6 @@ clients_info:
 # under this section.
 gluster:
 
-    # This is to define what volume types and mount protocols will be run
-    # in this current test run.
-    running_on_volumes: []  
-    running_on_mounts: []
-
-    # This is to define what are the server log directories and client log
-    # directories to inject any message required for debugging.
-    server_gluster_logs_info:
-        # Defaults- ["/var/log/glusterfs", "/var/log/samba"]
-        dirs: []
-        # Defaults- ["/var/log/ganesha.log", "/var/log/ganesha-gfapi.log"]
-        files: []
-
-    client_gluster_logs_info:
-        # Defaults- ["/var/log/glusterfs"]
-        dirs: []
-        # Defaults- []
-        files: []
-
     # 'volume_types' defines different volume types that we can create in
     # gluster and we have default values assigned to each of the volume
     # type to run the tests. This can be modified based on the
