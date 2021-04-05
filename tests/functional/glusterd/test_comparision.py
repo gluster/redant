@@ -16,13 +16,14 @@ class TestCase(ParentTest):
     def run_test(self):
         """
         The following steps are undertaken in the testcase:
-        1) glusterd service is started on the server
-        2) Volumes are created
-        3) Volumes are started
-        4) Volume list is fetched
-        5) volume options are set on all volumes
-        6) Volumes are stopped
-        7) glusterd service is stopped
+        1) Volume is created
+        2) Volume is started
+        3) Volume status is fetched
+        4) Mountpoint is mounted to volume
+        5) Io operations are performed
+        6) Volume is Stopped
+        7) Volume is Deleted
+        8) Mountpoint is unmounted
         """
         server = self.server_list[0]
         try:
