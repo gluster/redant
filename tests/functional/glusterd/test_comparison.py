@@ -38,8 +38,8 @@ class TestCase(ParentTest):
                                       [f"{servera}:/glusterfs/brick/brick1",
                                       f"{serverb}:/glusterfs/brick/brick2",
                                       f"{serverc}:/glusterfs/brick/brick3"],
-                                      servera, force=True)
-            self.redant.volume_start(volname,servera)
+                                      serverb, force=True)
+            self.redant.volume_start(volname,serverc)
             volume_status1 = self.redant.get_volume_status(serverb,volname)
             volume_status2 = self.redant.get_volume_status(serverc,volname)
             self.redant.run(serverb, f"mkdir -p {mountpoint}")
