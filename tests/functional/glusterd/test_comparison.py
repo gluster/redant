@@ -31,6 +31,7 @@ class TestCase(ParentTest):
         try:
             self.redant.peer_probe(servera, serverb)
             self.redant.peer_probe(serverc, serverb)
+            self.redant.peer_status(serverb)
             volname = "test-vol1"
             mountpoint = "/mnt/dist"
             self.redant.run(servera,"ls -l /root")
