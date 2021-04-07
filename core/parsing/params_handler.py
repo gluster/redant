@@ -128,7 +128,7 @@ class ParamsHandler:
 
         for i, ip in enumerate(servers_ip_list):
             servers_info = {}
-            servers_info["hostname"] = f"server-vm{i+1}"
+            servers_info["hostname"] = s_info[ip]["hostname"]
             servers_info["ip"] = ip
             servers_info["user"] = s_info[ip]["user"]
             servers_info["passwd"] = s_info[ip]["passwd"]
@@ -137,7 +137,7 @@ class ParamsHandler:
 
         for i, ip in enumerate(clients_ip_list):
             clients_info = {}
-            clients_info["hostname"] = f"client_vm{i+1}"
+            clients_info["hostname"] = c_info[ip]["hostname"]
             clients_info["ip"] = ip
             clients_info["user"] = c_info[ip]["user"]
             clients_info["passwd"] = c_info[ip]["passwd"]

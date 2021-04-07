@@ -30,18 +30,22 @@ clients:
 
 servers_info:
     *server-vm1: &server1
+        hostname: "snode1"
         brick_root: ["/bricks"] #Example- brick_root: ["/bricks","/gluster"]
         user: "root"
         passwd: "redhat"
     *server-vm2: &server2
+        hostname: "snode2"
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
     *server-vm3: &server3
+        hostname: "snode3"
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
     *server-vm4: &server4
+        hostname: "snode4"
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
@@ -53,9 +57,11 @@ servers_info:
 # This section has to be defined.
 clients_info:
     *client_vm1: &client1
+        hostname: "cnode1"
         user: "root"
         passwd: "redhat"
     *client_vm2: &client2
+        hostame: "cnode2"
         user: 'root'
         passwd: "redhat"
 
