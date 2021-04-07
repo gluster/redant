@@ -30,6 +30,9 @@ class TestCase(ParentTest):
             self.redant.pool_list(server1)
 
             self.redant.peer_detach(server1, server2)
+            
+            server_list = [server1,server2]
+            self.redant.create_cluster(server_list)
 
         except Exception as e:
             self.TEST_RES = False
