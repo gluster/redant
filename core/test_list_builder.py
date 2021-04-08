@@ -228,7 +228,8 @@ class TestListBuilder:
         tc_flags = {}
         tc_flags["tcNature"] = flags.split(';')[0]
         tc_flags["volType"] = flags.split(';')[1].split(',')
-
+        if tc_flags["volType"] == ['']:
+            tc_flags["volType"] = ["Generic"]
         return tc_flags
 
     @classmethod
