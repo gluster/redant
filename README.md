@@ -51,3 +51,7 @@ run a specific TC also. To do this, one simply has to use the `-sp` flag while
 invoking redant and instead of the directory path provide the path of the TC.
 For example,
 `python3 core/redant_main.py -c core/parsing/config.yml -t tests/example/sample_component/test_sample.py -sp`
+
+
+To clean out the cache files being added, one can use the `clean_pycache` BASH
+script under the tools dir. 
