@@ -23,7 +23,7 @@ class Rexe:
                 paramiko.AutoAddPolicy())
             try:
                 node_ssh_client.connect(
-                    hostname=self.host_dict[node]['ip'],
+                    hostname=node,
                     username=self.host_dict[node]['user'],
                     password=self.host_dict[node]['passwd'])
                 self.logger.debug(f"SSH connection to {node} is successful.")
@@ -49,7 +49,7 @@ class Rexe:
                 paramiko.AutoAddPolicy())
             try:
                 node_ssh_client.connect(
-                    hostname=self.host_dict[node]['ip'],
+                    hostname=node,
                     username=self.host_dict[node]['user'],
                     password=self.host_dict[node]['passwd'])
                 self.logger.debug(f"SSH connection to {node} is successful.")

@@ -4,35 +4,29 @@
 
 #servers_info - All the relevant information about the servers
 servers_info:
-    server1:
-        ip: "1.1.1.1"
+    "1.1.1.1":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    server2:
-        ip: "2.2.2.2"
+    "2.2.2.2":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    server3:
-        ip: "3.3.3.3"
+    "3.3.3.3":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    server4:
-        ip: "4.4.4.4"
+    "4.4.4.4":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
         
 #clients_info - All the relevant information about the clients
 clients_info:
-    client1:
-        ip: "5.5.5.5"
+    "5.5.5.5":
         user: "root"
         passwd: "redhat"
-    client2:
-        ip: "6.6.6.6"
+    "6.6.6.6":
         user: 'root'
         passwd: "redhat"
 

@@ -25,46 +25,13 @@ class ParamsHandler:
         cls.config_hashmap = Parser.generate_config_hashmap(filepath)
 
     @classmethod
-    def get_server_ip(cls, server_name: str) -> str:
-        """
-        Gives the server ip given the server name
-        Args:
-            server_name: name of the server as in config file.
-                         example: server-vm1
-        Returns:
-            str: ip address of the given server
-        Example:
-            get_server_ip("server-vm1")
-        """
-        server_ip = cls.config_hashmap['servers_info'][server_name]["ip"]
-        return server_ip
-
-    @classmethod
-    def get_client_ip(cls, client_name: str) -> str:
-        """
-        Gives the client ip given the client name
-        Args:
-            client_name: name of the client as in config file.
-                         example: client_vm1
-        Returns:
-            ip address of the given client
-        Example:
-            str: get_client_ip("client_vm1")
-        """
-        client_ip = cls.config_hashmap['clients_info'][client_name]["ip"]
-        return client_ip
-
-    @classmethod
     def get_server_ip_list(cls) -> list:
         """
         Gives the list of all server ip
         Returns:
             list: list of all server ip address
         """ 
-        servers = list(cls.config_hashmap['servers_info'].keys())
-        server_ip_list = []
-        for server in servers:
-            server_ip_list.append(cls.get_server_ip(server))
+        server_ip_list = list(cls.config_hashmap['servers_info'].keys())
         return server_ip_list
         
 
@@ -75,10 +42,7 @@ class ParamsHandler:
         Returns:
             list: list of all client ip address
         """
-        clients = list(cls.config_hashmap['clients_info'].keys())
-        client_ip_list = []
-        for client in clients:
-            client_ip_list.append(cls.get_client_ip(client))
+        client_ip_list = list(cls.config_hashmap['clients_info'].keys())
         return client_ip_list
 
     @classmethod
@@ -90,25 +54,21 @@ class ParamsHandler:
         format of dictionary:
         {
             servers: {
-                        "server1": {
-                            "ip" : 10.4.28.93
+                        "10.4.28.93": {
                             "user" : root
                             "passwd" : redhat
                         },
-                        "server2": {
-                            "ip" : 23.43.12.87
+                        "23.43.12.87": { 
                             "user" : root
                             "passwd" : redhat
                         }
             }
             clients: {
-                        "client1": {
-                            "ip" : 10.3.28.92
+                        "10.3.28.92": {
                             "user" : root
                             "passwd" : redhat
                         },
-                        "client2": {
-                            "ip" : 15.12.43.98
+                        "15.12.43.98": {
                             "user" : root
                             "passwd" : redhat
                         }
@@ -131,7 +91,7 @@ class ParamsHandler:
         return nodes_info
 
     @classmethod
-    def get_brick_root_list(cls, server_name: str) -> list:
+    def get_brick_root_list(cls, server_ip: str) -> list:
         """
         Returns the list of brick root given the server name
         Args:
@@ -143,5 +103,5 @@ class ParamsHandler:
             get_brick_root_list("server-vm1")
         """
         servers_info = cls.config_hashmap['servers_info']
-        brick_root_list = servers_info[server_name]['brick_root']
+        brick_root_list = servers_info[server_ip]['brick_root']
         return brick_root_list
