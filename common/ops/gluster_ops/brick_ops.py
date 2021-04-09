@@ -85,14 +85,14 @@ class BrickOps:
             bricks_list (list): List of bricks to be removed
             option (str): Remove brick options: <start|stop|status|commit|force>
     Kwargs:
-        
+
         **kwargs
             The keys, values in kwargs are:
                 - replica_count : (int)|None
 
         """
         option = option + ' --mode=script'
-        
+
         replica_count = None
         replica = ''
 
@@ -101,10 +101,37 @@ class BrickOps:
 
         if replica_count is not None:
             replica = f'replica {replica_count}'
-        
+
         cmd = (f"gluster volume remove-brick "
                f"{volname} {replica} {' '.join(bricks_list)} "
                f"{option} --xml")
+        self.logger.info(f"Running {cmd} on node {node}")
+
+        ret = self.execute_command(node=node, cmd=cmd)
+
+        if int(ret['msg']['opRet']) != 0:
+            self.logger.error(ret['msg']['opErrstr'])
+            raise Exception(ret['msg']['opErrstr'])
+
+        self.logger.info(f"Successfully ran {cmd} on {node}")
+
+    def replace_brick(self, node: str, volname: str,
+                      src_brick: str, dest_brick: str):
+        """
+        This function replaces one brick(source brick)
+        with the another brick(destination brick) on the volume.
+
+        Args:
+            node (str): The node on which the command has to be executed
+            volname (str): The volume on which the bricks have to be replaced.
+            src_brick (str) : The source brick name
+            dest_brick (str) : The destination brick name
+        
+        """
+        cmd = (f"gluster volume replace-brick "
+               f"{volname} {src_brick} {dest_brick} "
+               f"commit force --xml")
+
         self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
