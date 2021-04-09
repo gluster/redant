@@ -36,8 +36,7 @@ class ParamsHandler:
         Example:
             get_server_ip("server-vm1")
         """
-        index = server_name[9:]
-        server_ip = cls.config_hashmap['servers'][int(index)-1]
+        server_ip = cls.config_hashmap['servers_info'][server_name]["ip"]
         return server_ip
 
     @classmethod
@@ -52,8 +51,7 @@ class ParamsHandler:
         Example:
             str: get_client_ip("client_vm1")
         """
-        index = client_name[9:]
-        client_ip = cls.config_hashmap['clients'][int(index)-1]
+        client_ip = cls.config_hashmap['clients_info'][client_name]["ip"]
         return client_ip
 
     @classmethod
@@ -62,9 +60,13 @@ class ParamsHandler:
         Gives the list of all server ip
         Returns:
             list: list of all server ip address
-        """
-        server_ip_list = cls.config_hashmap['servers']
+        """ 
+        servers = list(cls.config_hashmap['servers_info'].keys())
+        server_ip_list = []
+        for server in servers:
+            server_ip_list.append(cls.get_server_ip(server))
         return server_ip_list
+        
 
     @classmethod
     def get_client_ip_list(cls) -> list:
@@ -73,7 +75,10 @@ class ParamsHandler:
         Returns:
             list: list of all client ip address
         """
-        client_ip_list = cls.config_hashmap['clients']
+        clients = list(cls.config_hashmap['clients_info'].keys())
+        client_ip_list = []
+        for client in clients:
+            client_ip_list.append(cls.get_client_ip(client))
         return client_ip_list
 
     @classmethod
@@ -84,65 +89,44 @@ class ParamsHandler:
             dict: dictionary consisting of server info
         format of dictionary:
         {
-            servers: [
-                        {
-                            "hostname" : server-vm1
+            servers: {
+                        "server1": {
                             "ip" : 10.4.28.93
                             "user" : root
                             "passwd" : redhat
                         },
-                        {
-                            "hostname" : server-vm2
+                        "server2": {
                             "ip" : 23.43.12.87
                             "user" : root
                             "passwd" : redhat
                         }
-            ]
-            clients: [
-                        {
-                            "hostname" : client_vm1
+            }
+            clients: {
+                        "client1": {
                             "ip" : 10.3.28.92
                             "user" : root
                             "passwd" : redhat
                         },
-                        {
-                            "hostname" : client_vm2
+                        "client2": {
                             "ip" : 15.12.43.98
                             "user" : root
                             "passwd" : redhat
                         }
-           ]
+           }
         }
         """
 
         nodes_info = {}
-
-        servers_ip_list = cls.get_server_ip_list()
-        clients_ip_list = cls.get_client_ip_list()
-
         s_info = cls.config_hashmap["servers_info"]
         c_info = cls.config_hashmap["clients_info"]
-
-        nodes_info['servers'] = []
-        nodes_info['clients'] = []
-
-        for i, ip in enumerate(servers_ip_list):
-            servers_info = {}
-            servers_info["hostname"] = s_info[ip]["hostname"]
-            servers_info["ip"] = ip
-            servers_info["user"] = s_info[ip]["user"]
-            servers_info["passwd"] = s_info[ip]["passwd"]
-
-            nodes_info["servers"].append(servers_info)
-
-        for i, ip in enumerate(clients_ip_list):
-            clients_info = {}
-            clients_info["hostname"] = c_info[ip]["hostname"]
-            clients_info["ip"] = ip
-            clients_info["user"] = c_info[ip]["user"]
-            clients_info["passwd"] = c_info[ip]["passwd"]
-
-            nodes_info["clients"].append(clients_info)
+        
+        servers = list(s_info.keys())
+        
+        for server in servers:
+            s_info[server].pop("brick_root")
+            
+        nodes_info['servers'] = s_info
+        nodes_info['clients'] = c_info
 
         return nodes_info
 
@@ -158,18 +142,6 @@ class ParamsHandler:
         Example:
             get_brick_root_list("server-vm1")
         """
-        server_ip = cls.get_server_ip(server_name)
         servers_info = cls.config_hashmap['servers_info']
-        brick_root_list = servers_info[server_ip]['brick_root']
+        brick_root_list = servers_info[server_name]['brick_root']
         return brick_root_list
-
-    @classmethod
-    def volume_create_force_option(cls) -> bool:
-        """
-        Returns the flag for volume_create_force option
-        Returns:
-            bool: flag value(True/False) for volume_create_force option
-        """
-        gluster_info = cls.config_hashmap['gluster']
-        volume_create_force = gluster_info['volume_create_force']
-        return volume_create_force

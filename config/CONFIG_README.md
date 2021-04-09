@@ -4,36 +4,45 @@ The config file is a yaml file which defines all the configuration parameters
 to create a test environment under which the test runs.
 The components of the config.yml file are as follows:
 
-<h3>1. servers</h3>
-The servers section consists of all server ip addresses which run the glusterd
-service and provide a storage environment to which the clients mount their 
-filesystem.
-A single server in the config file has to be specified with a reference name 
-followed by ip address in the following way:<br>
-`&server-vm1 0.0.0.0`<br>
-server-vm1 is a reference to its ip address which can be used to refer to its 
-ip address in the further config file or in the test cases. 1 should be replaced
-by other integers in the increasing order while specifying further servers
+<h3>1. servers_info</h3>
+'servers_info' is info about each server in the cluster.<br>
+Each server should contain 4 attributes:<br>
+1) ip: ip address of the server.<br>
+2) brick_root: the list of directories where bricks have to be created.<br>
+3) user: the username of the server for ssh connection.<br>
+4) passwd: the password of the server for ssh connection.<br>
+All the above attributes have to defined by the user.<br>
+If a new server has to added, then it has to follow the convention of the
+previous servers and the name for each server has to be given in the format
+"server<num>" where num(number) is given in numerological order.<br>
 
-<h3>2. clients</h3>
-The clients section consists of all client ip addresses whose file system has to
-be mounted to the glusterfs servers.
-A single client in the config file has to be specified with a reference name 
-followed by ip address in the following way:<br>
-`&client_vm1 0.0.0.0` <br>
-client_vm1 is a reference to its ip address which can be used to refer to its 
-ip address in the further config file or in the test cases. 1 should be replaced
-by other integers in the increasing order while specifying further clients.
+Example format of one server:<br>
 
-<h3>3. servers\_info</h3>
-The 'servers\_info' consists of brick\_root for each server which is a list 
-of all the mount points in the client. 
-The brick\_root list has to be specified in the following way:<br>
-`brick_root: ["/bricks1","/bricks2"]`<br>
-username and password can also be defined for creating ssh connection.
+server1:
+    &nbsp;&nbsp;&nbsp;&nbsp; ip: "1.1.1.1"
+    &nbsp;&nbsp;&nbsp;&nbsp; brick_root: ["/bricks","/gluster"]
+    &nbsp;&nbsp;&nbsp;&nbsp; user: "root"
+    &nbsp;&nbsp;&nbsp;&nbsp; passwd: "redhat"
 
-<h3>4. clients\_info</h3>
- 'clients\_info' is info about each client in  the cluster.
- The info should contain platform(linux),super_user name(root
- in case of linux) as mentioned in the config file.
- username and password can also be defined for creating ssh connection.
+<h3>2. clients_info</h3>
+'clients_info' is info about each server in the cluster.<br>
+Each server should contain 3 attributes:<br>
+1) ip: ip address of the server.<br>
+2) user: the username of the server for ssh connection.<br>
+3) passwd: the password of the server for ssh connection.<br>
+All the above attributes have to defined by the user.<br>
+If a new client has to added, then it has to follow the convention of the
+previous clients and the name for each client has to be given in the format
+"client<num>" where num(number) is given in numerological order.<br>
+
+Example format of one client:<br>
+
+client1:
+   &nbsp;&nbsp;&nbsp;&nbsp; ip: "5.5.5.5"
+   &nbsp;&nbsp;&nbsp;&nbsp; user: "root"
+   &nbsp;&nbsp;&nbsp;&nbsp; passwd: "redhat"
+
+<h3>3. volume_types</h3>
+'volume_types' defines different volume types that we can create in
+gluster and minimum number of servers are assigned to each of the
+volume types to run the tests. This section is not defined by the user.

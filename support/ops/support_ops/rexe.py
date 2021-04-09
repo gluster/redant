@@ -6,12 +6,7 @@ import xmltodict
 class Rexe:
     def __init__(self, host_dict):
         self.host_generic = ['alls', 'allp']
-        self.host_dict = {}
-        for element in host_dict:
-            self.host_dict[element['hostname']] = {}
-            self.host_dict[element['hostname']]['user'] = element['user']
-            self.host_dict[element['hostname']]['passwd'] = element['passwd']
-            self.host_dict[element['hostname']]['ip'] = element['ip']
+        self.host_dict = host_dict
 
     def establish_connection(self):
         """
