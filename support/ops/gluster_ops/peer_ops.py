@@ -150,3 +150,51 @@ class peer_ops:
 
         self.rlog(f"Successfully ran {cmd} on {node}")
         return ret
+
+    def nodes_from_pool_list(self, node: str):
+        """
+        Return list of nodes from the 'gluster pool list'.
+
+        Args:
+            node (str): Node on which command has to be executed.
+
+        Returns:
+            list: List of nodes in pool on Success, Empty list on failure.
+        """
+        pool_list_data = self.get_pool_list(node)
+
+        if pool_list_data is None:
+            self.rlog("Unable to get Nodes")
+
+        nodes = []
+        for item in pool_list_data:
+            nodes.append(item['hostname'])
+        return nodes
+
+    def get_pool_list(self, node: str):
+        """
+        Parse the output of 'gluster pool list' command.
+
+        Args:
+            node (str): Node on which command has to be executed.
+
+        Returns:
+            list : list of dicts on success.
+        """
+
+        cmd = 'gluster pool list --xml'
+
+        self.rlog(f"Running {cmd} on node {node}")
+        ret = self.execute_command(node, cmd)
+
+        if ret['error_code'] != 0:
+            self.rlog(ret['msg']['opErrstr'], 'E')
+            raise Exception(ret['msg']['opErrstr'])
+
+        self.rlog(f"Successfully ran {cmd} on {node}")
+
+        peer_dict = ret['msg']
+
+        pool_list = peer_dict['peerStatus']['peer']
+
+        return pool_list
