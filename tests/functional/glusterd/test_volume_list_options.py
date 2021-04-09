@@ -26,7 +26,6 @@ class TestCase(ParentTest):
         """
         server = self.server_list[0]
         try:
-            self.redant.start_glusterd(server)
             self.redant.volume_create("test-vol1",[f"{server}:/brick1",
                                       f"{server}:/brick3"],server,
                                       force=True)
@@ -43,7 +42,6 @@ class TestCase(ParentTest):
             self.redant.volume_stop("test-vol2",server)
             self.redant.volume_delete("test-vol1",server)
             self.redant.volume_delete("test-vol2", server)
-            self.redant.stop_glusterd(server)
         except Exception as error:
             self.TEST_RES = False
             print(f"Test Failed:{error}")

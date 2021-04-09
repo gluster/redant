@@ -25,15 +25,11 @@ class TestCase(ParentTest):
             server1 = self.server_list[0]
             server2 = self.server_list[1]
 
-            self.redant.start_glusterd(server1)
-
             self.redant.peer_probe(server2, server1)
 
             self.redant.pool_list(server1)
 
             self.redant.peer_detach(server1, server2)
-
-            self.redant.stop_glusterd(server1)
 
         except Exception as e:
             self.TEST_RES = False

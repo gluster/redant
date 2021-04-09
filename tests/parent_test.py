@@ -30,6 +30,8 @@ class ParentTest:
         for client in client_details:
             self.client_list.append(client["hostname"])
 
+        self.redant.start_glusterd(self.server_list)
+
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
         machine_detail = client_details + server_details
