@@ -26,15 +26,15 @@ class VolumeOps:
 
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret["error_code"]) != 0:
-            self.rlog(ret["error_msg"], 'E')
+            self.logger.error(ret["error_msg"])
             raise Exception(ret["error_msg"])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         
     def volume_unmount(self, path: str, node: str=None):
         """
@@ -49,15 +49,15 @@ class VolumeOps:
         
         cmd = f"umount {path}"
         
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret["error_code"]) != 0:
-            self.rlog(ret["error_msg"], 'E')
+            self.logger.error(ret["error_msg"])
             raise Exception(ret["error_msg"])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         
 
     def volume_create(self, volname: str, bricks_list: list,
@@ -118,15 +118,15 @@ class VolumeOps:
         if force:
             cmd = cmd + " force"
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
 
     def volume_start(self, volname: str, node : str=None, force: bool = False):
         """
@@ -145,15 +145,15 @@ class VolumeOps:
         else:
             cmd = f"gluster volume start {volname} --mode=script --xml"
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
 
     def volume_stop(self, volname: str, node : str=None, force: bool = False):
         """
@@ -172,15 +172,15 @@ class VolumeOps:
         else:
             cmd = f"gluster volume stop {volname} --mode=script --xml"
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
 
     def volume_delete(self, volname: str,node : str=None):
         """
@@ -193,15 +193,15 @@ class VolumeOps:
 
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
 
     def get_volume_info(self, node : str=None, volname: str = 'all') -> dict:
         """
@@ -260,14 +260,14 @@ class VolumeOps:
 
         cmd = f"gluster volume info {volname} --xml"
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
@@ -317,15 +317,15 @@ class VolumeOps:
         """
         cmd = "gluster volume list --xml"
         
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         
         volume_list_count = int(ret['msg']['volList']['count'])
         volume_list = []
@@ -354,15 +354,15 @@ class VolumeOps:
         else:
             cmd = f"gluster volume reset {volname} --mode=script --xml"
             
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
         
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         
     def get_volume_status(self,node : str=None,volname : str='all',
                          service : str='',options : str='') -> dict:
@@ -413,15 +413,15 @@ class VolumeOps:
         
         cmd = f"gluster volume status {volname} {service} {options} --xml"
         
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
             
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         
         volume_status = ret['msg']['volStatus']['volumes']
         ret_dict = {}
@@ -485,15 +485,15 @@ class VolumeOps:
         
         cmd = f"gluster volume get {volname} {option} --mode=script --xml"
         
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
             
         ret = self.execute_command(node=node, cmd=cmd)
  
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         
         volume_options = ret['msg']['volGetopts']
         
@@ -531,27 +531,27 @@ class VolumeOps:
             for group_option in group_options:
                 cmd = (f"gluster volume set {volname} group {group_option} "
                         "--mode=script --xml")
-                self.rlog(f"Running {cmd} on node {node}")
+                self.logger.info(f"Running {cmd} on node {node}")
                     
                 ret = self.execute_command(node=node, cmd=cmd)
 
                 if int(ret['msg']['opRet']) != 0:
-                    self.rlog(ret['msg']['opErrstr'], 'E')
+                    self.logger.error(ret['msg']['opErrstr'])
                     raise Exception(ret['msg']['opErrstr'])
                     
 
         for option in volume_options:
             cmd = (f"gluster volume set {volname} {option} "
                    f"{volume_options[option]} --mode=script --xml")
-            self.rlog(f"Running {cmd} on node {node}")
+            self.logger.info(f"Running {cmd} on node {node}")
                 
             ret = self.execute_command(node=node, cmd=cmd)
 
             if int(ret['msg']['opRet']) != 0:
-                self.rlog(ret['msg']['opErrstr'], 'E')
+                self.logger.error(ret['msg']['opErrstr'])
                 raise Exception(ret['msg']['opErrstr'])
 
-            self.rlog(f"Successfully ran {cmd} on {node}")
+            self.logger.info(f"Successfully ran {cmd} on {node}")
         
     def reset_volume_option(self, volname : str, option : str,
                             node : str=None, force : bool=False):
@@ -574,13 +574,14 @@ class VolumeOps:
                    "--mode=script --xml")
         else:
             cmd = f"gluster volume reset {volname} {option} --mode=script --xml"
+        self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
             
     def volume_sync(self, hostname : str, node: str, volname : str='all'):
         """
@@ -596,10 +597,11 @@ class VolumeOps:
         
         cmd = f"gluster volume sync {hostname} {volname} --mode=script --xml"
         
+        self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
 
         if int(ret['msg']['opRet']) != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
