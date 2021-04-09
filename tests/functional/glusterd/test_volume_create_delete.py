@@ -24,14 +24,14 @@ class TestCase(ParentTest):
         try:
             server = self.server_list[0]
 
-            self.redant.glusterd_start(server)
+            self.redant.start_glusterd(server)
 
             self.redant.volume_create(server, "test-vol",
                                       [f"{server}:/brick1"],
                                       force=True)
             self.redant.volume_delete(server, "test-vol")
 
-            self.redant.glusterd_stop(server)
+            self.redant.stop_glusterd(server)
             print("Test Passed")
 
         except Exception as error:

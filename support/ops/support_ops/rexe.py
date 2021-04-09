@@ -96,5 +96,5 @@ class Rexe:
                     ret_val.append(future_handle.result())
                 except Exception as exc:
                     print(f"Generated exception : {exc}")
-        self.rlog(ret_val)
+        self.logger.info(ret_val)
         return ret_val
