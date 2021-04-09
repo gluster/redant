@@ -36,14 +36,14 @@ class peer_ops:
 
         cmd = f'gluster --xml peer probe {server}'
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node=node, cmd=cmd)
 
         if ret['error_code'] != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
     def peer_detach(self, node: str, server: str, force: bool = False):
@@ -75,14 +75,14 @@ class peer_ops:
             cmd = f"gluster --xml peer detach {server} force --mode=script"
         else:
             cmd = f"gluster --xml peer detach {server} --mode=script"
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node, cmd)
 
         if ret['error_code'] != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
     def peer_status(self, node: str):
@@ -108,15 +108,15 @@ class peer_ops:
 
         cmd = 'gluster --xml peer status'
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
 
         ret = self.execute_command(node, cmd)
 
         if ret['error_code'] != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
     def pool_list(self, node: str):
@@ -141,14 +141,14 @@ class peer_ops:
         """
 
         cmd = 'gluster --xml pool list'
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node, cmd)
 
         if ret['error_code'] != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
     def nodes_from_pool_list(self, node: str):
@@ -164,7 +164,7 @@ class peer_ops:
         pool_list_data = self.get_pool_list(node)
 
         if pool_list_data is None:
-            self.rlog("Unable to get Nodes")
+            self.logger.info("Unable to get Nodes")
 
         nodes = []
         for item in pool_list_data:
@@ -184,14 +184,14 @@ class peer_ops:
 
         cmd = 'gluster pool list --xml'
 
-        self.rlog(f"Running {cmd} on node {node}")
+        self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node, cmd)
 
         if ret['error_code'] != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {node}")
 
         peer_dict = ret['msg']
 

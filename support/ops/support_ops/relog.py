@@ -34,18 +34,6 @@ class Logger(logging.Logger):
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
         self.logger.addHandler(log_file_handler)
-        self.log_function_mapping = {'I': self.logger.info,
-                                     'D': self.logger.debug,
-                                     'E': self.logger.error}
-
-    def rlog(self, log_message: str, log_level: str = 'I'):
-        """
-        Logger function used across the framework for logging.
-        Created in a way so that people only have to deal with one
-        single logger function istead of multiple as is the default
-        manner.
-        """
-        self.log_function_mapping[log_level](log_message)
 
     @classmethod
     def log_dir_creation(cls, path: str, component_dict: dict,

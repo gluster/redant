@@ -19,11 +19,11 @@ class io_ops:
             host (str): The node in the cluster where the command is to be run
         '''
 
-        self.rlog(f"Running {cmd} on node {host}")
+        self.logger.info(f"Running {cmd} on node {host}")
         ret = self.execute_command(host, cmd)
 
         if ret['error_code'] != 0:
-            self.rlog(ret['msg']['opErrstr'], 'E')
+            self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.rlog(f"Successfully ran {cmd} on {host}")
+        self.logger.info(f"Successfully ran {cmd} on {host}")

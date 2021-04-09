@@ -18,7 +18,7 @@ class Rexe:
         Function to establish connection with the given
         set of hosts.
         """
-        self.rlog("establish connection", 'D')
+        self.logger.debug("establish connection")
         self.node_dict = {}
         self.connect_flag = True
 
@@ -31,9 +31,9 @@ class Rexe:
                     hostname=self.host_dict[node]['ip'],
                     username=self.host_dict[node]['user'],
                     password=self.host_dict[node]['passwd'])
-                self.rlog(f"SSH connection to {node} is successful.", 'D')
+                self.loger.debug(f"SSH connection to {node} is successful.")
             except Exception as e:
-                self.rlog(f"Connection failure. Exception : {e}", 'E')
+                self.logger.error(f"Connection failure. Exception : {e}")
                 self.connect_flag = False
             self.node_dict[node] = node_ssh_client
 
@@ -57,10 +57,10 @@ class Rexe:
                     hostname=self.host_dict[node]['ip'],
                     username=self.host_dict[node]['user'],
                     password=self.host_dict[node]['passwd'])
-                self.rlog(f"SSH connection to {node} is successful.", 'D')
+                self.logger.debug(f"SSH connection to {node} is successful.")
                 self.node_dict[node] = node_ssh_client
             except Exception as e:
-                self.rlog(f"Connection failure. Exception {e}", 'E')
+                self.logger.error(f"Connection failure. Exception {e}")
         if stdout.channel.recv_exit_status() != 0:
             ret_dict['Flag'] = False
             ret_dict['msg'] = stdout.readlines()
@@ -77,7 +77,7 @@ class Rexe:
         ret_dict['cmd'] = cmd
         ret_dict['error_code'] = stdout.channel.recv_exit_status()
 
-        self.rlog(ret_dict, 'D')
+        self.logger.debug(ret_dict)
         return ret_dict
 
     def execute_command_multinode(self, node_list, cmd):
