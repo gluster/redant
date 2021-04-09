@@ -1,187 +1,63 @@
-# 'servers' is list of IP's of servers in the cluster.
-# This section has to be defined.
-# Below x denotes integer
-# server-vm[x] has to be replaced by ip-address
-# server-vm[x] can be used to refer to its ip-address in this file using
-# *server-vm[x] wherever required and can also be used in test cases using 
-# just "server-vm[x]"
-servers:
-    - &server-vm1 server-vm1 #Example- &server-vm1 0.0.0.0
-    - &server-vm2 server-vm2
-    - &server-vm3 server-vm3
-    - &server-vm4 server-vm4
+# This is a smaple config file with sample parameter data.
+# Refer to CONFIG_README.md for information on how to use the config file and
+# and information about all the parameters.
 
-# 'clients' is list of Hostnames/IP's of clients in the cluster.
-# This section has to be defined.
-# Below x denotes integer
-# client-vm[x] has to be replaced by ip-address
-# client_vm[x] can be used to refer to its ip-address in this file using
-# *client_vm[x] wherever required and can also be used in test cases using 
-# just "client_vm[x]"
-clients:
-    - &client_vm1 client-vm1 #Example- &client_vm1 0.0.0.0
-    - &client_vm2 client-vm2
-
-# 'servers_info' is info about each server in the cluster.
-# the brick_root is a list where multiple mount points can be added.
-# brick_root i.e dirname of brick mount point.
-# user and password are also defined for creating ssh connection
-# This section has to be defined.
-
+#servers_info - All the relevant information about the servers
 servers_info:
-    *server-vm1: &server1
-        hostname: "snode1"
-        brick_root: ["/bricks"] #Example- brick_root: ["/bricks","/gluster"]
-        user: "root"
-        passwd: "redhat"
-    *server-vm2: &server2
-        hostname: "snode2"
+    "1.1.1.1":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    *server-vm3: &server3
-        hostname: "snode3"
+    "2.2.2.2":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-    *server-vm4: &server4
-        hostname: "snode4"
+    "3.3.3.3":
         brick_root: ["/bricks"]
         user: "root"
         passwd: "redhat"
-
-# 'clients_info' is info about each client in  the cluster.
-# The info should contain platform(linux),super_user name(root
-# in case of linux).
-# user and password can be defined for creating ssh connection
-# This section has to be defined.
+    "4.4.4.4":
+        brick_root: ["/bricks"]
+        user: "root"
+        passwd: "redhat"
+        
+#clients_info - All the relevant information about the clients
 clients_info:
-    *client_vm1: &client1
-        hostname: "cnode1"
+    "5.5.5.5":
         user: "root"
         passwd: "redhat"
-    *client_vm2: &client2
-        hostame: "cnode2"
+    "6.6.6.6":
         user: 'root'
         passwd: "redhat"
 
-# This section contains details about the gluster volumes, mounts etc.
-# For defining volumes, mounts and/or anything realted to gluster, it has to be
-# under this section.
-gluster:
-
-    # 'volume_types' defines different volume types that we can create in
-    # gluster and we have default values assigned to each of the volume
-    # type to run the tests. This can be modified based on the
-    # test configuration. Note- The 'keys' should remain same.
-    volume_types:
-        distributed: &distributed
-            dist_count: 4
-            transport: tcp
-        replicated: &replicated
-            replica_count: 3
-            arbiter_count: 1
-            transport: tcp
-        distributed-replicated: &distributed_replicated
-            dist_count: 2
-            replica_count: 3
-            transport: tcp
-        dispersed: &dispersed
-            disperse_count: 6
-            redundancy_count: 2
-            transport: tcp
-        distributed-dispersed: &distributed_dispersed
-            dist_count: 2
-            disperse_count: 6
-            redundancy_count: 2
-            transport: tcp
-        arbiter: &arbiter
-            replica_count: 3
-            arbiter_count: 1
-            transport: tcp
-        distributed-arbiter: &distrbuted_arbiter
-            dist_count: 2
-            replica_count: 3
-            arbiter_count: 1
-            transport: tcp
-
-    # volume_create_force flag should be set to True if volume has to created
-    # using force
-    volume_create_force: False
-
-    # Volume options that has to be applicable to all volume types
-    # The required options can be uncommented and set on "on" or "off"
-    # according to requirement
-    volume_options:
-##        performance.quick-read: "off"
-##        performance.read-ahead: "off"
-##        performance.io-cache: "off"
-##        performance.stat-prefetch: "off"
-##        performance.open-behind: "off"
-##        performance.readdir-ahead: "off"
-##        server.allow-insecure: "on"
-
-
-    # 'volumes' is list of all the volumes that we need to refer in the
-    # testcases. Each item in the list is the details about the volume.
-    # The volume should have 'name', 'voltype' info defined.
-    volumes:
-    
-    # 'tier' -  Tiering related info. set 'create_tier' to 'true' to attach
-    #           tier during volume setup when the tests calls glusto-tests
-    #           volume_setup for setting up volume.
-    #           'tier_type' defines the tier volume type.
-        tier:
-            create_tier: False
-            tier_type: *distributed_replicated
-
-    # 'quota' - Quota related info. setting 'enable' to 'True' enables quota
-    #           during volume setup when the tests calls glusto-tests
-    #           volume_setup for setting up volume.
-    #           Other details of  quota like 'limit_usage', 'limit_objects',
-    #           'alert_time', 'soft_timeout', 'hard_timeout' can be defined
-    #           in this section and referred in test cases using 'g.config'.
-        quota:
-            enable: False
-            limit_usage:
-                path: "/"
-                size: 100GB
-                percent:
-            limit_objects:
-                path: "/"
-                number:
-                percent:
-            alert_time: 0
-            soft_timeout: 0
-            hard_timeout: 0
-        inode_quota:
-            enable: False
-
-    # 'bitrot'- Bitrot related info. setting  'enable' to 'True' will enable
-    #           bitrot during volume setup when the tests calls glusto-tests
-    #           volume_setup for setting up volume.
-    #           Other bitrot options like 'scrub_throttle', 'scrub_frequency'
-    #           and any other bitrot related info can be defined here and
-    #           referred in tets cases using 'g.config'.
-        bitrot:
-            enable: False
-            scrub_throttle: 'aggressive'
-            scrub_frequency: 'hourly'
-
-    # 'options'- Define volume options and it's values to be set during volume
-    #           setup when the tests calls glusto-tests volume_setup for
-    #           setting up the volume.
-        options:
-            performance.readdir-ahead: "on"
-
-    # 'snapshot'- snapshot related info.
-        snapshot:
-            use_snapshot: True
-            snap_jobname: 'snap_job'
-            snap_schedule: 2
-
-    # 'uss'- USS related info. setting  'enable' to 'True' will enable
-    #       USS during volume setup when the tests calls glusto-tests
-    #       volume_setup for setting up volume.
-        uss:
-            enable: False
+#volume_types - Indivudual volume type information and minimum servers for
+#               each volume type
+volume_types:
+    distributed:
+        dist_count: 4
+        transport: tcp
+    replicated:
+        replica_count: 3
+        transport: tcp
+    distributed-replicated:
+        dist_count: 2
+        replica_count: 3
+        transport: tcp
+    dispersed:
+        disperse_count: 6
+        redundancy_count: 2
+        transport: tcp
+    distributed-dispersed:
+        dist_count: 2
+        disperse_count: 6
+        redundancy_count: 2
+        transport: tcp
+    arbiter:
+        replica_count: 3
+        arbiter_count: 1
+        transport: tcp
+    distributed-arbiter:
+        dist_count: 2
+        replica_count: 3
+        arbiter_count: 1
+        transport: tcp
