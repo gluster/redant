@@ -178,7 +178,7 @@ class GlusterOps:
 
         count = 0
         while count <= timeout:
-            ret = is_glusterd_running(node)
+            ret = self.is_glusterd_running(node)
             if not ret:
                 return True
             sleep(1)
