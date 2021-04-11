@@ -1,7 +1,9 @@
+import traceback
+import abc
 from support.mixin import RedantMixin
 
 
-class ParentTest:
+class ParentTest(metaclass=abc.ABCMeta):
 
     """
     This class contains the standard info and methods which are needed by
@@ -37,8 +39,21 @@ class ParentTest:
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
 
+    @abc.abstractmethod
     def run_test(self):
         pass
+
+    def parent_run_test(self):
+        """
+        Function to handle the exception logic and invokes the run_test
+        which is overridden by every TC.
+        """
+        try:
+            self.run_test()
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(tb)
+            self.TEST_RES = False
 
     def terminate(self):
         """

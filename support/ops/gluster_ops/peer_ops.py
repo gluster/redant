@@ -237,6 +237,7 @@ class peer_ops:
                 for server in nodes:
                     self.peer_probe(server,node)
                 self.logger.info("Cluster created")
+                self.peer_status(nodes[0])
             return True
         else:
             return False

@@ -2,7 +2,7 @@
 This file contains a test-case which tests glusterd
 starting and stopping of glusterd service.
 """
-#nonDisruptive;dist
+#disruptive;
 
 from tests.parent_test import ParentTest
 
@@ -19,12 +19,6 @@ class TestCase(ParentTest):
         1) glusterd service is started on the server.
         4) glusterd service is stopped.
         """
-        try:
-            for _ in range(10):
-                self.redant.start_glusterd(self.server_list)
-                self.redant.stop_glusterd(self.server_list)
-            print("Test Passed")
-
-        except Exception as error:
-            self.TEST_RES = False
-            print(f"Test Failed:{error}")
+        for _ in range(10):
+            self.redant.start_glusterd(self.server_list)
+            self.redant.stop_glusterd(self.server_list)
