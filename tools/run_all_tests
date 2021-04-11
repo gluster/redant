@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$#" -ne 2 ]; then
+	./clean_pycache
+	python3 core/redant_main.py -c config/config.yml -t tests/
+elif [ "$1" != "-nc" ]; then
+	python3 core/redant_main.py -c config/config.yml -t tests/
+fi
+	 
+

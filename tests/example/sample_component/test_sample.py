@@ -1,30 +1,71 @@
-"""
-This file contains the format of a test case.
-It contains one class - TestCase wich would
-hold the functions to be run in the test case.
-"""
 
-#nonDisruptive;dist,rep,arb,disp,dist-rep,dist-arb,dist-disp
+"""
+This file contains a test-case which tests glusterd
+starting and stopping of glusterd service.
+"""
+#disruptive;dist
 
 from tests.parent_test import ParentTest
 
 
-class TestClass(ParentTest):
+class TestCase(ParentTest):
     """
-    The TestCase class contains the functions to be
-    run in the test case. Every function should contain
-    the flow of the function(APIs which are called) in
-    the form of steps.
+    The test case contains one function to test
+    for glusterd service operations
     """
 
     def run_test(self):
         """
-        Function calling required APIs for performing required test.
-        Steps:
-        1) calling API1
-        2) calling API2
+        The following steps are undertaken in the testcase:
+        1) Volume is created
+        2) Volume is started
+        3) Volume status is fetched
+        4) Mountpoint is mounted to volume
+        5) Io operations are performed
+        6) Volume is Stopped
+        7) Volume is Deleted
+        8) Mountpoint is unmounted
         """
+        servera = self.server_list[0]
+        serverb = self.server_list[1]
+        serverc = self.server_list[2]
         try:
-            print("Hello world!")
+            self.redant.peer_probe(servera, serverb)
+            self.redant.peer_probe(serverc, serverb)
+
+            self.redant.peer_status(serverb)
+            
+            volname = "dist"
+            mountpoint = "/mnt/dist"
+
+            self.redant.execute_io_cmd("ls -l /root", servera)
+            self.redant.volume_create(volname,
+                                      [f"{servera}:/glusterfs/brick/brick1",
+                                      f"{serverb}:/glusterfs/brick/brick2",
+                                      f"{serverc}:/glusterfs/brick//brick3"],
+                                      serverb, force=True)
+            self.redant.volume_start(volname,serverc)
+            volume_status = self.redant.get_volume_status(serverb,volname)
+            self.redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
+            self.redant.volume_mount(servera,volname,mountpoint,serverb)
+            self.redant.execute_io_cmd(f"cd {mountpoint} && touch " + "{1..100}", serverb)
+            self.redant.execute_io_cmd(f"ls -l {mountpoint}", serverb)
+            self.redant.execute_io_cmd(f"cd {mountpoint} && rm -rf ./*", serverb)
+            self.redant.execute_io_cmd(f"ls -l {mountpoint}", serverb)
+
+            try:
+                self.redant.execute_io_cmd("ls -l /non-exsisting-path", servera)
+            except Exception as error:
+                pass
+
+            self.redant.volume_stop(volname,servera)
+            self.redant.volume_delete(volname,servera)
+            self.redant.volume_unmount(mountpoint,serverb)
+            self.redant.execute_io_cmd(f"cd /mnt && rm -rf {mountpoint}", serverb)
+
+            self.redant.peer_detach(serverb, serverc)
+            self.redant.peer_detach(serverb, servera)
+            
         except Exception as error:
-            print(f"Exception: {error}")
+            self.TEST_RES = False
+            print(f"Test Failed:{error}")

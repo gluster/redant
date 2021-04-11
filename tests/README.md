@@ -29,6 +29,10 @@ as follows
 |  dist-arb | Distributed-Arbiter |
 |  dist-disp | Distributed-disp |
 
+If the TC doesn't deal with any volume creation or if the user wants the TC
+to deal with multiple TCs in a single run itself then the following is the
+format
+`#tc_type'`
 
 This data will be parsed by the test list builder so as to determine how many
 threads for this TC has to be created and if it can be run parallely with other
