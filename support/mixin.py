@@ -2,8 +2,8 @@
     Module Name:
     Purpose: Refer to the redhat_mixin.md for more information
 """
-from support.ops.support_ops.rexe import Rexe
-from support.ops.support_ops.relog import Logger
+from support.rexe import Rexe
+from support.relog import Logger
 from support.ops.support_ops.io_ops import io_ops
 from support.ops.gluster_ops.peer_ops import peer_ops
 from support.ops.gluster_ops.volume_ops import VolumeOps

@@ -70,7 +70,7 @@ def main():
 
     # Creating log dirs.
     sys.path.insert(1, ".")
-    from support.ops.support_ops.relog import Logger
+    from support.relog import Logger
     Logger.log_dir_creation(args.log_dir, test_cases_component,
                             test_cases_dict)
 
