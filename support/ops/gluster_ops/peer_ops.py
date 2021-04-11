@@ -126,30 +126,29 @@ class peer_ops:
             node (str): Node on which command has to be executed.
 
         Returns:
-            tuple: Tuple containing three elements (ret, out, err).
-                The first element 'ret' is of type 'int' and
-                is the return value
-                of command execution.
-
-                The second element 'out' is of type 'str'
-                and is the stdout value
-                of the command execution.
-
-                The third element 'err' is of type 'str'
-                and is the stderr value
-                of the command execution.
+            list : gives list of all the UUID's of all the connected peers
         """
 
         cmd = 'gluster --xml pool list'
         self.logger.info(f"Running {cmd} on node {node}")
         ret = self.execute_command(node, cmd)
-
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
+        peer_list = []
+        
+        peers = ret['msg']['peerStatus']['peer']
+        if not isinstance(peers,list):
+            peers = [peers]
+            
+        for peer in peers:
+            if peer['connected']=='1':
+                peer_list.append(peer['uuid'])    
+                     
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        return ret
+        
+        return peer_list
 
     def nodes_from_pool_list(self, node: str):
         """
@@ -198,3 +197,46 @@ class peer_ops:
         pool_list = peer_dict['peerStatus']['peer']
 
         return pool_list
+    
+    def create_cluster(self, nodes: list):
+        """
+        Creates a cluster by probing all the nodes in the list.
+        Args:
+            node (list): All the nodes which form the cluster.
+        Returns:
+            True: If nodes are in cluster or number of nodes are 0 or 1.
+            False: If cluster cannot be created.
+        """
+        
+        length = len(nodes)
+        if length==0 or length==1:
+            return True
+        
+        peer_list = []
+        
+        count = 0
+        
+        for node in nodes:
+            pool_list = self.pool_list(node)
+            if count==0:
+                peer_list = pool_list
+            else:
+                if len(peer_list)==len(pool_list):
+                    for peer in peer_list:
+                        if peer not in pool_list and len(peer_list)!=1:
+                            break
+                else:
+                    break
+            count += 1
+            
+        if count==len(nodes):
+            if len(peer_list)==1:
+                
+                node = nodes[0]
+                self.logger.info("Creating cluster")
+                for server in nodes:
+                    self.peer_probe(server,node)
+                self.logger.info("Cluster created")
+            return True
+        else:
+            return False
