@@ -61,7 +61,7 @@ class Rexe:
             ret_dict['msg'] = stdout.readlines()
             ret_dict['error_msg'] = stderr.readlines()
         else:
-            if cmd.split(' ', 1)[0] == 'gluster':
+            if cmd.find("--xml") != -1:
                 stdout_xml_string = "".join(stdout.readlines())
                 ret_dict['msg'] = xmltodict.parse(
                     stdout_xml_string)['cliOutput']
