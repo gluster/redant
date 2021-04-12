@@ -52,7 +52,7 @@ class Rexe:
                     hostname=node,
                     username=self.host_dict[node]['user'],
                     password=self.host_dict[node]['passwd'],
-                    timeout=50)
+                )
                 self.logger.debug(f"SSH connection to {node} is successful.")
                 self.node_dict[node] = node_ssh_client
             except Exception as e:
