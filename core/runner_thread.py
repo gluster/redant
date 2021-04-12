@@ -15,7 +15,7 @@ class RunnerThread:
         # Creating the test case object from the test case.
         self.tc_obj = tc_class(mname, client_dict, server_dict, volume_type,
                                log_path, log_level)
-        self.run_test_func = getattr(self.tc_obj, "run_test")
+        self.run_test_func = getattr(self.tc_obj, "parent_run_test")
         self.terminate_test_func = getattr(self.tc_obj, "terminate")
         self.test_stats = {
             'timeTaken':0,

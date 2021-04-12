@@ -1,7 +1,8 @@
 """
-This component has a test-case for peers addition and deletion.
+This component has a test-case for peers probe
+and detach operations.
 """
-#disruptive;dist,rep,arb,disp,dist-rep,dist-arb
+#disruptive;
 
 from tests.parent_test import ParentTest
 
@@ -12,28 +13,17 @@ class TestCase(ParentTest):
     for peer probe , pool list and peer detach.
     """
 
-    def run_test(self):
+    def run_test(self, redant):
         """
         In this testcase:
-        1) glusterd service is started
-        2) peer probe of a server
-        3) list the storage pool
-        4) peer detach
-        5) glusterd is stopped
+        1) Cluster is created.
+        2) The storage pool is listed.
+        3) The cluster is destroyed ( currently with the help of peer detach)
         """
-        try:
-            server1 = self.server_list[0]
-            server2 = self.server_list[1]
-
-            self.redant.peer_probe(server2, server1)
-
-            self.redant.pool_list(server1)
-
-            self.redant.peer_detach(server1, server2)
-            
-            server_list = [server1,server2]
-            self.redant.create_cluster(server_list)
-
-        except Exception as e:
-            self.TEST_RES = False
-            print(f"Test is failed:{e}")
+        server1 = self.server_list[0]
+        server2 = self.server_list[1]
+        server3 = self.server_list[2]
+        redant.create_cluster(self.server_list)
+        redant.pool_list(server1)
+        redant.peer_detach(server1, server2)
+        redant.peer_detach(server3, server2)
