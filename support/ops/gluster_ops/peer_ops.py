@@ -26,6 +26,7 @@ class peer_ops:
                 - error_msg: error message
                 - error_code: error code returned
                 - cmd : command that got executed
+                - node : node on which the command got executed
         """
 
         cmd = f'gluster --xml peer probe {server}'
@@ -58,6 +59,8 @@ class peer_ops:
                 - error_msg: error message
                 - error_code: error code returned
                 - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         if force:
@@ -87,6 +90,8 @@ class peer_ops:
                 - error_msg: error message
                 - error_code: error code returned
                 - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         cmd = 'gluster --xml peer status'
@@ -100,7 +105,7 @@ class peer_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         return ret
 
     def pool_list(self, node: str) -> list:
