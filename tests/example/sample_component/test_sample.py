@@ -63,5 +63,5 @@ class TestCase(ParentTest):
         redant.volume_delete(volname, servera)
         redant.volume_unmount(mountpoint, serverb)
         redant.execute_io_cmd(f"cd /mnt && rm -rf {mountpoint}", serverb)
-        redant.peer_detach(serverb, serverc)
-        redant.peer_detach(serverb, servera)
+        redant.peer_detach(serverc, serverb)
+        redant.peer_detach(servera, serverb)

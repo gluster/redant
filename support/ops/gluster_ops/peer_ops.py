@@ -3,9 +3,11 @@ This file contains one class - PeerOps which
 holds APIS related to peers which will be called
 from the test case.
 """
-import socket
 
-class PeerOps:
+import socket
+from support.ops.abstract_ops import AbstractOps
+
+class PeerOps(AbstractOps):
     """
     PeerOps class provides APIs to perform operations
     like adding and deleting the peers,checking the status
@@ -31,14 +33,7 @@ class PeerOps:
 
         cmd = f'gluster --xml peer probe {server}'
 
-        self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd, node)
-
-        if ret['error_code'] != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -67,14 +62,9 @@ class PeerOps:
             cmd = f"gluster --xml peer detach {server} force --mode=script"
         else:
             cmd = f"gluster --xml peer detach {server} --mode=script"
-        self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd, node)
 
-        if ret['error_code'] != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
+        ret = self.execute_abstract_op_node(cmd, node)
 
-        self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
     def peer_status(self, node: str):
@@ -96,15 +86,7 @@ class PeerOps:
 
         cmd = 'gluster --xml peer status'
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if ret['error_code'] != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -119,11 +101,8 @@ class PeerOps:
         """
 
         cmd = 'gluster --xml pool list'
-        self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd, node)
-        if ret['error_code'] != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
+
+        ret = self.execute_abstract_op_node(cmd, node)
 
         peer_list = []
 
@@ -134,8 +113,6 @@ class PeerOps:
         for peer in peers:
             if peer['connected'] == '1':
                 peer_list.append(peer['uuid'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return peer_list
 
@@ -191,14 +168,7 @@ class PeerOps:
 
         cmd = 'gluster pool list --xml'
 
-        self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd, node)
-
-        if ret['error_code'] != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         peer_dict = ret['msg']
 

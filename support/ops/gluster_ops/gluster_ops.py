@@ -3,9 +3,10 @@ This file contains one class - GlusterOps wich holds
 operations on the glusterd service on the server
 or the client.
 """
+from support.ops.abstract_ops import AbstractOps
 
 
-class GlusterOps:
+class GlusterOps(AbstractOps):
     """
     GlusterOps class provides APIs to start and stop
     the glusterd service on either the client or the sever.
@@ -261,13 +262,7 @@ class GlusterOps:
             str: The gluster version value.
         """
         cmd = "gluster --version"
-        self.logger.info(f"Running {cmd} on {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_abstract_op_multinode(cmd, node)
 
-        if int(ret['error_code']) != 0:
-            self.logger.error(ret['error_msg'])
-            raise Exception(ret['error_msg'])
-
-        self.logger.info("Successfully ran {cmd} on {node}")
         return ret['msg'].split(' ')[1]

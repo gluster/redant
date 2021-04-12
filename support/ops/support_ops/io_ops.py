@@ -2,9 +2,10 @@
 This file contains one class - IoOps which
 holds API for running all the IO commands.
 """
+from support.ops.abstract_ops import AbstractOps
 
 
-class IoOps:
+class IoOps(AbstractOps):
     """
     IoOps class provides API to handle
     all the IO commands.
@@ -29,16 +30,6 @@ class IoOps:
 
         '''
 
-        self.logger.info(f"Running {cmd} on node {host}")
-        if host is None:
-            ret = self.execute_command(cmd)
-        else:
-            ret = self.execute_command(cmd, host)
-
-        if ret['error_code'] != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
+        ret = self.execute_abstract_op_node(cmd, host)
 
         return ret
