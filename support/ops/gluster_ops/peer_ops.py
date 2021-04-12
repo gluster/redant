@@ -19,6 +19,13 @@ class peer_ops:
             node (str): The node in the cluster where peer probe is to be run
             server (str): The server to probe
 
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
         """
 
         cmd = f'gluster --xml peer probe {server}'
@@ -32,6 +39,7 @@ class peer_ops:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
 
     def peer_detach(self, node: str, server: str, force: bool = False):
         """
@@ -43,6 +51,13 @@ class peer_ops:
         Kwargs:
             force (bool): option to detach peer. Defaults to False.
 
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
         """
 
         if force:
@@ -57,6 +72,7 @@ class peer_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+        return ret
 
     def peer_status(self, node: str):
         """
@@ -64,6 +80,13 @@ class peer_ops:
         Args:
             node (str): Node on which command has to be executed.
 
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
         """
 
         cmd = 'gluster --xml peer status'
@@ -77,7 +100,8 @@ class peer_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-
+        
+        return ret
 
     def pool_list(self, node: str) -> list:
         """
