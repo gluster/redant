@@ -19,19 +19,6 @@ class peer_ops:
             node (str): The node in the cluster where peer probe is to be run
             server (str): The server to probe
 
-        Returns:
-            tuple: Tuple containing three elements (ret, out, err).
-                The first element 'ret' is of type 'int' and
-                is the return value
-                of command execution.
-
-                The second element 'out' is of type 'str'
-                and is the stdout value
-                of the command execution.
-
-                The third element 'err' is of type 'str'
-                and is the stderr value
-                of the command execution.
         """
 
         cmd = f'gluster --xml peer probe {server}'
@@ -44,7 +31,7 @@ class peer_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        return ret
+
 
     def peer_detach(self, node: str, server: str, force: bool = False):
         """
@@ -56,19 +43,6 @@ class peer_ops:
         Kwargs:
             force (bool): option to detach peer. Defaults to False.
 
-        Returns:
-            tuple: Tuple containing three elements (ret, out, err).
-                The first element 'ret' is of type 'int' and
-                is the return value
-                of command execution.
-
-                The second element 'out' is of type 'str'
-                and is the stdout value
-                of the command execution.
-
-                The third element 'err' is of type 'str'
-                and is the stderr value
-                of the command execution.
         """
 
         if force:
@@ -83,7 +57,6 @@ class peer_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        return ret
 
     def peer_status(self, node: str):
         """
@@ -91,19 +64,6 @@ class peer_ops:
         Args:
             node (str): Node on which command has to be executed.
 
-        Returns:
-            tuple: Tuple containing three elements (ret, out, err).
-                The first element 'ret' is of type 'int' and
-                is the return value
-                of command execution.
-
-                The second element 'out' is of type 'str'
-                and is the stdout value
-                of the command execution.
-
-                The third element 'err' is of type 'str'
-                and is the stderr value
-                of the command execution.
         """
 
         cmd = 'gluster --xml peer status'
@@ -117,9 +77,9 @@ class peer_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        return ret
 
-    def pool_list(self, node: str):
+
+    def pool_list(self, node: str) -> list:
         """
         Runs the command gluster pool list on `node`
         Args:
@@ -150,7 +110,7 @@ class peer_ops:
         
         return peer_list
 
-    def nodes_from_pool_list(self, node: str):
+    def nodes_from_pool_list(self, node: str) -> list:
         """
         Return list of nodes from the 'gluster pool list'.
 
@@ -170,7 +130,7 @@ class peer_ops:
             nodes.append(item['hostname'])
         return nodes
 
-    def get_pool_list(self, node: str):
+    def get_pool_list(self, node: str) -> list:
         """
         Parse the output of 'gluster pool list' command.
 
@@ -198,7 +158,7 @@ class peer_ops:
 
         return pool_list
     
-    def create_cluster(self, nodes: list):
+    def create_cluster(self, nodes: list) -> bool:
         """
         Creates a cluster by probing all the nodes in the list.
         Args:
