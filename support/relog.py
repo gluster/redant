@@ -34,6 +34,13 @@ class Logger(logging.Logger):
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
         self.logger.addHandler(log_file_handler)
+        self.logger.info('''
+         ===================================
+        ||                                 ||
+        ||  This is a new run!!            || 
+        ||                                 ||
+         ===================================
+        ''')
 
     @classmethod
     def log_dir_creation(cls, path: str, component_dict: dict,
