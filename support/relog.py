@@ -35,7 +35,6 @@ class Logger(logging.Logger):
         log_file_handler.setFormatter(log_format)
         self.logger.addHandler(log_file_handler)
         test_name = log_file_path.split('/')[-1:][0][:-4]
-        print(test_name)
         self.logger.info(f'''
          ============================================================
                                          
