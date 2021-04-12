@@ -67,4 +67,4 @@ class ParentTest(metaclass=abc.ABCMeta):
         """
         Closes connection for now.
         """
-        pass
+        self.redant.deconstruct_connection()
