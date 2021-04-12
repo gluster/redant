@@ -32,6 +32,18 @@ class Rexe:
                 self.connect_flag = False
             self.node_dict[node] = node_ssh_client
 
+    def deconstruct_connection(self):
+        """
+        Function to close the existing connections.
+        """
+        self.logger.debug("Deconstructing connection.")
+        if not self.connect_flag:
+            return
+        for node in self.host_dict:
+            if self.node_dict[node]:
+                (self.node_dict[node]).close()
+        return    
+
     def execute_command(self, node, cmd):
         """
         Function to execute command in the given node.
