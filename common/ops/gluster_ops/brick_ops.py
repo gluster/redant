@@ -35,6 +35,14 @@ class BrickOps:
                 The keys, values in kwargs are:
                     - replica_count : (int)|None
                     - arbiter_count : (int)|None
+        Returns:
+            ret: A dictionary consisting
+                    - Flag : Flag to check if connection failed
+                    - msg : message
+                    - error_msg: error message
+                    - error_code: error code returned
+                    - cmd : command that got executed
+                    - node : node on which the command got executed
         """
         replica_count = arbiter_count = None
 
@@ -88,6 +96,14 @@ class BrickOps:
         **kwargs
             The keys, values in kwargs are:
                 - replica_count : (int)|None
+    Returns:
+            ret: A dictionary consisting
+                    - Flag : Flag to check if connection failed
+                    - msg : message
+                    - error_msg: error message
+                    - error_code: error code returned
+                    - cmd : command that got executed
+                    - node : node on which the command got executed
 
         """
         option = option + ' --mode=script'
@@ -116,6 +132,8 @@ class BrickOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
+
     def replace_brick(self, node: str, volname: str,
                       src_brick: str, dest_brick: str):
         """
@@ -128,6 +146,14 @@ class BrickOps:
             src_brick (str) : The source brick name
             dest_brick (str) : The destination brick name
         
+        Returns:
+            ret: A dictionary consisting
+                    - Flag : Flag to check if connection failed
+                    - msg : message
+                    - error_msg: error message
+                    - error_code: error code returned
+                    - cmd : command that got executed
+                    - node : node on which the command got executed
         """
         cmd = (f"gluster volume replace-brick "
                f"{volname} {src_brick} {dest_brick} "
@@ -143,3 +169,4 @@ class BrickOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
     
+        return ret
