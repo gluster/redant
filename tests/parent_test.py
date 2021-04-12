@@ -49,7 +49,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         which is overridden by every TC.
         """
         try:
-            self.run_test()
+            self.run_test(self.redant)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(tb)

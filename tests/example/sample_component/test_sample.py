@@ -14,7 +14,7 @@ class TestCase(ParentTest):
     for glusterd service operations
     """
 
-    def run_test(self):
+    def run_test(self, redant):
         """
         The following steps are undertaken in the testcase:
         1) Volume is created
@@ -29,37 +29,37 @@ class TestCase(ParentTest):
         servera = self.server_list[0]
         serverb = self.server_list[1]
         serverc = self.server_list[2]
-        self.redant.peer_probe(servera, serverb)
-        self.redant.peer_probe(serverc, serverb)
-        self.redant.peer_status(serverb)
+        redant.peer_probe(servera, serverb)
+        redant.peer_probe(serverc, serverb)
+        redant.peer_status(serverb)
 
         volname = "dist"
         mountpoint = "/mnt/dist"
 
-        self.redant.execute_io_cmd("ls -l /root", servera)
-        self.redant.volume_create(volname,
-                                  [f"{servera}:/glusterfs/brick/brick1",
-                                   f"{serverb}:/glusterfs/brick/brick2",
-                                   f"{serverc}:/glusterfs/brick//brick3"],
-                                  serverb, force=True)
-        self.redant.volume_start(volname,serverc)
-        volume_status = self.redant.get_volume_status(serverb,volname)
-        self.redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
-        self.redant.volume_mount(servera, volname, mountpoint, serverb)
-        self.redant.execute_io_cmd(f"cd {mountpoint} && touch " + "{1..100}",
-                                   serverb)
-        self.redant.execute_io_cmd(f"ls -l {mountpoint}", serverb)
-        self.redant.execute_io_cmd(f"cd {mountpoint} && rm -rf ./*", serverb)
-        self.redant.execute_io_cmd(f"ls -l {mountpoint}", serverb)
+        redant.execute_io_cmd("ls -l /root", servera)
+        redant.volume_create(volname,
+                             [f"{servera}:/glusterfs/brick/brick1",
+                              f"{serverb}:/glusterfs/brick/brick2",
+                              f"{serverc}:/glusterfs/brick//brick3"],
+                              serverb, force=True)
+        redant.volume_start(volname,serverc)
+        volume_status = redant.get_volume_status(serverb,volname)
+        redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
+        redant.volume_mount(servera, volname, mountpoint, serverb)
+        redant.execute_io_cmd(f"cd {mountpoint} && touch " + "{1..100}",
+                              serverb)
+        redant.execute_io_cmd(f"ls -l {mountpoint}", serverb)
+        redant.execute_io_cmd(f"cd {mountpoint} && rm -rf ./*", serverb)
+        redant.execute_io_cmd(f"ls -l {mountpoint}", serverb)
 
         try:
-            self.redant.execute_io_cmd("ls -l /non-exsisting-path", servera)
+            redant.execute_io_cmd("ls -l /non-exsisting-path", servera)
         except Exception as error:
             pass
 
-        self.redant.volume_stop(volname, servera)
-        self.redant.volume_delete(volname, servera)
-        self.redant.volume_unmount(mountpoint,serverb)
-        self.redant.execute_io_cmd(f"cd /mnt && rm -rf {mountpoint}", serverb)
-        self.redant.peer_detach(serverb, serverc)
-        self.redant.peer_detach(serverb, servera)
+        redant.volume_stop(volname, servera)
+        redant.volume_delete(volname, servera)
+        redant.volume_unmount(mountpoint,serverb)
+        redant.execute_io_cmd(f"cd /mnt && rm -rf {mountpoint}", serverb)
+        redant.peer_detach(serverb, serverc)
+        redant.peer_detach(serverb, servera)
