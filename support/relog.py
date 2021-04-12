@@ -7,7 +7,7 @@ it's functions to be used by the Redant framework.
 import os
 import logging
 import logging.handlers
-
+from datetime import datetime
 
 class Logger(logging.Logger):
     """
@@ -34,6 +34,14 @@ class Logger(logging.Logger):
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
         self.logger.addHandler(log_file_handler)
+        test_name = log_file_path.split('/')[-1:][0][:-4]
+        self.logger.info(f'''
+         ============================================================
+                                         
+           {test_name} started running: {datetime.now()}       
+                                         
+         ============================================================
+        ''')
 
     @classmethod
     def log_dir_creation(cls, path: str, component_dict: dict,

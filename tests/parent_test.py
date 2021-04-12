@@ -1,7 +1,7 @@
 import traceback
 import abc
 from support.mixin import RedantMixin
-
+from datetime import datetime
 
 class ParentTest(metaclass=abc.ABCMeta):
 
@@ -38,6 +38,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.redant = RedantMixin(machine_detail)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
+        self.test_name = log_path.split('/')[-1:][0][:-4]
 
     @abc.abstractmethod
     def run_test(self):
@@ -54,6 +55,13 @@ class ParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(tb)
             self.TEST_RES = False
+        self.redant.logger.info(f'''
+         ============================================================
+                                         
+           {self.test_name} finished running: {datetime.now()}       
+                                         
+         ============================================================
+        ''')
 
     def terminate(self):
         """
