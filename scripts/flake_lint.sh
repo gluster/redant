@@ -8,13 +8,17 @@ NARGS=$#
 # FILE(s) PATH stores the path of the file
 FILEPATH=$1
 
-# By default it will do both linting and flaking
+if [[ $FILEPATH == '' ]]
+then
+    FILEPATH='.'
+fi
+# By default it will do both linting and flake
 # If passed flake, it will only flake
 # If passed lint, it will only lint
 OPERATION=$2
 
 perform_linting () {
-    if [ $FILEPATH == '.' ]
+    if [[ $FILEPATH == '.' ]]
     then
         pylint -j 4 --rcfile=.pylintrc ./core
         pylint -j 4 --rcfile=.pylintrc ./core/parsing
@@ -30,22 +34,22 @@ perform_linting () {
     fi
 }
 
-if [ $OPERATION == '' ]
+if [[ $OPERATION == '' ]]
 then
     echo 'Nothing was passed in operation'
-    echo 'Performing both flaking and linting'
-    echo 'Flaking'
+    echo 'Performing both flake and linting'
+    echo 'Flake'
     flake8 $FILEPATH
     printf '\n==================================================\n'
     echo 'Linting'
     perform_linting
-    printf "\n\n\nDone Flaking and Linting\n"
+    printf "\n\n\nDone performing flake and linting\n"
     echo '=============================================================='
     echo 'Run the following command to automatically remove most issues'
     echo '=============================================================='
     echo 'autopep8 -i PATH/TO/FILE.py'
 
-elif [ $OPERATION == 'flake' ]
+elif [[ $OPERATION == 'flake' ]]
 then
     echo "Performing " $OPERATION
     flake8 $FILEPATH
