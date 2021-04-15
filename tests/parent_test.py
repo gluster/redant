@@ -20,15 +20,15 @@ class ParentTest(metaclass=abc.ABCMeta):
         And runs the specific component in the
         test case
         """
-        
+
         server_details = config_hashmap['servers_info']
         client_details = config_hashmap['clients_info']
-        volume_types_info = config_hashmap['volume_types']
 
         self.TEST_RES = True
         self.volume_type = volume_type
         self.server_list = []
         self.client_list = []
+        self.volume_types_info = config_hashmap['volume_types']
         self._configure(mname, server_details, client_details, log_path,
                         log_level)
         self.server_list = list(server_details.keys())
