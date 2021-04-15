@@ -47,6 +47,15 @@ class Rexe:
     def execute_command(self, node, cmd):
         """
         Function to execute command in the given node.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         ret_dict = {}
         if not self.connect_flag:

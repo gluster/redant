@@ -1,13 +1,13 @@
 """
-This file contains one class - peer_ops which
+This file contains one class - PeerOps which
 holds APIS related to peers which will be called
 from the test case.
 """
 
 
-class peer_ops:
+class PeerOps:
     """
-    peer_ops class provides APIs to perform operations
+    PeerOps class provides APIs to perform operations
     like adding and deleting the peers,checking the status
     and list of peers in the pool.
     """

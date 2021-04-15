@@ -1,6 +1,6 @@
 """
-This file contains a test-case which tests glusterd
-starting and stopping of glusterd service.
+This file contains a test-case which tests
+volume related operations.
 """
 #disruptive;dist
 
@@ -10,7 +10,7 @@ from tests.parent_test import ParentTest
 class TestCase(ParentTest):
     """
     The test case contains one function to test
-    for glusterd service operations
+    volume creation and deletion.
     """
 
     def run_test(self, redant):

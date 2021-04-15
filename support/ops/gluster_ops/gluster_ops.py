@@ -16,6 +16,15 @@ class GlusterOps:
         Args:
             node (str|list): The node(s) on which the glusterd service
                              is to be started.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         cmd_fail = False
         error_msg = ""
@@ -43,12 +52,23 @@ class GlusterOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
+
     def restart_glusterd(self, node: str, enable_retry: bool=True):
         """
         Restarts the glusterd service on the specified node or nodes.
         Args:
             node (str|list): The node(s) on which the glusterd service
                              is to be restarted.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         cmd_fail = False
         error_msg = ""
@@ -76,12 +96,23 @@ class GlusterOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
+
     def stop_glusterd(self, node):
         """
         Stops the glusterd service on the specified node(s).
         Args:
             node (str|list): The node on which the glusterd service
                         is to be stopped.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         cmd = "systemctl stop glusterd"
 
@@ -99,6 +130,8 @@ class GlusterOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
+
     def reset_failed_glusterd(self, node) -> bool:
         """
         Glusterd has a burst limit of 5 times, hence TCs will
@@ -111,7 +144,14 @@ class GlusterOps:
             reset-failed has to be run.
 
         Returns:
-            bool: True if successful on all servers or false.
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         if not isinstance(node, list):
             node = [node]
@@ -127,6 +167,8 @@ class GlusterOps:
                 raise Exception(result_val['error_msg'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+
+        return ret
 
     def is_glusterd_running(self, node: str) -> bool:
         """

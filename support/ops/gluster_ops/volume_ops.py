@@ -22,6 +22,16 @@ class VolumeOps:
             server (str): Hostname or IP address
             volname (str): Name of volume to be mounted
             path (str): The path of the mount directory(mount point)
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
@@ -35,6 +45,8 @@ class VolumeOps:
             raise Exception(ret["error_msg"])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+
+        return ret
         
     def volume_unmount(self, path: str, node: str=None):
         """
@@ -45,6 +57,16 @@ class VolumeOps:
             server (str): Hostname or IP address
             volname (str): Name of volume to be mounted
             path (str): The path of the mount directory(mount point)
+        
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         
         cmd = f"umount {path}"
@@ -59,6 +81,7 @@ class VolumeOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
         
+        return ret
 
     def volume_create(self, volname: str, bricks_list: list,
                       node : str=None, force: bool = False,
@@ -84,6 +107,15 @@ class VolumeOps:
                     - redundancy_count : (int)|None
                     - transport_type : tcp|rdma|tcp,rdma|None
                     - ...
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         replica = arbiter = stripe = disperse = disperse_data = redundancy = ''
@@ -128,16 +160,28 @@ class VolumeOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
+
     def volume_start(self, volname: str, node : str=None, force: bool = False):
         """
         Starts the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
+
         Kwargs:
             force (bool): If this option is set to True, then start volume
                 will get executed with force option. If it is set to False,
                 then start volume will get executed without force option
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         if force:
@@ -155,6 +199,8 @@ class VolumeOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
+        return ret
+
     def volume_stop(self, volname: str, node : str=None, force: bool = False):
         """
         Stops the gluster volume
@@ -165,6 +211,15 @@ class VolumeOps:
             force (bool): If this option is set to True, then start volume
                 will get executed with force option. If it is set to False,
                 then start volume will get executed without force option
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         if force:
@@ -181,6 +236,7 @@ class VolumeOps:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+        return ret
 
     def volume_delete(self, volname: str,node : str=None):
         """
@@ -189,6 +245,15 @@ class VolumeOps:
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
 
         cmd = f"gluster volume delete {volname} --mode=script --xml"
@@ -202,6 +267,8 @@ class VolumeOps:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+
+        return ret
 
     def get_volume_info(self, node : str=None, volname: str = 'all') -> dict:
         """
@@ -347,6 +414,15 @@ class VolumeOps:
                 then reset volume will get executed without force option
         Example:
             volume_reset("testvol",server)
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
         
         """  
         if force:
@@ -363,6 +439,8 @@ class VolumeOps:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+
+        return ret
         
     def get_volume_status(self,node : str=None,volname : str='all',
                          service : str='',options : str='') -> dict:
@@ -520,6 +598,16 @@ class VolumeOps:
         Example:
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, server)
+
+        Returns:
+        ret: A dictionary consisting
+            - Flag : Flag to check if connection failed
+            - msg : message
+            - error_msg: error message
+            - error_code: error code returned
+            - cmd : command that got executed
+            - node : node on which the command got executed
+
         """
         
         volume_options = options
@@ -552,6 +640,8 @@ class VolumeOps:
                 raise Exception(ret['msg']['opErrstr'])
 
             self.logger.info(f"Successfully ran {cmd} on {node}")
+
+        return ret
         
     def reset_volume_option(self, volname : str, option : str,
                             node : str=None, force : bool=False):
@@ -567,6 +657,16 @@ class VolumeOps:
                 then reset volume will get executed without force option
         Example:
             reset_volume_option("test-vol1", "option", server)
+        
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         
         if force:
@@ -582,7 +682,9 @@ class VolumeOps:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-            
+        
+        return ret
+
     def volume_sync(self, hostname : str, node: str, volname : str='all'):
         """
         Sync the volume to the specified host
@@ -593,6 +695,16 @@ class VolumeOps:
             volname (str): volume name. Defaults to 'all'.
         Example:
             volume_sync(volname="testvol",server)
+        
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         """
         
         cmd = f"gluster volume sync {hostname} {volname} --mode=script --xml"
@@ -605,3 +717,5 @@ class VolumeOps:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
+
+        return ret
