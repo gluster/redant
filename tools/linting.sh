@@ -21,6 +21,7 @@ perform_linting () {
 help_info () {
 # Provides the help information
 # Describes the flags and their usage
+    echo
     echo "Linting help"
             echo "============="
             echo "Flags:"
@@ -42,11 +43,27 @@ help_info () {
             echo "If you don't specify the path, the operation will occur on the whole repo"
             echo
             echo "Ex: tools/linting.sh -f -l"
-            echo "This will perform the linting on the whoke repo"
+            echo "This will perform the linting on the whole repo"
             echo
             echo "Examples:"
             echo "========="
-            echo "tools/linting.sh -p /home/redant/core"
+            echo "tools/linting.sh -f"
+            echo "This will perform only flake on the folder"
+            echo
+            echo "tools/linting.sh -l"
+            echo "This will perform only lint on the folder"
+            echo
+            echo "tools/linting.sh -p /home/redant/core -f -l"
+            echo "This will perform linting on the folder"
+            echo
+            echo "tools/linting.sh -p /home/redant/core -f"
+            echo "This will perform only flake operation on the folder"
+            echo
+            echo "tools/linting.sh -p /home/redant/core -l"
+            echo "This will perform only lint operation on the folder"
+            echo
+            echo "tools/linting.sh -[wrong flag]"
+            echo "This will show illegal action"
 }
 
 while getopts "p:flh" opt; do
