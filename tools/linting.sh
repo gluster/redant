@@ -43,9 +43,13 @@ help_info () {
             echo
             echo "Ex: tools/linting.sh -f -l"
             echo "This will perform the linting on the whoke repo"
+            echo
+            echo "Examples:"
+            echo "========="
+            echo "tools/linting.sh -p /home/redant/core"
 }
 
-while getopts ":pflh" opt; do
+while getopts "p:flh" opt; do
     case $opt in
         p)
             if [[ $OPTARG == '' ]]
@@ -70,8 +74,8 @@ while getopts ":pflh" opt; do
 
         ;;
         \?)
-            echo "Invalid option: -$OPTARG" >&2
-            echo "Use -h to see the operation of flags"
+            help_info
+
         ;;
     esac
 done
