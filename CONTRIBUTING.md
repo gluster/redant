@@ -32,7 +32,7 @@ To execute the same:
 ### Using script:
 You can run the following command
 ```js
-./scripts/flake_lint.sh [PATH] [OPERATION]
+tools/linting.sh -p PATH/TO/FILE -l -f
 ```
 To know more about the script, go [here](https://github.com/srijan-sivakumar/redant/blob/main/tools/README.md).
 
