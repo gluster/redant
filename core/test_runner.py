@@ -3,10 +3,12 @@ The test runner is responsible for handling the list of TCs
 to be run and invoking them.
 """
 import uuid
+import time
+from datetime import datetime
+from threading import Thread, Semaphore
 from colorama import Fore, Style
 from runner_thread import RunnerThread
-from threading import Thread, Semaphore
-import time
+
 
 class TestRunner:
     """
@@ -41,13 +43,12 @@ class TestRunner:
             test_thread.join()
 
         thread_flag = False
-        
+
         for test in cls.non_concur_test:
             cls.test_results[test['moduleName'][:-3]] = []
-        
-        for test in cls.non_concur_test:   
+
+        for test in cls.non_concur_test:
             cls._run_test(test, thread_flag)
-            
 
         return cls.test_results
 
@@ -57,13 +58,14 @@ class TestRunner:
         This method creates the threadlist for non disruptive tests
         """
         thread_flag = True
-        
+
         for test in cls.concur_test:
             cls.test_results[test['moduleName'][:-3]] = []
-        
+
         for test in cls.concur_test:
             cls.threadList.append(Thread(target=cls._run_test,
                                          args=(test, thread_flag,)))
+
     @classmethod
     def _run_test(cls, test_dict: dict, thread_flag: bool):
         """
@@ -74,9 +76,9 @@ class TestRunner:
             cls.semaphore.acquire()
         tc_class = test_dict["testClass"]
         tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
-            test_dict["moduleName"][:-3]+"-"+test_dict["volType"]\
-            + ".log"
-        
+            test_dict["volType"]+"/"+test_dict["moduleName"][:-3]+"-" +\
+            test_dict["volType"] + f"-{datetime.now()}" + ".log"
+
         # to calculate time spent to execute the test
         start = time.time()
         runner_thread_obj = RunnerThread(str(uuid.uuid1().int), tc_class,
@@ -85,7 +87,7 @@ class TestRunner:
                                          test_dict["volType"], tc_log_path,
                                          cls.log_level)
         test_stats = runner_thread_obj.run_thread()
-        
+
         test_stats['timeTaken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
         if test_stats['testResult']:

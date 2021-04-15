@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 from datetime import datetime
 
+
 class Logger(logging.Logger):
     """
     The framework's logger class. It handles three levels of logging
@@ -106,7 +107,15 @@ class Logger(logging.Logger):
             test_case_dir = path+"/"+test["modulePath"][5:-3]
             if not os.path.isdir(test_case_dir):
                 os.makedirs(test_case_dir)
+            for vol in test["volType"]:
+                voltype_dir = test_case_dir+"/"+vol
+                if not os.path.isdir(voltype_dir):
+                    os.makedirs(voltype_dir)
         for test in test_dict["nonDisruptive"]:
             test_case_dir = path+"/"+test["modulePath"][5:-3]
             if not os.path.isdir(test_case_dir):
                 os.makedirs(test_case_dir)
+            for vol in test["volType"]:
+                voltype_dir = test_case_dir+"/"+vol
+                if not os.path.isdir(voltype_dir):
+                    os.makedirs(voltype_dir)
