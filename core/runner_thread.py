@@ -9,11 +9,10 @@ class RunnerThread:
     functions for running it.
     """
 
-    def __init__(self, mname: str, tc_class, client_dict: dict,
-                 server_dict: dict, volume_type: str, log_path: str,
-                 log_level: str):
+    def __init__(self, mname: str, tc_class, config_hashmap: dict,
+                 volume_type: str, log_path: str,log_level: str):
         # Creating the test case object from the test case.
-        self.tc_obj = tc_class(mname, client_dict, server_dict, volume_type,
+        self.tc_obj = tc_class(mname, config_hashmap, volume_type,
                                log_path, log_level)
         self.run_test_func = getattr(self.tc_obj, "parent_run_test")
         self.terminate_test_func = getattr(self.tc_obj, "terminate")

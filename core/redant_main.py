@@ -57,10 +57,10 @@ def main():
     start = time.time()
     args = pars_args()
 
-    ParamsHandler.get_config_hashmap(args.config_file)
+    ParamsHandler.set_config_hashmap(args.config_file)
 
     # Obtain the client and server dict.
-    mach_conn_dict = ParamsHandler.get_nodes_info()
+    config_hashmap = ParamsHandler.get_config_hashmap()
 
     # Building the test list and obtaining the TC details.
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
@@ -78,7 +78,7 @@ def main():
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
 
     # invoke the test_runner.
-    TestRunner.init(test_cases_dict, mach_conn_dict, args.log_dir,
+    TestRunner.init(test_cases_dict, config_hashmap, args.log_dir,
                     args.log_level, args.semaphore_count)
     all_test_results = TestRunner.run_tests()
 
