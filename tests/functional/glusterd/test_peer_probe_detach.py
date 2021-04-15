@@ -1,6 +1,6 @@
 """
-This component has a test-case for peers probe
-and detach operations.
+This component has a test-case for testing
+peer related operations
 """
 #disruptive;
 

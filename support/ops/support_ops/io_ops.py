@@ -1,12 +1,12 @@
 """
-This file contains one class - io_ops which
+This file contains one class - IoOpswhich
 holds API for running all the IO commands.
 """
 
 
-class io_ops:
+class IoOps:
     """
-    io_ops class provides API to handle
+    IoOps class provides API to handle
     all the IO commands.
     """
 
@@ -17,6 +17,16 @@ class io_ops:
         Args:
             cmd (str): The IO command which is to be run
             host (str): The node in the cluster where the command is to be run
+        
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         '''
 
         self.logger.info(f"Running {cmd} on node {host}")
@@ -27,3 +37,5 @@ class io_ops:
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {host}")
+
+        return ret

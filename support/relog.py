@@ -93,15 +93,19 @@ class Logger(logging.Logger):
         """
         if not os.path.isdir(path):
             os.makedirs(path)
+        
         # Component wise directory creation.
         for test_type in component_dict:
             test_type_path = path+"/"+test_type
+        
         if not os.path.isdir(test_type_path):
             os.makedirs(test_type_path)
+        
         components = component_dict[test_type]
         for component in components:
             if not os.path.isdir(test_type_path+"/"+component):
                 os.makedirs(test_type_path+"/"+component)
+        
         # TC wise directory creation.
         for test in test_dict["disruptive"]:
             test_case_dir = path+"/"+test["modulePath"][5:-3]
@@ -111,6 +115,7 @@ class Logger(logging.Logger):
                 voltype_dir = test_case_dir+"/"+vol
                 if not os.path.isdir(voltype_dir):
                     os.makedirs(voltype_dir)
+            
         for test in test_dict["nonDisruptive"]:
             test_case_dir = path+"/"+test["modulePath"][5:-3]
             if not os.path.isdir(test_case_dir):

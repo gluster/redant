@@ -1,7 +1,7 @@
 
 """
 This file contains a test-case which tests glusterd
-starting and stopping of glusterd service.
+service operations
 """
 #disruptive;dist
 
