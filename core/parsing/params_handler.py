@@ -114,10 +114,9 @@ class ParamsHandler:
                }
                
             }
-        """
-        config_hashmap = cls.config_hashmap    
+        """   
         
-        return config_hashmap
+        return cls.config_hashmap
 
     @classmethod
     def get_brick_root_list(cls, server_ip: str) -> list:
