@@ -38,7 +38,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret["error_code"]) != 0:
             self.logger.error(ret["error_msg"])
@@ -73,7 +73,7 @@ class VolumeOps:
         
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret["error_code"]) != 0:
             self.logger.error(ret["error_msg"])
@@ -152,7 +152,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -191,7 +191,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -229,7 +229,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -260,7 +260,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -329,7 +329,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
@@ -386,7 +386,7 @@ class VolumeOps:
         
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -432,7 +432,7 @@ class VolumeOps:
             
         self.logger.info(f"Running {cmd} on node {node}")
         
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -493,7 +493,7 @@ class VolumeOps:
         
         self.logger.info(f"Running {cmd} on node {node}")
             
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -565,7 +565,7 @@ class VolumeOps:
         
         self.logger.info(f"Running {cmd} on node {node}")
             
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
  
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -621,7 +621,7 @@ class VolumeOps:
                         "--mode=script --xml")
                 self.logger.info(f"Running {cmd} on node {node}")
                     
-                ret = self.execute_command(node=node, cmd=cmd)
+                ret = self.execute_command(cmd=cmd, node=node)
 
                 if int(ret['msg']['opRet']) != 0:
                     self.logger.error(ret['msg']['opErrstr'])
@@ -633,7 +633,7 @@ class VolumeOps:
                    f"{volume_options[option]} --mode=script --xml")
             self.logger.info(f"Running {cmd} on node {node}")
                 
-            ret = self.execute_command(node=node, cmd=cmd)
+            ret = self.execute_command(cmd=cmd, node=node)
 
             if int(ret['msg']['opRet']) != 0:
                 self.logger.error(ret['msg']['opErrstr'])
@@ -675,7 +675,7 @@ class VolumeOps:
         else:
             cmd = f"gluster volume reset {volname} {option} --mode=script --xml"
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command( cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -710,7 +710,7 @@ class VolumeOps:
         cmd = f"gluster volume sync {hostname} {volname} --mode=script --xml"
         
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])

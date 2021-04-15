@@ -1,12 +1,21 @@
+import random
 import concurrent.futures
 import paramiko
 import xmltodict
+from multipledispatch import dispatch
 
 
 class Rexe:
     def __init__(self, host_dict):
         self.host_generic = ['alls', 'allp']
         self.host_dict = host_dict
+
+    def _random_node(self):
+        """
+        Module to select a random node from the
+        existing node_dict
+        """
+        return random.choice(list(self.node_dict.keys()))
 
     def establish_connection(self):
         """
@@ -44,7 +53,23 @@ class Rexe:
                 (self.node_dict[node]).close()
         return    
 
-    def execute_command(self, node, cmd):
+    @dispatch(str)
+    def execute_command(self, cmd):
+        """
+        Module to handle random node execution.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        """
+        return self.execute_command(cmd, self._random_node())
+
+    @dispatch(str, str)
+    def execute_command(self, cmd, node):
         """
         Function to execute command in the given node.
         Returns:
@@ -58,6 +83,7 @@ class Rexe:
 
         """
         ret_dict = {}
+
         if not self.connect_flag:
             ret_dict['Flag'] = False
             return ret_dict
@@ -100,17 +126,27 @@ class Rexe:
         self.logger.debug(ret_dict)
         return ret_dict
 
-    def execute_command_multinode(self, node_list, cmd):
+    @dispatch(str)
+    def execute_command_multinode(self, cmd):
+        """
+        Function to execute command in multiple nodes parallely
+        when node list isn't given.
+        """
+        return self.execute_command_multinode(cmd, list(self.node_dict.keys()))
+
+    @dispatch(str, list)
+    def execute_command_multinode(self, cmd, node_list):
         """
         Function to execute command in multiple nodes
         parallely.
         """
         ret_val = []
+
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=len(node_list)) as executor:
 
             future_exec = {executor.submit(
-                self.execute_command, node, cmd): node for node in node_list}
+                self.execute_command, cmd, node): node for node in node_list}
             for future_handle in concurrent.futures.as_completed(future_exec):
                 try:
                     ret_val.append(future_handle.result())

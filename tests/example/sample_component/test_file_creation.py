@@ -29,7 +29,7 @@ class TestCase(ParentTest):
         host = self.server_list[0]
         regfile_name = "file1"
         mountpoint = "/mnt/test_dir"
-        redant.execute_io_cmd(f"mkdir -p {mountpoint}", host)
+        """redant.execute_io_cmd(f"mkdir -p {mountpoint}", host)
         redant.execute_io_cmd(
             f"cd {mountpoint} && touch {mountpoint}/{regfile_name}", host)
 
@@ -50,5 +50,6 @@ class TestCase(ParentTest):
                 f"echo '{str_to_add}' >> {path}", host)
 
         redant.execute_io_cmd(f"cat {path}", host)
-        redant.execute_io_cmd(f"ls -lR {mountpoint}", host)
-        redant.execute_io_cmd(f"rm -rf {mountpoint}", host)
+        redant.execute_io_cmd(f"ls -lR {mountpoint}", host)"""
+        redant.execute_io_cmd(f"ls -l /")
+        #redant.execute_io_cmd(f"rm -rf {mountpoint}", host)

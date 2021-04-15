@@ -32,7 +32,7 @@ class PeerOps:
         cmd = f'gluster --xml peer probe {server}'
 
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -68,7 +68,7 @@ class PeerOps:
         else:
             cmd = f"gluster --xml peer detach {server} --mode=script"
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -98,7 +98,7 @@ class PeerOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -120,7 +120,7 @@ class PeerOps:
 
         cmd = 'gluster --xml pool list'
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
@@ -173,7 +173,7 @@ class PeerOps:
         cmd = 'gluster pool list --xml'
 
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -224,7 +224,7 @@ class PeerOps:
                 node = nodes[0]
                 self.logger.info("Creating cluster")
                 for server in nodes:
-                    self.peer_probe(server,node)
+                    self.peer_probe(server, node)
                 self.logger.info("Cluster created")
                 self.peer_status(nodes[0])
             return True

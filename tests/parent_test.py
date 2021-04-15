@@ -34,7 +34,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.server_list = list(server_details.keys())
         self.client_list = list(client_details.keys())
 
-        self.redant.start_glusterd(self.server_list)
+        self.redant.start_glusterd()
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):

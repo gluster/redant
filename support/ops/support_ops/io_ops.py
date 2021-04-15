@@ -10,7 +10,7 @@ class IoOps:
     all the IO commands.
     """
 
-    def execute_io_cmd(self, cmd: str, host: str = None):
+    def execute_io_cmd(self, cmd: str, host: str=None):
         '''
         Used for all the IO commands
 
@@ -30,12 +30,15 @@ class IoOps:
         '''
 
         self.logger.info(f"Running {cmd} on node {host}")
-        ret = self.execute_command(host, cmd)
+        if host is None:
+            ret = self.execute_command(cmd)
+        else:
+            ret = self.execute_command(cmd, host)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
-        self.logger.info(f"Successfully ran {cmd} on {host}")
+        self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
 
         return ret
