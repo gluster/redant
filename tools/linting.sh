@@ -45,7 +45,7 @@ help_info () {
             echo "This will perform the linting on the whoke repo"
 }
 
-while getopts ":prflh" opt; do
+while getopts ":pflh" opt; do
     case $opt in
         p)
             if [[ $OPTARG == '' ]]
