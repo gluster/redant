@@ -34,7 +34,7 @@ You can run the following command
 ```js
 ./scripts/flake_lint.sh [PATH] [OPERATION]
 ```
-To know more about the script, go [here](https://github.com/srijan-sivakumar/redant/blob/main/scripts/README.md).
+To know more about the script, go [here](https://github.com/srijan-sivakumar/redant/blob/main/tools/README.md).
 
 ### Manually
 ```js
