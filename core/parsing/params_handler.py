@@ -13,7 +13,7 @@ class ParamsHandler:
     """
 
     @classmethod
-    def get_config_hashmap(cls, filepath: str):
+    def set_config_hashmap(cls, filepath: str):
         """
         Gets the configuration hashmap generated from the
         api in Parser class and sets the reuired class variable.
@@ -46,49 +46,78 @@ class ParamsHandler:
         return client_ip_list
 
     @classmethod
-    def get_nodes_info(cls) -> dict:
+    def get_config_hashmap(cls) -> dict:
         """
-        Returns a dictionary consisting of server info
+        Returns the config hashmap which is parsed from
+        the config file 
         Returns:
-            dict: dictionary consisting of server info
-        format of dictionary:
-        {
-            servers: {
-                        "10.4.28.93": {
-                            "user" : root
-                            "passwd" : redhat
-                        },
-                        "23.43.12.87": { 
-                            "user" : root
-                            "passwd" : redhat
-                        }
+            dict: dictionary consisting of servers info,
+                  clients info and volume types info. 
+            format of dictionary:
+            {
+                servers_info: {
+                                "10.4.28.93": {
+                                    "user" : root
+                                    "passwd" : redhat
+                                },
+                                "23.43.12.87": { 
+                                    "user" : root
+                                    "passwd" : redhat
+                                }
+                }
+                clients_info: {
+                                "10.3.28.92": {
+                                    "user" : root
+                                    "passwd" : redhat
+                                },
+                                "15.12.43.98": {
+                                    "user" : root
+                                    "passwd" : redhat
+                                }
+               }
+               volume_types: {
+                                "distributed": {
+                                    "dist_count": "4"
+                                    "transport": "tcp"
+                                }
+                                "replicated": {
+                                    "replica_count": "3"
+                                    "transport": "tcp"
+                                }
+                                "distributed-replicated": {
+                                    "dist_count": "2"
+                                    "replica_count": "3"
+                                    "transport": "tcp"
+                                }
+                                "dispersed": {
+                                    "disperse_count": "6"
+                                    "redundancy_count": "2"
+                                    "transport": "tcp"
+                                }
+                                "distributed-dispersed": {
+                                    "dist_count": "2"
+                                    "disperse_count": "6"
+                                    "redundancy_count": "2"
+                                    "transport": "tcp"
+                                }
+                                "arbiter": {
+                                    "replica_count": "3"
+                                    "arbiter_count": "1"
+                                    "transport": "tcp"
+                                }
+                                "distributed-arbiter": {
+                                    "dist_count": "2"
+                                    "replica_count": "3"
+                                    "arbiter_count": "1"
+                                    "transport": "tcp"
+                                }
+               }
+               
             }
-            clients: {
-                        "10.3.28.92": {
-                            "user" : root
-                            "passwd" : redhat
-                        },
-                        "15.12.43.98": {
-                            "user" : root
-                            "passwd" : redhat
-                        }
-           }
-        }
         """
-
-        nodes_info = {}
-        s_info = cls.config_hashmap["servers_info"]
-        c_info = cls.config_hashmap["clients_info"]
+        config_hashmap = cls.config_hashmap    
         
-        servers = list(s_info.keys())
-        
-        for server in servers:
-            s_info[server].pop("brick_root")
-            
-        nodes_info['servers'] = s_info
-        nodes_info['clients'] = c_info
-
-        return nodes_info
+        return config_hashmap
 
     @classmethod
     def get_brick_root_list(cls, server_ip: str) -> list:

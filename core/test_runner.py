@@ -16,9 +16,9 @@ class TestRunner:
     """
 
     @classmethod
-    def init(cls, test_run_dict: dict, mach_conn_dict: dict,
+    def init(cls, test_run_dict: dict, config_hashmap: dict,
              base_log_path: str, log_level: str, semaphore_count: int):
-        cls.mach_conn_dict = mach_conn_dict
+        cls.config_hashmap = config_hashmap
         cls.semaphore = Semaphore(semaphore_count)
         cls.base_log_path = base_log_path
         cls.log_level = log_level
@@ -80,8 +80,7 @@ class TestRunner:
         # to calculate time spent to execute the test
         start = time.time()
         runner_thread_obj = RunnerThread(str(uuid.uuid1().int), tc_class,
-                                         cls.mach_conn_dict["clients"],
-                                         cls.mach_conn_dict["servers"],
+                                         cls.config_hashmap,
                                          test_dict["volType"], tc_log_path,
                                          cls.log_level)
         test_stats = runner_thread_obj.run_thread()

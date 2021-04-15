@@ -13,13 +13,17 @@ class ParentTest(metaclass=abc.ABCMeta):
 
     """
 
-    def __init__(self, mname: str, client_details: dict, server_details: dict,
-                 volume_type: str, log_path: str, log_level: str = 'I'):
+    def __init__(self, mname: str, config_hashmap: dict, volume_type: str,
+                 log_path: str, log_level: str = 'I'):
         """
         Creates volume
         And runs the specific component in the
         test case
         """
+        
+        server_details = config_hashmap['servers_info']
+        client_details = config_hashmap['clients_info']
+        volume_types_info = config_hashmap['volume_types']
 
         self.TEST_RES = True
         self.volume_type = volume_type
