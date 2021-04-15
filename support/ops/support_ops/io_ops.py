@@ -1,5 +1,5 @@
 """
-This file contains one class - IoOpswhich
+This file contains one class - IoOps which
 holds API for running all the IO commands.
 """
 
