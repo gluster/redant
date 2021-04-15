@@ -13,3 +13,5 @@ where the test cases will reside will be tests/ . Once can provide a flag
 -nc if they want the TC suite to run faster as it won't clear the cache files.
 This scenario might come handy wherein a user might want to test out some code
 changes and see if it passes the sanity checks.
+
+3. `linting.sh` : A BASH script helps in automating the linting process. Multiple flags for flake and lint are provided that gives the user the choice to perform any one or both. The path flag leverages the operation as the user can run the script to test the lint for one file or the whole repo. Run `tools/linting.sh -h` to know more.

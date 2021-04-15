@@ -26,9 +26,17 @@ autopep8 -i <PATH_TO_THE_FILE>/<filename>.py
 ---
 **NOTE**
 
-Along with this run pylint and flake8 manually as well and remove the errors. <br>
-To run the same:
+Run pylint and flake8 to check and remove the errors. <br>
+To execute the same:
 
+### Using script:
+You can run the following command
+```js
+tools/linting.sh -p PATH/TO/FILE -l -f
+```
+To know more about the script, go [here](https://github.com/srijan-sivakumar/redant/blob/main/tools/README.md).
+
+### Manually
 ```js
 flake8 <PATH_TO_THE_FILE>/<filename>.py
 pylint -j 4 --rcfile=.pylintrc <PATH_TO_THE_FILE>/<filename>.py
