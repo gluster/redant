@@ -10,14 +10,14 @@ class IoOps:
     all the IO commands.
     """
 
-    def execute_io_cmd(self, cmd: str, host: str=None):
+    def execute_io_cmd(self, cmd: str, host: str = None):
         '''
         Used for all the IO commands
 
         Args:
             cmd (str): The IO command which is to be run
             host (str): The node in the cluster where the command is to be run
-        
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed

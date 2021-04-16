@@ -13,7 +13,7 @@ class VolumeOps:
     """
 
     def volume_mount(self, server: str, volname: str,
-                     path: str, node: str=None):
+                     path: str, node: str = None):
         """
         Mounts the gluster volume to the client's filesystem.
         Args:
@@ -38,7 +38,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret["error_code"]) != 0:
             self.logger.error(ret["error_msg"])
@@ -47,8 +47,8 @@ class VolumeOps:
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return ret
-        
-    def volume_unmount(self, path: str, node: str=None):
+
+    def volume_unmount(self, path: str, node: str = None):
         """
         Unmounts the gluster volume .
         Args:
@@ -57,7 +57,7 @@ class VolumeOps:
             server (str): Hostname or IP address
             volname (str): Name of volume to be mounted
             path (str): The path of the mount directory(mount point)
-        
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -68,23 +68,23 @@ class VolumeOps:
                 - node : node on which the command got executed
 
         """
-        
+
         cmd = f"umount {path}"
-        
+
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret["error_code"]) != 0:
             self.logger.error(ret["error_msg"])
             raise Exception(ret["error_msg"])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         return ret
 
     def volume_create(self, volname: str, bricks_list: list,
-                      node : str=None, force: bool = False,
+                      node: str = None, force: bool = False,
                       **kwargs):
         """
         Create the gluster volume with specified configuration
@@ -152,7 +152,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -162,7 +162,8 @@ class VolumeOps:
 
         return ret
 
-    def volume_start(self, volname: str, node : str=None, force: bool = False):
+    def volume_start(self, volname: str, node: str = None,
+                     force: bool = False):
         """
         Starts the gluster volume
         Args:
@@ -191,7 +192,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -201,7 +202,7 @@ class VolumeOps:
 
         return ret
 
-    def volume_stop(self, volname: str, node : str=None, force: bool = False):
+    def volume_stop(self, volname: str, node: str = None, force: bool = False):
         """
         Stops the gluster volume
         Args:
@@ -229,7 +230,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -238,7 +239,7 @@ class VolumeOps:
         self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
-    def volume_delete(self, volname: str,node : str=None):
+    def volume_delete(self, volname: str, node: str = None):
         """
         Deletes the gluster volume if given volume exists in
         gluster.
@@ -260,7 +261,7 @@ class VolumeOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -270,7 +271,7 @@ class VolumeOps:
 
         return ret
 
-    def get_volume_info(self, node : str=None, volname: str = 'all') -> dict:
+    def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
         """
         Gives volume information
         Args:
@@ -290,7 +291,7 @@ class VolumeOps:
                                          'name': 'server-vm1:/brick1',
                                          'isArbiter': '0',
                                          '#text': 'server-vm1:/brick1'
-                                        }, 
+                                        },
                                         {'name': 'server-vm1:/brick3',
                                          'isArbiter': '0',
                                          '#text': 'server-vm1:/brick3'
@@ -322,14 +323,14 @@ class VolumeOps:
                                         }
                           }
             }
-            
+
         """
 
         cmd = f"gluster volume info {volname} --xml"
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
@@ -339,38 +340,38 @@ class VolumeOps:
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
         volume_list = volume_info['volume']
-        if not(isinstance(volume_list,list)):
+        if not(isinstance(volume_list, list)):
             volume_list = [volume_list]
         for volume in volume_list:
-            for key,val in volume.items():
-                if key=='name':
+            for key, val in volume.items():
+                if key == 'name':
                     volname = val
                     ret_dict[volname] = {}
-                elif key=='bricks':
+                elif key == 'bricks':
                     ret_dict[volname]['bricks'] = []
                     brick_list = val['brick']
-                    if not(isinstance(brick_list,list)):
+                    if not(isinstance(brick_list, list)):
                         brick_list = [brick_list]
                     for brick in brick_list:
                         brick_info = {}
-                        for b_key,b_val in brick.items():
+                        for b_key, b_val in brick.items():
                             brick_info[b_key] = b_val
-                        ret_dict[volname]['bricks'].append(brick_info)                   
-                elif key=='options':
+                        ret_dict[volname]['bricks'].append(brick_info)
+                elif key == 'options':
                     ret_dict[volname]['options'] = {}
                     for option in val['option']:
-                        for opt,opt_val in option.items():
-                            if opt=='name':
+                        for opt, opt_val in option.items():
+                            if opt == 'name':
                                 opt_name = opt_val
-                            elif opt=='value':
+                            elif opt == 'value':
                                 opt_value = opt_val
                         ret_dict[volname]['options'][opt_name] = opt_val
                 else:
                     ret_dict[volname][key] = val
 
         return ret_dict
-        
-    def get_volume_list(self, node : str=None) -> list:
+
+    def get_volume_list(self, node: str = None) -> list:
         """
         Fetches the volume names in the gluster.
         Uses xml output of volume list and parses it into to list
@@ -383,26 +384,26 @@ class VolumeOps:
             >>>['testvol1', 'testvol2']
         """
         cmd = "gluster volume list --xml"
-        
+
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         volume_list_count = int(ret['msg']['volList']['count'])
         volume_list = []
-        if volume_list_count!=0:
+        if volume_list_count != 0:
             volume_list = ret['msg']['volList']['volume']
-        
+
         return volume_list
-        
-        
-    def volume_reset(self, volname: str, node : str=None, force : bool=False):
+
+    def volume_reset(self, volname: str, node: str = None,
+                     force: bool = False):
         """
         Resets the gluster volume of all the reconfigured options.
         Args:
@@ -423,16 +424,16 @@ class VolumeOps:
                 - error_code: error code returned
                 - cmd : command that got executed
                 - node : node on which the command got executed
-        
-        """  
+
+        """
         if force:
             cmd = f"gluster volume reset {volname} force --mode=script --xml"
         else:
             cmd = f"gluster volume reset {volname} --mode=script --xml"
-            
+
         self.logger.info(f"Running {cmd} on node {node}")
-        
-        ret = self.execute_command(cmd=cmd, node=node)
+
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -441,9 +442,9 @@ class VolumeOps:
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return ret
-        
-    def get_volume_status(self,node : str=None,volname : str='all',
-                         service : str='',options : str='') -> dict:
+
+    def get_volume_status(self, node: str = None, volname: str = 'all',
+                          service: str = '', options: str = '') -> dict:
         """
         Gets the status of all or the specified volume
         Args:
@@ -459,7 +460,7 @@ class VolumeOps:
         Returns:
             dict: volume status in dict of dictionary format
         Example:
-            get_volume_status("test-vol1",server)    
+            get_volume_status("test-vol1",server)
          >>>{ 'test-vol1': {
                              'nodeCount': '2',
                              'node': [{
@@ -473,7 +474,7 @@ class VolumeOps:
                                                  },
                                         'pid': '669291'
                                       },
-                                      { 
+                                      {
                                         'hostname': 'server-vm1',
                                         'path': '/brick3',
                                         'status': '1',
@@ -488,52 +489,52 @@ class VolumeOps:
                            }
             }
         """
-        
+
         cmd = f"gluster volume status {volname} {service} {options} --xml"
-        
+
         self.logger.info(f"Running {cmd} on node {node}")
-            
-        ret = self.execute_command(cmd=cmd, node=node)
+
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         volume_status = ret['msg']['volStatus']['volumes']
         ret_dict = {}
         volume_list = volume_status['volume']
-        if not(isinstance(volume_list,list)):
+        if not(isinstance(volume_list, list)):
             volume_list = [volume_list]
         for volume in volume_list:
-            for key,val in volume.items():
-                if key=='volName':
+            for key, val in volume.items():
+                if key == 'volName':
                     volname = val
                     ret_dict[volname] = {}
-                elif key=='node':
+                elif key == 'node':
                     ret_dict[volname]['node'] = []
                     node_list = val
-                    if not(isinstance(node_list,list)):
+                    if not(isinstance(node_list, list)):
                         node_list = [node_list]
                     for node in node_list:
                         node_info = {}
-                        for n_key,n_val in node.items():
-                            if n_key=='ports':
+                        for n_key, n_val in node.items():
+                            if n_key == 'ports':
                                 port_info = {}
-                                for p_key,p_val in n_val.items():
+                                for p_key, p_val in n_val.items():
                                     port_info[p_key] = p_val
                                 node_info[n_key] = port_info
-                            else:        
+                            else:
                                 node_info[n_key] = n_val
-                        ret_dict[volname]['node'].append(node_info)                   
+                        ret_dict[volname]['node'].append(node_info)
                 else:
                     ret_dict[volname][key] = val
-        
+
         return ret_dict
-        
-    def get_volume_options(self,node : str=None, volname : str='all',
-                            option : str='all') -> dict:
+
+    def get_volume_options(self, node: str = None, volname: str = 'all',
+                           option: str = 'all') -> dict:
         """
         Gets the option values for a given volume.
         Args:
@@ -560,34 +561,33 @@ class VolumeOps:
               'cluster.brick-graceful-cleanup': 'disable (DEFAULT)'
             }
         """
-        
+
         cmd = f"gluster volume get {volname} {option} --mode=script --xml"
-        
+
         self.logger.info(f"Running {cmd} on node {node}")
-            
-        ret = self.execute_command(cmd=cmd, node=node)
- 
+
+        ret = self.execute_command(cmd, node)
+
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         volume_options = ret['msg']['volGetopts']
-        
-        
+
         ret_dict = {}
         option_list = volume_options['Opt']
-        if not(isinstance(option_list,list)):
+        if not(isinstance(option_list, list)):
             option_list = [option_list]
         for option in option_list:
             option_name = option['Option']
             option_value = option['Value']
             ret_dict[option_name] = option_value
-        
+
         return volume_options
-        
-    def set_volume_options(self, volname : str, options : str, node : str=None):
+
+    def set_volume_options(self, volname: str, options: str, node: str = None):
         """
         Sets the option values for the given volume.
         Args:
@@ -609,31 +609,30 @@ class VolumeOps:
             - node : node on which the command got executed
 
         """
-        
+
         volume_options = options
-        
+
         if 'group' in volume_options:
             group_options = volume_options.pop('group')
             if not isinstance(group_options, list):
                 group_options = [group_options]
             for group_option in group_options:
                 cmd = (f"gluster volume set {volname} group {group_option} "
-                        "--mode=script --xml")
+                       "--mode=script --xml")
                 self.logger.info(f"Running {cmd} on node {node}")
-                    
-                ret = self.execute_command(cmd=cmd, node=node)
+
+                ret = self.execute_command(cmd, node)
 
                 if int(ret['msg']['opRet']) != 0:
                     self.logger.error(ret['msg']['opErrstr'])
                     raise Exception(ret['msg']['opErrstr'])
-                    
 
         for option in volume_options:
             cmd = (f"gluster volume set {volname} {option} "
                    f"{volume_options[option]} --mode=script --xml")
             self.logger.info(f"Running {cmd} on node {node}")
-                
-            ret = self.execute_command(cmd=cmd, node=node)
+
+            ret = self.execute_command(cmd, node)
 
             if int(ret['msg']['opRet']) != 0:
                 self.logger.error(ret['msg']['opErrstr'])
@@ -642,9 +641,9 @@ class VolumeOps:
             self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return ret
-        
-    def reset_volume_option(self, volname : str, option : str,
-                            node : str=None, force : bool=False):
+
+    def reset_volume_option(self, volname: str, option: str,
+                            node: str = None, force: bool = False):
         """
         Resets the volume option
         Args:
@@ -657,7 +656,7 @@ class VolumeOps:
                 then reset volume will get executed without force option
         Example:
             reset_volume_option("test-vol1", "option", server)
-        
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -668,24 +667,24 @@ class VolumeOps:
                 - node : node on which the command got executed
 
         """
-        
+
         if force:
-            cmd = (f"gluster volume reset {volname} {option} force" 
+            cmd = (f"gluster volume reset {volname} {option} force"
                    "--mode=script --xml")
         else:
-            cmd = f"gluster volume reset {volname} {option} --mode=script --xml"
+            cmd = f"gluster vol reset {volname} {option} --mode=script --xml"
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command( cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         return ret
 
-    def volume_sync(self, hostname : str, node: str, volname : str='all'):
+    def volume_sync(self, hostname: str, node: str, volname: str = 'all'):
         """
         Sync the volume to the specified host
         Args:
@@ -695,7 +694,7 @@ class VolumeOps:
             volname (str): volume name. Defaults to 'all'.
         Example:
             volume_sync(volname="testvol",server)
-        
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -706,11 +705,11 @@ class VolumeOps:
                 - node : node on which the command got executed
 
         """
-        
+
         cmd = f"gluster volume sync {hostname} {volname} --mode=script --xml"
-        
+
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd=cmd, node=node)
+        ret = self.execute_command(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])

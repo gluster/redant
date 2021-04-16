@@ -2,7 +2,7 @@
 This file contains a test-case which tests glusterd
 starting and stopping of glusterd service.
 """
-#disruptive;
+# disruptive;
 
 from tests.parent_test import ParentTest
 

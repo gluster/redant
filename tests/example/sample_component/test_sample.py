@@ -3,7 +3,7 @@
 This file contains a test-case which tests glusterd
 service operations
 """
-#disruptive;dist
+# disruptive;dist
 
 from tests.parent_test import ParentTest
 
@@ -41,9 +41,10 @@ class TestCase(ParentTest):
                              [f"{servera}:/glusterfs/brick/brick1",
                               f"{serverb}:/glusterfs/brick/brick2",
                               f"{serverc}:/glusterfs/brick//brick3"],
-                              serverb, force=True)
-        redant.volume_start(volname,serverc)
-        volume_status = redant.get_volume_status(serverb,volname)
+                             serverb, force=True)
+        redant.volume_start(volname, serverc)
+        volume_status = redant.get_volume_status(serverb, volname)
+        redant.logger.info(volume_status)
         redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
         redant.volume_mount(servera, volname, mountpoint, serverb)
         redant.execute_io_cmd(f"cd {mountpoint} && touch " + "{1..100}",
@@ -55,11 +56,12 @@ class TestCase(ParentTest):
         try:
             redant.execute_io_cmd("ls -l /non-exsisting-path", servera)
         except Exception as error:
+            redant.logger.error(error)
             pass
 
         redant.volume_stop(volname, servera)
         redant.volume_delete(volname, servera)
-        redant.volume_unmount(mountpoint,serverb)
+        redant.volume_unmount(mountpoint, serverb)
         redant.execute_io_cmd(f"cd /mnt && rm -rf {mountpoint}", serverb)
         redant.peer_detach(serverb, serverc)
         redant.peer_detach(serverb, servera)

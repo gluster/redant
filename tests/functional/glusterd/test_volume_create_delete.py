@@ -2,7 +2,7 @@
 This file contains a test-case which tests
 volume related operations.
 """
-#disruptive;dist
+# disruptive;dist
 
 from tests.parent_test import ParentTest
 
@@ -41,7 +41,9 @@ class TestCase(ParentTest):
                              serverb, force=True)
         redant.volume_start(volname, serverc)
         volume_status1 = redant.get_volume_status(serverb, volname)
+        redant.logger.info(volume_status1)
         volume_status2 = redant.get_volume_status(serverc, volname)
+        redant.logger.info(volume_status2)
         redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
         redant.volume_mount(servera, volname, mountpoint, serverb)
         redant.execute_io_cmd(f"cd {mountpoint} && touch " + "{1..100}",

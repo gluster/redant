@@ -51,7 +51,7 @@ class Rexe:
         for node in self.host_dict:
             if self.node_dict[node]:
                 (self.node_dict[node]).close()
-        return    
+        return
 
     @dispatch(str)
     def execute_command(self, cmd):
@@ -103,7 +103,7 @@ class Rexe:
                 self.logger.debug(f"SSH connection to {node} is successful.")
                 self.node_dict[node] = node_ssh_client
             except Exception as e:
-                self.logger.error(f"Connection failure. Exception {e}")
+                self.logger.error(f"Connection failure. Exceptions {e}.")
             # On rebooting the node
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
 
@@ -111,6 +111,8 @@ class Rexe:
             ret_dict['Flag'] = False
             ret_dict['msg'] = stdout.readlines()
             ret_dict['error_msg'] = stderr.readlines()
+            if isinstance(ret_dict['error_msg'], list):
+                ret_dict['error_msg'] = "".join(ret_dict['error_msg'])
         else:
             if cmd.find("--xml") != -1:
                 stdout_xml_string = "".join(stdout.readlines())

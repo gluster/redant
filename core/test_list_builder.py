@@ -29,7 +29,7 @@ class TestListBuilder:
                                  "example": set([])}
 
     @classmethod
-    def create_test_dict(cls, path: str, single_tc: bool=False) -> tuple:
+    def create_test_dict(cls, path: str, single_tc: bool = False) -> tuple:
         """
         This method creates a dict of TCs wrt the given directory
         path.
@@ -226,7 +226,7 @@ class TestListBuilder:
         """
         flags = str(extract_comments(tc_path, mime="text/x-python")[0])
         tc_flags = {}
-        tc_flags["tcNature"] = flags.split(';')[0]
+        tc_flags["tcNature"] = flags.split(';')[0].strip()
         tc_flags["volType"] = flags.split(';')[1].split(',')
         if tc_flags["volType"] == ['']:
             tc_flags["volType"] = ["Generic"]

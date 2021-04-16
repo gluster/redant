@@ -2,7 +2,7 @@
 This component has a test-case for testing
 peer related operations
 """
-#disruptive;
+# disruptive;
 
 from tests.parent_test import ParentTest
 

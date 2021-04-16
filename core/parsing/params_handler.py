@@ -30,10 +30,9 @@ class ParamsHandler:
         Gives the list of all server ip
         Returns:
             list: list of all server ip address
-        """ 
+        """
         server_ip_list = list(cls.config_hashmap['servers_info'].keys())
         return server_ip_list
-        
 
     @classmethod
     def get_client_ip_list(cls) -> list:
@@ -49,18 +48,18 @@ class ParamsHandler:
     def get_config_hashmap(cls) -> dict:
         """
         Returns the config hashmap which is parsed from
-        the config file 
+        the config file
         Returns:
             dict: dictionary consisting of servers info,
-                  clients info and volume types info. 
-            format of dictionary:
+                  clients info and volume types info.
+                  format of dictionary:
             {
                 servers_info: {
                                 "10.4.28.93": {
                                     "user" : root
                                     "passwd" : redhat
                                 },
-                                "23.43.12.87": { 
+                                "23.43.12.87": {
                                     "user" : root
                                     "passwd" : redhat
                                 }
@@ -112,10 +111,10 @@ class ParamsHandler:
                                     "transport": "tcp"
                                 }
                }
-               
+
             }
-        """   
-        
+        """
+
         return cls.config_hashmap
 
     @classmethod

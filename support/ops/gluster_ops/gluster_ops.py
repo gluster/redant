@@ -4,13 +4,14 @@ operations on the glusterd service on the server
 or the client.
 """
 
+
 class GlusterOps:
     """
     GlusterOps class provides APIs to start and stop
     the glusterd service on either the client or the sever.
     """
 
-    def start_glusterd(self, node=None, enable_retry: bool=True):
+    def start_glusterd(self, node=None, enable_retry: bool = True):
         """
         Starts the glusterd service on the specified node or nodes.
         Args:
@@ -32,7 +33,6 @@ class GlusterOps:
             node = [node]
 
         cmd = "pgrep glusterd || systemctl start glusterd"
-
 
         if node is None:
             ret = self.execute_command_multinode(cmd)
@@ -61,7 +61,7 @@ class GlusterOps:
 
         return ret
 
-    def restart_glusterd(self, node: str, enable_retry: bool=True):
+    def restart_glusterd(self, node: str, enable_retry: bool = True):
         """
         Restarts the glusterd service on the specified node or nodes.
         Args:
@@ -83,7 +83,6 @@ class GlusterOps:
             node = [node]
 
         cmd = "systemctl restart glusterd"
-
 
         self.logger.info(f"Running {cmd} on {node}")
         self.logger.info(f"Running {cmd} on {node}")
@@ -219,7 +218,7 @@ class GlusterOps:
         self.logger.info(f"Successfully ran {cmd1} on {node}")
         return is_active
 
-    def wait_for_glusterd_to_start(self, node=None, timeout: int=80):
+    def wait_for_glusterd_to_start(self, node=None, timeout: int = 80):
         """
         Checks if the glusterd has started already or waits for
         it till the timeout is reached.
