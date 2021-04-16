@@ -18,10 +18,10 @@ previous servers
 
 Example format of one server:<br>
 
-ip:
-    &nbsp;&nbsp;&nbsp;&nbsp; brick_root: ["/bricks","/gluster"]
-    &nbsp;&nbsp;&nbsp;&nbsp; user: "root"
-    &nbsp;&nbsp;&nbsp;&nbsp; passwd: "redhat"
+ip:<br>
+    &nbsp;&nbsp;&nbsp;&nbsp; brick_root: ["/bricks","/gluster"]<br>
+    &nbsp;&nbsp;&nbsp;&nbsp; user: "root"<br>
+    &nbsp;&nbsp;&nbsp;&nbsp; passwd: "redhat"<br>
 
 <h3>2. clients_info</h3>
 'clients_info' is info about each client in the cluster.<br>
@@ -36,9 +36,9 @@ previous clients
 
 Example format of one client:<br>
 
-ip:
-   &nbsp;&nbsp;&nbsp;&nbsp; user: "root"
-   &nbsp;&nbsp;&nbsp;&nbsp; passwd: "redhat"
+ip:<br>
+   &nbsp;&nbsp;&nbsp;&nbsp; user: "root"<br>
+   &nbsp;&nbsp;&nbsp;&nbsp; passwd: "redhat"<br>
 
 <h3>3. volume_types</h3>
 'volume_types' defines different volume types that we can create in
