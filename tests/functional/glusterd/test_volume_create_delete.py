@@ -28,9 +28,6 @@ class TestCase(ParentTest):
         servera = self.server_list[0]
         serverb = self.server_list[1]
         serverc = self.server_list[2]
-        redant.peer_probe(servera, serverb)
-        redant.peer_probe(serverc, serverb)
-        redant.peer_status(serverb)
         volname = "test-vol1"
         mountpoint = "/mnt/dist"
         redant.execute_io_cmd("ls -l /root", servera)
@@ -55,5 +52,3 @@ class TestCase(ParentTest):
         redant.volume_stop(volname, servera)
         redant.volume_delete(volname, servera)
         redant.execute_io_cmd(f"cd /mnt && rm -rf ./{volname}", serverb)
-        redant.peer_detach(serverb, serverc)
-        redant.peer_detach(serverb, servera)
