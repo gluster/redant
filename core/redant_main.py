@@ -13,6 +13,7 @@ from test_runner import TestRunner
 from result_handler import ResultHandler
 import time
 
+
 def pars_args():
     """
     Function to handle command line parsing for the redant.
@@ -85,7 +86,6 @@ def main():
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
 
     ResultHandler.handle_results(all_test_results, args.result_path)
-
 
 
 if __name__ == '__main__':

@@ -4,13 +4,14 @@ operations on the glusterd service on the server
 or the client.
 """
 
+
 class GlusterOps:
     """
     GlusterOps class provides APIs to start and stop
     the glusterd service on either the client or the sever.
     """
 
-    def start_glusterd(self, node, enable_retry: bool=True):
+    def start_glusterd(self, node=None, enable_retry: bool = True):
         """
         Starts the glusterd service on the specified node or nodes.
         Args:
@@ -28,14 +29,17 @@ class GlusterOps:
         """
         cmd_fail = False
         error_msg = ""
-        if not isinstance(node, list):
+        if not isinstance(node, list) and node is not None:
             node = [node]
 
         cmd = "pgrep glusterd || systemctl start glusterd"
 
-        self.logger.info(f"Running {cmd} on {node}")
-
-        ret = self.execute_command_multinode(node, cmd)
+        if node is None:
+            ret = self.execute_command_multinode(cmd)
+            self.logger.info(f"Running {cmd} on all nodes.")
+        else:
+            ret = self.execute_command_multinode(cmd, node)
+            self.logger.info(f"Running {cmd} on {node}")
 
         for result_val in ret:
             if int(result_val['error_code']) != 0:
@@ -50,11 +54,14 @@ class GlusterOps:
         elif cmd_fail:
             raise Exception(error_msg)
 
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        if node is None:
+            self.logger.info(f"Successfully ran {cmd} on all nodes")
+        else:
+            self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return ret
 
-    def restart_glusterd(self, node: str, enable_retry: bool=True):
+    def restart_glusterd(self, node: str, enable_retry: bool = True):
         """
         Restarts the glusterd service on the specified node or nodes.
         Args:
@@ -72,14 +79,15 @@ class GlusterOps:
         """
         cmd_fail = False
         error_msg = ""
-        if not isinstance(node, list):
+        if not isinstance(node, list) and node is not None:
             node = [node]
 
         cmd = "systemctl restart glusterd"
 
         self.logger.info(f"Running {cmd} on {node}")
+        self.logger.info(f"Running {cmd} on {node}")
 
-        ret = self.execute_command_multinode(node, cmd)
+        ret = self.execute_command_multinode(cmd, node)
 
         for result_val in ret:
             if int(result_val['error_code']) != 0:
@@ -94,11 +102,11 @@ class GlusterOps:
         elif cmd_fail:
             raise Exception(error_msg)
 
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
 
         return ret
 
-    def stop_glusterd(self, node):
+    def stop_glusterd(self, node=None):
         """
         Stops the glusterd service on the specified node(s).
         Args:
@@ -116,23 +124,29 @@ class GlusterOps:
         """
         cmd = "systemctl stop glusterd"
 
-        if not isinstance(node, list):
+        if not isinstance(node, list) and node is not None:
             node = [node]
 
-        self.logger.info(f"Running {cmd} on {node}")
-
-        ret = self.execute_command_multinode(node, cmd)
+        if node is None:
+            self.logger.info(f"Running {cmd} on all nodes")
+            ret = self.execute_command_multinode(cmd)
+        else:
+            self.logger.info(f"Running {cmd} on {node}")
+            ret = self.execute_command_multinode(cmd, node)
 
         for result_val in ret:
             if int(result_val['error_code']) != 0:
                 self.logger.error(result_val['error_msg'])
                 raise Exception(result_val['error_msg'])
 
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        if node is None:
+            self.logger.info(f"Successfully ran {cmd} on all nodes.")
+        else:
+            self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return ret
 
-    def reset_failed_glusterd(self, node) -> bool:
+    def reset_failed_glusterd(self, node=None) -> bool:
         """
         Glusterd has a burst limit of 5 times, hence TCs will
         start failing after the TC breach this limit. Systemd has
@@ -153,20 +167,23 @@ class GlusterOps:
                 - node : node on which the command got executed
 
         """
-        if not isinstance(node, list):
+        if not isinstance(node, list) and node is not None:
             node = [node]
 
         cmd = "systemctl reset-failed glusterd"
 
-        self.logger.info(f"Running {cmd} on {node}")
-
-        ret = self.execute_command_multinode(node, cmd)
+        if node is None:
+            ret = self.execute_command_multinode(cmd)
+            self.logger.info(f"Running {cmd} on all nodes.")
+        else:
+            ret = self.execute_command_multinode(cmd, node)
+            self.logger.info(f"Running {cmd} on {node}")
         for result_val in ret:
             if int(result_val['error_code']) != 0:
                 self.logger.error(result_val['error_msg'])
                 raise Exception(result_val['error_msg'])
 
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        self.logger.info(f"Successfully ran {cmd} on said nodes.")
 
         return ret
 
@@ -188,12 +205,12 @@ class GlusterOps:
 
         self.logger.info(f"Running {cmd1} on {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd1)
+        ret = self.execute_command(cmd=cmd1, node=node)
 
         if int(ret['error_code']) != 0:
             is_active = 0
             self.logger.info(f"Running {cmd2} on {node}")
-            ret1 = self.execute_command(node=node, cmd=cmd2)
+            ret1 = self.execute_command(cmd=cmd2, node=node)
             if ret1['error_code'] == 0:
                 is_active = -1
                 self.logger.info(f"Successfully ran {cmd2} on {node}")
@@ -201,7 +218,7 @@ class GlusterOps:
         self.logger.info(f"Successfully ran {cmd1} on {node}")
         return is_active
 
-    def wait_for_glusterd_to_start(self, node, timeout: int=80):
+    def wait_for_glusterd_to_start(self, node=None, timeout: int = 80):
         """
         Checks if the glusterd has started already or waits for
         it till the timeout is reached.
@@ -214,13 +231,16 @@ class GlusterOps:
         Returns:
             bool: True if glusterd is running on the node(s) or else False.
         """
-        if not isinstance(node, list):
+        if not isinstance(node, list) and node is not None:
             node = [node]
 
         count = 0
         from time import sleep
         while count <= timeout:
-            ret = self.is_glusterd_running(node)
+            if node is None:
+                ret = self.is_glusterd_running()
+            else:
+                ret = self.is_glusterd_running(node)
             if not ret:
                 return True
             sleep(1)
@@ -243,7 +263,7 @@ class GlusterOps:
         cmd = "gluster --version"
         self.logger.info(f"Running {cmd} on {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd=cmd, node=node)
 
         if int(ret['error_code']) != 0:
             self.logger.error(ret['error_msg'])

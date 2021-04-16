@@ -8,6 +8,7 @@ framework
 from prettytable import PrettyTable
 from colorama import Fore, Style
 
+
 class ResultHandler:
 
     @classmethod
@@ -31,12 +32,15 @@ class ResultHandler:
                 cls.result += (Style.RESET_ALL+"\n")
             else:
                 cls.result += (item+'\n')
-            
-            table = PrettyTable(['Volume Type','Test Result','Time taken (sec)'])
+
+            table = PrettyTable(
+                ['Volume Type', 'Test Result', 'Time taken (sec)'])
             for each_vol_test in test_results[item]:
-                
-                table.add_row([each_vol_test['volType'], each_vol_test['testResult'],each_vol_test['timeTaken']])
-            
+
+                table.add_row(
+                    [each_vol_test['volType'], each_vol_test['testResult'],
+                     each_vol_test['timeTaken']])
+
             cls.result += (str(table)+"\n")
 
     @classmethod
@@ -53,7 +57,7 @@ class ResultHandler:
         print(cls.result)
 
     @classmethod
-    def _store_results(cls, test_results:dict, result_path: str):
+    def _store_results(cls, test_results: dict, result_path: str):
         """
         This function stores the test results
         in the form of tables in a file.
@@ -80,7 +84,7 @@ class ResultHandler:
         test_results: all the tests results
         result_path: path of the result file
         """
-        if result_path == None:
+        if result_path is None:
             cls._display_test_results(test_results)
         else:
             cls._store_results(test_results, result_path)

@@ -32,7 +32,7 @@ class PeerOps:
         cmd = f'gluster --xml peer probe {server}'
 
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -68,7 +68,7 @@ class PeerOps:
         else:
             cmd = f"gluster --xml peer detach {server} --mode=script"
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -98,7 +98,7 @@ class PeerOps:
 
         self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -120,23 +120,23 @@ class PeerOps:
 
         cmd = 'gluster --xml pool list'
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
             raise Exception(ret['msg']['opErrstr'])
 
         peer_list = []
-        
+
         peers = ret['msg']['peerStatus']['peer']
-        if not isinstance(peers,list):
+        if not isinstance(peers, list):
             peers = [peers]
-            
+
         for peer in peers:
-            if peer['connected']=='1':
-                peer_list.append(peer['uuid'])    
-                     
+            if peer['connected'] == '1':
+                peer_list.append(peer['uuid'])
+
         self.logger.info(f"Successfully ran {cmd} on {node}")
-        
+
         return peer_list
 
     def nodes_from_pool_list(self, node: str) -> list:
@@ -173,7 +173,7 @@ class PeerOps:
         cmd = 'gluster pool list --xml'
 
         self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(node, cmd)
+        ret = self.execute_command(cmd, node)
 
         if ret['error_code'] != 0:
             self.logger.error(ret['msg']['opErrstr'])
@@ -186,7 +186,7 @@ class PeerOps:
         pool_list = peer_dict['peerStatus']['peer']
 
         return pool_list
-    
+
     def create_cluster(self, nodes: list) -> bool:
         """
         Creates a cluster by probing all the nodes in the list.
@@ -196,35 +196,35 @@ class PeerOps:
             True: If nodes are in cluster or number of nodes are 0 or 1.
             False: If cluster cannot be created.
         """
-        
+
         length = len(nodes)
-        if length==0 or length==1:
+        if length == 0 or length == 1:
             return True
-        
+
         peer_list = []
-        
+
         count = 0
-        
+
         for node in nodes:
             pool_list = self.pool_list(node)
-            if count==0:
+            if count == 0:
                 peer_list = pool_list
             else:
-                if len(peer_list)==len(pool_list):
+                if len(peer_list) == len(pool_list):
                     for peer in peer_list:
-                        if peer not in pool_list and len(peer_list)!=1:
+                        if peer not in pool_list and len(peer_list) != 1:
                             break
                 else:
                     break
             count += 1
-            
-        if count==len(nodes):
-            if len(peer_list)==1:
-                
+
+        if count == len(nodes):
+            if len(peer_list) == 1:
+
                 node = nodes[0]
                 self.logger.info("Creating cluster")
                 for server in nodes:
-                    self.peer_probe(server,node)
+                    self.peer_probe(server, node)
                 self.logger.info("Cluster created")
                 self.peer_status(nodes[0])
             return True

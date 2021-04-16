@@ -3,6 +3,7 @@ import abc
 from support.mixin import RedantMixin
 from datetime import datetime
 
+
 class ParentTest(metaclass=abc.ABCMeta):
 
     """
@@ -34,11 +35,11 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.server_list = list(server_details.keys())
         self.client_list = list(client_details.keys())
 
-        self.redant.start_glusterd(self.server_list)
+        self.redant.start_glusterd()
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
-        machine_detail = {**client_details , **server_details}
+        machine_detail = {**client_details, **server_details}
         self.redant = RedantMixin(machine_detail)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
@@ -57,14 +58,13 @@ class ParentTest(metaclass=abc.ABCMeta):
             self.run_test(self.redant)
         except Exception as error:
             tb = traceback.format_exc()
+            self.redant.logger.error(error)
             self.redant.logger.error(tb)
             self.TEST_RES = False
         self.redant.logger.info(f'''
-         ============================================================
-                                         
-           {self.test_name} finished running: {datetime.now()}       
-                                         
-         ============================================================
+        ============================================================
+           {self.test_name} finished running: {datetime.now()}
+        ============================================================
         ''')
 
     def terminate(self):
