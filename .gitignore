@@ -1,4 +1,3 @@
-odinControl
-Utilities
 *.log
 *__pycache__
+venv
