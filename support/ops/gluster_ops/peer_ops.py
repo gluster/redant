@@ -205,30 +205,17 @@ class PeerOps:
         pool_list = peer_dict['peerStatus']['peer']
         return pool_list
 
-    def _add_orphan_nodes_to_cluster(self, cluster_nodes: list,
-                                     orphan_nodes: list):
-        """
-        This function is useful for adding orphan nodes to an existing cluster
-        one by one.
-        Args:
-            cluster_nodes (list): The list of nodes which are part of existing
-                                  cluster.
-            orphan_nodes (list): The list of nodes which aren't part of any
-                                 cluster and need to be added to the existing
-                                 cluster.
-        """
-        # Select any node randomly from the list for peer probing.
-        import random
-        node = random.choice(cluster_nodes)
-        for nd in orphan_nodes:
-            self.peer_probe(nd, node)
-
     def convert_hosts_to_ip(self, node_list: list, node: str):
         """
         Redant framework works with IP addresses ( especially rexe )
         hence it makes sense to have a function to handle the conversion
         a node_list containing hostnames to ip addresses and if there's
         a localhost term, that is replaced by the node value.
+        Args:
+            node_list (list): List of nodes obtained wherein the node can
+            be represented by ip or hostname.
+            node (str): The node which is represented by localhost. Has to
+            be replaced by corresponding IP.
         """
         if 'localhost' in node_list:
             node_list.remove('localhost')
@@ -246,6 +233,9 @@ class PeerOps:
         of their existing cluster configurations.
         Args:
             node_list (list): All nodes which are to be part of the cluster.
+        Returns:
+            Boolean value: Representing whether the cluster created failed
+            or passed.
         """
         if len(node_list) in [0, 1]:
             return False
