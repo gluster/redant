@@ -36,6 +36,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.client_list = list(client_details.keys())
 
         self.redant.start_glusterd()
+        self.redant.create_cluster(self.server_list)
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):

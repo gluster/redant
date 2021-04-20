@@ -3,7 +3,7 @@ This file contains one class - PeerOps which
 holds APIS related to peers which will be called
 from the test case.
 """
-
+import socket
 
 class PeerOps:
     """
@@ -42,7 +42,7 @@ class PeerOps:
 
         return ret
 
-    def peer_detach(self, node: str, server: str, force: bool = False):
+    def peer_detach(self, server: str, node: str, force: bool = False):
         """
         Detach the specified server.
         Args:
@@ -155,6 +155,25 @@ class PeerOps:
             self.logger.info("Unable to get Nodes")
 
         nodes = []
+        """
+        WHY?
+        The pool_list_data is a simple dict of the form
+        {'uuid' : 'val', 'hostname' : 'val',...} when the node isn't
+        part of any cluster.
+        And a list of dictionaries when multiple nodes are present. This
+        causes an issue in obtaining the hostname in a generic manner, hence
+        this if statement which checks for hostname in keys BUT!! this will
+        cause an exception if the said value contains lists of dict, hence
+        the try-except block.
+        If anyone were to come across a better syntax, do change this
+        monstrosity.
+        """
+        try:
+            if 'hostname' in pool_list_data.keys():
+                nodes.append(pool_list_data['hostname'])
+                return nodes
+        except:
+            pass
         for item in pool_list_data:
             nodes.append(item['hostname'])
         return nodes
@@ -184,49 +203,77 @@ class PeerOps:
         peer_dict = ret['msg']
 
         pool_list = peer_dict['peerStatus']['peer']
-
         return pool_list
 
-    def create_cluster(self, nodes: list) -> bool:
+    def convert_hosts_to_ip(self, node_list: list, node: str):
         """
-        Creates a cluster by probing all the nodes in the list.
+        Redant framework works with IP addresses ( especially rexe )
+        hence it makes sense to have a function to handle the conversion
+        a node_list containing hostnames to ip addresses and if there's
+        a localhost term, that is replaced by the node value.
         Args:
-            node (list): All the nodes which form the cluster.
-        Returns:
-            True: If nodes are in cluster or number of nodes are 0 or 1.
-            False: If cluster cannot be created.
+            node_list (list): List of nodes obtained wherein the node can
+            be represented by ip or hostname.
+            node (str): The node which is represented by localhost. Has to
+            be replaced by corresponding IP.
         """
+        if 'localhost' in node_list:
+            node_list.remove('localhost')
+            node_list.append(node) 
+        for value in node_list:
+            if not value.replace('.', '').isnumeric():
+                ip_val = socket.gethostbyname(value)
+                node_list.remove(value)
+                node_list.append(ip_val)
+        return node_list
 
-        length = len(nodes)
-        if length == 0 or length == 1:
-            return True
-
-        peer_list = []
-
-        count = 0
-
-        for node in nodes:
-            pool_list = self.pool_list(node)
-            if count == 0:
-                peer_list = pool_list
-            else:
-                if len(peer_list) == len(pool_list):
-                    for peer in peer_list:
-                        if peer not in pool_list and len(peer_list) != 1:
-                            break
-                else:
-                    break
-            count += 1
-
-        if count == len(nodes):
-            if len(peer_list) == 1:
-
-                node = nodes[0]
-                self.logger.info("Creating cluster")
-                for server in nodes:
-                    self.peer_probe(server, node)
-                self.logger.info("Cluster created")
-                self.peer_status(nodes[0])
-            return True
-        else:
+    def create_cluster(self, node_list: list) -> bool:
+        """
+        Creates a cluster out of given set of nodes irrespective
+        of their existing cluster configurations.
+        Args:
+            node_list (list): All nodes which are to be part of the cluster.
+        Returns:
+            Boolean value: Representing whether the cluster created failed
+            or passed.
+        """
+        if len(node_list) in [0, 1]:
             return False
+        desired_cluster_size = len(node_list)
+        main_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(\
+                                                node_list[0]), node_list[0])
+        main_cluster_size = len(main_cluster)
+        if main_cluster_size == desired_cluster_size:
+            return True
+        for node in node_list:
+            temp_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(\
+                                                    node), node)
+            self.delete_cluster(temp_cluster)
+        import random
+        node = random.choice(node_list)
+        for nd in node_list:
+            if nd == node:
+                continue
+            self.peer_probe(nd, node)
+        from time import sleep
+        while len(self.nodes_from_pool_list(node_list[0])) != \
+              desired_cluster_size:
+            sleep(1)
+        return True
+
+    def delete_cluster(self, node_list: list):
+        """
+        Clusters have to be broken down to make way for new ones :p
+        Args:
+            node_list (list) : List of nodes which are part of a cluster
+                               which is to be broken up.
+        """
+        # Select any node randomly from the list for peer detaching.
+        if len(node_list) in [0, 1]:
+            return
+        import random
+        node = random.choice(node_list)
+        for nd in node_list:
+            if nd == node:
+                continue
+            self.peer_detach(nd, node)
