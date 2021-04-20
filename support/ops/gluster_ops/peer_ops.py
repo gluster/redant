@@ -253,23 +253,21 @@ class PeerOps:
         main_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(\
                                                 node_list[0]), node_list[0])
         main_cluster_size = len(main_cluster)
-        for node in node_list[1:]:
-            if main_cluster_size == desired_cluster_size:
-                return True
-            elif node in main_cluster:
-                continue
+        if main_cluster_size == desired_cluster_size:
+            return True
+        for node in node_list:
             temp_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(\
                                                     node), node)
-            if len(temp_cluster) > main_cluster_size:
-                temp_cluster, main_cluster = main_cluster, temp_cluster
-                main_cluster_size = len(temp_cluster)
             self.delete_cluster(temp_cluster)
-            self._add_orphan_nodes_to_cluster(main_cluster, temp_cluster)
-            main_cluster = main_cluster + temp_cluster
-            main_cluster_size = len(main_cluster)
+        import random
+        node = random.choice(node_list)
+        for nd in node_list:
+            if nd == node:
+                continue
+            self.peer_probe(nd, node)
         from time import sleep
         while len(self.nodes_from_pool_list(node_list[0])) != \
-              main_cluster_size:
+              desired_cluster_size:
             sleep(1)
         return True
 
@@ -285,6 +283,7 @@ class PeerOps:
             return
         import random
         node = random.choice(node_list)
-        temp_node_list = node_list.remove(node)
-        for nd in temp_node_list:
+        for nd in node_list:
+            if nd == node:
+                continue
             self.peer_detach(nd, node)

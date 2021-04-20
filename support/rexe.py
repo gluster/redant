@@ -2,6 +2,7 @@ import random
 import concurrent.futures
 import paramiko
 import xmltodict
+import json
 from multipledispatch import dispatch
 
 
@@ -116,8 +117,8 @@ class Rexe:
         else:
             if cmd.find("--xml") != -1:
                 stdout_xml_string = "".join(stdout.readlines())
-                ret_dict['msg'] = xmltodict.parse(
-                    stdout_xml_string)['cliOutput']
+                ret_dict['msg'] = json.loads(json.dumps(xmltodict.parse(
+                    stdout_xml_string)))['cliOutput']
             else:
                 ret_dict['msg'] = stdout.readlines()
             ret_dict['Flag'] = True

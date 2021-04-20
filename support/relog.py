@@ -26,7 +26,6 @@ class Logger(logging.Logger):
         log_level_dict = {'I': logging.INFO, 'D': logging.DEBUG,
                           'E': logging.ERROR}
         log_format = logging.Formatter("[%(asctime)s] %(levelname)s "
-                                       "[%(module)s - %(lineno)s:%(funcName)s]"
                                        " - %(message)s")
         if log_file_level not in valid_log_level:
             print("Invalid log level given, Taking Log Level as Info.")
