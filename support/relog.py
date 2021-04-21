@@ -93,8 +93,8 @@ class Logger(logging.Logger):
 
         components = component_dict[test_type]
         for component in components:
-            if not os.path.isdir("{test_type_path}/{component}"):
-                os.makedirs("{test_type_path}/{component}")
+            if not os.path.isdir(f"{test_type_path}/{component}"):
+                os.makedirs(f"{test_type_path}/{component}")
 
         # TC wise directory creation.
         for test in test_dict["disruptive"]:
