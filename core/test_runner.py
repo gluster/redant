@@ -76,8 +76,7 @@ class TestRunner:
             cls.semaphore.acquire()
         tc_class = test_dict["testClass"]
         tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
-            test_dict["volType"]+"/"+test_dict["moduleName"][:-3]+"-" +\
-            test_dict["volType"] + f"-{datetime.now()}" + ".log"
+            test_dict["volType"]+"/"+test_dict["moduleName"][:-3]+".log"
 
         # to calculate time spent to execute the test
         start = time.time()

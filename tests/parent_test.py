@@ -55,6 +55,11 @@ class ParentTest(metaclass=abc.ABCMeta):
         Function to handle the exception logic and invokes the run_test
         which is overridden by every TC.
         """
+        self.redant.logger.info(f'''
+        ============================================================
+        {self.test_name}-{self.volume_type} Started Running: {datetime.now()}
+        ============================================================
+        ''')
         try:
             self.run_test(self.redant)
         except Exception as error:
@@ -64,7 +69,7 @@ class ParentTest(metaclass=abc.ABCMeta):
             self.TEST_RES = False
         self.redant.logger.info(f'''
         ============================================================
-           {self.test_name} finished running: {datetime.now()}
+        {self.test_name}-{self.volume_type} Finished Running: {datetime.now()}
         ============================================================
         ''')
 

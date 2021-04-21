@@ -6,12 +6,13 @@ This module takes care of:
 """
 
 import sys
+import time
+import datetime
 import argparse
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
-import time
 
 
 def pars_args():
@@ -72,6 +73,7 @@ def main():
     # Creating log dirs.
     sys.path.insert(1, ".")
     from support.relog import Logger
+    args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
     Logger.log_dir_creation(args.log_dir, test_cases_component,
                             test_cases_dict)
 
