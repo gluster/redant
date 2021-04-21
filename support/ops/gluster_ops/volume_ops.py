@@ -3,9 +3,10 @@ This file contains one class - VolumeOps which
 holds volume related APIs which will be called
 from the test case.
 """
+from support.ops.abstract_ops import AbstractOps
 
 
-class VolumeOps:
+class VolumeOps(AbstractOps):
     """
     VolumeOps class provides APIs to perform operations
     related to volumes like mount,create,delete,start,stop,
@@ -36,15 +37,7 @@ class VolumeOps:
 
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret["error_code"]) != 0:
-            self.logger.error(ret["error_msg"])
-            raise Exception(ret["error_msg"])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -71,15 +64,7 @@ class VolumeOps:
 
         cmd = f"umount {path}"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret["error_code"]) != 0:
-            self.logger.error(ret["error_msg"])
-            raise Exception(ret["error_msg"])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -150,15 +135,7 @@ class VolumeOps:
         if force:
             cmd = cmd + " force"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -190,15 +167,7 @@ class VolumeOps:
         else:
             cmd = f"gluster volume start {volname} --mode=script --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -228,15 +197,8 @@ class VolumeOps:
         else:
             cmd = f"gluster volume stop {volname} --mode=script --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
         return ret
 
     def volume_delete(self, volname: str, node: str = None):
@@ -259,15 +221,7 @@ class VolumeOps:
 
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -328,14 +282,7 @@ class VolumeOps:
 
         cmd = f"gluster volume info {volname} --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
@@ -385,15 +332,7 @@ class VolumeOps:
         """
         cmd = "gluster volume list --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         volume_list_count = int(ret['msg']['volList']['count'])
         volume_list = []
@@ -431,15 +370,7 @@ class VolumeOps:
         else:
             cmd = f"gluster volume reset {volname} --mode=script --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -492,15 +423,7 @@ class VolumeOps:
 
         cmd = f"gluster volume status {volname} {service} {options} --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         volume_status = ret['msg']['volStatus']['volumes']
         ret_dict = {}
@@ -564,15 +487,7 @@ class VolumeOps:
 
         cmd = f"gluster volume get {volname} {option} --mode=script --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         volume_options = ret['msg']['volGetopts']
 
@@ -598,16 +513,6 @@ class VolumeOps:
         Example:
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, server)
-
-        Returns:
-        ret: A dictionary consisting
-            - Flag : Flag to check if connection failed
-            - msg : message
-            - error_msg: error message
-            - error_code: error code returned
-            - cmd : command that got executed
-            - node : node on which the command got executed
-
         """
 
         volume_options = options
@@ -619,28 +524,13 @@ class VolumeOps:
             for group_option in group_options:
                 cmd = (f"gluster volume set {volname} group {group_option} "
                        "--mode=script --xml")
-                self.logger.info(f"Running {cmd} on node {node}")
-
-                ret = self.execute_command(cmd, node)
-
-                if int(ret['msg']['opRet']) != 0:
-                    self.logger.error(ret['msg']['opErrstr'])
-                    raise Exception(ret['msg']['opErrstr'])
+                self.execute_abstract_op_node(cmd, node)
 
         for option in volume_options:
             cmd = (f"gluster volume set {volname} {option} "
                    f"{volume_options[option]} --mode=script --xml")
-            self.logger.info(f"Running {cmd} on node {node}")
 
-            ret = self.execute_command(cmd, node)
-
-            if int(ret['msg']['opRet']) != 0:
-                self.logger.error(ret['msg']['opErrstr'])
-                raise Exception(ret['msg']['opErrstr'])
-
-            self.logger.info(f"Successfully ran {cmd} on {node}")
-
-        return ret
+            self.execute_abstract_op_node(cmd, node)
 
     def reset_volume_option(self, volname: str, option: str,
                             node: str = None, force: bool = False):
@@ -672,15 +562,9 @@ class VolumeOps:
             cmd = (f"gluster volume reset {volname} {option} force"
                    "--mode=script --xml")
         else:
-            cmd = f"gluster vol reset {volname} {option} --mode=script --xml"
-        self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd, node)
+            cmd = f"gluster volume reset {volname} {option} --mode=script --xml"
 
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
 
@@ -708,13 +592,6 @@ class VolumeOps:
 
         cmd = f"gluster volume sync {hostname} {volname} --mode=script --xml"
 
-        self.logger.info(f"Running {cmd} on node {node}")
-        ret = self.execute_command(cmd, node)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         return ret

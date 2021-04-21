@@ -51,5 +51,5 @@ class TestCase(ParentTest):
 
         redant.execute_io_cmd(f"cat {path}", host)
         redant.execute_io_cmd(f"ls -lR {mountpoint}", host)
-        redant.execute_io_cmd("ls -l /")
+        redant.execute_io_cmd("ls -l /", host)
         redant.execute_io_cmd(f"rm -rf {mountpoint}", host)
