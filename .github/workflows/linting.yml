@@ -28,6 +28,6 @@ jobs:
       - name: Lint with Pylint
         run: |
           pylint $(pwd)/core/
-          pylint $(pwd)/support/
+          pylint $(pwd)/common/
           pylint $(pwd)/tests/
 

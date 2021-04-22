@@ -2,7 +2,7 @@
 This file contains one class - IoOps which
 holds API for running all the IO commands.
 """
-from support.ops.abstract_ops import AbstractOps
+from common.ops.abstract_ops import AbstractOps
 
 
 class IoOps(AbstractOps):

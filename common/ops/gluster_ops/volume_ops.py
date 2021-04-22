@@ -3,7 +3,7 @@ This file contains one class - VolumeOps which
 holds volume related APIs which will be called
 from the test case.
 """
-from support.ops.abstract_ops import AbstractOps
+from common.ops.abstract_ops import AbstractOps
 
 
 class VolumeOps(AbstractOps):

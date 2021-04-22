@@ -5,7 +5,7 @@ from the test case.
 """
 
 import socket
-from support.ops.abstract_ops import AbstractOps
+from common.ops.abstract_ops import AbstractOps
 
 class PeerOps(AbstractOps):
     """

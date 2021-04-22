@@ -69,9 +69,9 @@ Once the above support library is created, one needs to add the module inside th
 let the `mixin` class inherit from this newly added class.
 
 ```
-from support.ops.support_ops.rexe import Rexe
-from support.ops.gluster_ops.sample_ops1 import sample_ops_class # the newly added module
-from support.ops.gluster_ops.sample_ops2 import sample_ops2_class 
+from common.ops.support_ops.rexe import Rexe
+from common.ops.gluster_ops.sample_ops1 import sample_ops_class # the newly added module
+from common.ops.gluster_ops.sample_ops2 import sample_ops2_class 
 
 class mixin(Rexe, sample_ops_class, sample_ops2_class):
 	pass

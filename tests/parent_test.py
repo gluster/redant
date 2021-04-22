@@ -1,6 +1,6 @@
 import traceback
 import abc
-from support.mixin import RedantMixin
+from common.mixin import RedantMixin
 from datetime import datetime
 
 

@@ -3,7 +3,7 @@ This file contains one class - GlusterOps wich holds
 operations on the glusterd service on the server
 or the client.
 """
-from support.ops.abstract_ops import AbstractOps
+from common.ops.abstract_ops import AbstractOps
 
 
 class GlusterOps(AbstractOps):
