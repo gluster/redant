@@ -72,7 +72,7 @@ def main():
 
     # Creating log dirs.
     sys.path.insert(1, ".")
-    from support.relog import Logger
+    from common.relog import Logger
     args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
     Logger.log_dir_creation(args.log_dir, test_cases_component,
                             test_cases_dict)

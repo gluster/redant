@@ -10,9 +10,9 @@ perform_linting () {
         pylint -j 4 --rcfile=.pylintrc ./tests/example/sample_component
         pylint -j 4 --rcfile=.pylintrc ./tests/functional
         pylint -j 4 --rcfile=.pylintrc ./tests/functional/glusterd
-        pylint -j 4 --rcfile=.pylintrc ./support
-        pylint -j 4 --rcfile=.pylintrc ./support/ops/gluster_ops
-        pylint -j 4 --rcfile=.pylintrc ./support/ops/support_ops
+        pylint -j 4 --rcfile=.pylintrc ./common
+        pylint -j 4 --rcfile=.pylintrc ./common/ops/gluster_ops
+        pylint -j 4 --rcfile=.pylintrc ./common/ops/support_ops
     else
         pylint -j 4 --rcfile=.pylintrc $FILEPATH
     fi

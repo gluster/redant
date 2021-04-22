@@ -5,7 +5,7 @@ Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1
 ### Structure:
 
 core: contains the core redant framework which includes parsing,test_list_builder,test_runner,runner_thread and redant_main.<br>
-support: consists of the libs and ops that will help in running the test cases and the mixin class.<br>
+common: consists of the libs and ops that will help in running the test cases and the mixin class.<br>
 tests: holds the test cases as performace and functional tests and includes parent test. Add any new test cases here.<br>
 
 ### To start Working:
