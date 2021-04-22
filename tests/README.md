@@ -142,7 +142,7 @@ def run_test(self, redant):
 Here, we are calling the `start_glusterd()` and `stop_glusterd()` ops using the `redant` object.
 In the same way you can call the other ops and use them to write your own test.
 
-### To know more about the Ops you can go [here](https://github.com/srijan-sivakumar/redant/blob/main/support/ops/OPS_README.md)
+### To know more about the Ops you can go [here](https://github.com/srijan-sivakumar/redant/blob/main/common/ops/OPS_README.md)
 
 ---
 
