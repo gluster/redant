@@ -83,7 +83,7 @@ class TestRunner:
         runner_thread_obj = RunnerThread(str(uuid.uuid1().int), tc_class,
                                          cls.config_hashmap,
                                          test_dict["volType"], tc_log_path,
-                                         cls.log_level)
+                                         cls.log_level, thread_flag)
         test_stats = runner_thread_obj.run_thread()
 
         test_stats['timeTaken'] = time.time() - start

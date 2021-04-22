@@ -13,7 +13,7 @@ from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
-
+from environ import environ
 
 def pars_args():
     """
@@ -80,10 +80,16 @@ def main():
     # Pre test run test list builder is modified.
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
 
+    # Environment setup.
+    env_obj = environ(config_hashmap, args.log_dir+"/main.log", args.log_level)
+    env_obj.setup_env()
+
     # invoke the test_runner.
     TestRunner.init(test_cases_dict, config_hashmap, args.log_dir,
                     args.log_level, args.semaphore_count)
     all_test_results = TestRunner.run_tests()
+
+    # Environment cleanup. TBD.
 
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
 
