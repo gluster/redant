@@ -24,6 +24,7 @@ class TestRunner:
         cls.log_level = log_level
         cls.concur_test = test_run_dict["nonDisruptive"]
         cls.non_concur_test = test_run_dict["disruptive"]
+        cls.excluded_tests = excluded_tests
         cls.threadList = []
         cls.job_result_queue = Queue()
         cls.nd_job_queue = Queue()
@@ -33,7 +34,7 @@ class TestRunner:
     def run_tests(cls):
         """
         The non-disruptive tests are invoked followed by the disruptive
-        tests.
+        tests and excluded tests are displayed in the end.
         """
         jobs = []
         if bool(cls.concur_count):
@@ -60,6 +61,13 @@ class TestRunner:
         # TODO: Handle it without sleep.
         while cls.job_result_queue.empty():
             time.sleep(1)
+
+        if len(cls.excluded_tests) > 0:
+            print("Excluded tests: " + str(len(cls.excluded_tests)))
+            for test in cls.excluded_tests:
+                print(Fore.YELLOW + test)
+
+            print(Style.RESET_ALL)
 
         return cls.job_result_queue
 

@@ -33,3 +33,14 @@ ip:<br>
 'volume_types' defines different volume types that we can create in
 gluster and minimum number of servers are assigned to each of the
 volume types to run the tests. This section is not defined by the user.
+
+<h3>4. excluded_tests</h3>
+'excluded_tests' is a list of tests given by the user which are excluded during
+the test run. Each element of the list consists of the complete path of the test
+case with respect to the redant directory.
+
+Example format of excluded_tests list:<br>
+
+excluded_tests:<br>
+    &nbsp;&nbsp;&nbsp;&nbsp; - tests/functional/glusterd/test1<br>
+    &nbsp;&nbsp;&nbsp;&nbsp; - tests/functional/glusterd/test2<br>

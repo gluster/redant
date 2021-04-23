@@ -22,6 +22,7 @@ class TestListBuilder:
     TC related data to the test_runner.
     """
     tests_to_run: list = []
+    excluded_tests: list = []
     tests_run_dict: dict = {"disruptive": [],
                             "nonDisruptive": []}
     tests_component_dir: dict = {"functional": set([]),
@@ -29,7 +30,8 @@ class TestListBuilder:
                                  "example": set([])}
 
     @classmethod
-    def create_test_dict(cls, path: str, single_tc: bool = False) -> tuple:
+    def create_test_dict(cls, path: str, excluded_tests: list,
+                         single_tc: bool = False) -> tuple:
         """
         This method creates a dict of TCs wrt the given directory
         path.
@@ -72,7 +74,12 @@ class TestListBuilder:
                 "functional" : ["component1", "component2",...],
                 "performance" : ["component1", "component2", ...],
                 "example" : ["component1"...]
-            }
+            },
+            [
+                ../glusterd/test_1,
+                ../glusterd/test_2
+            ])
+
         """
         # Obtaining list of paths to the TCs under given directory.
         if not single_tc:
@@ -80,13 +87,20 @@ class TestListBuilder:
                 for root, _, files in os.walk(path):
                     for tfile in files:
                         if tfile.endswith(".py") and tfile.startswith("test"):
-                            cls.tests_to_run.append(os.path.join(root, tfile))
+                            test_case_path = os.path.join(root, tfile)
+                            if test_case_path not in excluded_tests:
+                                cls.tests_to_run.append(test_case_path)
+                            else:
+                                cls.excluded_tests.append(test_case_path)
 
             except Exception as e:
                 print(e)
                 return {}
         else:
-            cls.tests_to_run.append(path)
+            if path not in excluded_tests:
+                cls.tests_to_run.append(path)
+            else:
+                cls.excluded_tests.append(path)
 
         # Extracting the test case flags and adding module level info.
         for test_case_path in cls.tests_to_run:
@@ -107,7 +121,7 @@ class TestListBuilder:
             cls.tests_component_dir[test_type] =\
                 list(cls.tests_component_dir[test_type])
 
-        return (cls.tests_run_dict, cls.tests_component_dir)
+        return (cls.tests_run_dict, cls.tests_component_dir, cls.excluded_tests)
 
     @classmethod
     def pre_test_run_list_modify(cls, test_dict: dict) -> dict:
