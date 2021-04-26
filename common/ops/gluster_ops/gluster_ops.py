@@ -35,17 +35,10 @@ class GlusterOps(AbstractOps):
 
         cmd = "pgrep glusterd || systemctl start glusterd"
 
-        if node is None:
-            ret = self.execute_command_multinode(cmd)
-            self.logger.info(f"Running {cmd} on all nodes.")
-        else:
-            ret = self.execute_command_multinode(cmd, node)
-            self.logger.info(f"Running {cmd} on {node}")
-
+        ret = self.execute_abstract_op_multinode(cmd, node)
+    
         for result_val in ret:
             if int(result_val['error_code']) != 0:
-                error_msg = result_val['error_msg']
-                self.logger.error(error_msg)
                 cmd_fail = True
                 break
 
@@ -54,11 +47,6 @@ class GlusterOps(AbstractOps):
             self.start_glusterd(node)
         elif cmd_fail:
             raise Exception(error_msg)
-
-        if node is None:
-            self.logger.info(f"Successfully ran {cmd} on all nodes")
-        else:
-            self.logger.info(f"Successfully ran {cmd} on {node}")
 
         return ret
 
@@ -85,15 +73,10 @@ class GlusterOps(AbstractOps):
 
         cmd = "systemctl restart glusterd"
 
-        self.logger.info(f"Running {cmd} on {node}")
-        self.logger.info(f"Running {cmd} on {node}")
-
-        ret = self.execute_command_multinode(cmd, node)
+        ret = self.execute_abstract_op_multinode(cmd, node)
 
         for result_val in ret:
             if int(result_val['error_code']) != 0:
-                error_msg = result_val['error_msg']
-                self.logger.error(error_msg)
                 cmd_fail = True
                 break
 
@@ -102,8 +85,6 @@ class GlusterOps(AbstractOps):
             self.restart_glusterd(node)
         elif cmd_fail:
             raise Exception(error_msg)
-
-        self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
 
         return ret
 
@@ -128,22 +109,7 @@ class GlusterOps(AbstractOps):
         if not isinstance(node, list) and node is not None:
             node = [node]
 
-        if node is None:
-            self.logger.info(f"Running {cmd} on all nodes")
-            ret = self.execute_command_multinode(cmd)
-        else:
-            self.logger.info(f"Running {cmd} on {node}")
-            ret = self.execute_command_multinode(cmd, node)
-
-        for result_val in ret:
-            if int(result_val['error_code']) != 0:
-                self.logger.error(result_val['error_msg'])
-                raise Exception(result_val['error_msg'])
-
-        if node is None:
-            self.logger.info(f"Successfully ran {cmd} on all nodes.")
-        else:
-            self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_multinode(cmd, node)
 
         return ret
 
@@ -173,18 +139,7 @@ class GlusterOps(AbstractOps):
 
         cmd = "systemctl reset-failed glusterd"
 
-        if node is None:
-            ret = self.execute_command_multinode(cmd)
-            self.logger.info(f"Running {cmd} on all nodes.")
-        else:
-            ret = self.execute_command_multinode(cmd, node)
-            self.logger.info(f"Running {cmd} on {node}")
-        for result_val in ret:
-            if int(result_val['error_code']) != 0:
-                self.logger.error(result_val['error_msg'])
-                raise Exception(result_val['error_msg'])
-
-        self.logger.info(f"Successfully ran {cmd} on said nodes.")
+        ret = self.execute_abstract_op_multinode(cmd, node)
 
         return ret
 
@@ -204,19 +159,12 @@ class GlusterOps(AbstractOps):
         cmd1 = "systemctl status glusterd"
         cmd2 = "pidof glusterd"
 
-        self.logger.info(f"Running {cmd1} on {node}")
-
-        ret = self.execute_command(cmd=cmd1, node=node)
+        ret = self.execute_abstract_op_node(cmd1)
 
         if int(ret['error_code']) != 0:
             is_active = 0
-            self.logger.info(f"Running {cmd2} on {node}")
-            ret1 = self.execute_command(cmd=cmd2, node=node)
-            if ret1['error_code'] == 0:
-                is_active = -1
-                self.logger.info(f"Successfully ran {cmd2} on {node}")
+            ret1 = self.execute_abstract_op_node(cmd=cmd2, node=node)
 
-        self.logger.info(f"Successfully ran {cmd1} on {node}")
         return is_active
 
     def wait_for_glusterd_to_start(self, node=None, timeout: int = 80):
@@ -262,6 +210,8 @@ class GlusterOps(AbstractOps):
             str: The gluster version value.
         """
         cmd = "gluster --version"
+        if not isinstance(node, list) and node is not None:
+            node = [node]
 
         ret = self.execute_abstract_op_multinode(cmd, node)
 

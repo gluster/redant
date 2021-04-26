@@ -24,7 +24,6 @@ class AbstractOps:
                         If the node is None then the rexe chooses the
                         node randomly and executes the command on it.
         """
-        self.logger.info(f"Running {cmd} on {node}")
 
         ret = self.execute_command(cmd, node)
 
@@ -36,9 +35,14 @@ class AbstractOps:
                 self.logger.error(ret['msg']['opErrstr'])
                 raise Exception(ret['msg']['opErrstr'])
 
+<<<<<<< HEAD
+=======
+        self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
+
+>>>>>>> 16b28c6... Gluster ops modified to use abstract ops functionalities
         return ret
         
-    def execute_abstract_op_multinode(self, cmd : str, node : str=None):
+    def execute_abstract_op_multinode(self, cmd : str, node : list=None):
         """
         Calls the function in the remote executioner to execute
         commands on the nodes. Logging is also performed along
@@ -49,14 +53,14 @@ class AbstractOps:
                         If the node is None then the rexe chooses the
                         node randomly and executes the command on it.
         """
-        self.logger.info(f"Running {cmd} on {node}")
-
         ret = self.execute_command_multinode(cmd, node)
+        for each_ret in ret:
+            if each_ret['error_code'] != 0:
+                self.logger.error(each_ret['msg']['opErrstr'])
+                raise Exception(each_ret['msg']['opErrstr'])
 
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
+            self.logger.info(f"Successfully ran {cmd} on {each_ret['node']}")
+            
         return ret
         
         

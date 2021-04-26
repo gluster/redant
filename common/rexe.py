@@ -59,8 +59,8 @@ class Rexe:
                 (self.node_dict[node]).close()
         return
 
-    @dispatch(str)
-    def execute_command(self, cmd):
+    @dispatch(str, type(None))
+    def execute_command(self, cmd, node):
         """
         Module to handle random node execution.
         Returns:
@@ -72,6 +72,7 @@ class Rexe:
                 - cmd : command that got executed
                 - node : node on which the command got executed
         """
+        self.logger.info(f"Running {cmd} on a random node")
         return self.execute_command(cmd, self._random_node())
 
     @dispatch(str, str)
@@ -89,7 +90,7 @@ class Rexe:
 
         """
         ret_dict = {}
-
+        self.logger.info(f"Running {cmd} on {node}")
         if not self.connect_flag:
             ret_dict['Flag'] = False
             return ret_dict
@@ -131,6 +132,8 @@ class Rexe:
         ret_dict['error_code'] = stdout.channel.recv_exit_status()
 
         self.logger.debug(ret_dict)
+
+
         return ret_dict
 
     @dispatch(str)
@@ -250,12 +253,14 @@ class Rexe:
 
         return ret_dict
 
-    @dispatch(str)
-    def execute_command_multinode(self, cmd):
+
+    @dispatch(str, type(None))
+    def execute_command_multinode(self, cmd, node_list):
         """
         Function to execute command in multiple nodes parallely
         when node list isn't given.
         """
+        self.logger.info(f"Running {cmd} on random node list")
         return self.execute_command_multinode(cmd, list(self.node_dict.keys()))
 
     @dispatch(str, list)
@@ -265,7 +270,7 @@ class Rexe:
         parallely.
         """
         ret_val = []
-
+        self.logger.info(f"Running {cmd} on {node_list}")
         with concurrent.futures.ThreadPoolExecutor(
                 max_workers=len(node_list)) as executor:
 
@@ -277,4 +282,6 @@ class Rexe:
                 except Exception as exc:
                     print(f"Generated exception : {exc}")
         self.logger.info(ret_val)
+
+        self.logger.info(f"Successfully ran {cmd} on {node_list}")
         return ret_val
