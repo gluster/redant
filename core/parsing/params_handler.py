@@ -12,40 +12,56 @@ class ParamsHandler:
     the values of all the configuration parameters.
     """
 
-    @classmethod
-    def set_config_hashmap(cls, filepath: str):
+    def __init__(self, filepath: str):
         """
-        Gets the configuration hashmap generated from the
-        api in Parser class and sets the reuired class variable.
-        The config_hashmap class variable can be accessed
-        throughout the class.
-        Args:
-            filepath (str): Path for config file
+        Parsing the config file.
         """
-        cls.config_hashmap = Parser.generate_config_hashmap(filepath)
+        self.config_hashmap = Parser.generate_config_hashmap(filepath)
+        self.server_config = self.config_hashmap['servers_info']
+        self.client_config = self.config_hashmap['clients_info']
+        self.volume_types = self.config_hashmap['volume_types']
 
-    @classmethod
-    def get_server_ip_list(cls) -> list:
+    def get_server_ip_list(self) -> list:
         """
         Gives the list of all server ip
         Returns:
             list: list of all server ip address
         """
-        server_ip_list = list(cls.config_hashmap['servers_info'].keys())
-        return server_ip_list
+        return list(self.server_config.keys())
 
-    @classmethod
-    def get_client_ip_list(cls) -> list:
+    def get_server_config(self) -> dict:
+        """
+        Getter for server config details.
+        Returns:
+            dict: Server config details.
+        """
+        return self.server_config
+
+    def get_client_config(self) -> dict:
+        """
+        Getter for client config details.
+        Returns:
+            dict: Client config details.
+        """
+        return self.client_config
+
+    def get_client_ip_list(self) -> list:
         """
         Gives the list of all client ip
         Returns:
             list: list of all client ip address
         """
-        client_ip_list = list(cls.config_hashmap['clients_info'].keys())
-        return client_ip_list
+        return list(self.client_config.keys())
 
-    @classmethod
-    def get_config_hashmap(cls) -> dict:
+    def get_volume_types(self) -> dict:
+        """
+        Getter for volume information.
+        Retuns:
+            Dict
+        """
+        return self.volume_types
+
+    def get_config_hashmap(self) -> dict:
         """
         Returns the config hashmap which is parsed from
         the config file
@@ -115,10 +131,9 @@ class ParamsHandler:
             }
         """
 
-        return cls.config_hashmap
+        return self.config_hashmap
 
-    @classmethod
-    def get_brick_root_list(cls, server_ip: str) -> list:
+    def get_brick_root_list(self, server_ip: str) -> list:
         """
         Returns the list of brick root given the server name
         Args:
@@ -129,6 +144,16 @@ class ParamsHandler:
         Example:
             get_brick_root_list("server-vm1")
         """
-        servers_info = cls.config_hashmap['servers_info']
-        brick_root_list = servers_info[server_ip]['brick_root']
-        return brick_root_list
+        return self.server_config[server_ip]['brick_root']
+
+    # TODO: Handling servers with multiple brick roots.
+    def get_brick_roots(self) -> dict:
+        """
+        Get the mapping of server ip to their brick roots
+        Returns:
+           Dict
+        """
+        brick_roots = {}
+        for server in self.server_config:
+            brick_roots[server] = self.server_config[server]['brick_root'][0]
+        return brick_roots

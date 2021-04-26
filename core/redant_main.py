@@ -59,10 +59,7 @@ def main():
     start = time.time()
     args = pars_args()
 
-    ParamsHandler.set_config_hashmap(args.config_file)
-
-    # Obtain the client and server dict.
-    config_hashmap = ParamsHandler.get_config_hashmap()
+    param_obj = ParamsHandler(args.config_file)
 
     # Building the test list and obtaining the TC details.
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
@@ -81,11 +78,11 @@ def main():
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
 
     # Environment setup.
-    env_obj = environ(config_hashmap, args.log_dir+"/main.log", args.log_level)
+    env_obj = environ(param_obj, args.log_dir+"/main.log", args.log_level)
     env_obj.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(test_cases_dict, config_hashmap, args.log_dir,
+    TestRunner.init(test_cases_dict, param_obj, args.log_dir,
                     args.log_level, args.semaphore_count)
     all_test_results = TestRunner.run_tests()
 

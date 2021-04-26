@@ -3,7 +3,7 @@ This file contains a test-case which tests
 the creation of different types of files and
 some operations on it.
 """
-# disruptive;
+# nonDisruptive;rep,dist,dist-rep
 
 from tests.parent_test import ParentTest
 

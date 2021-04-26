@@ -8,23 +8,22 @@ class environ:
     the setup and the complete cleanup.
     """
 
-    def __init__(self, config_hashm : dict, log_path : str, log_level : str):
+    def __init__(self, param_obj, log_path : str, log_level : str):
         """
         Redant mixin obj to be used for server setup and teardown operations
         has to be created.
         """
-        self.server_details = config_hashm['servers_info']
-        machine_details = {**self.server_details}
-        self.redant = RedantMixin(machine_details)
+        self.redant = RedantMixin(param_obj.get_server_config())
         self.redant.init_logger("environ", log_path, log_level)
         self.redant.establish_connection()
+        self.server_list = param_obj.get_server_ip_list()
 
     def setup_env(self):
         """
         Setting up of the environment before the TC execution begins.
         """
         self.redant.start_glusterd()
-        self.redant.create_cluster(list(self.server_details.keys()))
+        self.redant.create_cluster(self.server_list)
 
     def teardown_env(self):
         """
