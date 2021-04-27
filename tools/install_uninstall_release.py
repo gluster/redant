@@ -1,7 +1,9 @@
 """
-scp ./gluster-rpms/{os_type}/{release_type}/ host:/home/install_rpms/rpms/
-scp remote_install.py host:/home/install_rpms/
-execute_command(comm="python3 /home/install_rpms/remote_install.py")
+This script can be used for
+installing, uninstalling a specific release
+of glusterfs. If you want to upgrade or degrade from
+a release to another it will come out as a
+handy tool as well :)
 """
 
 import os
@@ -196,12 +198,7 @@ class Script:
         cls.node_ssh_client = cls._establish_connection('10.70.43.184')
 
         cls._create_dir_structure()
-        # cls._copy_files_to_server()
-        # cmd = f"python3 {cls.remote_os_path+cls.choice['release'][0]}/remote_handler.py"
-        # print(f"Executed {cmd}")
 
-        # msg = cls._execute_command(
-        #     cmd, True, f"{cls.remote_os_path}\n{cls.choice['operation']}\n{cls.choice['release']}\n")
         cls._perform_operation()
 
 if __name__ == "__main__":
