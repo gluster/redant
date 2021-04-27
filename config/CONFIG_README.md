@@ -39,6 +39,9 @@ volume types to run the tests. This section is not defined by the user.
 the test run. Each element of the list consists of the complete path of the test
 case with respect to the redant directory.
 
+Specific design consideration and more information on the feature is given in
+the doc link [here](https://docs.google.com/document/d/1T0Fu20WzH7jACE9wTVT_SEyfrcXKQUmEExpLKru6Ys0/edit?usp=sharing)
+
 Example format of excluded_tests list:<br>
 
 excluded_tests:<br>
