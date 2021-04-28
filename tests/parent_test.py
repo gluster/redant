@@ -52,6 +52,12 @@ class ParentTest(metaclass=abc.ABCMeta):
             self.redant.volume_create(self.vol_name, self.server_list[0],
                                       self.volume_types_info[self.conv_dict[volume_type]],
                                       self.server_list, self.brick_roots, True)
+            self.redant.volume_start(self.vol_name, self.server_list[0])
+            self.mountpoint = (f"/mnt/{self.vol_name}")
+            self.redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
+                                       self.client_list[0])
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, self.client_list[0])
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
@@ -93,6 +99,9 @@ class ParentTest(metaclass=abc.ABCMeta):
         Closes connection for now.
         """
         if self.volume_type != 'Generic':
+            self.redant.volume_unmount(self.mountpoint, self.client_list[0])
+            self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
+                                       self.client_list[0])
             self.redant.volume_stop(self.vol_name, self.server_list[0], True)
             self.redant.volume_delete(self.vol_name, self.server_list[0])
         self.redant.deconstruct_connection()

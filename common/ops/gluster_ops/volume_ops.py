@@ -4,7 +4,7 @@ holds volume related APIs which will be called
 from the test case.
 """
 from common.ops.abstract_ops import AbstractOps
-
+from multipledispatch import dispatch
 
 class VolumeOps(AbstractOps):
     """
@@ -117,7 +117,7 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node)
 
-        return 0
+        return ret
 
     def volume_start(self, volname: str, node: str = None,
                      force: bool = False):
@@ -150,7 +150,7 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
-
+    
     def volume_stop(self, volname: str, node: str = None, force: bool = False):
         """
         Stops the gluster volume
@@ -354,7 +354,7 @@ class VolumeOps(AbstractOps):
 
         return ret
 
-    def get_volume_status(self, node: str = None, volname: str = 'all',
+    def get_volume_status(self, volname: str = 'all', node: str = None,
                           service: str = '', options: str = '') -> dict:
         """
         Gets the status of all or the specified volume
