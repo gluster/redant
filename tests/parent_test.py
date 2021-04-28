@@ -14,7 +14,16 @@ class ParentTest(metaclass=abc.ABCMeta):
 
     """
 
-    def __init__(self, mname: str, config_hashmap: dict, volume_type: str,
+    conv_dict = {
+                    "dist" : "distributed",
+                    "rep" : "replicated",
+                    "dist-rep" : "distributed-replicated",
+                    "disp" : "dispersed",
+                    "dist-disp" : "distributed-dispersed",
+                    "arb" : "arbiter",
+                    "dist-arb" : "distributed-arbiter"
+                }
+    def __init__(self, mname: str, param_obj, volume_type: str,
                  thread_flag: bool, log_path: str, log_level: str = 'I'):
         """
         Creates volume
@@ -22,22 +31,33 @@ class ParentTest(metaclass=abc.ABCMeta):
         test case
         """
 
-        server_details = config_hashmap['servers_info']
-        client_details = config_hashmap['clients_info']
+        server_details = param_obj.get_server_config()
+        client_details = param_obj.get_client_config()
 
         self.TEST_RES = True
         self.volume_type = volume_type
-        self.server_list = []
-        self.client_list = []
-        self.volume_types_info = config_hashmap['volume_types']
-        self._configure(mname, server_details, client_details, log_path,
-                        log_level)
-        self.server_list = list(server_details.keys())
-        self.client_list = list(client_details.keys())
+        self.volume_types_info = param_obj.get_volume_types()
+        self._configure(f"{mname}-{volume_type}", server_details,
+                        client_details, log_path, log_level)
+        self.server_list = param_obj.get_server_ip_list()
+        self.client_list = param_obj.get_client_ip_list()
+        self.brick_roots = param_obj.get_brick_roots()
 
         if not thread_flag:
             self.redant.start_glusterd()
             self.redant.create_cluster(self.server_list)
+
+        if self.volume_type != "Generic":
+            self.vol_name = (f"{mname}-{volume_type}")
+            self.redant.volume_create(self.vol_name, self.server_list[0],
+                                      self.volume_types_info[self.conv_dict[volume_type]],
+                                      self.server_list, self.brick_roots, True)
+            self.redant.volume_start(self.vol_name, self.server_list[0])
+            self.mountpoint = (f"/mnt/{self.vol_name}")
+            self.redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
+                                       self.client_list[0])
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, self.client_list[0])
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
@@ -45,7 +65,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.redant = RedantMixin(machine_detail)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
-        self.test_name = log_path.split('/')[-1:][0][:-4]
+        self.test_name = mname
 
     @abc.abstractmethod
     def run_test(self):
@@ -78,4 +98,10 @@ class ParentTest(metaclass=abc.ABCMeta):
         """
         Closes connection for now.
         """
+        if self.volume_type != 'Generic':
+            self.redant.volume_unmount(self.mountpoint, self.client_list[0])
+            self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
+                                       self.client_list[0])
+            self.redant.volume_stop(self.vol_name, self.server_list[0], True)
+            self.redant.volume_delete(self.vol_name, self.server_list[0])
         self.redant.deconstruct_connection()

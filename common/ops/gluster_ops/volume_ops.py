@@ -4,7 +4,7 @@ holds volume related APIs which will be called
 from the test case.
 """
 from common.ops.abstract_ops import AbstractOps
-
+from multipledispatch import dispatch
 
 class VolumeOps(AbstractOps):
     """
@@ -68,30 +68,19 @@ class VolumeOps(AbstractOps):
 
         return ret
 
-    def volume_create(self, volname: str, bricks_list: list,
-                      node: str = None, force: bool = False,
-                      **kwargs):
+    def volume_create(self, volname: str, node: str, conf_hash: dict,
+                      server_list: list, brick_root: list,
+                      force: bool = False):
         """
         Create the gluster volume with specified configuration
         Args:
-            node(str): server on which command has to be executed
             volname(str): volume name that has to be created
-            bricks_list (list): List of bricks to use for creating volume.
-
-        Kwargs:
+            node(str): server on which command has to be executed
+            conf_hash (dict): Config hash providing parameters for volume
+            creation.
             force (bool): If this option is set to True, then create volume
-                will get executed with force option. If it is set to False,
-                then create volume will get executed without force option
-            **kwargs
-                The keys, values in kwargs are:
-                    - replica_count : (int)|None
-                    - arbiter_count : (int)|None
-                    - stripe_count : (int)|None
-                    - disperse_count : (int)|None
-                    - disperse_data_count : (int)|None
-                    - redundancy_count : (int)|None
-                    - transport_type : tcp|rdma|tcp,rdma|None
-                    - ...
+            will get executed with force option.
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -102,38 +91,29 @@ class VolumeOps(AbstractOps):
                 - node : node on which the command got executed
 
         """
+        #TODO adding vol create for disp, arb, dist-arb and dist-disp
+        brick_cmd = ""
+        server_iter = 0
+        mul_fac = 0
+        cmd = ""
+        if "replica_count" in conf_hash:
+            mul_fac = conf_hash["replica_count"]
+            if "dist_count" in conf_hash:
+                mul_fac *= conf_hash["dist_count"]
+        elif "dist_count" in conf_hash:
+            mul_fac = conf_hash["dist_count"]
 
-        replica = arbiter = stripe = disperse = disperse_data = redundancy = ''
-        transport = ''
+        for iter in range(mul_fac):
+            if server_iter == len(server_list):
+                server_iter = 0
+            brick_cmd = (f"{brick_cmd} {server_list[server_iter]}:{brick_root[server_list[server_iter]]}/{volname}-{iter}")
 
-        if 'replica_count' in kwargs:
-            replica = f"replica {kwargs['replica_count']}"
-
-        if 'arbiter_count' in kwargs:
-            arbiter = f"arbiter {kwargs['arbiter_count']}"
-
-        if 'stripe_count' in kwargs:
-            stripe = f"stripe {kwargs['stripe_count']}"
-
-        if 'disperse_count' in kwargs:
-            disperse = f"disperse {kwargs['disperse_count']}"
-
-        if 'disperse_data_count' in kwargs:
-            disperse = f"disperse-data {kwargs['disperse_data_count']}"
-
-        if 'redundancy_count' in kwargs:
-            redundancy = f"redundancy {kwargs['redundancy_count']}"
-
-        if 'transport_type' in kwargs:
-            transport = f"transport {kwargs['transport_type']}"
-
-        cmd = (f"gluster volume create {volname} {replica} "
-               f"{arbiter} {stripe} {disperse} {disperse_data} "
-               f"{redundancy} {transport} {' '.join(bricks_list)} --xml "
-               "--mode=script")
-
+        if "replica_count" in conf_hash:
+            cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}{brick_cmd}")
+        else:
+            cmd = (f"gluster volume create {volname}{brick_cmd}")
         if force:
-            cmd = cmd + " force"
+            cmd = (f"{cmd} force")
 
         ret = self.execute_abstract_op_node(cmd, node)
 
@@ -170,7 +150,7 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
-
+    
     def volume_stop(self, volname: str, node: str = None, force: bool = False):
         """
         Stops the gluster volume
@@ -222,7 +202,7 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-
+        #TODO cleanup of the brick dirs after the volume is deleted.
         return ret
 
     def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
@@ -374,7 +354,7 @@ class VolumeOps(AbstractOps):
 
         return ret
 
-    def get_volume_status(self, node: str = None, volname: str = 'all',
+    def get_volume_status(self, volname: str = 'all', node: str = None,
                           service: str = '', options: str = '') -> dict:
         """
         Gets the status of all or the specified volume

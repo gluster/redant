@@ -26,7 +26,7 @@ class AbstractOps:
         """
         self.logger.info(f"Running {cmd} on {node}")
 
-        ret = self.execute_command(cmd,node)
+        ret = self.execute_command(cmd, node)
 
         if(ret['error_code']!=0):
             self.logger.error(ret['error_msg'])
@@ -53,7 +53,7 @@ class AbstractOps:
         """
         self.logger.info(f"Running {cmd} on {node}")
 
-        ret = self.execute_command_multinode(cmd,node)
+        ret = self.execute_command_multinode(cmd, node)
 
         if int(ret['msg']['opRet']) != 0:
             self.logger.error(ret['msg']['opErrstr'])
