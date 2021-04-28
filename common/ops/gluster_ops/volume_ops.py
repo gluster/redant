@@ -91,6 +91,7 @@ class VolumeOps(AbstractOps):
                 - node : node on which the command got executed
 
         """
+        #TODO adding vol create for disp, arb, dist-arb and dist-disp
         brick_cmd = ""
         server_iter = 0
         mul_fac = 0
@@ -201,7 +202,7 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-
+        #TODO cleanup of the brick dirs after the volume is deleted.
         return ret
 
     def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
