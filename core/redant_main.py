@@ -40,7 +40,7 @@ def pars_args():
                         dest="log_level", default="I", type=str)
     parser.add_argument("-cc", "--concurrency-count",
                         help="Number of concurrent test runs",
-                        dest="semaphore_count", default=4, type=int)
+                        dest="concur_count", default=4, type=int)
     parser.add_argument("-rf", "--result-file",
                         help="Result file. By default it will be None",
                         dest="result_path", default=None, type=str)
@@ -83,14 +83,16 @@ def main():
 
     # invoke the test_runner.
     TestRunner.init(test_cases_dict, param_obj, args.log_dir,
-                    args.log_level, args.semaphore_count)
+                    args.log_level, args.concur_count)
     all_test_results = TestRunner.run_tests()
 
     # Environment cleanup. TBD.
 
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
+    while not all_test_results.empty():
+        print(all_test_results.get())
 
-    ResultHandler.handle_results(all_test_results, args.result_path)
+#    ResultHandler.handle_results(all_test_results, args.result_path)
 
 
 if __name__ == '__main__':
