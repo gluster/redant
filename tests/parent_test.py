@@ -43,15 +43,15 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
 
+        if not thread_flag:
+            self.redant.start_glusterd()
+            self.redant.create_cluster(self.server_list)
+
         if self.volume_type != "Generic":
             self.vol_name = (f"{mname}-{volume_type}")
             self.redant.volume_create(self.vol_name, self.server_list[0],
                                       self.volume_types_info[self.conv_dict[volume_type]],
                                       self.server_list, self.brick_roots, True)
-
-        if not thread_flag:
-            self.redant.start_glusterd()
-            self.redant.create_cluster(self.server_list)
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
