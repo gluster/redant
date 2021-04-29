@@ -22,11 +22,7 @@ class Parser():
             dict: Hashmap for config file as a dictionary.
             None: None on failure.
         """
-        try:
-            configfd = open(filepath, 'r')
-            config_hashmap = yaml.load(configfd, Loader=yaml.FullLoader)
-            configfd.close()
-            return config_hashmap
-        except IOError:
-            print("Error: can\'t find config file or read data.")
-            return None
+        configfd = open(filepath, 'r')
+        config_hashmap = yaml.load(configfd, Loader=yaml.FullLoader)
+        configfd.close()
+        return config_hashmap
