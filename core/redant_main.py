@@ -89,10 +89,10 @@ def main():
     # Environment cleanup. TBD.
 
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
-    while not all_test_results.empty():
-        print(all_test_results.get())
+    
+    ResultHandler.handle_results(all_test_results, args.result_path)
 
-#    ResultHandler.handle_results(all_test_results, args.result_path)
+
 
 
 if __name__ == '__main__':

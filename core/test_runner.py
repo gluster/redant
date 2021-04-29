@@ -20,6 +20,7 @@ class TestRunner:
     @classmethod
     def init(cls, test_run_dict: dict, param_obj: dict,
              base_log_path: str, log_level: str, multiprocess_count: int):
+        cls.test_results = {}
         cls.param_obj = param_obj
         cls.concur_count = multiprocess_count
         cls.base_log_path = base_log_path
@@ -54,10 +55,20 @@ class TestRunner:
                 else:
                    backoff_time += 1
 
+        while not cls.job_result_queue.empty():
+            curr_item = cls.job_result_queue.get()
+            print(curr_item)
+            key = list(curr_item.keys())[0]
+            value = curr_item[key]
+            cls.test_results[key].append(value)
+            
         for test in cls.non_concur_test:
+            cls.test_results[test['moduleName'][:-3]] = []
             cls._run_test(test)
 
-        return cls.job_result_queue
+
+
+        return cls.test_results
 
     @classmethod
     def _prepare_thread_tests(cls):
@@ -65,9 +76,9 @@ class TestRunner:
         This method creates the threadlist for non disruptive tests
         """
         for test in cls.concur_test:
-            print(test)
+            cls.test_results[test['moduleName'][:-3]] = []
             cls.nd_job_queue.put(test)
-
+        
     @classmethod
     def _run_test(cls, test_dict: dict, thread_flag: bool=False):
         """
@@ -98,6 +109,8 @@ class TestRunner:
             test_stats['testResult'] = "FAIL"
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
+
+        cls.test_results[test_dict["moduleName"][:-3]].append(test_stats)
         result_value = { test_dict["moduleName"][:-3] : test_stats }
         cls.job_result_queue.put(result_value)
 
