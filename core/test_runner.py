@@ -57,11 +57,10 @@ class TestRunner:
 
         while not cls.job_result_queue.empty():
             curr_item = cls.job_result_queue.get()
-            print(curr_item)
             key = list(curr_item.keys())[0]
             value = curr_item[key]
             cls.test_results[key].append(value)
-            
+
         for test in cls.non_concur_test:
             cls.test_results[test['moduleName'][:-3]] = []
             cls._run_test(test)
