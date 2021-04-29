@@ -4,7 +4,7 @@ import paramiko
 import xmltodict
 import json
 from multipledispatch import dispatch
-
+import os
 
 class Rexe:
     def __init__(self, host_dict):
@@ -28,18 +28,25 @@ class Rexe:
         self.connect_flag = True
 
         for node in self.host_dict:
+            # to debug PARAMIKO in case of a failure uncomment the following line
+            # paramiko.common.logging.basicConfig(level=paramiko.common.DEBUG)
+
             node_ssh_client = paramiko.SSHClient()
+            node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
             node_ssh_client.set_missing_host_key_policy(
                 paramiko.AutoAddPolicy())
+            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
             try:
                 node_ssh_client.connect(
                     hostname=node,
-                    username=self.host_dict[node]['user'],
-                    password=self.host_dict[node]['passwd'])
+                    pkey=mykey,
+                    )
+
                 self.logger.debug(f"SSH connection to {node} is successful.")
             except Exception as e:
                 self.logger.error(f"Connection failure. Exception : {e}")
                 self.connect_flag = False
+                raise e
             self.node_dict[node] = node_ssh_client
 
     def deconstruct_connection(self):
@@ -93,13 +100,14 @@ class Rexe:
         except Exception as e:
             # Reconnection to be done.
             node_ssh_client = paramiko.SSHClient()
+            node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
             node_ssh_client.set_missing_host_key_policy(
                 paramiko.AutoAddPolicy())
+            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
             try:
                 node_ssh_client.connect(
                     hostname=node,
-                    username=self.host_dict[node]['user'],
-                    password=self.host_dict[node]['passwd'],
+                    pkey=mykey,
                 )
                 self.logger.debug(f"SSH connection to {node} is successful.")
                 self.node_dict[node] = node_ssh_client
