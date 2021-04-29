@@ -84,13 +84,13 @@ def main():
     # invoke the test_runner.
     TestRunner.init(test_cases_dict, param_obj, args.log_dir,
                     args.log_level, args.concur_count)
-    all_test_results = TestRunner.run_tests()
+    result_queue = TestRunner.run_tests()
 
     # Environment cleanup. TBD.
 
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
     
-    ResultHandler.handle_results(all_test_results, args.result_path)
+    ResultHandler.handle_results(result_queue, TestRunner.test_results,  args.result_path)
 
 
 

@@ -55,19 +55,14 @@ class TestRunner:
                 else:
                    backoff_time += 1
 
-        while not cls.job_result_queue.empty():
-            curr_item = cls.job_result_queue.get()
-            key = list(curr_item.keys())[0]
-            value = curr_item[key]
-            cls.test_results[key].append(value)
+            for iter in range(cls.concur_count):
+                proc.join()
 
         for test in cls.non_concur_test:
             cls.test_results[test['moduleName'][:-3]] = []
             cls._run_test(test)
 
-
-
-        return cls.test_results
+        return cls.job_result_queue
 
     @classmethod
     def _prepare_thread_tests(cls):
