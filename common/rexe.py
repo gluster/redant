@@ -1,10 +1,10 @@
+import os
 import random
 import concurrent.futures
 import paramiko
 import xmltodict
 import json
 from multipledispatch import dispatch
-import os
 
 class Rexe:
     def __init__(self, host_dict):
@@ -28,13 +28,9 @@ class Rexe:
         self.connect_flag = True
 
         for node in self.host_dict:
-            # to debug PARAMIKO in case of a failure uncomment the following line
-            # paramiko.common.logging.basicConfig(level=paramiko.common.DEBUG)
 
             node_ssh_client = paramiko.SSHClient()
             node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
-            node_ssh_client.set_missing_host_key_policy(
-                paramiko.AutoAddPolicy())
             mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
             try:
                 node_ssh_client.connect(
@@ -101,8 +97,6 @@ class Rexe:
             # Reconnection to be done.
             node_ssh_client = paramiko.SSHClient()
             node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
-            node_ssh_client.set_missing_host_key_policy(
-                paramiko.AutoAddPolicy())
             mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
             try:
                 node_ssh_client.connect(
