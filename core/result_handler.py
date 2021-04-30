@@ -72,7 +72,7 @@ class ResultHandler:
         file.close()
 
     @classmethod
-    def handle_results(cls, test_results: dict, result_path: str):
+    def handle_results(cls, result_queue, result_path: str):
         """
         This function handles the results
         for the framework. It checks
@@ -81,9 +81,23 @@ class ResultHandler:
         specified by the user
 
         Args:
-        test_results: all the tests results
+        result_queue: a queue of results
         result_path: path of the result file
         """
+        test_results = {}
+
+        while not result_queue.empty():
+        
+            curr_item = result_queue.get()
+            key = list(curr_item.keys())[0]
+            value = curr_item[key]
+
+            if key not in test_results.keys():
+                test_results[key] = []
+
+            test_results[key].append(value)
+        
+
         if result_path is None:
             cls._display_test_results(test_results)
         else:

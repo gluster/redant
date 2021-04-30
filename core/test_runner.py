@@ -5,7 +5,7 @@ to be run and invoking them.
 import uuid
 import time
 from datetime import datetime
-from threading import Thread, Semaphore
+from multiprocessing import Process, Queue
 from colorama import Fore, Style
 from runner_thread import RunnerThread
 
@@ -19,15 +19,16 @@ class TestRunner:
 
     @classmethod
     def init(cls, test_run_dict: dict, param_obj: dict,
-             base_log_path: str, log_level: str, semaphore_count: int):
+             base_log_path: str, log_level: str, multiprocess_count: int):
         cls.param_obj = param_obj
-        cls.semaphore = Semaphore(semaphore_count)
+        cls.concur_count = multiprocess_count
         cls.base_log_path = base_log_path
         cls.log_level = log_level
         cls.concur_test = test_run_dict["nonDisruptive"]
         cls.non_concur_test = test_run_dict["disruptive"]
         cls.threadList = []
-        cls.test_results = {}
+        cls.job_result_queue = Queue()
+        cls.nd_job_queue = Queue()
         cls._prepare_thread_tests()
 
     @classmethod
@@ -36,44 +37,54 @@ class TestRunner:
         The non-disruptive tests are invoked followed by the disruptive
         tests.
         """
-        for test_thread in cls.threadList:
-            test_thread.start()
+        jobs = []
+        if bool(cls.concur_count):
+            for iter in range(cls.concur_count):
+                proc = Process(target=cls._worker_process,
+                               args=(cls.nd_job_queue,))
+                jobs.append(proc)
+                proc.start()
 
-        for test_thread in cls.threadList:
-            test_thread.join()
+            # TODO replace incremental backup with a signalling and lock.
+            backoff_time = 0
+            while len(jobs) > 0:
+                jobs = [job for job in jobs if job.is_alive()]
+                if backoff_time == 20:
+                    time.sleep(backoff_time)
+                else:
+                   backoff_time += 1
 
-        thread_flag = False
+            for iter in range(cls.concur_count):
+                proc.join()
 
         for test in cls.non_concur_test:
-            cls.test_results[test['moduleName'][:-3]] = []
+            cls._run_test(test)
 
-        for test in cls.non_concur_test:
-            cls._run_test(test, thread_flag)
+        """
+        Because of the infinitesimal delay in value being reflected in Queue
+        it was found that sometimes the Queue which was empty had been given
+        some value, it still showed itself as empty.
+        TODO: Handle it without sleep.
+        """
+        while cls.job_result_queue.empty():
+            time.sleep(1)
 
-        return cls.test_results
+        return cls.job_result_queue
 
     @classmethod
     def _prepare_thread_tests(cls):
         """
         This method creates the threadlist for non disruptive tests
         """
-        thread_flag = True
-
         for test in cls.concur_test:
-            cls.test_results[test['moduleName'][:-3]] = []
-
-        for test in cls.concur_test:
-            cls.threadList.append(Thread(target=cls._run_test,
-                                         args=(test, thread_flag,)))
-
+            cls.nd_job_queue.put(test)
+        
     @classmethod
-    def _run_test(cls, test_dict: dict, thread_flag: bool):
+    def _run_test(cls, test_dict: dict, thread_flag: bool=False):
         """
         A generic method handling the run of both disruptive and non
         disruptive tests.
         """
-        if thread_flag:
-            cls.semaphore.acquire()
         tc_class = test_dict["testClass"]
         tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
             test_dict["volType"]+"/"+test_dict["moduleName"][:-3]+".log"
@@ -98,7 +109,17 @@ class TestRunner:
             test_stats['testResult'] = "FAIL"
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
-        if thread_flag:
-            cls.semaphore.release()
 
-        cls.test_results[test_dict['moduleName'][:-3]].append(test_stats)
+        result_value = { test_dict["moduleName"][:-3] : test_stats }
+        cls.job_result_queue.put(result_value)
+
+    @classmethod
+    def _worker_process(cls, nd_queue):
+        """
+        Worker process would be taking up new jobs from the queue
+        till the queue is empty. This queue will consist only non disruptive
+        test cases.
+        """
+        while not nd_queue.empty():
+            job_data = nd_queue.get()
+            cls._run_test(job_data, True)
