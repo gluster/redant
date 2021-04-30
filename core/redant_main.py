@@ -4,7 +4,6 @@ This module takes care of:
 2) Tests-to-run list preparation (by test_list_builder).
 3) Invocation of the test_runner.
 """
-import os
 import sys
 import time
 import datetime
@@ -63,9 +62,9 @@ def main():
     start = time.time()
     args = pars_args()
 
-    if os.access(args.config_file, os.R_OK):
+    try: 
         param_obj = ParamsHandler(args.config_file)
-    else:
+    except IOError:
         print("Error: can't find config file or read data.")
         return
 
