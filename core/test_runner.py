@@ -20,7 +20,7 @@ class TestRunner:
     @classmethod
     def init(cls, test_run_dict: dict, param_obj: dict,
              base_log_path: str, log_level: str, multiprocess_count: int):
-        cls.test_results = {}
+        # cls.test_results = {}
         cls.param_obj = param_obj
         cls.concur_count = multiprocess_count
         cls.base_log_path = base_log_path
@@ -59,8 +59,19 @@ class TestRunner:
                 proc.join()
 
         for test in cls.non_concur_test:
-            cls.test_results[test['moduleName'][:-3]] = []
+            # cls.test_results[test['moduleName'][:-3]] = []
             cls._run_test(test)
+
+        """
+        Because of the infinitesimal delay in the Queue
+        it was found that sometimes the
+        Queue was empty while the other times.
+        Although this is not the correct way
+        to handle it but can be considered for now.
+        """
+        # if not bool(cls.concur_count):
+        while cls.job_result_queue.empty():
+            time.sleep(1)
 
         return cls.job_result_queue
 
@@ -70,7 +81,7 @@ class TestRunner:
         This method creates the threadlist for non disruptive tests
         """
         for test in cls.concur_test:
-            cls.test_results[test['moduleName'][:-3]] = []
+            # cls.test_results[test['moduleName'][:-3]] = []
             cls.nd_job_queue.put(test)
         
     @classmethod
@@ -104,7 +115,7 @@ class TestRunner:
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
 
-        cls.test_results[test_dict["moduleName"][:-3]].append(test_stats)
+        # cls.test_results[test_dict["moduleName"][:-3]].append(test_stats)
         result_value = { test_dict["moduleName"][:-3] : test_stats }
         cls.job_result_queue.put(result_value)
 

@@ -90,7 +90,7 @@ def main():
 
     print(f"\nTotal time taken by the framework: {time.time()-start} sec")
     
-    ResultHandler.handle_results(result_queue, TestRunner.test_results,  args.result_path)
+    ResultHandler.handle_results(result_queue, args.result_path)
 
 
 
