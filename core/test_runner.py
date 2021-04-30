@@ -20,7 +20,6 @@ class TestRunner:
     @classmethod
     def init(cls, test_run_dict: dict, param_obj: dict,
              base_log_path: str, log_level: str, multiprocess_count: int):
-        # cls.test_results = {}
         cls.param_obj = param_obj
         cls.concur_count = multiprocess_count
         cls.base_log_path = base_log_path
