@@ -20,9 +20,7 @@ class TestCase(ParentTest):
         2) The storage pool is listed.
         """
         server1 = self.server_list[0]
-        server2 = self.server_list[1]
-        server3 = self.server_list[2]
-        for _ in range(3):
+        for _ in range(2):
             redant.create_cluster(self.server_list)
             node_list = redant.nodes_from_pool_list(server1)
             node_ip_list = redant.convert_hosts_to_ip(node_list, server1)
