@@ -19,6 +19,6 @@ class TestCase(ParentTest):
         1) glusterd service is started on the server.
         4) glusterd service is stopped.
         """
-        for _ in range(10):
-            redant.start_glusterd(self.server_list)
+        for _ in range(5):
             redant.stop_glusterd(self.server_list)
+            redant.start_glusterd(self.server_list)
