@@ -7,7 +7,7 @@ The components of the config.yml file are as follows:
 <h3>1. servers_info</h3>
 'servers_info' is info about each server in the cluster.<br>
 Each server is defined by its ip address which acts as a key representing the server.<br>
-Each server should contain 1 attributes:<br>
+Each server should contain 1 attribute:<br>
 1) brick_root: the list of directories where bricks have to be created.<br>
 The above attribute has to be defined by the user.<br>
 If a new server has to added, then it has to follow the convention of the
