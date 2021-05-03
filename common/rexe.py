@@ -42,7 +42,9 @@ class Rexe:
             except Exception as e:
                 self.logger.error(f"Connection failure. Exception : {e}")
                 self.connect_flag = False
-                raise e
+                print(f"Connection failed on {node}.\nTake a look in the main.log file for more details")
+                exit(0)
+                # raise e
             self.node_dict[node] = node_ssh_client
 
     def deconstruct_connection(self):
