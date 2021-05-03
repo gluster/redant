@@ -12,7 +12,7 @@ from colorama import Fore, Style
 class ResultHandler:
 
     @classmethod
-    def _get_output(cls, test_results: dict, colorify: bool):
+    def _get_output(cls, test_results: dict, colorify: bool, total_time):
         """
         It generates the output in the
         form of tables with columns
@@ -43,21 +43,25 @@ class ResultHandler:
 
             cls.result += (str(table)+"\n")
 
+        cls.result += (f"\nTotal time taken by the framework is {total_time}\n")        
+
     @classmethod
-    def _display_test_results(cls, test_results: dict):
+    def _display_test_results(cls, test_results: dict, total_time):
         """
         This function displays the test results
         in the form of tables.
 
         Args:
         test_results: All the tests results.
+        total_time: stores the total time taken by the framework
 
         """
-        cls._get_output(test_results, True)
+        cls._get_output(test_results, True, total_time)
         print(cls.result)
 
+
     @classmethod
-    def _store_results(cls, test_results: dict, result_path: str):
+    def _store_results(cls, test_results: dict, result_path: str, total_time):
         """
         This function stores the test results
         in the form of tables in a file.
@@ -66,13 +70,14 @@ class ResultHandler:
         test_results: All the tests results.
         result_path: Path of the result file
         """
-        cls._get_output(test_results, False)
+        cls._get_output(test_results, False, total_time)
+        print(f"The results are stored in {result_path}")
         file = open(result_path, 'w')
         file.write(cls.result)
         file.close()
 
     @classmethod
-    def handle_results(cls, result_queue, result_path: str):
+    def handle_results(cls, result_queue, result_path: str, total_time):
         """
         This function handles the results
         for the framework. It checks
@@ -99,6 +104,6 @@ class ResultHandler:
         
 
         if result_path is None:
-            cls._display_test_results(test_results)
+            cls._display_test_results(test_results, total_time)
         else:
-            cls._store_results(test_results, result_path)
+            cls._store_results(test_results, result_path, total_time)

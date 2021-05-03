@@ -87,10 +87,9 @@ def main():
     result_queue = TestRunner.run_tests()
 
     # Environment cleanup. TBD.
-
-    print(f"\nTotal time taken by the framework: {time.time()-start} sec")
+    total_time = time.time()-start
     
-    ResultHandler.handle_results(result_queue, args.result_path)
+    ResultHandler.handle_results(result_queue, args.result_path, total_time)
 
 
 
