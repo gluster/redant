@@ -36,15 +36,14 @@ class Rexe:
                 node_ssh_client.connect(
                     hostname=node,
                     pkey=mykey,
+                    timeout=15,
                     )
 
                 self.logger.debug(f"SSH connection to {node} is successful.")
             except Exception as e:
                 self.logger.error(f"Connection failure. Exception : {e}")
                 self.connect_flag = False
-                print(f"Connection failed on {node}.\nTake a look in the main.log file for more details")
-                exit(0)
-                # raise e
+                raise e
             self.node_dict[node] = node_ssh_client
 
     def deconstruct_connection(self):

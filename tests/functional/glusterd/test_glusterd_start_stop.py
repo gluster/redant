@@ -17,7 +17,7 @@ class TestCase(ParentTest):
         """
         The following steps are undertaken in the testcase:
         1) glusterd service is started on the server.
-        4) glusterd service is stopped.
+        2) glusterd service is stopped.
         """
         for _ in range(5):
             redant.stop_glusterd(self.server_list)
