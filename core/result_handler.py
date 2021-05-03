@@ -1,9 +1,9 @@
 """
-This component is dedicated to
-displaying the result of the tests
-in the form of tables for better
-understanding of the performance of
-framework
+This component handles the
+results in two ways:
+
+1. display on the CLI
+2. store in a file
 """
 from prettytable import PrettyTable
 from colorama import Fore, Style
@@ -12,7 +12,7 @@ from colorama import Fore, Style
 class ResultHandler:
 
     @classmethod
-    def _get_output(cls, test_results: dict, colorify: bool, total_time):
+    def _get_output(cls, test_results: dict, colorify: bool, total_time: float):
         """
         It generates the output in the
         form of tables with columns
@@ -23,6 +23,8 @@ class ResultHandler:
         test_results: All the tests result.
         colorify: Stores whether to show colored
                 output or not
+        total_time: stores the total time taken by the framework
+        
         """
         cls.result = "Table:\n"
 
@@ -46,7 +48,7 @@ class ResultHandler:
         cls.result += (f"\nTotal time taken by the framework is {total_time}\n")        
 
     @classmethod
-    def _display_test_results(cls, test_results: dict, total_time):
+    def _display_test_results(cls, test_results: dict, total_time: float):
         """
         This function displays the test results
         in the form of tables.
@@ -61,7 +63,7 @@ class ResultHandler:
 
 
     @classmethod
-    def _store_results(cls, test_results: dict, result_path: str, total_time):
+    def _store_results(cls, test_results: dict, result_path: str, total_time: float):
         """
         This function stores the test results
         in the form of tables in a file.
@@ -69,6 +71,7 @@ class ResultHandler:
         Args:
         test_results: All the tests results.
         result_path: Path of the result file
+        total_time: stores the total time taken by the framework
         """
         cls._get_output(test_results, False, total_time)
         print(f"The results are stored in {result_path}")
@@ -77,7 +80,7 @@ class ResultHandler:
         file.close()
 
     @classmethod
-    def handle_results(cls, result_queue, result_path: str, total_time):
+    def handle_results(cls, result_queue, result_path: str, total_time: float):
         """
         This function handles the results
         for the framework. It checks
@@ -88,6 +91,7 @@ class ResultHandler:
         Args:
         result_queue: a queue of results
         result_path: path of the result file
+        total_time: stores the total time taken by the framework
         """
         test_results = {}
 

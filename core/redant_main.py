@@ -88,7 +88,6 @@ def main():
 
     # Environment cleanup. TBD.
     total_time = time.time()-start
-    
     ResultHandler.handle_results(result_queue, args.result_path, total_time)
 
 
