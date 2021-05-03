@@ -44,6 +44,9 @@ def pars_args():
     parser.add_argument("-rf", "--result-file",
                         help="Result file. By default it will be None",
                         dest="result_path", default=None, type=str)
+    parser.add_argument("-xls", "--excel-sheet",
+                        help="Excel sheet to store the result. By default it will be None",
+                        dest="excel_sheet", default=None, type=str)
     return parser.parse_args()
 
 
@@ -88,7 +91,7 @@ def main():
 
     # Environment cleanup. TBD.
     total_time = time.time()-start
-    ResultHandler.handle_results(result_queue, args.result_path, total_time)
+    ResultHandler.handle_results(result_queue, args.result_path, total_time, args.excel_sheet)
 
 
 
