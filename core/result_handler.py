@@ -1,9 +1,9 @@
 """
-This component is dedicated to
-displaying the result of the tests
-in the form of tables for better
-understanding of the performance of
-framework
+This component handles the
+results in two ways:
+
+1. display on the CLI
+2. store in a file
 """
 from prettytable import PrettyTable
 from colorama import Fore, Style
@@ -12,7 +12,7 @@ from colorama import Fore, Style
 class ResultHandler:
 
     @classmethod
-    def _get_output(cls, test_results: dict, colorify: bool):
+    def _get_output(cls, test_results: dict, colorify: bool, total_time: float):
         """
         It generates the output in the
         form of tables with columns
@@ -23,15 +23,17 @@ class ResultHandler:
         test_results: All the tests result.
         colorify: Stores whether to show colored
                 output or not
+        total_time: stores the total time taken by the framework
+        
         """
         cls.result = "Table:\n"
 
         for item in test_results:
             if colorify:
-                cls.result += (Fore.BLUE + item+"\n")
-                cls.result += (Style.RESET_ALL+"\n")
+                cls.result = f"{cls.result} {Fore.BLUE}{item}\n"
+                cls.result = f"{cls.result} {Style.RESET_ALL}\n"
             else:
-                cls.result += (item+'\n')
+                cls.result = f"{cls.result} {item}\n"
 
             table = PrettyTable(
                 ['Volume Type', 'Test Result', 'Time taken (sec)'])
@@ -41,23 +43,27 @@ class ResultHandler:
                     [each_vol_test['volType'], each_vol_test['testResult'],
                      each_vol_test['timeTaken']])
 
-            cls.result += (str(table)+"\n")
+            cls.result = f"{cls.result}{str(table)}\n"
+
+        cls.result = (f"{cls.result}\nTotal time taken by the framework is {total_time}\n")        
 
     @classmethod
-    def _display_test_results(cls, test_results: dict):
+    def _display_test_results(cls, test_results: dict, total_time: float):
         """
         This function displays the test results
         in the form of tables.
 
         Args:
         test_results: All the tests results.
+        total_time: stores the total time taken by the framework
 
         """
-        cls._get_output(test_results, True)
+        cls._get_output(test_results, True, total_time)
         print(cls.result)
 
+
     @classmethod
-    def _store_results(cls, test_results: dict, result_path: str):
+    def _store_results(cls, test_results: dict, result_path: str, total_time: float):
         """
         This function stores the test results
         in the form of tables in a file.
@@ -65,14 +71,16 @@ class ResultHandler:
         Args:
         test_results: All the tests results.
         result_path: Path of the result file
+        total_time: stores the total time taken by the framework
         """
-        cls._get_output(test_results, False)
+        cls._get_output(test_results, False, total_time)
+        print(f"The results are stored in {result_path}")
         file = open(result_path, 'w')
         file.write(cls.result)
         file.close()
 
     @classmethod
-    def handle_results(cls, result_queue, result_path: str):
+    def handle_results(cls, result_queue, result_path: str, total_time: float):
         """
         This function handles the results
         for the framework. It checks
@@ -83,6 +91,7 @@ class ResultHandler:
         Args:
         result_queue: a queue of results
         result_path: path of the result file
+        total_time: stores the total time taken by the framework
         """
         test_results = {}
 
@@ -99,6 +108,6 @@ class ResultHandler:
         
 
         if result_path is None:
-            cls._display_test_results(test_results)
+            cls._display_test_results(test_results, total_time)
         else:
-            cls._store_results(test_results, result_path)
+            cls._store_results(test_results, result_path, total_time)
