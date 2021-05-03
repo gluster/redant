@@ -78,7 +78,7 @@ class TestRunner:
         """
         for test in cls.concur_test:
             cls.nd_job_queue.put(test)
-        
+
     @classmethod
     def _run_test(cls, test_dict: dict, thread_flag: bool=False):
         """
@@ -86,16 +86,18 @@ class TestRunner:
         disruptive tests.
         """
         tc_class = test_dict["testClass"]
+        volume_type = test_dict["volType"]
+        mname = test_dict["moduleName"][:-3]
+
         tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
-            test_dict["volType"]+"/"+test_dict["moduleName"][:-3]+".log"
+            volume_type+"/"+mname+".log"
 
         # to calculate time spent to execute the test
         start = time.time()
-        runner_thread_obj = RunnerThread(tc_class, cls.param_obj,
-                                         test_dict["moduleName"][:-3],
-                                         test_dict["volType"], tc_log_path,
-                                         cls.log_level, thread_flag)
-        test_stats = runner_thread_obj.run_thread()
+
+        runner_thread_obj = RunnerThread(tc_class, cls.param_obj, volume_type,
+                                         mname, tc_log_path, cls.log_level)
+        test_stats = runner_thread_obj.run_thread(mname, volume_type, thread_flag)
 
         test_stats['timeTaken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]

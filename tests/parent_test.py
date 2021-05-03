@@ -24,7 +24,7 @@ class ParentTest(metaclass=abc.ABCMeta):
                     "dist-arb" : "distributed-arbiter"
                 }
     def __init__(self, mname: str, param_obj, volume_type: str,
-                 thread_flag: bool, log_path: str, log_level: str = 'I'):
+                 log_path: str, log_level: str = 'I'):
         """
         Creates volume
         And runs the specific component in the
@@ -43,22 +43,6 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
 
-        if not thread_flag:
-            self.redant.start_glusterd()
-            self.redant.create_cluster(self.server_list)
-
-        if self.volume_type != "Generic":
-            self.vol_name = (f"{mname}-{volume_type}")
-            self.redant.volume_create(self.vol_name, self.server_list[0],
-                                      self.volume_types_info[self.conv_dict[volume_type]],
-                                      self.server_list, self.brick_roots, True)
-            self.redant.volume_start(self.vol_name, self.server_list[0])
-            self.mountpoint = (f"/mnt/{self.vol_name}")
-            self.redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
-                                       self.client_list[0])
-            self.redant.volume_mount(self.server_list[0], self.vol_name,
-                                     self.mountpoint, self.client_list[0])
-
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, log_path: str, log_level: str):
         machine_detail = {**client_details, **server_details}
@@ -71,7 +55,7 @@ class ParentTest(metaclass=abc.ABCMeta):
     def run_test(self):
         pass
 
-    def parent_run_test(self):
+    def parent_run_test(self, mname: str, volume_type: str, thread_flag: bool):
         """
         Function to handle the exception logic and invokes the run_test
         which is overridden by every TC.
@@ -82,6 +66,21 @@ class ParentTest(metaclass=abc.ABCMeta):
         ============================================================
         ''')
         try:
+            if not thread_flag:
+                self.redant.start_glusterd()
+                self.redant.create_cluster(self.server_list)
+
+            if self.volume_type != "Generic":
+                self.vol_name = (f"{mname}-{volume_type}")
+                self.redant.volume_create(self.vol_name, self.server_list[0],
+                                        self.volume_types_info[self.conv_dict[volume_type]],
+                                        self.server_list, self.brick_roots, True)
+                self.redant.volume_start(self.vol_name, self.server_list[0])
+                self.mountpoint = (f"/mnt/{self.vol_name}")
+                self.redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
+                                        self.client_list[0])
+                self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                        self.mountpoint, self.client_list[0])
             self.run_test(self.redant)
         except Exception as error:
             tb = traceback.format_exc()
