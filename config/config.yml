@@ -6,29 +6,17 @@
 servers_info:
     "1.1.1.1":
         brick_root: ["/bricks"]
-        user: "root"
-        passwd: "redhat"
     "2.2.2.2":
         brick_root: ["/bricks"]
-        user: "root"
-        passwd: "redhat"
     "3.3.3.3":
         brick_root: ["/bricks"]
-        user: "root"
-        passwd: "redhat"
     "4.4.4.4":
         brick_root: ["/bricks"]
-        user: "root"
-        passwd: "redhat"
         
 #clients_info - All the relevant information about the clients
 clients_info:
     "5.5.5.5":
-        user: "root"
-        passwd: "redhat"
     "6.6.6.6":
-        user: 'root'
-        passwd: "redhat"
 
 #volume_types - Indivudual volume type information and minimum servers for
 #               each volume type
