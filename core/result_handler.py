@@ -30,10 +30,10 @@ class ResultHandler:
 
         for item in test_results:
             if colorify:
-                cls.result += (Fore.BLUE + item+"\n")
-                cls.result += (Style.RESET_ALL+"\n")
+                cls.result = f"{cls.result} {Fore.BLUE}{item}\n"
+                cls.result = f"{cls.result} {Style.RESET_ALL}\n"
             else:
-                cls.result += (item+'\n')
+                cls.result = f"{cls.result} {item}\n"
 
             table = PrettyTable(
                 ['Volume Type', 'Test Result', 'Time taken (sec)'])
@@ -43,9 +43,9 @@ class ResultHandler:
                     [each_vol_test['volType'], each_vol_test['testResult'],
                      each_vol_test['timeTaken']])
 
-            cls.result += (str(table)+"\n")
+            cls.result = f"{cls.result}{str(table)}\n"
 
-        cls.result += (f"\nTotal time taken by the framework is {total_time}\n")        
+        cls.result = (f"{cls.result}\nTotal time taken by the framework is {total_time}\n")        
 
     @classmethod
     def _display_test_results(cls, test_results: dict, total_time: float):
