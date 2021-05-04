@@ -4,7 +4,6 @@ This module takes care of:
 2) Tests-to-run list preparation (by test_list_builder).
 3) Invocation of the test_runner.
 """
-
 import sys
 import time
 import datetime
@@ -14,6 +13,7 @@ from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
 from environ import environ
+
 
 def pars_args():
     """
@@ -62,7 +62,11 @@ def main():
     start = time.time()
     args = pars_args()
 
-    param_obj = ParamsHandler(args.config_file)
+    try: 
+        param_obj = ParamsHandler(args.config_file)
+    except IOError:
+        print("Error: can't find config file or read data.")
+        return
 
     # Building the test list and obtaining the TC details.
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
