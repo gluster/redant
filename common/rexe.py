@@ -38,7 +38,6 @@ class Rexe:
                     pkey=mykey,
                     )
 
-                self.logger.debug(f"SSH connection to {node} is successful.")
             except Exception as e:
                 self.logger.error(f"Connection failure. Exception : {e}")
                 self.connect_flag = False
@@ -103,7 +102,6 @@ class Rexe:
                     hostname=node,
                     pkey=mykey,
                 )
-                self.logger.debug(f"SSH connection to {node} is successful.")
                 self.node_dict[node] = node_ssh_client
             except Exception as e:
                 self.logger.error(f"Connection failure. Exceptions {e}.")
