@@ -164,7 +164,7 @@ class Rexe:
         try:
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
             pid = stdout.readline()
-            self.logger.info(f"Process ID for the {cmd} : {pid}")
+            self.logger.debug(f"Process ID for the {cmd} : {pid}")
 
         except Exception as e:
             # Reconnection to be done.
@@ -183,7 +183,7 @@ class Rexe:
             # On rebooting the node
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
             pid = stdout.readline()
-            self.logger.info(f"Process ID for the {cmd} : {pid}")
+            self.logger.debug(f"Process ID for the {cmd} : {pid}")
 
         return pid
 
