@@ -2,11 +2,18 @@
 
 Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1D8zUSmg-00ey711gsqvS6G9i_fGN2cE0EbG4u1TOsaQ/edit?usp=sharing)
 
-### Structure:
+# Contents
+* [Structure](#structure)
+* [Set up](#set-up)
+* [About](#flags)
+
+## Structure:
 
 core: contains the core redant framework which includes parsing,test_list_builder,test_runner,runner_thread and redant_main.<br>
 common: consists of the libs and ops that will help in running the test cases and the mixin class.<br>
 tests: holds the test cases as performace and functional tests and includes parent test. Add any new test cases here.<br>
+
+## Set up
 
 ### To start Working:
 
@@ -55,3 +62,15 @@ For example,
 One can also run the scripts given under the tools dir which will reduce the
 lengthy commands to be typed out everytime. Check out the README.md at the link
 [Tools-README](https://github.com/srijan-sivakumar/redant/blob/main/tools/README.md)
+
+## About
+
+### Flags
+
+* -c, --config : Stores the path of the config file(s) to read. You need to provide the path else by default it is `None`. Moreover, this is a required argument so you need to provide it for sure.
+* -t, --test-dir : The path of the test directory where test cases exist. You can also provide the path to the specific test file. But in that case remember the `-sp` flag :upside_down_face:. This is also a required argument so don't forget it.
+*   -l, --log-dir : It stores the path of the log directory where you want the log files to be kept. By default it stores `/tmp/redant` and it is not a required argument.
+* -ll, --log-level : The log level you want for the execution.By default the log level is `I` (INFO). There are other log levels also like `D`(DEBUG), `W`(WARN) etc.
+* -cc, --concurrency-count : It stores the number of concurrent tests run. By default it is 4.
+* -rf, --result-file : It stores the path of the result file. By default it is `None`
+* -xls, --excel-sheet : It stores the path of the excel sheet. By default it is `None`.
