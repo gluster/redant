@@ -1,7 +1,7 @@
 import traceback
 import abc
-from common.mixin import RedantMixin
 from datetime import datetime
+from common.mixin import RedantMixin
 
 
 class ParentTest(metaclass=abc.ABCMeta):
@@ -82,6 +82,13 @@ class ParentTest(metaclass=abc.ABCMeta):
                 self.redant.volume_mount(self.server_list[0], self.vol_name,
                                         self.mountpoint, self.client_list[0])
             self.run_test(self.redant)
+
+            if self.volume_type != 'Generic':
+                self.redant.volume_unmount(self.mountpoint, self.client_list[0])
+                self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
+                                        self.client_list[0])
+                self.redant.volume_stop(self.vol_name, self.server_list[0], True)
+                self.redant.volume_delete(self.vol_name, self.server_list[0])
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -97,10 +104,4 @@ class ParentTest(metaclass=abc.ABCMeta):
         """
         Closes connection for now.
         """
-        if self.volume_type != 'Generic':
-            self.redant.volume_unmount(self.mountpoint, self.client_list[0])
-            self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
-                                       self.client_list[0])
-            self.redant.volume_stop(self.vol_name, self.server_list[0], True)
-            self.redant.volume_delete(self.vol_name, self.server_list[0])
         self.redant.deconstruct_connection()
