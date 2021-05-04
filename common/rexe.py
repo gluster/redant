@@ -157,7 +157,7 @@ class Rexe:
         """
         ret_dict = {}
 
-        cmd = f'echo $$; exec {cmd} > /tmp/$$.txt 2>&1 &'
+        cmd = f'echo $$; exec {cmd} > /tmp/redant-pid-$$.txt 2>&1 &'
         if not self.connect_flag:
             ret_dict['Flag'] = False
             return 0
