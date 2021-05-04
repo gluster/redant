@@ -131,6 +131,63 @@ class Rexe:
         self.logger.debug(ret_dict)
         return ret_dict
 
+
+    @dispatch(str)
+    def execute_command_async(self, cmd):
+        """
+        Module to handle random node execution.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        """
+        return self.execute_command_async(cmd, self._random_node())
+
+    @dispatch(str, str)
+    def execute_command_async(self, cmd, node):
+        """
+        Function to execute command in the given node.
+        Returns:
+            pid : Process ID of the command running
+
+        """
+        ret_dict = {}
+
+        cmd = f'echo $$; exec {cmd} > /tmp/$$.txt 2>&1 &'
+        if not self.connect_flag:
+            ret_dict['Flag'] = False
+            return 0
+        try:
+            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            pid = stdout.readline()
+            self.logger.info(f"Process ID for the {cmd} : {pid}")
+
+        except Exception as e:
+            # Reconnection to be done.
+            node_ssh_client = paramiko.SSHClient()
+            node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
+            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
+            try:
+                node_ssh_client.connect(
+                    hostname=node,
+                    pkey=mykey,
+                )
+                self.logger.debug(f"SSH connection to {node} is successful.")
+                self.node_dict[node] = node_ssh_client
+            except Exception as e:
+                self.logger.error(f"Connection failure. Exceptions {e}.")
+            # On rebooting the node
+            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            pid = stdout.readline()
+            self.logger.info(f"Process ID for the {cmd} : {pid}")
+
+        return pid
+
+
     @dispatch(str)
     def execute_command_multinode(self, cmd):
         """
