@@ -46,13 +46,9 @@ class TestRunner:
                 proc.start()
 
             # TODO replace incremental backup with a signalling and lock.
-            backoff_time = 0
             while len(jobs) > 0:
                 jobs = [job for job in jobs if job.is_alive()]
-                if backoff_time == 20:
-                    time.sleep(backoff_time)
-                else:
-                   backoff_time += 1
+                time.sleep(1)
 
             for iter in range(cls.concur_count):
                 proc.join()
