@@ -18,7 +18,7 @@ class Rexe:
         """
         return random.choice(list(self.node_dict.keys()))
 
-    def establish_connection(self):
+    def establish_connection(self, timeout=15):
         """
         Function to establish connection with the given
         set of hosts.
@@ -36,7 +36,7 @@ class Rexe:
                 node_ssh_client.connect(
                     hostname=node,
                     pkey=mykey,
-                    timeout=15,
+                    timeout=timeout,
                     )
 
                 self.logger.debug(f"SSH connection to {node} is successful.")
