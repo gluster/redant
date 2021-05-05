@@ -35,11 +35,8 @@ class AbstractOps:
                 self.logger.error(ret['msg']['opErrstr'])
                 raise Exception(ret['msg']['opErrstr'])
 
-<<<<<<< HEAD
-=======
         self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
 
->>>>>>> 16b28c6... Gluster ops modified to use abstract ops functionalities
         return ret
         
     def execute_abstract_op_multinode(self, cmd : str, node : list=None):
