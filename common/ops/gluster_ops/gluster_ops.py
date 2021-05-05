@@ -36,17 +36,6 @@ class GlusterOps(AbstractOps):
         cmd = "pgrep glusterd || systemctl start glusterd"
 
         ret = self.execute_abstract_op_multinode(cmd, node)
-    
-        for result_val in ret:
-            if int(result_val['error_code']) != 0:
-                cmd_fail = True
-                break
-
-        if cmd_fail and enable_retry:
-            self.reset_failed_glusterd(node)
-            self.start_glusterd(node)
-        elif cmd_fail:
-            raise Exception(error_msg)
 
         return ret
 
