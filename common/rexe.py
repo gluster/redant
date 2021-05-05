@@ -1,10 +1,12 @@
 import os
+import time
 import random
 import concurrent.futures
 import paramiko
 import xmltodict
 import json
 from multipledispatch import dispatch
+
 
 class Rexe:
     def __init__(self, host_dict):
@@ -30,13 +32,14 @@ class Rexe:
         for node in self.host_dict:
 
             node_ssh_client = paramiko.SSHClient()
-            node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
+            node_ssh_client.load_host_keys(
+                os.path.expanduser('/root/.ssh/known_hosts'))
             mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
             try:
                 node_ssh_client.connect(
                     hostname=node,
                     pkey=mykey,
-                    )
+                )
 
             except Exception as e:
                 self.logger.error(f"Connection failure. Exception : {e}")
@@ -95,7 +98,8 @@ class Rexe:
         except Exception as e:
             # Reconnection to be done.
             node_ssh_client = paramiko.SSHClient()
-            node_ssh_client.load_host_keys(os.path.expanduser('/root/.ssh/known_hosts'))
+            node_ssh_client.load_host_keys(
+                os.path.expanduser('/root/.ssh/known_hosts'))
             mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
             try:
                 node_ssh_client.connect(
@@ -127,6 +131,123 @@ class Rexe:
         ret_dict['error_code'] = stdout.channel.recv_exit_status()
 
         self.logger.debug(ret_dict)
+        return ret_dict
+
+    @dispatch(str)
+    def execute_command_async(self, cmd: str) -> dict:
+        """
+        Module to handle random node async execution.
+        Returns:
+            ret: A dictionary consisting
+                - cmd : Command requested
+                - node : Node wherein it was run
+                - stdout : The stdout handle
+                - stderr : The stderr handle
+        """
+        return self.execute_command_async(cmd, self._random_node())
+
+    @dispatch(str, str)
+    def execute_command_async(self, cmd: str, node: str) -> dict:
+        """
+        Function to execute command asynchronously in the given node.
+        Args:
+            cmd (string): Command to be executed.
+            node (string) : The node ip wherein the command is to be run.
+        Returns:
+            ret: A dictionary consisting
+                - cmd : Command requested
+                - node : Node wherein the command was run
+                - stdout : The stdout handle
+                - stderr : The stderr handle
+        """
+        async_obj = {}
+
+        if not self.connect_flag:
+            return async_obj
+        try:
+            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
+                         "stderr": stderr}
+        except Exception as e:
+            # Reconnection to be done.
+            node_ssh_client = paramiko.SSHClient()
+            node_ssh_client.load_host_keys(
+                os.path.expanduser('/root/.ssh/known_hosts'))
+            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
+            try:
+                node_ssh_client.connect(
+                    hostname=node,
+                    pkey=mykey,
+                )
+                self.node_dict[node] = node_ssh_client
+            except Exception as e:
+                self.logger.error(f"Connection failure. Exceptions {e}.")
+            # On rebooting the node
+            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+
+            async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
+                         "stderr": stderr}
+        return async_obj
+
+    def check_async_command_status(self, async_obj: dict) -> bool:
+        """
+        A check to see if the async execution of a command which
+        was dispatched has been finished.
+        Args:
+            async_obj (dict) : Contains the details about the async command,
+            with keys -> 'stdout', 'stderr', 'cmd', 'node'
+        Returns:
+            Bool : True if the operations is completed or else False.
+        """
+        return async_obj["stdout"].channel.exit_status_ready()
+
+    def collect_async_result(self, async_obj: dict) -> dict:
+        """
+        Collect the async command's execution result after it ends.
+        Args:
+            async_obj (dict) : Contains the details about the async command,
+            with keys -> 'stdout', 'stderr', 'cmd', 'node'
+        Returns:
+            dict: Returns the resultant dictionary
+        """
+        ret_dict = {}
+        if async_obj['stdout'].channel.recv_exit_status() != 0:
+            ret_dict['Flag'] = False
+            ret_dict['msg'] = async_obj['stdout'].readlines()
+            ret_dict['error_msg'] = async_obj['stderr'].readlines()
+            if isinstance(ret_dict['error_msg'], list):
+                ret_dict['error_msg'] = "".join(ret_dict['error_msg'])
+        else:
+            if async_obj['cmd'].find("--xml") != -1:
+                stdout_xml_string = "".join(async_obj['stdout'].readlines())
+                ret_dict['msg'] = json.loads(json.dumps(xmltodict.parse(
+                    stdout_xml_string)))['cliOutput']
+            else:
+                ret_dict['msg'] = async_obj['stdout'].readlines()
+            ret_dict['Flag'] = True
+        ret_dict['node'] = async_obj['node']
+        ret_dict['cmd'] = async_obj['cmd']
+        ret_dict['error_code'] = async_obj['stdout'].channel.recv_exit_status()
+
+        self.logger.debug(ret_dict)
+        return ret_dict
+
+    def wait_till_async_command_ends(self, async_obj: dict) -> dict:
+        """
+        Stay put till the async command finished it's execution and
+        provide the required return value.
+        Args:
+            async_obj (dict) : Contains the details about the async command,
+            with keys -> 'stdout', 'stderr', 'cmd', 'node'
+        Returns:
+            dict: Returns the resultant dictionary after the command ends.
+        """
+        while not async_obj['stdout'].channel.exit_status_ready():
+            time.sleep(1)
+            if async_obj['stdout'].channel.recv_ready():
+                ret_dict = self.collect_async_result(async_obj)
+                break
+
         return ret_dict
 
     @dispatch(str)
