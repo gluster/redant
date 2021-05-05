@@ -134,7 +134,7 @@ class Rexe:
         return ret_dict
 
     @dispatch(str)
-    def execute_command_async(self, cmd):
+    def execute_command_async(self, cmd: str) -> dict:
         """
         Module to handle random node async execution.
         Returns:
@@ -147,9 +147,12 @@ class Rexe:
         return self.execute_command_async(cmd, self._random_node())
 
     @dispatch(str, str)
-    def execute_command_async(self, cmd, node):
+    def execute_command_async(self, cmd: str, node: str) -> dict:
         """
         Function to execute command asynchronously in the given node.
+        Args:
+            cmd (string): Command to be executed.
+            node (string) : The node ip wherein the command is to be run.
         Returns:
             ret: A dictionary consisting
                 - cmd : Command requested
@@ -190,6 +193,9 @@ class Rexe:
         """
         A check to see if the async execution of a command which
         was dispatched has been finished.
+        Args:
+            async_obj (dict) : Contains the details about the async command,
+            with keys -> 'stdout', 'stderr', 'cmd', 'node'
         Returns:
             Bool : True if the operations is completed or else False.
         """
@@ -197,7 +203,10 @@ class Rexe:
 
     def collect_async_result(self, async_obj: dict) -> dict:
         """
-        Collect the asynch command's execution result after it ends.
+        Collect the async command's execution result after it ends.
+        Args:
+            async_obj (dict) : Contains the details about the async command,
+            with keys -> 'stdout', 'stderr', 'cmd', 'node'
         Returns:
             dict: Returns the resultant dictionary
         """
@@ -227,6 +236,9 @@ class Rexe:
         """
         Stay put till the async command finished it's execution and
         provide the required return value.
+        Args:
+            async_obj (dict) : Contains the details about the async command,
+            with keys -> 'stdout', 'stderr', 'cmd', 'node'
         Returns:
             dict: Returns the resultant dictionary after the command ends.
         """
