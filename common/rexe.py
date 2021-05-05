@@ -108,12 +108,6 @@ class Rexe:
             # On rebooting the node
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
 
-        # Wait till command completes.
-        while not stdout.channel.exit_status_ready():
-            time.sleep(1)
-            if stdout.channel.recv_ready():
-                break
-
         if stdout.channel.recv_exit_status() != 0:
             ret_dict['Flag'] = False
             ret_dict['msg'] = stdout.readlines()
@@ -121,7 +115,6 @@ class Rexe:
             if isinstance(ret_dict['error_msg'], list):
                 ret_dict['error_msg'] = "".join(ret_dict['error_msg'])
         else:
-            # Gluster related commands use --xml flag for more info on response
             if cmd.find("--xml") != -1:
                 stdout_xml_string = "".join(stdout.readlines())
                 ret_dict['msg'] = json.loads(json.dumps(xmltodict.parse(
