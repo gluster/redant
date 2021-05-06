@@ -38,13 +38,16 @@ class VolumeOps(AbstractOps):
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-
+        if node not in self.volds[volname]["mountpath"].keys():
+            self.volds[volname]["mountpath"][node] = []
+        self.volds[volname]["mountpath"][node].append(path)
         return ret
 
-    def volume_unmount(self, path: str, node: str = None):
+    def volume_unmount(self, volname: str, path: str, node: str = None):
         """
         Unmounts the gluster volume .
         Args:
+            volname (str): The volume whose mt pt. is to be unmounted.
             node (str): The client node in the cluster where volume
                         unmount is to be run
             server (str): Hostname or IP address
@@ -65,7 +68,10 @@ class VolumeOps(AbstractOps):
         cmd = f"umount {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-
+        if len(self.volds[volname]["mountpath"][node]) == 1:
+            del self.volds[volname]["mountpath"][node]
+        else:
+            self.volds[volname]["mountpath"][node].remove(path)
         return ret
 
     def volume_create(self, volname: str, node: str, conf_hash: dict,
@@ -103,10 +109,19 @@ class VolumeOps(AbstractOps):
         elif "dist_count" in conf_hash:
             mul_fac = conf_hash["dist_count"]
 
+        self.volds[volname] = {"brickdata" : {}, "mountpath" : {}}
+
+        server_iter = 0
         for iter in range(mul_fac):
             if server_iter == len(server_list):
                 server_iter = 0
-            brick_cmd = (f"{brick_cmd} {server_list[server_iter]}:{brick_root[server_list[server_iter]]}/{volname}-{iter}")
+            server_val = server_list[server_iter]
+            if server_val not in self.volds[volname]["brickdata"].keys():
+                self.volds[volname]["brickdata"][server_val] = []
+            brick_path_val = f"{brick_root[server_list[server_iter]]}/{volname}-{iter}"
+            self.volds[volname]["brickdata"][server_val].append(brick_path_val)
+            brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
+            server_iter += 1
 
         if "replica_count" in conf_hash:
             cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}{brick_cmd}")
@@ -203,6 +218,7 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node)
         #TODO cleanup of the brick dirs after the volume is deleted.
+        del self.volds[volname]
         return ret
 
     def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:

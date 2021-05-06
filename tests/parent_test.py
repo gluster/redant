@@ -39,6 +39,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.volume_types_info = param_obj.get_volume_types()
         self._configure(f"{mname}-{volume_type}", server_details,
                         client_details, log_path, log_level)
+        self.redant.volds = {}
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
@@ -84,7 +85,8 @@ class ParentTest(metaclass=abc.ABCMeta):
             self.run_test(self.redant)
 
             if self.volume_type != 'Generic':
-                self.redant.volume_unmount(self.mountpoint, self.client_list[0])
+                self.redant.volume_unmount(self.vol_name, self.mountpoint,
+                                           self.client_list[0])
                 self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
                                         self.client_list[0])
                 self.redant.volume_stop(self.vol_name, self.server_list[0], True)
