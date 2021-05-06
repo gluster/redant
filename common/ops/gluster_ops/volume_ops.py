@@ -108,7 +108,7 @@ class VolumeOps(AbstractOps):
             if "dist_count" in conf_hash:
                 mul_fac *= conf_hash["dist_count"]
 
-            if "arbiter_count" in conf_hash["arbiter_count"]:
+            if "arbiter_count" in conf_hash:
                 mul_fac += conf_hash["arbiter_count"]
 
         elif "dist_count" in conf_hash:
