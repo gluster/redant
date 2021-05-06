@@ -57,6 +57,10 @@ class AbstractOps:
             if each_ret['error_code'] != 0:
                 self.logger.error(each_ret['msg']['opErrstr'])
                 raise Exception(each_ret['msg']['opErrstr'])
+            elif isinstance(each_ret['msg'],OrderedDict) or isinstance(each_ret['msg'],dict):
+            if int(each_ret['msg']['opRet']) != 0:
+                self.logger.error(each_ret['msg']['opErrstr'])
+                raise Exception(each_ret['msg']['opErrstr'])
 
         return ret
         
