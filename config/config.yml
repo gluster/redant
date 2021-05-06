@@ -41,11 +41,11 @@ volume_types:
         redundancy_count: 2
         transport: tcp
     arbiter:
-        replica_count: 3
+        replica_count: 2
         arbiter_count: 1
         transport: tcp
     distributed-arbiter:
         dist_count: 2
-        replica_count: 3
+        replica_count: 2
         arbiter_count: 1
         transport: tcp
