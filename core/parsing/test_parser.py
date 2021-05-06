@@ -5,12 +5,28 @@ parses the configuration file given the filepath.
 import yaml
 
 
-class Parser():
+class Parser:
     """
     This class consists an API which parses the
     configuration file from the filepath. The
     API is called from the ParamsHandler module.
     """
+
+    @staticmethod
+    def file_accessible(path, mode='r'):
+        """
+        Check if the file or directory at `path` can
+        be accessed by the program using `mode` open flags.
+        Args:
+
+        """
+        try:
+            f = open(path, mode)
+            f.close()
+        except IOError:
+            return False
+        return True
+
 
     @staticmethod
     def generate_config_hashmap(filepath: str) -> dict:
@@ -22,11 +38,9 @@ class Parser():
             dict: Hashmap for config file as a dictionary.
             None: None on failure.
         """
-        try:
-            configfd = open(filepath, 'r')
-            config_hashmap = yaml.load(configfd, Loader=yaml.FullLoader)
-            configfd.close()
-            return config_hashmap
-        except IOError:
-            print("Error: can\'t find config file or read data.")
-            return None
+        if not Parser.file_accessible(filepath):
+            raise IOError
+        configfd = open(filepath, 'r')
+        config_hashmap = yaml.load(configfd, Loader=yaml.FullLoader)
+        configfd.close()
+        return config_hashmap

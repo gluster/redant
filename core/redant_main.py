@@ -4,7 +4,6 @@ This module takes care of:
 2) Tests-to-run list preparation (by test_list_builder).
 3) Invocation of the test_runner.
 """
-
 import sys
 import time
 import datetime
@@ -14,6 +13,7 @@ from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
 from environ import environ
+
 
 def pars_args():
     """
@@ -44,6 +44,9 @@ def pars_args():
     parser.add_argument("-rf", "--result-file",
                         help="Result file. By default it will be None",
                         dest="result_path", default=None, type=str)
+    parser.add_argument("-xls", "--excel-sheet",
+                        help="Excel sheet to store the result. By default it will be None",
+                        dest="excel_sheet", default=None, type=str)
     return parser.parse_args()
 
 
@@ -59,7 +62,11 @@ def main():
     start = time.time()
     args = pars_args()
 
-    param_obj = ParamsHandler(args.config_file)
+    try: 
+        param_obj = ParamsHandler(args.config_file)
+    except IOError:
+        print("Error: can't find config file or read data.")
+        return
 
     # Building the test list and obtaining the TC details.
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
@@ -87,10 +94,8 @@ def main():
     result_queue = TestRunner.run_tests()
 
     # Environment cleanup. TBD.
-
-    print(f"\nTotal time taken by the framework: {time.time()-start} sec")
-    
-    ResultHandler.handle_results(result_queue, args.result_path)
+    total_time = time.time()-start
+    ResultHandler.handle_results(result_queue, args.result_path, total_time, args.excel_sheet)
 
 
 
