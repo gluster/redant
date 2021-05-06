@@ -40,7 +40,7 @@ def pars_args():
                         dest="log_level", default="I", type=str)
     parser.add_argument("-cc", "--concurrency-count",
                         help="Number of concurrent test runs",
-                        dest="concur_count", default=4, type=int)
+                        dest="concur_count", default=2, type=int)
     parser.add_argument("-rf", "--result-file",
                         help="Result file. By default it will be None",
                         dest="result_path", default=None, type=str)
