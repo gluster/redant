@@ -15,7 +15,7 @@ class BrickOps:
     reset_brick
     """
 
-    def add_brick(self, node: str, volname: str, bricks_list: list, force: bool = False, **kwargs):
+    def add_brick(self, node: str, volname: str, force: bool = False, **kwargs):
         """
         This function adds bricks specified in the list (bricks_list)
         in the volume.
@@ -24,7 +24,6 @@ class BrickOps:
 
             node(str): The node on which the command is to be run.
             volname(str): The volume in which the brick has to be added.
-            bricks_list(list) : The list of bricks.
 
         Kwargs:
 
@@ -58,6 +57,7 @@ class BrickOps:
         if force:
             force_value = 'force'
 
+        bricks_list = self.volds[volname]["brickdata"][node]
         cmd = (f"gluster volume add-brick "
                f"{volname} {replica} {arbiter} "
                f"{' '.join(bricks_list)} {force_value} --xml")
@@ -71,7 +71,7 @@ class BrickOps:
 
         self.logger.info(f"Successfully ran {cmd} on {node}")
 
-    def remove_brick(self, node: str, volname: str, bricks_list: list,
+    def remove_brick(self, node: str, volname: str,
                      option: str, **kwargs):
         """
         This function removes the bricks
@@ -82,7 +82,6 @@ class BrickOps:
 
             node (str): Node on which the command has to be executed.
             volname (str): The volume from which brick(s) have to be removed.
-            bricks_list (list): List of bricks to be removed
             option (str): Remove brick options: <start|stop|status|commit|force>
     Kwargs:
 
@@ -101,6 +100,8 @@ class BrickOps:
 
         if replica_count is not None:
             replica = f'replica {replica_count}'
+
+        bricks_list = self.volds[volname]["brickdata"][node]
 
         cmd = (f"gluster volume remove-brick "
                f"{volname} {replica} {' '.join(bricks_list)} "
