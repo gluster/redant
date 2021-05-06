@@ -104,8 +104,13 @@ class VolumeOps(AbstractOps):
         cmd = ""
         if "replica_count" in conf_hash:
             mul_fac = conf_hash["replica_count"]
+
             if "dist_count" in conf_hash:
                 mul_fac *= conf_hash["dist_count"]
+
+            if "arbiter_count" in conf_hash["arbiter_count"]:
+                mul_fac += conf_hash["arbiter_count"]
+
         elif "dist_count" in conf_hash:
             mul_fac = conf_hash["dist_count"]
 
@@ -124,7 +129,11 @@ class VolumeOps(AbstractOps):
             server_iter += 1
 
         if "replica_count" in conf_hash:
-            cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}{brick_cmd}")
+            if "arbiter_count" in conf_hash:
+                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']} arbiter {conf_hash['arbiter_count']}{brick_cmd}")
+
+            else:
+                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}{brick_cmd}")
         else:
             cmd = (f"gluster volume create {volname}{brick_cmd}")
         if force:
