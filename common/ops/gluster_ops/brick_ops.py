@@ -70,14 +70,9 @@ class BrickOps:
                f"{volname} {replica} {arbiter} "
                f"{' '.join(bricks_list)} {force_value} --xml")
 
-        self.logger.info(f"Running {cmd} on {node}")
-        ret = self.execute_command(node=node, cmd=cmd)
+        ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
-        if int(ret["error_code"]) != 0:
-            self.logger.error(ret["error_msg"])
-            raise Exception(ret["error_msg"])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        return ret
 
     def remove_brick(self, node: str, volname: str,
                      option: str, **kwargs):
@@ -122,15 +117,8 @@ class BrickOps:
         cmd = (f"gluster volume remove-brick "
                f"{volname} {replica} {' '.join(bricks_list)} "
                f"{option} --xml")
-        self.logger.info(f"Running {cmd} on node {node}")
 
-        ret = self.execute_command(node=node, cmd=cmd)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
         return ret
 
@@ -159,14 +147,48 @@ class BrickOps:
                f"{volname} {src_brick} {dest_brick} "
                f"commit force --xml")
 
-        self.logger.info(f"Running {cmd} on node {node}")
-
-        ret = self.execute_command(node=node, cmd=cmd)
-
-        if int(ret['msg']['opRet']) != 0:
-            self.logger.error(ret['msg']['opErrstr'])
-            raise Exception(ret['msg']['opErrstr'])
-
-        self.logger.info(f"Successfully ran {cmd} on {node}")
+        ret = self.execute_abstract_op_node(node=node, cmd=cmd)
     
+        return ret
+
+    def reset_brick(self, node: str, volname: str, src_brick: str, option: str, dst_brick=None, force=False):
+        """
+        Resets brick in a volume
+
+        Args:
+            node (str) : Node on which the command has to be executed
+            volname (str) : Name of the volume on which the brick
+                            has to be reset
+            src_brick (str) : Name of the source brick
+            dst_brick (str) : Name of the destination brick
+            option (str) : Options for reset brick : start | commit | force
+
+        Kwargs:
+            force (bool) : If this option is set to True,
+                then reset brick will get executed with force option
+
+        Returns:
+            ret: A dictionary consisting
+                    - Flag : Flag to check if connection failed
+                    - msg : message
+                    - error_msg: error message
+                    - error_code: error code returned
+                    - cmd : command that got executed
+                    - node : node on which the command got executed
+        """
+
+        if option == "start":
+            cmd = f"gluster vol reset-brick {volname} {src_brick} start"
+            
+        elif option == "commit":
+            if dst_brick is None:
+                dst_brick = src_brick
+
+            cmd = f"gluster vol reset-brick {src_brick} {dst_brick} {option}"
+            
+            if force:
+                cmd = f"{cmd} force"
+            
+        ret = self.execute_abstract_op_node(cmd=cmd, node=node)
+
         return ret
