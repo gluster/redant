@@ -45,46 +45,66 @@ class BrickOps:
         server_iter = 0
         mul_fac = 0
         cmd = ""
+        server_val = ""
+        server_iter = 0
+        bricks_list = []
 
-        if 'replica_count' in conf_hash:
-            mul_fac = conf_hash["replica_count"]
+        if "replica_count" in conf_hash:
+            mul_fac = conf_hash['replica_count']
 
-            # if "arbiter_count" in conf_hash:
-            #     mul_fac += conf_hash["arbiter_count"]
-            
+            if "arbiter_count" in conf_hash:
+                mul_fac += conf_hash['arbiter_count']
+        
             if "dist_count" in conf_hash:
-                mul_fac *= conf_hash["dist_count"]
+                mul_fac *= conf_hash['dist_count']
 
         elif "dist_count" in conf_hash:
-            mul_fac = conf_hash["dist_count"]
-
-        server_val = ""
+            mul_fac = conf_hash['dist_count']
+        
         if len(server_list) > mul_fac:
-            server_val = server_list[mul_fac]
+            server_iter = mul_fac-1
+
         else:
-            server_val = server_list[(mul_fac%len(server_list))]
-        
-        brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac}"
+            server_iter = (mul_fac%len(server_list))-1
 
-        if server_val not in self.volds[volname]["brickdata"].keys():
-            self.volds[volname]["brickdata"][server_val] = []
+        num_bricks = 1
 
-        self.volds[volname]["brickdata"][server_val].append(brick_path_val)
+        if "arbiter_count" in conf_hash:
+            num_bricks = num_bricks + 2
 
-        brick_cmd = f"{server_val}:{brick_path_val}"
+        for i in range(num_bricks):
 
-        
+            server_val = server_list[server_iter]
+
+            brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac+i}"
+
+            brick_cmd = f"{server_val}:{brick_path_val}"
+
+            bricks_list.append(brick_cmd)
+            server_iter = (server_iter + 1)%len(server_list)
+
         if "replica_count" in conf_hash:
             replica = conf_hash['replica_count']+1
-            conf_hash['replica_count'] = replica
-            cmd = (f"gluster vol add-brick "
+
+            if "arbiter_count" in conf_hash:
+                replica += 1
+                arbiter = conf_hash['arbiter_count'] + 1
+        
+                conf_hash['arbiter_count'] = arbiter
+                conf_hash['replica_count'] = replica
+                cmd = (f"gluster vol add-brick "
+                   f"{volname} replica 3 arbiter 1 "
+                   f"{' '.join(bricks_list)} --xml")
+            else:
+                conf_hash['replica_count'] = replica
+                cmd = (f"gluster vol add-brick "
                    f"{volname} replica {replica} "
-                   f"{brick_cmd} --xml")
+                   f"{' '.join(bricks_list)} --xml")
 
         elif "dist_count" in conf_hash:
             conf_hash['dist_count'] += 1
             cmd = (f"gluster vol add-brick "
-                   f"{volname} {brick_cmd} --xml")
+                   f"{volname} {' '.join(bricks_list)} --xml")
         if force:
             cmd = f"{cmd} force"
 
