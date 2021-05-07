@@ -4,7 +4,7 @@ holds volume related APIs which will be called
 from the test case.
 """
 from common.ops.abstract_ops import AbstractOps
-from multipledispatch import dispatch
+
 
 class VolumeOps(AbstractOps):
     """
@@ -97,7 +97,6 @@ class VolumeOps(AbstractOps):
                 - node : node on which the command got executed
 
         """
-        #TODO adding vol create for disp, arb, dist-arb and dist-disp
         brick_cmd = ""
         server_iter = 0
         mul_fac = 0
@@ -107,34 +106,47 @@ class VolumeOps(AbstractOps):
 
             if "arbiter_count" in conf_hash:
                 mul_fac += conf_hash["arbiter_count"]
-                
+
             if "dist_count" in conf_hash:
                 mul_fac *= conf_hash["dist_count"]
-
 
         elif "dist_count" in conf_hash:
             mul_fac = conf_hash["dist_count"]
 
-        self.volds[volname] = {"brickdata" : {}, "mountpath" : {}}
+            if "disperse_count" in conf_hash:
+                mul_fac *= conf_hash["disperse_count"]
+
+        else:
+            mul_fac = conf_hash["disperse_count"]
+
+        self.volds[volname] = {"brickdata": {}, "mountpath": {}}
 
         server_iter = 0
-        for iter in range(mul_fac):
+        for iteration in range(mul_fac):
             if server_iter == len(server_list):
                 server_iter = 0
             server_val = server_list[server_iter]
             if server_val not in self.volds[volname]["brickdata"].keys():
                 self.volds[volname]["brickdata"][server_val] = []
-            brick_path_val = f"{brick_root[server_list[server_iter]]}/{volname}-{iter}"
+            brick_path_val = f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
             self.volds[volname]["brickdata"][server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1
 
         if "replica_count" in conf_hash:
+            # arbiter vol and distributed-arbiter vol
             if "arbiter_count" in conf_hash:
-                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']} arbiter {conf_hash['arbiter_count']}{brick_cmd}")
-
+                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']} "
+                       f"arbiter {conf_hash['arbiter_count']}{brick_cmd}")
+            # replicated vol
             else:
-                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}{brick_cmd}")
+                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}"
+                       f"{brick_cmd}")
+        # dispersed vol and distributed-dispersed vol
+        elif "disperse_count" in conf_hash:
+            cmd = (f"gluster volume create {volname} disperse {mul_fac} "
+                   f"redundancy {conf_hash['redundancy_count']}{brick_cmd} --mode=script")
+        # distributed vol
         else:
             cmd = (f"gluster volume create {volname}{brick_cmd}")
         if force:
@@ -175,7 +187,7 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
-    
+
     def volume_stop(self, volname: str, node: str = None, force: bool = False):
         """
         Stops the gluster volume
@@ -227,7 +239,7 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        #TODO cleanup of the brick dirs after the volume is deleted.
+        # TODO cleanup of the brick dirs after the volume is deleted.
         del self.volds[volname]
         return ret
 
@@ -293,7 +305,7 @@ class VolumeOps(AbstractOps):
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
         volume_list = volume_info['volume']
-        if not(isinstance(volume_list, list)):
+        if not isinstance(volume_list, list):
             volume_list = [volume_list]
         for volume in volume_list:
             for key, val in volume.items():
@@ -303,7 +315,7 @@ class VolumeOps(AbstractOps):
                 elif key == 'bricks':
                     ret_dict[volname]['bricks'] = []
                     brick_list = val['brick']
-                    if not(isinstance(brick_list, list)):
+                    if not isinstance(brick_list, list):
                         brick_list = [brick_list]
                     for brick in brick_list:
                         brick_info = {}
@@ -318,7 +330,7 @@ class VolumeOps(AbstractOps):
                                 opt_name = opt_val
                             elif opt == 'value':
                                 opt_value = opt_val
-                        ret_dict[volname]['options'][opt_name] = opt_val
+                        ret_dict[volname]['options'][opt_name] = opt_value
                 else:
                     ret_dict[volname][key] = val
 
@@ -434,7 +446,7 @@ class VolumeOps(AbstractOps):
         volume_status = ret['msg']['volStatus']['volumes']
         ret_dict = {}
         volume_list = volume_status['volume']
-        if not(isinstance(volume_list, list)):
+        if not isinstance(volume_list, list):
             volume_list = [volume_list]
         for volume in volume_list:
             for key, val in volume.items():
@@ -444,7 +456,7 @@ class VolumeOps(AbstractOps):
                 elif key == 'node':
                     ret_dict[volname]['node'] = []
                     node_list = val
-                    if not(isinstance(node_list, list)):
+                    if not isinstance(node_list, list):
                         node_list = [node_list]
                     for node in node_list:
                         node_info = {}
@@ -499,7 +511,7 @@ class VolumeOps(AbstractOps):
 
         ret_dict = {}
         option_list = volume_options['Opt']
-        if not(isinstance(option_list, list)):
+        if not isinstance(option_list, list):
             option_list = [option_list]
         for option in option_list:
             option_name = option['Option']

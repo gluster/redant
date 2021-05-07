@@ -32,13 +32,13 @@ volume_types:
         replica_count: 3
         transport: tcp
     dispersed:
-        disperse_count: 6
-        redundancy_count: 2
+        disperse_count: 3
+        redundancy_count: 1
         transport: tcp
     distributed-dispersed:
         dist_count: 2
-        disperse_count: 6
-        redundancy_count: 2
+        disperse_count: 3
+        redundancy_count: 1
         transport: tcp
     arbiter:
         replica_count: 2
