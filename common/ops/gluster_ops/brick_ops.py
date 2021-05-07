@@ -15,7 +15,9 @@ class BrickOps:
     reset_brick
     """
 
-    def add_brick(self, node: str, volname: str, server_list:list, conf_hash: dict, force: bool = False):
+    def add_brick(self, node: str, volname: str, 
+                 server_list:list, conf_hash: dict, 
+                  brick_root: list, force: bool = False):
         """
         This function adds bricks to the volume volname. 
 
@@ -24,8 +26,9 @@ class BrickOps:
             node (str): The node on which the command is to be run.
             volname (str): The volume in which the brick has to be added.
             server_list (list): List of servers provided.
-            force (bool): If set to True will add force in the command being executed.
             conf_hash (dict): Config hash providing parameters for adding bricks.
+            brick_root (list): List of brick root paths
+            force (bool): If set to True will add force in the command being executed.
         
 
         Returns:
@@ -44,7 +47,7 @@ class BrickOps:
         cmd = ""
 
         if 'replica_count' in conf_hash:
-            mul_fac = conf_has["replica_count"]
+            mul_fac = conf_hash["replica_count"]
 
             # if "arbiter_count" in conf_hash:
             #     mul_fac += conf_hash["arbiter_count"]
@@ -89,8 +92,8 @@ class BrickOps:
 
         return ret
 
-    def remove_brick(self, node: str, volname: str, conf_has: dict, 
-                    server_list:list, option: str):
+    def remove_brick(self, node: str, volname: str, conf_hash: dict, 
+                    server_list:list, brick_root: list, option: str):
         """
         This function removes a brick from the volume volname
 
@@ -100,6 +103,7 @@ class BrickOps:
             volname (str): The volume from which brick(s) have to be removed.
             conf_has (dict):Config hash providing parameters for
                 deleting bricks
+            brick_root (list): The list of brick root paths
             option (str): Remove brick options: <start|stop|status|commit|force>
   
     Returns:
