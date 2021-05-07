@@ -129,8 +129,8 @@ class BrickOps:
             if "dist_count" in conf_hash:
                 mul_fac *= conf_hash['dist_count']
 
-        elif "dist_count" in conf_has:
-            mul_fac = conf_has['dist_count']
+        elif "dist_count" in conf_hash:
+            mul_fac = conf_hash['dist_count']
         
         server_val = ""
 
