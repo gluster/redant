@@ -15,26 +15,19 @@ class BrickOps:
     reset_brick
     """
 
-    def add_brick(self, node: str, volname: str, force: bool = False, **kwargs):
+    def add_brick(self, node: str, volname: str, server_list:list, force: bool = False, conf_hash: dict):
         """
-        This function adds bricks specified in the list (bricks_list)
-        in the volume.
+        This function adds bricks to the volume volname. 
 
         Args:
 
-            node(str): The node on which the command is to be run.
-            volname(str): The volume in which the brick has to be added.
+            node (str): The node on which the command is to be run.
+            volname (str): The volume in which the brick has to be added.
+            server_list (list): List of servers provided.
+            force (bool): If set to True will add force in the command being executed.
+            conf_hash (dict): Config hash providing parameters for adding bricks.
+        
 
-        Kwargs:
-
-            force (bool): If this option is set to True, then add brick command
-            will get executed with force option. If it is set to False,
-            then add brick command will get executed without force option
-
-            **kwargs
-                The keys, values in kwargs are:
-                    - replica_count : (int)|None
-                    - arbiter_count : (int)|None
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -44,53 +37,71 @@ class BrickOps:
                     - cmd : command that got executed
                     - node : node on which the command got executed
         """
-        replica_count = arbiter_count = None
 
-        if 'replica_count' in kwargs:
-            replica_count = int(kwargs['replica_count'])
+        brick_cmd = ""
+        server_iter = 0
+        mul_fac = 0
+        cmd = ""
 
-        if 'arbiter_count' in kwargs:
-            arbiter_count = int(kwargs['arbiter_count'])
+        if 'replica_count' in conf_hash:
+            mul_fac = conf_has["replica_count"]
 
-        replica = arbiter = ''
+            # if "arbiter_count" in conf_hash:
+            #     mul_fac += conf_hash["arbiter_count"]
+            
+            if "dist_count" in conf_hash:
+                mul_fac *= conf_hash["dist_count"]
 
-        if replica_count is not None:
-            replica = f'replica {replica_count}'
+        elif "dist_count" in conf_hash:
+            mul_fac = conf_hash["dist_count"]
 
-            if arbiter_count is not None:
-                arbiter = f'arbiter {arbiter_count}'
+        server_val = ""
+        if len(server_list) > mul_fac:
+            server_val = server_list[mul_fac]
+        else:
+            server_val = server_list[(mul_fac%len(server_list))]
+        
+        brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac}"
 
-        force_value = ''
+        if server_val not in self.volds[volname]["brickdata"].keys():
+            self.volds[volname]["brickdata"][server_val] = []
 
+        self.volds[volname]["brickdata"][server_val].append(brick_path_val)
+
+        brick_cmd = f"{server_val}:{brick_path_val}"
+
+        
+        if "replica_count" in conf_hash:
+            replica = conf_hash['replica_count']+1
+            conf_hash['replica_count'] = replica
+            cmd = (f"gluster vol add-brick "
+                   f"{volname} replica {replica} "
+                   f"{brick_cmd} --xml")
+
+        elif "dist_count" in conf_hash:
+            conf_hash['dist_count'] += 1
+            cmd = (f"gluster vol add-brick "
+                   f"{volname} {brick_cmd} --xml")
         if force:
-            force_value = 'force'
-
-        bricks_list = self.volds[volname]["brickdata"][node]
-        cmd = (f"gluster volume add-brick "
-               f"{volname} {replica} {arbiter} "
-               f"{' '.join(bricks_list)} {force_value} --xml")
+            cmd = f"{cmd} force"
 
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
         return ret
 
-    def remove_brick(self, node: str, volname: str,
-                     option: str, **kwargs):
+    def remove_brick(self, node: str, volname: str, conf_has: dict, 
+                    server_list:list, option: str):
         """
-        This function removes the bricks
-        specified in the bricks_list
-        from the volume.
+        This function removes a brick from the volume volname
 
         Args:
 
             node (str): Node on which the command has to be executed.
             volname (str): The volume from which brick(s) have to be removed.
+            conf_has (dict):Config hash providing parameters for
+                deleting bricks
             option (str): Remove brick options: <start|stop|status|commit|force>
-    Kwargs:
-
-        **kwargs
-            The keys, values in kwargs are:
-                - replica_count : (int)|None
+  
     Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -103,21 +114,44 @@ class BrickOps:
         """
         option = option + ' --mode=script'
 
-        replica_count = None
-        replica = ''
+        brick_cmd = ""
+        server_iter = 0
+        mul_fac = 0
+        cmd = ""
 
-        if 'replica_count' in kwargs:
-            replica_count = int(kwargs['replica_count'])
+        if "replica_count" in conf_hash:
+            mul_fac = conf_hash['replica_count']
+        
+            if "dist_count" in conf_hash:
+                mul_fac *= conf_hash['dist_count']
 
-        if replica_count is not None:
-            replica = f'replica {replica_count}'
+        elif "dist_count" in conf_has:
+            mul_fac = conf_has['dist_count']
+        
+        server_val = ""
 
-        bricks_list = self.volds[volname]["brickdata"][node]
+        if len(server_list) > mul_fac:
+            server_val = server_list[mul_fac-1]
 
-        cmd = (f"gluster volume remove-brick "
-               f"{volname} {replica} {' '.join(bricks_list)} "
-               f"{option} --xml")
+        else:
+            server_val = server_list[(mul_fac%len(server_list))-1]
 
+        brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac}"
+
+        brick_cmd = f"{server_val}:{brick_path_val}"
+
+        if "replica_count" in conf_hash:
+            replica = conf_hash['replica_count']-1
+            conf_hash['replica_count'] = replica
+            cmd = (f"gluster vol remove-brick "
+                   f"{volname} replica {replica} "
+                   f"{brick_cmd} --xml")
+
+        elif "dist_count" in conf_hash:
+            conf_hash['dist_count'] -= 1
+            cmd = (f"gluster vol remove-brick "
+                   f"{volname} {brick_cmd} --xml")
+        
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
         return ret
