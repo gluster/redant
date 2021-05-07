@@ -2,7 +2,7 @@
 This file contains a test-case which tests
 the creation of different volume types.
 """
-# nonDisruptive;rep,dist,dist-rep,arb,dist-arb
+# nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
 from tests.parent_test import ParentTest
 
@@ -18,4 +18,3 @@ class TestCase(ParentTest):
         """
         In the testcase:
         """
-        pass
