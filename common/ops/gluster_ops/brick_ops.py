@@ -15,7 +15,7 @@ class BrickOps:
     reset_brick
     """
 
-    def add_brick(self, node: str, volname: str, server_list:list, force: bool = False, conf_hash: dict):
+    def add_brick(self, node: str, volname: str, server_list:list, conf_hash: dict, force: bool = False):
         """
         This function adds bricks to the volume volname. 
 
