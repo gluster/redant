@@ -5,7 +5,7 @@ Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1
 The architects of any project won't be there forever with it 
 ( not everyone has the luxury to be a BDFL ), hence it is important to have 
 the thought process documented so that one doesn't need to go through the code. 
-We for one believe in proper documentation. The very ideal of developers and 
+We for one believe in proper documentation. The very idea of developers and 
 engineers being spartans who understand logic only from code is what we feel as 
 . We need to be civilized humans and make it easy for the next person coming 
 in to just glance at what it is, why it is and how it is.
