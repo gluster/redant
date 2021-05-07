@@ -203,7 +203,6 @@ class GlusterOps(AbstractOps):
             ret1 = self.execute_command(cmd=cmd2, node=node)
             if ret1['error_code'] == 0:
                 is_active = -1
-                self.logger.info(f"Successfully ran {cmd2} on {node}")
 
         return is_active
 
