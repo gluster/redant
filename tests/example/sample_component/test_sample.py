@@ -3,7 +3,7 @@
 This file contains a test-case which tests glusterd
 service operations
 """
-# disruptive;dist
+# nonDisruptive;dist,rep,dist-rep,arb,dist-arb,disp,dist-disp
 
 from tests.parent_test import ParentTest
 
