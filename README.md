@@ -2,6 +2,25 @@
 
 Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1D8zUSmg-00ey711gsqvS6G9i_fGN2cE0EbG4u1TOsaQ/edit?usp=sharing)
 
+The architects of any project won't be there forever with it 
+( not everyone has the luxury to be a BDFL ), hence it is important to have 
+the thought process documented so that one doesn't need to go through the code. 
+We for one believe in proper documentation. The very idea of developers and 
+engineers being spartans who understand logic only from code is what we feel as 
+. We need to be civilized humans and make it easy for the next person coming 
+in to just glance at what it is, why it is and how it is.
+
+# Readme Docs
+For those who want to take the red pill, this is where you go, the Readme index
+contains all the thought process, decision making and everything documented 
+right from a variable, data structure to why some things are the way they are.
+So if you are ready to take the leap to learn the ugly truth ( kidding! ),
+this is where you go. But on the other hand, if you just want to learn about
+how to get things running and that's it, take the blue pill.
+
+* [Red Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/doc/RPIndex.md)
+* [Blue Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/doc/BPIndex.md)
+
 # Contents
 * [Structure](#structure)
 * [Set up](#set-up)
@@ -9,9 +28,12 @@ Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1
 
 ## Structure:
 
-core: contains the core redant framework which includes parsing,test_list_builder,test_runner,runner_thread and redant_main.<br>
-common: consists of the libs and ops that will help in running the test cases and the mixin class.<br>
-tests: holds the test cases as performace and functional tests and includes parent test. Add any new test cases here.<br>
+core: contains the core redant framework which includes parsing,
+test_list_builder, test_runner, runner_thread and redant_main.<br>
+common: consists of the libs and ops that will help in running the
+test cases and the mixin class.<br>
+tests: holds the test cases as performace and functional tests and includes
+parent test. Add any new test cases here.<br>
 
 ## Set up
 
