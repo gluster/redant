@@ -55,11 +55,6 @@ class GlusterOps(AbstractOps):
         elif cmd_fail:
             raise Exception(error_msg)
 
-        if node is None:
-            self.logger.info(f"Successfully ran {cmd} on all nodes")
-        else:
-            self.logger.info(f"Successfully ran {cmd} on {node}")
-
         return ret
 
     def restart_glusterd(self, node: str, enable_retry: bool = True):
@@ -103,7 +98,6 @@ class GlusterOps(AbstractOps):
         elif cmd_fail:
             raise Exception(error_msg)
 
-        self.logger.info(f"Successfully ran {cmd} on {ret['node']}")
 
         return ret
 
@@ -140,11 +134,7 @@ class GlusterOps(AbstractOps):
                 self.logger.error(result_val['error_msg'])
                 raise Exception(result_val['error_msg'])
 
-        if node is None:
-            self.logger.info(f"Successfully ran {cmd} on all nodes.")
-        else:
-            self.logger.info(f"Successfully ran {cmd} on {node}")
-
+        
         return ret
 
     def reset_failed_glusterd(self, node=None) -> bool:
@@ -184,7 +174,6 @@ class GlusterOps(AbstractOps):
                 self.logger.error(result_val['error_msg'])
                 raise Exception(result_val['error_msg'])
 
-        self.logger.info(f"Successfully ran {cmd} on said nodes.")
 
         return ret
 
@@ -214,9 +203,7 @@ class GlusterOps(AbstractOps):
             ret1 = self.execute_command(cmd=cmd2, node=node)
             if ret1['error_code'] == 0:
                 is_active = -1
-                self.logger.info(f"Successfully ran {cmd2} on {node}")
 
-        self.logger.info(f"Successfully ran {cmd1} on {node}")
         return is_active
 
     def wait_for_glusterd_to_start(self, node=None, timeout: int = 80):
