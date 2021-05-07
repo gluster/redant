@@ -2,7 +2,7 @@
 This file contains a test case
 that checks the replace-brick functionality
 """
-#disruptive;dist-rep
+#disruptive;rep
 from tests.parent_test import ParentTest
 
 class TestReplaceBrick(ParentTest):
@@ -11,16 +11,26 @@ class TestReplaceBrick(ParentTest):
     functionality 
     """
 
-    def run_test(self):
+    def run_test(self, redant):
         """
         The following steps are undertaken in the testcase:
-        1) Peer probed to all the servers
-        2) Volume is set up
-        3) Bricks are replaced
-        4) Bricks are deleted
-        5) Volume is deleted
-        6) Peers are detached
+        Bricks are replaced
         """
-        
-        pass
-        
+        try:
+            redant.add_brick(self.vol_name, self.server_list[0],
+                                        self.volume_types_info[self.conv_dict[self.volume_type]],
+                                        self.server_list, self.brick_roots, True)
+            
+            src_brick = f"{self.server_list[0]}:/glusterfs/brick/test_replace_brick-rep-0"
+            dest_brick = f"{self.server_list[0]}:/glusterfs/brick/test_replace_brick-rep-9"
+
+            redant.replace_brick(self.server_list[0], self.vol_name, 
+                                src_brick, dest_brick)
+
+            redant.remove_brick(self.server_list[0], self.vol_name, 
+                                self.volume_types_info[self.conv_dict[self.volume_type]],
+                                self.server_list, self.brick_roots, 'force')
+            
+        except Exception as error:
+            self.TEST_RES = False
+            print(error)
