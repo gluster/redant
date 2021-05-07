@@ -36,6 +36,8 @@ class AbstractOps:
                 self.logger.error(ret['msg']['opErrstr'])
                 raise Exception(ret['msg']['opErrstr'])
 
+        self.logger.info(f"Successfully ran {cmd} on {node}")
+
         return ret
         
     def execute_abstract_op_multinode(self, cmd : str, node : list=None):
@@ -61,6 +63,8 @@ class AbstractOps:
                 if int(each_ret['msg']['opRet']) != 0:
                     self.logger.error(each_ret['msg']['opErrstr'])
                     raise Exception(each_ret['msg']['opErrstr'])
+                
+        self.logger.info(f"Successfully ran {cmd} on all nodes")
 
         return ret
         
