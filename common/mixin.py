@@ -8,9 +8,10 @@ from ops.support_ops.io_ops import IoOps
 from ops.gluster_ops.peer_ops import PeerOps
 from ops.gluster_ops.volume_ops import VolumeOps
 from ops.gluster_ops.gluster_ops import GlusterOps
+from ops.gluster_ops.brick_ops import BrickOps
 
 
-class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
+class RedantMixin(GlusterOps, BrickOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
     """
     A mixin class for redant project to encompass all ops and support
     modules.

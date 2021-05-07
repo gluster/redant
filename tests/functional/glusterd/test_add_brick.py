@@ -2,7 +2,7 @@
 This file contains a test case
 that checks the add-brick functionality
 """
-#disruptive;dist-rep
+#disruptive;rep,dist
 from tests.parent_test import ParentTest
 
 class TestAddBrick(ParentTest):
@@ -11,7 +11,7 @@ class TestAddBrick(ParentTest):
     functionality 
     """
 
-    def run_test(self):
+    def run_test(self, redant):
         """
         The following steps are undertaken in the testcase:
         1) Peer probed to all the servers
@@ -21,34 +21,11 @@ class TestAddBrick(ParentTest):
         5) Volume is deleted
         6) Peers are detached
         """
-        servera = self.server_list[0]
-        serverb = self.server_list[1]
-        serverc = self.server_list[2]
-
         try:
-            volname = "test-vol1"
-            mountpoint = "/mnt/dist"
-            self.redant.peer_probe(servera, serverb)
-            self.redant.peer_status(serverb)
-            self.redant.volume_create(volname,
-                                      [f"{servera}:/data/glusterfs/avol/brick1",
-                                       f"{serverb}:/data/glusterfs/avol/brick2"],
-                                      servera, force=True)
-            self.redant.volume_start(volname, serverb)
-            volume_status1 = self.redant.get_volume_status(servera, volname)
-            volume_status2 = self.redant.get_volume_status(serverb, volname)
-            self.redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
-            self.redant.volume_mount(servera, volname, mountpoint, serverb)
-            self.redant.peer_probe(serverc, serverb)
-            self.redant.add_brick(servera, volname, [f"{serverc}:/data/glusterfs/avol/brick3"], True)
-            # self.redant.remove_brick(servera, volname, [f"{serverc}:/data/glusterfs/avol/brick3"], 'force')
-            self.redant.volume_stop(volname, servera)
-            self.redant.volume_delete(volname, servera)
-            self.redant.volume_unmount(mountpoint, serverb)
-            self.redant.execute_io_cmd(
-                f"cd /mnt && rm -rf ./{volname}", serverb)
-            self.redant.peer_detach(serverb, serverc)
-            self.redant.peer_detach(serverb, servera)
+            redant.add_brick(self.vol_name, self.server_list[0],
+                                        self.volume_types_info[self.conv_dict[self.volume_type]],
+                                        self.server_list, self.brick_roots, True)
+
         except Exception as error:
             self.TEST_RES = False
             print(f"Test failed:{error}")

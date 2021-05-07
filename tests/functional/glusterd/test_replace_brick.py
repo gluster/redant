@@ -21,34 +21,10 @@ class TestReplaceBrick(ParentTest):
         5) Volume is deleted
         6) Peers are detached
         """
-        servera = self.server_list[0]
-        serverb = self.server_list[1]
-        serverc = self.server_list[2]
-
-        try:
-            volname = "test-vol1"
-            mountpoint = "/mnt/dist"
-            self.redant.peer_probe(servera, serverb)
-            self.redant.peer_status(serverb)
-            self.redant.volume_create(volname,
-                                      [f"{servera}:/data/glusterfs/avol/brick1",
-                                       f"{serverb}:/data/glusterfs/avol/brick2"],
-                                      servera, force=True, replica_count = 2)
-            self.redant.volume_start(volname, serverb)
-            volume_status1 = self.redant.get_volume_status(servera, volname)
-            volume_status2 = self.redant.get_volume_status(serverb, volname)
-            self.redant.execute_io_cmd(f"mkdir -p {mountpoint}", serverb)
-            self.redant.volume_mount(servera, volname, mountpoint, serverb)
-            self.redant.peer_probe(serverc, serverb)
-            self.redant.replace_brick(servera, volname, f"{serverb}:/data/glusterfs/avol/brick2", f"{serverc}:/data/glusterfs/avol/brick3")
-            # # self.redant.remove_brick(servera, volname, [f"{serverc}:/data/glusterfs/avol/brick3"], 'force')
-            self.redant.volume_stop(volname, servera)
-            self.redant.volume_delete(volname, servera)
-            self.redant.volume_unmount(mountpoint, serverb)
-            self.redant.execute_io_cmd(
-                f"cd /mnt && rm -rf ./{volname}", serverb)
-            self.redant.peer_detach(serverb, serverc)
-            self.redant.peer_detach(serverb, servera)
-        except Exception as error:
-            self.TEST_RES = False
-            print(f"Test failed:{error}")
+  
+        pass
+        # try:
+        #     self.redant.replace_brick(servera, volname, f"{serverb}:/data/glusterfs/avol/brick2", f"{serverc}:/data/glusterfs/avol/brick3")
+        # except Exception as error:
+        #     self.TEST_RES = False
+        #     print(f"Test failed:{error}")

@@ -15,18 +15,18 @@ class BrickOps:
     reset_brick
     """
 
-    def add_brick(self, node: str, volname: str, 
-                 server_list:list, conf_hash: dict, 
+    def add_brick(self, volname: str, node: str,
+                 conf_hash: dict, server_list:list, 
                   brick_root: list, force: bool = False):
         """
         This function adds bricks to the volume volname. 
 
         Args:
 
-            node (str): The node on which the command is to be run.
             volname (str): The volume in which the brick has to be added.
-            server_list (list): List of servers provided.
+            node (str): The node on which the command is to be run.
             conf_hash (dict): Config hash providing parameters for adding bricks.
+            server_list (list): List of servers provided.
             brick_root (list): List of brick root paths
             force (bool): If set to True will add force in the command being executed.
         
