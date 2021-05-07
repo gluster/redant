@@ -21,10 +21,6 @@ class TestReplaceBrick(ParentTest):
         5) Volume is deleted
         6) Peers are detached
         """
-  
+        
         pass
-        # try:
-        #     self.redant.replace_brick(servera, volname, f"{serverb}:/data/glusterfs/avol/brick2", f"{serverc}:/data/glusterfs/avol/brick3")
-        # except Exception as error:
-        #     self.TEST_RES = False
-        #     print(f"Test failed:{error}")
+        

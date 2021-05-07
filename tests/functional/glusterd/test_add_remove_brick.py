@@ -24,10 +24,9 @@ class TestAddBrick(ParentTest):
             redant.add_brick(self.vol_name, self.server_list[0],
                                         self.volume_types_info[self.conv_dict[self.volume_type]],
                                         self.server_list, self.brick_roots, True)
-            # redant.remove_brick(self.server_list[0], self.vol_name, 
-            #                     self.volume_types_info[self.conv_dict[self.volume_type]],
-            #                     self.server_list, self.brick_roots, 'force')
+            redant.remove_brick(self.server_list[0], self.vol_name, 
+                                self.volume_types_info[self.conv_dict[self.volume_type]],
+                                self.server_list, self.brick_roots, 'force')
             
         except Exception as error:
             self.TEST_RES = False
-            print(error)
