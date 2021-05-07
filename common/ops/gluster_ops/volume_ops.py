@@ -144,7 +144,7 @@ class VolumeOps(AbstractOps):
                        f"{brick_cmd}")
         # dispersed vol and distributed-dispersed vol
         elif "disperse_count" in conf_hash:
-            cmd = (f"gluster volume create {volname} disperse {mul_fac}"
+            cmd = (f"gluster volume create {volname} disperse {mul_fac} "
                    f"redundancy {conf_hash['redundancy_count']}{brick_cmd} --mode=script")
         # distributed vol
         else:
