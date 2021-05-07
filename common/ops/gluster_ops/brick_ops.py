@@ -140,7 +140,7 @@ class BrickOps:
         else:
             server_val = server_list[(mul_fac%len(server_list))-1]
 
-        brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac}"
+        brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac-1}"
 
         brick_cmd = f"{server_val}:{brick_path_val}"
 
@@ -149,12 +149,12 @@ class BrickOps:
             conf_hash['replica_count'] = replica
             cmd = (f"gluster vol remove-brick "
                    f"{volname} replica {replica} "
-                   f"{brick_cmd} --xml")
+                   f"{brick_cmd} {option} --xml")
 
         elif "dist_count" in conf_hash:
             conf_hash['dist_count'] -= 1
             cmd = (f"gluster vol remove-brick "
-                   f"{volname} {brick_cmd} --xml")
+                   f"{volname} {brick_cmd} {option} --xml")
         
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
