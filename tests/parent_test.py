@@ -15,14 +15,15 @@ class ParentTest(metaclass=abc.ABCMeta):
     """
 
     conv_dict = {
-                    "dist" : "distributed",
-                    "rep" : "replicated",
-                    "dist-rep" : "distributed-replicated",
-                    "disp" : "dispersed",
-                    "dist-disp" : "distributed-dispersed",
-                    "arb" : "arbiter",
-                    "dist-arb" : "distributed-arbiter"
-                }
+        "dist": "distributed",
+        "rep": "replicated",
+        "dist-rep": "distributed-replicated",
+                    "disp": "dispersed",
+                    "dist-disp": "distributed-dispersed",
+                    "arb": "arbiter",
+                    "dist-arb": "distributed-arbiter"
+    }
+
     def __init__(self, mname: str, param_obj, volume_type: str,
                  log_path: str, log_level: str = 'I'):
         """
@@ -36,7 +37,7 @@ class ParentTest(metaclass=abc.ABCMeta):
 
         self.TEST_RES = True
         self.volume_type = volume_type
-        self.volume_types_info = param_obj.get_volume_types()
+        self.vol_type_inf = param_obj.get_volume_types()
         self._configure(f"{mname}-{volume_type}", server_details,
                         client_details, log_path, log_level)
         self.redant.volds = {}
@@ -73,23 +74,25 @@ class ParentTest(metaclass=abc.ABCMeta):
 
             if self.volume_type != "Generic":
                 self.vol_name = (f"{mname}-{volume_type}")
-                self.redant.volume_create(self.vol_name, self.server_list[0],
-                                        self.volume_types_info[self.conv_dict[volume_type]],
-                                        self.server_list, self.brick_roots, True)
+                self.redant.volume_create(
+                    self.vol_name, self.server_list[0],
+                    self.vol_type_inf[self.conv_dict[volume_type]],
+                    self.server_list, self.brick_roots, True)
                 self.redant.volume_start(self.vol_name, self.server_list[0])
                 self.mountpoint = (f"/mnt/{self.vol_name}")
                 self.redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
-                                        self.client_list[0])
+                                           self.client_list[0])
                 self.redant.volume_mount(self.server_list[0], self.vol_name,
-                                        self.mountpoint, self.client_list[0])
+                                         self.mountpoint, self.client_list[0])
             self.run_test(self.redant)
 
             if self.volume_type != 'Generic':
                 self.redant.volume_unmount(self.vol_name, self.mountpoint,
                                            self.client_list[0])
                 self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
-                                        self.client_list[0])
-                self.redant.volume_stop(self.vol_name, self.server_list[0], True)
+                                           self.client_list[0])
+                self.redant.volume_stop(
+                    self.vol_name, self.server_list[0], True)
                 self.redant.volume_delete(self.vol_name, self.server_list[0])
         except Exception as error:
             tb = traceback.format_exc()

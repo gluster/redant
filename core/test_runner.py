@@ -2,9 +2,7 @@
 The test runner is responsible for handling the list of TCs
 to be run and invoking them.
 """
-import uuid
 import time
-from datetime import datetime
 from multiprocessing import Process, Queue
 from colorama import Fore, Style
 from runner_thread import RunnerThread
@@ -76,7 +74,7 @@ class TestRunner:
             cls.nd_job_queue.put(test)
 
     @classmethod
-    def _run_test(cls, test_dict: dict, thread_flag: bool=False):
+    def _run_test(cls, test_dict: dict, thread_flag: bool = False):
         """
         A generic method handling the run of both disruptive and non
         disruptive tests.
@@ -93,7 +91,8 @@ class TestRunner:
 
         runner_thread_obj = RunnerThread(tc_class, cls.param_obj, volume_type,
                                          mname, tc_log_path, cls.log_level)
-        test_stats = runner_thread_obj.run_thread(mname, volume_type, thread_flag)
+        test_stats = runner_thread_obj.run_thread(
+            mname, volume_type, thread_flag)
 
         test_stats['timeTaken'] = time.time() - start
         result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
@@ -108,7 +107,7 @@ class TestRunner:
             print(Fore.RED + result_text)
             print(Style.RESET_ALL)
 
-        result_value = { test_dict["moduleName"][:-3] : test_stats }
+        result_value = {test_dict["moduleName"][:-3]: test_stats}
         cls.job_result_queue.put(result_value)
 
     @classmethod

@@ -7,6 +7,7 @@ from the test case.
 import socket
 from common.ops.abstract_ops import AbstractOps
 
+
 class PeerOps(AbstractOps):
     """
     PeerOps class provides APIs to perform operations
@@ -189,7 +190,7 @@ class PeerOps(AbstractOps):
         """
         if 'localhost' in node_list:
             node_list.remove('localhost')
-            node_list.append(node) 
+            node_list.append(node)
         for value in node_list:
             if not value.replace('.', '').isnumeric():
                 ip_val = socket.gethostbyname(value)
@@ -210,13 +211,13 @@ class PeerOps(AbstractOps):
         if len(node_list) in [0, 1]:
             return False
         desired_cluster_size = len(node_list)
-        main_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(\
+        main_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(
                                                 node_list[0]), node_list[0])
         main_cluster_size = len(main_cluster)
         if main_cluster_size == desired_cluster_size:
             return True
         for node in node_list:
-            temp_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(\
+            temp_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(
                                                     node), node)
             self.delete_cluster(temp_cluster)
         import random
@@ -227,7 +228,7 @@ class PeerOps(AbstractOps):
             self.peer_probe(nd, node)
         from time import sleep
         while len(self.nodes_from_pool_list(node_list[0])) != \
-              desired_cluster_size:
+                desired_cluster_size:
             sleep(1)
         return True
 

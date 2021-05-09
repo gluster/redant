@@ -7,7 +7,6 @@ it's functions to be used by the Redant framework.
 import os
 import logging
 import logging.handlers
-from datetime import datetime
 
 
 class Logger(logging.Logger):
@@ -84,7 +83,7 @@ class Logger(logging.Logger):
         """
         if not os.path.isdir(path):
             os.makedirs(path)
-        
+
         # Component wise directory creation.
         for test_type in component_dict:
             test_type_path = f"{path}/{test_type}"

@@ -98,7 +98,6 @@ class GlusterOps(AbstractOps):
         elif cmd_fail:
             raise Exception(error_msg)
 
-
         return ret
 
     def stop_glusterd(self, node=None):
@@ -134,7 +133,6 @@ class GlusterOps(AbstractOps):
                 self.logger.error(result_val['error_msg'])
                 raise Exception(result_val['error_msg'])
 
-        
         return ret
 
     def reset_failed_glusterd(self, node=None) -> bool:
@@ -173,7 +171,6 @@ class GlusterOps(AbstractOps):
             if int(result_val['error_code']) != 0:
                 self.logger.error(result_val['error_msg'])
                 raise Exception(result_val['error_msg'])
-
 
         return ret
 

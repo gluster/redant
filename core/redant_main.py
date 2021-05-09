@@ -36,16 +36,16 @@ def pars_args():
                         help="The directory wherein log will be stored.",
                         dest="log_dir", default="/tmp/redant", type=str)
     parser.add_argument("-ll", "--log-level",
-                        help="The log level.",
+                        help="The log level. Default log level is Info",
                         dest="log_level", default="I", type=str)
     parser.add_argument("-cc", "--concurrency-count",
-                        help="Number of concurrent test runs",
+                        help="Number of concurrent test runs. Default is 2.",
                         dest="concur_count", default=2, type=int)
     parser.add_argument("-rf", "--result-file",
-                        help="Result file. By default it will be None",
+                        help="Result file. Default value is None",
                         dest="result_path", default=None, type=str)
     parser.add_argument("-xls", "--excel-sheet",
-                        help="Excel sheet to store the result. By default it will be None",
+                        help="Spreadsheet for result. Default value is NULL",
                         dest="excel_sheet", default=None, type=str)
     return parser.parse_args()
 
@@ -62,7 +62,7 @@ def main():
     start = time.time()
     args = pars_args()
 
-    try: 
+    try:
         param_obj = ParamsHandler(args.config_file)
     except IOError:
         print("Error: can't find config file or read data.")
@@ -95,9 +95,8 @@ def main():
 
     # Environment cleanup. TBD.
     total_time = time.time()-start
-    ResultHandler.handle_results(result_queue, args.result_path, total_time, args.excel_sheet)
-
-
+    ResultHandler.handle_results(
+        result_queue, args.result_path, total_time, args.excel_sheet)
 
 
 if __name__ == '__main__':

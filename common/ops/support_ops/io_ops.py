@@ -68,15 +68,16 @@ class IoOps(AbstractOps):
         cmd = f"mkdir -p {list_of_dir_paths}"
         _rc = True
 
-        ret = self.execute_command_multinode(cmd,list_of_nodes)
+        ret = self.execute_command_multinode(cmd, list_of_nodes)
         for each_ret in ret:
             if each_ret['error_code'] != 0:
-                self.logger.error(f"Failed to create the dirs: {list_of_dir_paths.split(' ')} "
-                                  f"on node: {each_ret['node']} - {each_ret['error_msg']}")
+                self.logger.error(f"Failed to create the dirs: "
+                                  f"{list_of_dir_paths.split(' ')} "
+                                  f"on node: {each_ret['node']} - "
+                                  f"{each_ret['error_msg']}")
                 _rc = False
 
         return _rc
-
 
     def path_exists(self, list_of_nodes, list_of_paths):
         """Check if paths exist on nodes.
@@ -92,7 +93,6 @@ class IoOps(AbstractOps):
         if not isinstance(list_of_paths, list):
             list_of_paths = (list_of_paths.split(" "))
 
-        
         _rc = True
 
         for path in list_of_paths:
