@@ -18,8 +18,8 @@ So if you are ready to take the leap to learn the ugly truth ( kidding! ),
 this is where you go. But on the other hand, if you just want to learn about
 how to get things running and that's it, take the blue pill.
 
-* [Red Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/doc/RPIndex.md)
-* [Blue Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/doc/BPIndex.md)
+* [Red Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/docs/RPIndex.md)
+* [Blue Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/docs/BPIndex.md)
 
 # Contents
 * [Structure](#structure)
