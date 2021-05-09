@@ -27,7 +27,6 @@ class Parser:
             return False
         return True
 
-
     @staticmethod
     def generate_config_hashmap(filepath: str) -> dict:
         """

@@ -1,8 +1,9 @@
 import sys
-sys.path.insert(1, ".")
-import paramiko
 from socket import timeout
+import paramiko
+sys.path.insert(1, ".")
 from common.mixin import RedantMixin
+
 
 class environ:
     """
@@ -10,7 +11,7 @@ class environ:
     the setup and the complete cleanup.
     """
 
-    def __init__(self, param_obj, log_path : str, log_level : str):
+    def __init__(self, param_obj, log_path: str, log_level: str):
         """
         Redant mixin obj to be used for server setup and teardown operations
         has to be created.
@@ -21,11 +22,11 @@ class environ:
             self.redant.establish_connection()
         except paramiko.ssh_exception.NoValidConnectionsError as e:
             print(f'''
-            It seems one of the nodes is down. 
+            It seems one of the nodes is down.
             Message: {e}.
             Check and run again.
             ''')
-            exit(0)
+            sys.exit(0)
         except paramiko.ssh_exception.AuthenticationException as e:
             print(f"""
             Authentication failed.
@@ -33,7 +34,7 @@ class environ:
             Check and run again.
             """)
 
-            exit(0)
+            sys.exit(0)
         except timeout as e:
             print(f"""
             Oops! There was a timeout connecting the servers.
@@ -41,11 +42,11 @@ class environ:
             Check and run again.
             """)
 
-            exit(0)
+            sys.exit(0)
         except Exception as e:
             print(e)
-            exit(0)
-            
+            sys.exit(0)
+
         self.server_list = param_obj.get_server_ip_list()
 
     def setup_env(self):
@@ -60,5 +61,3 @@ class environ:
         The teardown of the complete environment once the test framework
         ends.
         """
-        pass
-        

@@ -13,7 +13,8 @@ class RunnerThread:
     def __init__(self, tc_class, param_obj, volume_type: str,
                  mname: str, log_path: str, log_level: str):
         # Creating the test case object from the test case.
-        self.tc_obj = tc_class(mname, param_obj, volume_type, log_path, log_level)
+        self.tc_obj = tc_class(
+            mname, param_obj, volume_type, log_path, log_level)
         self.run_test_func = getattr(self.tc_obj, "parent_run_test")
         self.terminate_test_func = getattr(self.tc_obj, "terminate")
         self.test_stats = {

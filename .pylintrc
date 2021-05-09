@@ -142,7 +142,22 @@ disable=print-statement,
         R0903,
         C0103,
         W0703,
-        R0902
+        R0902,
+        W0511,
+        R0913,
+        R0914,
+        R1702,
+        R0912,
+        E1121,
+        E0102,
+        R1720,
+        R0201,
+        W0702,
+        C0413,
+        E722,
+        F811,
+        F841,
+        C901
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -591,5 +606,4 @@ preferred-modules=
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "BaseException, Exception".
-overgeneral-exceptions=BaseException,
-                       Exception
+overgeneral-exceptions=Exception

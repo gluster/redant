@@ -128,7 +128,8 @@ class VolumeOps(AbstractOps):
             server_val = server_list[server_iter]
             if server_val not in self.volds[volname]["brickdata"].keys():
                 self.volds[volname]["brickdata"][server_val] = []
-            brick_path_val = f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
+            brick_path_val = \
+                f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
             self.volds[volname]["brickdata"][server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1
@@ -136,16 +137,19 @@ class VolumeOps(AbstractOps):
         if "replica_count" in conf_hash:
             # arbiter vol and distributed-arbiter vol
             if "arbiter_count" in conf_hash:
-                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']} "
+                cmd = (f"gluster volume create {volname} "
+                       f"replica {conf_hash['replica_count']} "
                        f"arbiter {conf_hash['arbiter_count']}{brick_cmd}")
             # replicated vol
             else:
-                cmd = (f"gluster volume create {volname} replica {conf_hash['replica_count']}"
+                cmd = (f"gluster volume create {volname} "
+                       f"replica {conf_hash['replica_count']}"
                        f"{brick_cmd}")
         # dispersed vol and distributed-dispersed vol
         elif "disperse_count" in conf_hash:
             cmd = (f"gluster volume create {volname} disperse {mul_fac} "
-                   f"redundancy {conf_hash['redundancy_count']}{brick_cmd} --mode=script")
+                   f"redundancy {conf_hash['redundancy_count']}{brick_cmd} "
+                   f"--mode=script")
         # distributed vol
         else:
             cmd = (f"gluster volume create {volname}{brick_cmd}")
@@ -458,9 +462,9 @@ class VolumeOps(AbstractOps):
                     node_list = val
                     if not isinstance(node_list, list):
                         node_list = [node_list]
-                    for node in node_list:
+                    for node_i in node_list:
                         node_info = {}
-                        for n_key, n_val in node.items():
+                        for n_key, n_val in node_i.items():
                             if n_key == 'ports':
                                 port_info = {}
                                 for p_key, p_val in n_val.items():
@@ -513,9 +517,9 @@ class VolumeOps(AbstractOps):
         option_list = volume_options['Opt']
         if not isinstance(option_list, list):
             option_list = [option_list]
-        for option in option_list:
-            option_name = option['Option']
-            option_value = option['Value']
+        for option_i in option_list:
+            option_name = option_i['Option']
+            option_value = option_i['Value']
             ret_dict[option_name] = option_value
 
         return volume_options
@@ -580,7 +584,7 @@ class VolumeOps(AbstractOps):
             cmd = (f"gluster volume reset {volname} {option} force"
                    "--mode=script --xml")
         else:
-            cmd = f"gluster volume reset {volname} {option} --mode=script --xml"
+            cmd = f"gluster vol reset {volname} {option} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
 

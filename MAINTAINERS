@@ -27,12 +27,13 @@ Descriptions of section entries:
     P: Peer for a component
 
 
-Project Architects
---------------------------
+Project Architects:
+-------------------
 M: Barak Sason Rofman <bsasonro@redhat.com>
 P: Srijan Sivakumar <ssivakum@redhat.com>
 
-Development:
+Dev Team:
+---------
 M: Srijan Sivakumar <ssivakum@redhat.com>
 M: Nikhil Ladha <nladha@redhat.com>
 P: Ayush Ujjwal <aujjwal@redhat.com>

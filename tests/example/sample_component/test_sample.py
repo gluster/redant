@@ -27,8 +27,6 @@ class TestCase(ParentTest):
         8) Mountpoint is unmounted
         """
         servera = self.server_list[0]
-        serverb = self.server_list[1]
-        serverc = self.server_list[2]
 
         redant.execute_io_cmd("ls -l /root", servera)
         volume_status = redant.get_volume_status(self.vol_name, servera)
@@ -44,4 +42,3 @@ class TestCase(ParentTest):
             redant.execute_io_cmd("ls -l /non-exsisting-path", servera)
         except Exception as error:
             redant.logger.error(error)
-            pass

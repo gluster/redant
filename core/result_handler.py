@@ -14,7 +14,8 @@ from colorama import Fore, Style
 class ResultHandler:
 
     @classmethod
-    def _get_output(cls, test_results: dict, colorify: bool, total_time: float):
+    def _get_output(cls, test_results: dict, colorify: bool,
+                    total_time: float):
         """
         It generates the output in the
         form of tables with columns
@@ -26,16 +27,16 @@ class ResultHandler:
         colorify: Stores whether to show colored
                 output or not
         total_time: stores the total time taken by the framework
-        
+
         """
         cls.result = "Table:\n"
 
         for item in test_results:
             if colorify:
-                cls.result = f"{cls.result} {Fore.BLUE}{item}\n"
-                cls.result = f"{cls.result} {Style.RESET_ALL}\n"
+                cls.result = (f"{cls.result} {Fore.BLUE}{item}\n")
+                cls.result = (f"{cls.result} {Style.RESET_ALL}\n")
             else:
-                cls.result = f"{cls.result} {item}\n"
+                cls.result = (f"{cls.result} {item}\n")
 
             table = PrettyTable(
                 ['Volume Type', 'Test Result', 'Time taken (sec)'])
@@ -45,9 +46,9 @@ class ResultHandler:
                     [each_vol_test['volType'], each_vol_test['testResult'],
                      each_vol_test['timeTaken']])
 
-            cls.result = f"{cls.result}{str(table)}\n"
+            cls.result = (f"{cls.result}{str(table)}\n")
 
-        cls.result = (f"{cls.result}\nTotal time taken by the framework is {total_time}\n")        
+        cls.result = (f"{cls.result}\nFramework runtime : {total_time}\n")
 
     @classmethod
     def _display_test_results(cls, test_results: dict, total_time: float):
@@ -63,9 +64,9 @@ class ResultHandler:
         cls._get_output(test_results, True, total_time)
         print(cls.result)
 
-
     @classmethod
-    def _store_results(cls, test_results: dict, result_path: str, total_time: float):
+    def _store_results(cls, test_results: dict, result_path: str,
+                       total_time: float):
         """
         This function stores the test results
         in the form of tables in a file.
@@ -80,9 +81,10 @@ class ResultHandler:
         file = open(result_path, 'w')
         file.write(cls.result)
         file.close()
-    
+
     @classmethod
-    def store_results_in_excelsheet(cls, excel_sheet: str, test_results: dict, total_time: float):
+    def store_results_in_excelsheet(cls, excel_sheet: str, test_results: dict,
+                                    total_time: float):
         """
         This method stores the
         results of the test(s) run
@@ -96,7 +98,7 @@ class ResultHandler:
         wb = Workbook()
 
         result_sheet = wb.add_sheet('Result Sheet')
-        
+
         row = 0
         style = xlwt.easyxf('font: bold 1')
 
@@ -113,7 +115,7 @@ class ResultHandler:
                 result_sheet.write(row, 1, each_vol_test['testResult'])
                 result_sheet.write(row, 2, each_vol_test['timeTaken'])
                 row = row + 1
-            
+
             row = row + 2
         result_sheet.write(row, 0, 'Total time taken ', style)
         result_sheet.write(row, 1, total_time)
@@ -121,7 +123,8 @@ class ResultHandler:
         wb.save(excel_sheet)
 
     @classmethod
-    def handle_results(cls, result_queue, result_path: str, total_time: float, excel_sheet: str):
+    def handle_results(cls, result_queue, result_path: str, total_time: float,
+                       excel_sheet: str):
         """
         This function handles the results
         for the framework. It checks
@@ -138,7 +141,7 @@ class ResultHandler:
         test_results = {}
 
         while not result_queue.empty():
-        
+
             curr_item = result_queue.get()
             key = list(curr_item.keys())[0]
             value = curr_item[key]
@@ -147,12 +150,12 @@ class ResultHandler:
                 test_results[key] = []
 
             test_results[key].append(value)
-        
 
         if result_path is None:
             cls._display_test_results(test_results, total_time)
         else:
             cls._store_results(test_results, result_path, total_time)
-        
+
         if excel_sheet is not None:
-            cls.store_results_in_excelsheet(excel_sheet, test_results, total_time)            
+            cls.store_results_in_excelsheet(
+                excel_sheet, test_results, total_time)
