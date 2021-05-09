@@ -462,9 +462,9 @@ class VolumeOps(AbstractOps):
                     node_list = val
                     if not isinstance(node_list, list):
                         node_list = [node_list]
-                    for node in node_list:
+                    for node_i in node_list:
                         node_info = {}
-                        for n_key, n_val in node.items():
+                        for n_key, n_val in node_i.items():
                             if n_key == 'ports':
                                 port_info = {}
                                 for p_key, p_val in n_val.items():
@@ -517,9 +517,9 @@ class VolumeOps(AbstractOps):
         option_list = volume_options['Opt']
         if not isinstance(option_list, list):
             option_list = [option_list]
-        for option in option_list:
-            option_name = option['Option']
-            option_value = option['Value']
+        for option_i in option_list:
+            option_name = option_i['Option']
+            option_value = option_i['Value']
             ret_dict[option_name] = option_value
 
         return volume_options

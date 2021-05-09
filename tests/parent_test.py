@@ -54,7 +54,7 @@ class ParentTest(metaclass=abc.ABCMeta):
         self.test_name = mname
 
     @abc.abstractmethod
-    def run_test(self):
+    def run_test(self, redant):
         pass
 
     def parent_run_test(self, mname: str, volume_type: str, thread_flag: bool):

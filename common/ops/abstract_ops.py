@@ -30,11 +30,10 @@ class AbstractOps:
 
         ret = self.execute_command(cmd, node)
 
-        if(ret['error_code'] != 0):
+        if ret['error_code'] != 0:
             self.logger.error(ret['error_msg'])
             raise Exception(ret['error_msg'])
-        elif isinstance(ret['msg'], OrderedDict) or \
-                isinstance(ret['msg'], dict):
+        elif isinstance(ret['msg'], (OrderedDict, dict)):
             if int(ret['msg']['opRet']) != 0:
                 self.logger.error(ret['msg']['opErrstr'])
                 raise Exception(ret['msg']['opErrstr'])
@@ -60,8 +59,7 @@ class AbstractOps:
             if each_ret['error_code'] != 0:
                 self.logger.error(each_ret['msg']['opErrstr'])
                 raise Exception(each_ret['msg']['opErrstr'])
-            elif isinstance(each_ret['msg'], OrderedDict) or \
-                    isinstance(each_ret['msg'], dict):
+            elif isinstance(each_ret['msg'], (OrderedDict, dict)):
                 if int(each_ret['msg']['opRet']) != 0:
                     self.logger.error(each_ret['msg']['opErrstr'])
                     raise Exception(each_ret['msg']['opErrstr'])

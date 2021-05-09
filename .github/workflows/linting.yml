@@ -27,7 +27,7 @@ jobs:
           flake8 $(pwd) --ignore=C901,F811,F841,E722,E226,E402 --count --max-complexity=10 --max-line-length=79 --statistics
       - name: Lint with Pylint
         run: |
-          pylint $(pwd)/core/
-          pylint $(pwd)/common/
-          pylint $(pwd)/tests/
+          pylint --rcfile=$(pwd)/.pylintrc $(pwd)/core/
+          pylint --rcfile=$(pwd)/.pylintrc $(pwd)/common/
+          pylint --rcfile=$(pwd)/.pylintrc $(pwd)/tests/
 

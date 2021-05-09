@@ -12,8 +12,9 @@ from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
-from environ import environ
 sys.path.insert(1, ".")
+sys.path.insert(1, "./common")
+from environ import environ
 from common.relog import Logger
 
 

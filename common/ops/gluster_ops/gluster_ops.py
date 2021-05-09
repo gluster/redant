@@ -3,6 +3,7 @@ This file contains one class - GlusterOps wich holds
 operations on the glusterd service on the server
 or the client.
 """
+from time import sleep
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -218,14 +219,12 @@ class GlusterOps(AbstractOps):
         """
         if not isinstance(node, list) and node is not None:
             node = [node]
+        elif node is None:
+            return False
 
         count = 0
-        from time import sleep
         while count <= timeout:
-            if node is None:
-                ret = self.is_glusterd_running()
-            else:
-                ret = self.is_glusterd_running(node)
+            ret = self.is_glusterd_running(node)
             if not ret:
                 return True
             sleep(1)

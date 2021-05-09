@@ -42,4 +42,3 @@ class TestCase(ParentTest):
             redant.execute_io_cmd("ls -l /non-exsisting-path", servera)
         except Exception as error:
             redant.logger.error(error)
-            pass

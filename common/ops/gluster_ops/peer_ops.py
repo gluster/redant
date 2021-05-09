@@ -4,6 +4,8 @@ holds APIS related to peers which will be called
 from the test case.
 """
 
+import random
+from time import sleep
 import socket
 from common.ops.abstract_ops import AbstractOps
 
@@ -133,19 +135,17 @@ class PeerOps(AbstractOps):
             self.logger.info("Unable to get Nodes")
 
         nodes = []
-        """
-        WHY?
-        The pool_list_data is a simple dict of the form
-        {'uuid' : 'val', 'hostname' : 'val',...} when the node isn't
-        part of any cluster.
-        And a list of dictionaries when multiple nodes are present. This
-        causes an issue in obtaining the hostname in a generic manner, hence
-        this if statement which checks for hostname in keys BUT!! this will
-        cause an exception if the said value contains lists of dict, hence
-        the try-except block.
-        If anyone were to come across a better syntax, do change this
-        monstrosity.
-        """
+        # WHY?
+        # The pool_list_data is a simple dict of the form
+        # {'uuid' : 'val', 'hostname' : 'val',...} when the node isn't
+        # part of any cluster.
+        # And a list of dictionaries when multiple nodes are present. This
+        # causes an issue in obtaining the hostname in a generic manner, hence
+        # this if statement which checks for hostname in keys BUT!! this will
+        # cause an exception if the said value contains lists of dict, hence
+        # the try-except block.
+        # If anyone were to come across a better syntax, do change this
+        # monstrosity.
         try:
             if 'hostname' in pool_list_data.keys():
                 nodes.append(pool_list_data['hostname'])
@@ -220,13 +220,11 @@ class PeerOps(AbstractOps):
             temp_cluster = self.convert_hosts_to_ip(self.nodes_from_pool_list(
                                                     node), node)
             self.delete_cluster(temp_cluster)
-        import random
         node = random.choice(node_list)
         for nd in node_list:
             if nd == node:
                 continue
             self.peer_probe(nd, node)
-        from time import sleep
         while len(self.nodes_from_pool_list(node_list[0])) != \
                 desired_cluster_size:
             sleep(1)
@@ -242,7 +240,6 @@ class PeerOps(AbstractOps):
         # Select any node randomly from the list for peer detaching.
         if len(node_list) in [0, 1]:
             return
-        import random
         node = random.choice(node_list)
         for nd in node_list:
             if nd == node:
