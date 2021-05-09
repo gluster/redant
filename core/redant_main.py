@@ -13,6 +13,8 @@ from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
 from environ import environ
+sys.path.insert(1, ".")
+from common.relog import Logger
 
 
 def pars_args():
@@ -75,8 +77,6 @@ def main():
     test_cases_component = test_cases_tuple[1]
 
     # Creating log dirs.
-    sys.path.insert(1, ".")
-    from common.relog import Logger
     args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
     Logger.log_dir_creation(args.log_dir, test_cases_component,
                             test_cases_dict)
