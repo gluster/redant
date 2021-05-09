@@ -83,8 +83,8 @@ class TestRunner:
         volume_type = test_dict["volType"]
         mname = test_dict["moduleName"][:-3]
 
-        tc_log_path =f"{cls.base_log_path+test_dict['modulePath'][5:-3]}/"
-                     f"{volume_type}/{mname}.log"
+        tc_log_path = f"{cls.base_log_path+test_dict['modulePath'][5:-3]}/"
+        f"{volume_type}/{mname}.log"
 
         # to calculate time spent to execute the test
         start = time.time()
