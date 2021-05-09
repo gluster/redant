@@ -83,8 +83,8 @@ class TestRunner:
         volume_type = test_dict["volType"]
         mname = test_dict["moduleName"][:-3]
 
-        tc_log_path = cls.base_log_path+test_dict["modulePath"][5:-3]+"/" +\
-            volume_type+"/"+mname+".log"
+        tc_log_path =f"{cls.base_log_path+test_dict['modulePath'][5:-3]}/"
+                     f"{volume_type}/{mname}.log"
 
         # to calculate time spent to execute the test
         start = time.time()
@@ -95,7 +95,7 @@ class TestRunner:
             mname, volume_type, thread_flag)
 
         test_stats['timeTaken'] = time.time() - start
-        result_text = test_dict["moduleName"][:-3]+"-"+test_dict["volType"]
+        result_text = f"{test_dict['moduleName'][:-3]}-{test_dict['volType']}"
         if test_stats['testResult']:
             test_stats['testResult'] = "PASS"
             result_text += " PASS"
