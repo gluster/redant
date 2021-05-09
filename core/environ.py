@@ -1,8 +1,8 @@
 import sys
 from socket import timeout
 import paramiko
-from common.mixin import RedantMixin
 sys.path.insert(1, ".")
+from common.mixin import RedantMixin
 
 
 class environ:
