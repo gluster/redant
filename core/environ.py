@@ -1,7 +1,7 @@
-from common.mixin import RedantMixin
+import sys
 from socket import timeout
 import paramiko
-import sys
+from common.mixin import RedantMixin
 sys.path.insert(1, ".")
 
 
@@ -26,7 +26,7 @@ class environ:
             Message: {e}.
             Check and run again.
             ''')
-            exit(0)
+            sys.exit(0)
         except paramiko.ssh_exception.AuthenticationException as e:
             print(f"""
             Authentication failed.
@@ -34,7 +34,7 @@ class environ:
             Check and run again.
             """)
 
-            exit(0)
+            sys.exit(0)
         except timeout as e:
             print(f"""
             Oops! There was a timeout connecting the servers.
@@ -42,10 +42,10 @@ class environ:
             Check and run again.
             """)
 
-            exit(0)
+            sys.exit(0)
         except Exception as e:
             print(e)
-            exit(0)
+            sys.exit(0)
 
         self.server_list = param_obj.get_server_ip_list()
 
@@ -61,4 +61,3 @@ class environ:
         The teardown of the complete environment once the test framework
         ends.
         """
-        pass

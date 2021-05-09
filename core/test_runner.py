@@ -37,29 +37,27 @@ class TestRunner:
         """
         jobs = []
         if bool(cls.concur_count):
-            for iter in range(cls.concur_count):
+            for _ in range(cls.concur_count):
                 proc = Process(target=cls._worker_process,
                                args=(cls.nd_job_queue,))
                 jobs.append(proc)
                 proc.start()
 
-            # TODO replace incremental backup with a signalling and lock.
+            # TODO replace sleep with a signalling and lock.
             while len(jobs) > 0:
                 jobs = [job for job in jobs if job.is_alive()]
                 time.sleep(1)
 
-            for iter in range(cls.concur_count):
+            for _ in range(cls.concur_count):
                 proc.join()
 
         for test in cls.non_concur_test:
             cls._run_test(test)
 
-        """
-        Because of the infinitesimal delay in value being reflected in Queue
-        it was found that sometimes the Queue which was empty had been given
-        some value, it still showed itself as empty.
-        TODO: Handle it without sleep.
-        """
+        # Because of the infinitesimal delay in value being reflected in Queue
+        # it was found that sometimes the Queue which was empty had been given
+        # some value, it still showed itself as empty.
+        # TODO: Handle it without sleep.
         while cls.job_result_queue.empty():
             time.sleep(1)
 
@@ -83,8 +81,8 @@ class TestRunner:
         volume_type = test_dict["volType"]
         mname = test_dict["moduleName"][:-3]
 
-        tc_log_path = f"{cls.base_log_path+test_dict['modulePath'][5:-3]}/"
-        f"{volume_type}/{mname}.log"
+        tc_log_path = (f"{cls.base_log_path+test_dict['modulePath'][5:-3]}/"
+                       f"{volume_type}/{mname}.log")
 
         # to calculate time spent to execute the test
         start = time.time()
