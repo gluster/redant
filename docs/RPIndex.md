@@ -8,10 +8,10 @@ Jokes apart, following is the index which contains the details about the
 REDANT project.
 
 ## Index
-* [What is Redant ?](https://github.com/srijan-sivakumar/redant/blob/main/doc/RP/WIRA.md)
-* [High level understanding of how things move](https://github.com/srijan-sivakumar/redant/blob/main/doc/RP/HLD.md)
-* [Documentation on Core features](https://github.com/srijan-sivakumar/redant/blob/main/doc/RP/Core/Index.md)
-* [Documentation on Common features](https://github.com/srijan-sivakumar/redant/blob/main/doc/RP/Common/Index.md)
-* [Documentation on Test features](https://github.com/srijan-sivakumar/redant/blob/main/doc/RP/Test/Index.md)
-* [Taking the Blue Pill of how to use Redant](https://github.com/srijan-sivakumar/redant/blob/main/doc/BPIndex.md)
+* [What is Redant ?](./RP/WIRA.md)
+* [High level understanding of how things move](./RP/HLD.md)
+* [Documentation on Core features](./RP/Core/Index.md)
+* [Documentation on Common features](./RP/Common/Index.md)
+* [Documentation on Test features](./RP/Test/Index.md)
+* [Taking the Blue Pill of how to use Redant](./BPIndex.md)
 

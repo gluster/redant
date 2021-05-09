@@ -18,8 +18,8 @@ So if you are ready to take the leap to learn the ugly truth ( kidding! ),
 this is where you go. But on the other hand, if you just want to learn about
 how to get things running and that's it, take the blue pill.
 
-* [Red Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/doc/RPIndex.md)
-* [Blue Pill Index](https://github.com/srijan-sivakumar/redant/blob/main/doc/BPIndex.md)
+* [Red Pill Index](./docs/RPIndex.md)
+* [Blue Pill Index](./docs/BPIndex.md)
 
 # Contents
 * [Structure](#structure)
@@ -83,7 +83,7 @@ For example,
 
 One can also run the scripts given under the tools dir which will reduce the
 lengthy commands to be typed out everytime. Check out the README.md at the link
-[Tools-README](https://github.com/srijan-sivakumar/redant/blob/main/tools/README.md)
+[Tools-README](./tools/README.md)
 
 ## About
 
