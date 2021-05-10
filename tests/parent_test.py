@@ -1,6 +1,5 @@
 import traceback
 import abc
-from datetime import datetime
 from common.mixin import RedantMixin
 
 
@@ -62,11 +61,6 @@ class ParentTest(metaclass=abc.ABCMeta):
         Function to handle the exception logic and invokes the run_test
         which is overridden by every TC.
         """
-        self.redant.logger.info(f'''
-        ============================================================
-        {self.test_name}-{self.volume_type} Started Running: {datetime.now()}
-        ============================================================
-        ''')
         try:
             if not thread_flag:
                 self.redant.start_glusterd()
@@ -99,11 +93,6 @@ class ParentTest(metaclass=abc.ABCMeta):
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
             self.TEST_RES = False
-        self.redant.logger.info(f'''
-        ============================================================
-        {self.test_name}-{self.volume_type} Finished Running: {datetime.now()}
-        ============================================================
-        ''')
 
     def terminate(self):
         """
