@@ -85,21 +85,7 @@ class PeerOps(AbstractOps):
 
         Returns:
             'peer'(list|dict): If single peer is present then dict is returned
-                                If multiple peers are present then list is returned
-            {
-                'uuid': '504fdf87-805a-4e8f-a266-b2f45d76958a',
-                'hostname': 'dhcp42-209.lab.eng.blr.redhat.com',
-                'hostnames': {
-                                'hostname': [
-                                                'dhcp1.1.lab.eng.blr.redhat.com',
-                                                '1.1.1.1'
-                                            ]
-                            },
-                'connected': '1',
-                'state': '3',
-                'stateStr': 'Peer in Cluster'
-            }
-
+                               If multiple peers are present then list is returned
         """
 
         cmd = 'gluster --xml peer status'
