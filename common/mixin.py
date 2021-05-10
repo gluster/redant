@@ -15,11 +15,12 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
     A mixin class for redant project to encompass all ops and support
     modules.
     """
+
     def __init__(self, server_config):
         super(RedantMixin, self).__init__(server_config)
         self.volds = {}
 
-    def get_mnt_pts_dict(self, volname : str) -> dict:
+    def get_mnt_pts_dict(self, volname: str) -> dict:
         """
         Method to obtain the mountpath dictionary.
         Arg:
@@ -29,7 +30,7 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
         """
         return self.volds[volname]['mountpath']
 
-    def get_mnt_pts_list(self, volname: str, node: str=None) -> list:
+    def get_mnt_pts_list(self, volname: str, node: str = None) -> list:
         """
         Method to obtain the list of mountpaths.
         Args:
@@ -46,7 +47,7 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
         else:
             return self.volds[volname]['mountpath'][node]
 
-    def get_brick_dict(self, volname: str, node: str=None) -> dict:
+    def get_brick_dict(self, volname: str, node: str = None) -> dict:
         """
         Method to obtain brick dictionary
         Args:
