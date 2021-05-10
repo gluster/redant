@@ -73,7 +73,7 @@ def main():
         return
 
     # Building the test list and obtaining the TC details.
-    excluded_tests = config_hashmap["excluded_tests"]
+    excluded_tests = param_obj.get_excluded_tests()
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
                                                         excluded_tests,
                                                         args.spec_test)
@@ -94,7 +94,7 @@ def main():
     env_obj.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(test_cases_dict, param_obj, args.log_dir,
+    TestRunner.init(test_cases_dict, param_obj, excluded_tests, args.log_dir,
                     args.log_level, args.concur_count)
     result_queue = TestRunner.run_tests()
 
