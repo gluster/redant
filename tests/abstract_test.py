@@ -39,7 +39,6 @@ class AbstractTest(metaclass=abc.ABCMeta):
         self.vol_type_inf = param_obj.get_volume_types()
         self._configure(f"{mname}-{volume_type}", server_details,
                         client_details, log_path, log_level)
-        #self.redant.volds = {}
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
