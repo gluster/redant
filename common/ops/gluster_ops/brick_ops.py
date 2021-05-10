@@ -73,7 +73,7 @@ class BrickOps:
 
         if "arbiter_count" in conf_hash:
             num_bricks = num_bricks + 2
-        
+
         if "dist_count" in conf_hash and "replica_count" in conf_hash:
             num_bricks = num_bricks + 2
 

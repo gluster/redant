@@ -18,7 +18,6 @@ class TestReplaceBrick(AbstractTest):
         Bricks are replaced
         """
         try:
-            vol_dict = self.conv_dict[self.volume_type]
 
             src_brick = (f"{self.server_list[0]}:"
                          f"/glusterfs/brick/"
@@ -32,4 +31,3 @@ class TestReplaceBrick(AbstractTest):
 
         except Exception:
             self.TEST_RES = False
-            raise Exception

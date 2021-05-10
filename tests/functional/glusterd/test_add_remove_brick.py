@@ -4,9 +4,8 @@ that checks the add-brick and remove-brick functionality
 """
 # nonDisruptive;dist-rep,rep,dist,arb
 from tests.abstract_test import AbstractTest
-"""
-dist,rep,arb,dist-rep
-"""
+
+
 class TestAddBrick(AbstractTest):
     """
     This test class tests the add-brick
@@ -31,4 +30,3 @@ class TestAddBrick(AbstractTest):
 
         except Exception:
             self.TEST_RES = False
-            raise Exception
