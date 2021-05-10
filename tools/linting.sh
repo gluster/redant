@@ -6,6 +6,7 @@ perform_linting () {
     then
         pylint -j 4 --rcfile=.pylintrc ./core
         pylint -j 4 --rcfile=.pylintrc ./core/parsing
+        pylint -j 4 --rcfile=.pylintrc ./tests/
         pylint -j 4 --rcfile=.pylintrc ./tests/example
         pylint -j 4 --rcfile=.pylintrc ./tests/example/sample_component
         pylint -j 4 --rcfile=.pylintrc ./tests/functional
@@ -80,7 +81,8 @@ while getopts "p:flh" opt; do
         ;;
         f)
             echo "Flake operation starts"
-            flake8 $FILEPATH
+            flake8 $FILEPATH --ignore=C901,F811,F841,E722,E226,E402 --count --select=E9,F63,F7,F82 --show-source --statistics
+            flake8 $FILEPATH --ignore=C901,F811,F841,E722,E226,E402 --count --max-complexity=10 --max-line-length=79 --statistics
         ;;
         l)
             echo "Lint operation starts"
