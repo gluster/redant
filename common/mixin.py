@@ -36,6 +36,9 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
         Args:
             volname (str)
             node (str) client node.
+        Returns:
+            list of mountpaths belonging to a node or list of
+            all mountpoints
         """
         if node is None:
             mount_point_list = []
