@@ -479,8 +479,8 @@ class VolumeOps(AbstractOps):
 
         return ret_dict
 
-    def get_volume_options(self, node: str = None, volname: str = 'all',
-                           option: str = 'all') -> dict:
+    def get_volume_options(self, volname: str = 'all', option: str = 'all',
+                           node: str = None) -> dict:
         """
         Gets the option values for a given volume.
         Args:
@@ -523,9 +523,10 @@ class VolumeOps(AbstractOps):
             option_value = option_i['Value']
             ret_dict[option_name] = option_value
 
-        return volume_options
+        return ret_dict
 
-    def set_volume_options(self, volname: str, options: str, node: str = None):
+    def set_volume_options(self, volname: str, options: dict,
+                           node: str = None):
         """
         Sets the option values for the given volume.
         Args:
@@ -554,6 +555,23 @@ class VolumeOps(AbstractOps):
                    f"{volume_options[option]} --mode=script --xml")
 
             self.execute_abstract_op_node(cmd, node)
+
+    def validate_volume_option(self, volname: str, options: dict,
+                               node: str = None):
+        """
+        Validate the volume options
+        Args:
+            node (str) : Node on which cmd has to be executed
+            volname (str) : volume name
+            option (dict) : dictionary of options which are to be validated.
+        Returns:
+            No value if success or else ValueError will be raised.
+        """
+        for (opt, val) in options.items():
+            ret_val = self.get_volume_options(volname, opt, node)
+            if ret_val[opt] != val:
+                raise ValueError
+        return
 
     def reset_volume_option(self, volname: str, option: str,
                             node: str = None, force: bool = False):
