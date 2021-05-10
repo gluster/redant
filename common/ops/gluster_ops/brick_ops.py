@@ -73,6 +73,9 @@ class BrickOps:
 
         if "arbiter_count" in conf_hash:
             num_bricks = num_bricks + 2
+        
+        if "dist_count" in conf_hash and "replica_count" in conf_hash:
+            num_bricks = num_bricks + 2
 
         for i in range(num_bricks):
 
@@ -97,6 +100,11 @@ class BrickOps:
                 conf_hash['replica_count'] = replica
                 cmd = (f"gluster vol add-brick "
                        f"{volname} replica 3 arbiter 1 "
+                       f"{' '.join(bricks_list)} --xml")
+            elif "dist_count" in conf_hash:
+                conf_hash['dist_count'] += 1
+                cmd = (f"gluster vol add-brick "
+                       f"{volname} replica 3 "
                        f"{' '.join(bricks_list)} --xml")
             else:
                 conf_hash['replica_count'] = replica
@@ -130,7 +138,7 @@ class BrickOps:
             option (str): Remove brick options:
                           <start|stop|status|commit|force>
 
-    Returns:
+        Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
                     - msg : message
@@ -173,6 +181,9 @@ class BrickOps:
         if "arbiter_count" in conf_hash:
             num_bricks = num_bricks + 2
 
+        if "dist_count" in conf_hash and "replica_count" in conf_hash:
+            num_bricks = num_bricks + 2
+
         for i in range(num_bricks):
 
             server_val = server_list[server_iter]
@@ -194,6 +205,11 @@ class BrickOps:
                 conf_hash['replica_count'] = replica
                 cmd = (f"gluster vol remove-brick "
                        f"{volname} replica 3 "
+                       f"{' '.join(bricks_list)} {option} --xml")
+            elif "dist_count" in conf_hash:
+                conf_hash['dist_count'] -= 1
+                cmd = (f"gluster vol remove-brick "
+                       f"{volname} replica {conf_hash['replica_count']} "
                        f"{' '.join(bricks_list)} {option} --xml")
             else:
                 conf_hash['replica_count'] = replica

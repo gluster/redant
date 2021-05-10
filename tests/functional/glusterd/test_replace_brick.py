@@ -2,7 +2,7 @@
 This file contains a test case
 that checks the replace-brick functionality
 """
-# disruptive;rep
+# nonDisruptive;rep,dist-rep,arb,dist-arb
 from tests.parent_test import ParentTest
 
 
@@ -19,23 +19,17 @@ class TestReplaceBrick(ParentTest):
         """
         try:
             vol_dict = self.conv_dict[self.volume_type]
-            redant.add_brick(self.vol_name, self.server_list[0],
-                             self.vol_type_inf[vol_dict],
-                             self.server_list, self.brick_roots, True)
 
             src_brick = (f"{self.server_list[0]}:"
                          f"/glusterfs/brick/"
-                         f"test_replace_brick-rep-0")
+                         f"{self.vol_name}-0")
             dest_brick = (f"{self.server_list[0]}:"
                           f"/glusterfs/brick/"
-                          f"test_replace_brick-rep-9")
+                          f"{self.vol_name}-20")
 
             redant.replace_brick(self.server_list[0], self.vol_name,
                                  src_brick, dest_brick)
 
-            redant.remove_brick(self.server_list[0], self.vol_name,
-                                self.vol_type_inf[vol_dict],
-                                self.server_list, self.brick_roots, 'force')
-
         except Exception:
             self.TEST_RES = False
+            raise Exception
