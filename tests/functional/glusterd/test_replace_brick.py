@@ -2,13 +2,14 @@
 This file contains a test case
 that checks the replace-brick functionality
 """
-#disruptive;rep
+# disruptive;rep
 from tests.parent_test import ParentTest
+
 
 class TestReplaceBrick(ParentTest):
     """
     This test class tests the add-brick
-    functionality 
+    functionality
     """
 
     def run_test(self, redant):
@@ -17,20 +18,25 @@ class TestReplaceBrick(ParentTest):
         Bricks are replaced
         """
         try:
+            vol_dict = self.conv_dict[self.volume_type]
             redant.add_brick(self.vol_name, self.server_list[0],
-                                        self.volume_types_info[self.conv_dict[self.volume_type]],
-                                        self.server_list, self.brick_roots, True)
-            
-            src_brick = f"{self.server_list[0]}:/glusterfs/brick/test_replace_brick-rep-0"
-            dest_brick = f"{self.server_list[0]}:/glusterfs/brick/test_replace_brick-rep-9"
+                             self.vol_type_inf[vol_dict],
+                             self.server_list, self.brick_roots, True)
 
-            redant.replace_brick(self.server_list[0], self.vol_name, 
-                                src_brick, dest_brick)
+            src_brick = (f"{self.server_list[0]}:"
+                         f"/glusterfs/brick/"
+                         f"test_replace_brick-rep-0")
+            dest_brick = (f"{self.server_list[0]}:"
+                          f"/glusterfs/brick/"
+                          f"test_replace_brick-rep-9")
 
-            redant.remove_brick(self.server_list[0], self.vol_name, 
-                                self.volume_types_info[self.conv_dict[self.volume_type]],
+            redant.replace_brick(self.server_list[0], self.vol_name,
+                                 src_brick, dest_brick)
+
+            redant.remove_brick(self.server_list[0], self.vol_name,
+                                self.vol_type_inf[vol_dict],
                                 self.server_list, self.brick_roots, 'force')
-            
+
         except Exception as error:
             self.TEST_RES = False
             print(error)

@@ -8,14 +8,14 @@ import sys
 import time
 import datetime
 import argparse
+from environ import environ
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
 from result_handler import ResultHandler
+from common.relog import Logger
 sys.path.insert(1, ".")
 sys.path.insert(1, "./common")
-from environ import environ
-from common.relog import Logger
 
 
 def pars_args():
@@ -89,7 +89,7 @@ def main():
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
 
     # Environment setup.
-    env_obj = environ(param_obj, args.log_dir+"/main.log", args.log_level)
+    env_obj = environ(param_obj, f"{args.log_dir}/main.log", args.log_level)
     env_obj.setup_env()
 
     # invoke the test_runner.
@@ -98,7 +98,7 @@ def main():
     result_queue = TestRunner.run_tests()
 
     # Environment cleanup. TBD.
-    total_time = time.time()-start
+    total_time = time.time() - start
     ResultHandler.handle_results(
         result_queue, args.result_path, total_time, args.excel_sheet)
 

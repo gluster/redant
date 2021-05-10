@@ -1,14 +1,15 @@
 """
 This file contains a test case
-that checks the add-brick functionality
+that checks the add-brick and remove-brick functionality
 """
-#disruptive;rep,dist,arb
+# disruptive;rep,dist,arb
 from tests.parent_test import ParentTest
+
 
 class TestAddBrick(ParentTest):
     """
     This test class tests the add-brick
-    functionality 
+    functionality
     """
 
     def run_test(self, redant):
@@ -18,15 +19,17 @@ class TestAddBrick(ParentTest):
         Bricks are removed
         """
         try:
+            vol_dict = self.conv_dict[self.volume_type]
             redant.add_brick(self.vol_name, self.server_list[0],
-                                        self.volume_types_info[self.conv_dict[self.volume_type]],
-                                        self.server_list, self.brick_roots, True)
+                             self.vol_type_inf[vol_dict],
+                             self.server_list, self.brick_roots, True)
             redant.add_brick(self.vol_name, self.server_list[0],
-                                        self.volume_types_info[self.conv_dict[self.volume_type]],
-                                        self.server_list, self.brick_roots, True)
-            redant.remove_brick(self.server_list[0], self.vol_name, 
-                                self.volume_types_info[self.conv_dict[self.volume_type]],
+                             self.vol_type_inf[vol_dict],
+                             self.server_list, self.brick_roots, True)
+            redant.remove_brick(self.server_list[0], self.vol_name,
+                                self.vol_type_inf[vol_dict],
                                 self.server_list, self.brick_roots, 'force')
-            
+
         except Exception as error:
             self.TEST_RES = False
+            print(error)
