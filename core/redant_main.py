@@ -72,10 +72,13 @@ def main():
         return
 
     # Building the test list and obtaining the TC details.
+    excluded_tests = param_obj.get_excluded_tests()
     test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
+                                                        excluded_tests,
                                                         args.spec_test)
     test_cases_dict = test_cases_tuple[0]
     test_cases_component = test_cases_tuple[1]
+    excluded_tests = test_cases_tuple[2]
 
     # Creating log dirs.
     args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
@@ -90,7 +93,7 @@ def main():
     env_obj.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(test_cases_dict, param_obj, args.log_dir,
+    TestRunner.init(test_cases_dict, param_obj, excluded_tests, args.log_dir,
                     args.log_level, args.concur_count)
     result_queue = TestRunner.run_tests()
 

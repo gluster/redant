@@ -157,3 +157,12 @@ class ParamsHandler:
         for server in self.server_config:
             brick_roots[server] = self.server_config[server]['brick_root'][0]
         return brick_roots
+
+    def get_excluded_tests(self):
+        """
+        Gets a list of exluded tests from the config file.
+        Returns:
+            list : list of exluded tests
+        """
+
+        return self.config_hashmap["excluded_tests"]
