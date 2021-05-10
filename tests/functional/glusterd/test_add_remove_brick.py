@@ -3,11 +3,11 @@ This file contains a test case
 that checks the add-brick and remove-brick functionality
 """
 # nonDisruptive;dist-rep,rep,dist,arb
-from tests.parent_test import ParentTest
+from tests.abstract_test import AbstractTest
 """
 dist,rep,arb,dist-rep
 """
-class TestAddBrick(ParentTest):
+class TestAddBrick(AbstractTest):
     """
     This test class tests the add-brick
     functionality

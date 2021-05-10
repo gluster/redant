@@ -3,10 +3,10 @@ This file contains a test case
 that checks the replace-brick functionality
 """
 # nonDisruptive;rep,dist-rep,arb,dist-arb
-from tests.parent_test import ParentTest
+from tests.abstract_test import AbstractTest
 
 
-class TestReplaceBrick(ParentTest):
+class TestReplaceBrick(AbstractTest):
     """
     This test class tests the add-brick
     functionality
