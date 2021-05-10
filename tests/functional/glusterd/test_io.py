@@ -32,11 +32,14 @@ class TestCase(AbstractTest):
 
         volumes = self.redant.volds.keys()
         volumes = list(volumes)
-        redant.create_dirs(self.server_list[0],["/root/mount1","/root/mount2"])
-        redant.create_file("/root/mount1","file1.txt",self.server_list[0])
-        redant.create_file("/root/mount2","file2.txt",self.server_list[0])
-        redant.volume_mount(self.server_list[0],volumes[0],"/root/mount1",self.server_list[0])
-        redant.volume_mount(self.server_list[0],volumes[0],"/root/mount2",self.server_list[0])
+        redant.create_dirs(self.server_list[0], [
+                           "/root/mount1", "/root/mount2"])
+        redant.create_file("/root/mount1", "file1.txt", self.server_list[0])
+        redant.create_file("/root/mount2", "file2.txt", self.server_list[0])
+        redant.volume_mount(self.server_list[0], volumes[0],
+                            "/root/mount1", self.server_list[0])
+        redant.volume_mount(self.server_list[0], volumes[0],
+                            "/root/mount2", self.server_list[0])
 
         mountpoints = []
         for vol in volumes:
@@ -51,10 +54,10 @@ class TestCase(AbstractTest):
         redant.collect_mounts_arequal(mountpoints)
         redant.get_mounts_stat(mountpoints)
         redant.list_all_files_and_dirs_mounts(mountpoints)
-        async_obj = redant.execute_command_async("ls",self.server_list[0])
-        redant.validate_io_procs(async_obj,mountpoints)
-        redant.volume_unmount(volumes[0],"/root/mount1",self.server_list[0])
-        redant.volume_unmount(volumes[0],"/root/mount2",self.server_list[0])
+        async_obj = redant.execute_command_async("ls", self.server_list[0])
+        redant.validate_io_procs(async_obj, mountpoints)
+        redant.volume_unmount(volumes[0], "/root/mount1", self.server_list[0])
+        redant.volume_unmount(volumes[0], "/root/mount2", self.server_list[0])
         redant.cleanup_mounts(mountpoints)
-        redant.execute_io_cmd("rm -rf /root/mount1",self.server_list[0])
-        redant.execute_io_cmd("rm -rf /root/mount2",self.server_list[0])
+        redant.execute_io_cmd("rm -rf /root/mount1", self.server_list[0])
+        redant.execute_io_cmd("rm -rf /root/mount2", self.server_list[0])
