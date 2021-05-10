@@ -17,7 +17,7 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
     """
 
     def __init__(self, server_config):
-        super(RedantMixin, self).__init__(server_config)
+        super().__init__(server_config)
         self.volds = {}
 
     def get_mnt_pts_dict(self, volname: str) -> dict:
@@ -47,7 +47,7 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
         else:
             return self.volds[volname]['mountpath'][node]
 
-    def get_brick_dict(self, volname: str, node: str = None) -> dict:
+    def get_brick_dict(self, volname: str) -> dict:
         """
         Method to obtain brick dictionary
         Args:
@@ -62,9 +62,12 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
         Method to obtain brick list
         Args:
             volname (str)
+            node (str)
         Returns:
             List of bricks for the given node.
         """
+        if node is None:
+            raise ValueError
         if node not in self.volds[volname]['brickdata'].keys():
             raise KeyError
         else:
