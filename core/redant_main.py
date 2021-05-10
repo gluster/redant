@@ -18,7 +18,6 @@ from environ import environ
 from common.relog import Logger
 
 
-
 def pars_args():
     """
     Function to handle command line parsing for the redant.

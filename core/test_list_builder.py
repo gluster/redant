@@ -121,7 +121,8 @@ class TestListBuilder:
             cls.tests_component_dir[test_type] =\
                 list(cls.tests_component_dir[test_type])
 
-        return (cls.tests_run_dict, cls.tests_component_dir, cls.excluded_tests)
+        return (cls.tests_run_dict, cls.tests_component_dir,
+                cls.excluded_tests)
 
     @classmethod
     def pre_test_run_list_modify(cls, test_dict: dict) -> dict:
