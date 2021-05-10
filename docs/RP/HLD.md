@@ -60,7 +60,7 @@ understood if one were to divide it into three components,
      +----------------------+               | Performance | Component2 TCs |
      |       MIXIN          |               |             | Component3 TCs |
      +----------------------+               +------------------------------+
-                                            |       Parent Test            |
+                                            |       Abstract Test            |
                                             +------------------------------+
    
    
@@ -91,5 +91,5 @@ most interactions a user might have is with the tests component ( and ops if new
 and performance tests ( I guess the names are self explanatory ). And within these are sub-components which are usually the gluster specific classifications
 such as 'Glusterd', 'Geo-replication', 'Snapshot', etc. Each sub-component will contain the test cases catering to different scenarios wherein the said
 component figures in. All these test components are dependent upon the Common. Also, every test case derives some basic operational capability from a common
-parent test which lifts much of the repeated tasks usually done when a test case run begins and ends.
+abstract test which lifts much of the repeated tasks usually done when a test case run begins and ends.
 

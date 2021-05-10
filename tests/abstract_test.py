@@ -3,7 +3,7 @@ import abc
 from common.mixin import RedantMixin
 
 
-class ParentTest(metaclass=abc.ABCMeta):
+class AbstractTest(metaclass=abc.ABCMeta):
 
     """
     This class contains the standard info and methods which are needed by

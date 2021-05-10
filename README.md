@@ -33,7 +33,7 @@ test_list_builder, test_runner, runner_thread and redant_main.<br>
 common: consists of the libs and ops that will help in running the
 test cases and the mixin class.<br>
 tests: holds the test cases as performace and functional tests and includes
-parent test. Add any new test cases here.<br>
+abstract test. Add any new test cases here.<br>
 
 ## Set up
 

@@ -108,11 +108,11 @@ Non-disruptive: `#nonDisruptive`
 |  dist-disp | Distributed-disp |
 
 
-4. Now, import [ParentTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/parent_test.py). Two questions that must come to your mind:
-- What is this Parent Test?
+4. Now, import [AbstractTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/abstract_test.py). Two questions that must come to your mind:
+- What is this Abstract Test?
 - Why to import it in every test? :space_invader:
 
-[ParentTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/parent_test.py), from the name itself it's almost clear that this test is parent to all the tests or is the superclass for all other tests. It has the standard functions that the tests inherit and might even override.
+[AbstractTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/abstract_test.py), from the name itself it's almost clear that this test is abstract to all the tests or is the superclass for all other tests. It has the standard functions that the tests inherit and might even override.
 
 The functions that it has:
 * \_\_init\_\_() : This function not just acts as a constructor but also an initiator for each test case.
@@ -121,15 +121,15 @@ The functions that it has:
 * terminate() : This function takes care of the tasks that need to be done in the end of each test case like closing the connections etc.
 
 ```js
-from tests.parent_test import ParentTest
+from tests.abstract_test import AbstractTest
 ```
 
-5. Create a class that extends the `ParentTest`. This is important as we already know that all the tests need to follow a certain set of functionalities to be performed and rules to be followed to run them and these are all in the ParentTest. Without this statement, you cannot override the run_test() function in your test.
+5. Create a class that extends the `AbstractTest`. This is important as we already know that all the tests need to follow a certain set of functionalities to be performed and rules to be followed to run them and these are all in the AbstractTest. Without this statement, you cannot override the run_test() function in your test.
 ```js
-class TestCase(ParentTest):
+class TestCase(AbstractTest):
 ```
 
-6. Make a function `run_test`. This function basically overrides the run_test() function(as mentioned earlier) from the [ParentTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/parent_test.py). Whatever, operation you want to perform needs to be a part of this function. You don't need to take care of the exception handling part as this is already taken care of by the ParentTest -> parent_run_test() function and hence all you need is call the ops and execute the functionalities. Moreover, remember to add `redant` as one of the arguments as it won't be able to override the run_test() function and you won't be able to call the ops without the redant object.
+6. Make a function `run_test`. This function basically overrides the run_test() function(as mentioned earlier) from the [AbstractTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/abstract_test.py). Whatever, operation you want to perform needs to be a part of this function. You don't need to take care of the exception handling part as this is already taken care of by the AbstractTest -> parent_run_test() function and hence all you need is call the ops and execute the functionalities. Moreover, remember to add `redant` as one of the arguments as it won't be able to override the run_test() function and you won't be able to call the ops without the redant object.
 
 ```js
 def run_test(self, redant):

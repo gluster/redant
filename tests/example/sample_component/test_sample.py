@@ -5,10 +5,10 @@ service operations
 """
 # nonDisruptive;dist,rep,dist-rep,arb,dist-arb,disp,dist-disp
 
-from tests.parent_test import ParentTest
+from tests.abstract_test import AbstractTest
 
 
-class TestCase(ParentTest):
+class TestCase(AbstractTest):
     """
     The test case contains one function to test
     for glusterd service operations
