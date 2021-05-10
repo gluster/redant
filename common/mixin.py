@@ -15,3 +15,6 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
     A mixin class for redant project to encompass all ops and support
     modules.
     """
+    def __init__(self, server_config):
+        super(RedantMixin, self).__init__(server_config)
+        self.volds = {}
