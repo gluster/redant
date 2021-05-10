@@ -37,6 +37,5 @@ class TestReplaceBrick(ParentTest):
                                 self.vol_type_inf[vol_dict],
                                 self.server_list, self.brick_roots, 'force')
 
-        except Exception as error:
+        except Exception:
             self.TEST_RES = False
-            print(error)
