@@ -38,7 +38,7 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
         """
         if node is None:
             mount_point_list = []
-            for (_, mnt_pts in self.volds[volname]['mountpath'].items():
+            for (_, mnt_pts) in self.volds[volname]['mountpath'].items():
                 mount_point_list.append(mnt_pts)
             return mount_point_list
         elif node not in self.volds[volname]['mountpath'].keys():
