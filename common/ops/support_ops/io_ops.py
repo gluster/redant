@@ -37,6 +37,12 @@ class IoOps(AbstractOps):
     def create_file(self, path: str, filename: str, node: str):
         """
         Creates a file in the specified specified path
+        Args:
+            path (str): The path where the file has to be
+                  created
+            filename (str): Name of the file
+            node (str): The node on which command
+                        has to run.
         """
         cmd = f"touch {path}/{filename}"
         self.execute_abstract_op_node(cmd, node)
@@ -44,6 +50,12 @@ class IoOps(AbstractOps):
     def create_dir(self, path: str, dirname: str, node: str):
         """
         Creates a directory in the specified path
+        Args:
+            path (str): The path where the file has to be
+                  created
+            dirname (str): Name of the directory
+            node (str): The node on which command
+                        has to run.
         """
         cmd = f"mkdir -p {path}/{dirname}"
         self.execute_abstract_op_node(cmd, node)

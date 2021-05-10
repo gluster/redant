@@ -51,7 +51,6 @@ class VolumeOps(AbstractOps):
             node (str): The client node in the cluster where volume
                         unmount is to be run
             server (str): Hostname or IP address
-            volname (str): Name of volume to be mounted
             path (str): The path of the mount directory(mount point)
 
         Returns:
@@ -84,6 +83,8 @@ class VolumeOps(AbstractOps):
             node(str): server on which command has to be executed
             conf_hash (dict): Config hash providing parameters for volume
             creation.
+            server_list (list): List of servers
+            brick_root (list): List of root path of bricks
             force (bool): If this option is set to True, then create volume
             will get executed with force option.
 
@@ -166,7 +167,7 @@ class VolumeOps(AbstractOps):
         Starts the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
-            volname (str): volume name
+            volname (str): Name of the volume to start
 
         Kwargs:
             force (bool): If this option is set to True, then start volume
@@ -197,7 +198,7 @@ class VolumeOps(AbstractOps):
         Stops the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
-            volname (str): volume name
+            volname (str): Name of the volume to stop
         Kwargs:
             force (bool): If this option is set to True, then start volume
                 will get executed with force option. If it is set to False,
@@ -228,7 +229,7 @@ class VolumeOps(AbstractOps):
         gluster.
         Args:
             node (str): Node on which cmd has to be executed.
-            volname (str): volume name
+            volname (str): Name of the volume to delete
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -345,7 +346,7 @@ class VolumeOps(AbstractOps):
         Fetches the volume names in the gluster.
         Uses xml output of volume list and parses it into to list
         Args:
-            mnode (str): Node on which cmd has to be executed.
+            node (str): Node on which cmd has to be executed.
         Returns:
             list: List of volume names
         Example:
@@ -368,8 +369,8 @@ class VolumeOps(AbstractOps):
         """
         Resets the gluster volume of all the reconfigured options.
         Args:
-            mnode (str): Node on which cmd has to be executed.
-            volname (str): volume name
+            node (str): Node on which cmd has to be executed.
+            volname (str): Name of the volume to reset
         Kwargs:
             force (bool): If this option is set to True, then reset volume
                 will get executed with force option. If it is set to False,
@@ -401,7 +402,7 @@ class VolumeOps(AbstractOps):
         """
         Gets the status of all or the specified volume
         Args:
-            mnode (str): Node on which cmd has to be executed.
+            node (str): Node on which cmd has to be executed.
         Kwargs:
             volname (str): volume name. Defaults to 'all'
             service (str): name of the service to get status.
@@ -483,7 +484,7 @@ class VolumeOps(AbstractOps):
         """
         Gets the option values for a given volume.
         Args:
-            mnode (str): Node on which cmd has to be executed.
+            node (str): Node on which cmd has to be executed.
             volname (str): volume name
         Kwargs:
             option (str): volume option to get status.
@@ -528,7 +529,7 @@ class VolumeOps(AbstractOps):
         """
         Sets the option values for the given volume.
         Args:
-            mnode (str): Node on which cmd has to be executed.
+            node (str): Node on which cmd has to be executed.
             volname (str): volume name
             options (dict): volume options in key
                 value format
@@ -559,7 +560,7 @@ class VolumeOps(AbstractOps):
         """
         Resets the volume option
         Args:
-            mnode (str): Node on which cmd has to be executed
+            node (str): Node on which cmd has to be executed
             volname (str): volume name
             option (str): volume option
         Kwargs:
@@ -594,7 +595,7 @@ class VolumeOps(AbstractOps):
         """
         Sync the volume to the specified host
         Args:
-            mnode (str): Node on which cmd has to be executed.
+            node (str): Node on which cmd has to be executed.
             hostname (str): host name to which volume has to be sync'ed
         Kwargs:
             volname (str): volume name. Defaults to 'all'.
