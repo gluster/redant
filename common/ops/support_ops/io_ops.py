@@ -142,20 +142,23 @@ class IoOps(AbstractOps):
         all_mounts_async_objs = []
         for mount in mounts:
             total_path = os.path.join(mount['mountpath'], path)
-            self.logger.info(f"arequal-checksum of mount {mount['client']}:{total_path}")
+            self.logger.info(
+                f"arequal-checksum of mount {mount['client']}:{total_path}")
             cmd = f"arequal-checksum -p {total_path} -i .trashcan"
-            async_obj = self.execute_command_async(cmd,mount['client'])
+            async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
         all_mounts_arequal_checksums = []
         _rc = True
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
-                self.logger.error(f"Collecting arequal-checksum failed on {mounts[i]['client']}:{mounts[i]['mountpath']}")
+                self.logger.error(f"Collecting arequal-checksum failed on "
+                                  f"{mounts[i]['client']}:{mounts[i]['mountpath']}")
                 _rc = False
                 all_mounts_arequal_checksums.append(None)
             else:
-                self.logger.info(f"Collecting arequal-checksum successful on {mounts[i]['client']}:{mounts[i]['mountpath']}")
+                self.logger.info(f"Collecting arequal-checksum successful on "
+                                 f"{mounts[i]['client']}:{mounts[i]['mountpath']}")
                 all_mounts_arequal_checksums.append(ret["msg"])
         return (_rc, all_mounts_arequal_checksums)
 
@@ -209,7 +212,8 @@ class IoOps(AbstractOps):
         self.logger.info("Start getting stat of the mountpoint recursively")
         all_mounts_async_objs = []
         for mount in mounts:
-            self.logger.info(f"Stat of mount {mount['client']}:{mount['mountpath']}")
+            self.logger.info(
+                f"Stat of mount {mount['client']}:{mount['mountpath']}")
             cmd = f"find {mount['mountpath']} | xargs stat"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
@@ -217,7 +221,8 @@ class IoOps(AbstractOps):
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
-                self.logger.error(f"Stat of files and dirs under {mounts[i]['client']}:{mounts[i]['mountpath']} Failed")
+                self.logger.error(f"Stat of files and dirs under {mounts[i]['client']}:"
+                                  f"{mounts[i]['mountpath']} Failed")
                 _rc = False
         return _rc
 
@@ -236,7 +241,8 @@ class IoOps(AbstractOps):
         self.logger.info("Start Listing mounts files and dirs")
         all_mounts_async_objs = []
         for mount in mounts:
-            self.logger.info(f"Listing files and dirs on {mount['client']}:{mount['mountpath']}")
+            self.logger.info(
+                f"Listing files and dirs on {mount['client']}:{mount['mountpath']}")
             cmd = f"find {mount['mountpath']} | grep -ve '{ignore_dirs}'"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
@@ -244,13 +250,15 @@ class IoOps(AbstractOps):
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
-                self.logger.error(f"Failed to list all files and dirs under {mounts[i]['client']}:{mounts[i]['mountpath']}")
+                self.logger.error(f"Failed to list all files and dirs under "
+                                  f"{mounts[i]['client']}:{mounts[i]['mountpath']}")
                 _rc = False
             else:
-                self.logger.info(f"Successfully listed all files and dirs under {mounts[i]['client']}:{mounts[i]['mountpath']}")
+                self.logger.info(f"Successfully listed all files and dirs under "
+                                 f"{mounts[i]['client']}:{mounts[i]['mountpath']}")
         return _rc
 
-    #TODO: Uncomment the below function when snaphot library is added.
+    # TODO: Uncomment the below function when snaphot library is added.
     """
     def view_snaps_from_mount(self, mounts, snaps):
         
@@ -299,7 +307,6 @@ class IoOps(AbstractOps):
         return _rc
     """
 
-
     def validate_io_procs(self, all_mounts_async_objs, mounts):
         """
         Validate whether IO was successful or not.
@@ -311,7 +318,7 @@ class IoOps(AbstractOps):
         Returns:
             bool: True if IO is successful on all mounts. False otherwise.
         """
-        if not isinstance(all_mounts_async_objs,list):
+        if not isinstance(all_mounts_async_objs, list):
             all_mounts_async_objs = [all_mounts_async_objs]
 
         if isinstance(mounts, dict):
@@ -320,10 +327,12 @@ class IoOps(AbstractOps):
         _rc = True
         self.logger.info("Start validating IO procs")
         for i, async_obj in enumerate(all_mounts_async_objs):
-            self.logger.info(f"Validating IO on {mounts[i]['client']}:{mounts[i]['mountpath']}")
+            self.logger.info(
+                f"Validating IO on {mounts[i]['client']}:{mounts[i]['mountpath']}")
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
-                self.logger.error(f"IO Failed on {mounts[i]['client']}:{mounts[i]['mountpath']}")
+                self.logger.error(
+                    f"IO Failed on {mounts[i]['client']}:{mounts[i]['mountpath']}")
                 _rc = False
         if _rc:
             self.logger.info("IO is successful on all mounts")
@@ -347,10 +356,12 @@ class IoOps(AbstractOps):
 
         _rc = True
         for i, async_obj in enumerate(all_mounts_async_objs):
-            self.logger.info(f"Waiting for IO to be complete on {mounts[i]['client']}:{mounts[i]['mountpath']}")
+            self.logger.info(
+                f"Waiting for IO to be complete on {mounts[i]['client']}:{mounts[i]['mountpath']}")
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
-                self.logger.error(f"IO Not complete on {mounts[i]['client']}:{mounts[i]['mountpath']}")
+                self.logger.error(
+                    f"IO Not complete on {mounts[i]['client']}:{mounts[i]['mountpath']}")
                 _rc = False
 
         return _rc
@@ -370,33 +381,39 @@ class IoOps(AbstractOps):
         all_mounts_async_objs = []
         valid_mounts = []
         for mount in mounts:
-            self.logger.info(f"Cleaning up data from {mount['client']}:{mount['mountpath']}")
+            self.logger.info(
+                f"Cleaning up data from {mount['client']}:{mount['mountpath']}")
             if (not mount['mountpath'] or (os.path.realpath(os.path.abspath(
                     mount['mountpath'])) == '/')):
-                self.logger.error(f"{mount['mountpath']} on {mount['client']} is not a valid mount point")
+                self.logger.error(
+                    f"{mount['mountpath']} on {mount['client']} is not a valid mount point")
                 continue
             cmd = f"rm -rf {mount['mountpath']}/*"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
             valid_mounts.append(mount)
-        self.logger.info("rm -rf on all clients is complete. Validating deletion now...")
+        self.logger.info(
+            "rm -rf on all clients is complete. Validating deletion now...")
 
         # Get cleanup status
         _rc_rmdir = True
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0 or ret['msg'] or ('error_msg' in ret):
-                self.logger.error(f"Deleting files/dirs Failed on {valid_mounts[i]['client']}:{valid_mounts[i]['mountpath']}")
+                self.logger.error(f"Deleting files/dirs Failed on "
+                                  f"{valid_mounts[i]['client']}:{valid_mounts[i]['mountpath']}")
                 _rc_rmdir = False
         if not _rc_rmdir:
-            self.logger.error("Deleting files/dirs failed on some of the mounts")
+            self.logger.error(
+                "Deleting files/dirs failed on some of the mounts")
 
         # Check if mount points are empty
         ignore_dirs_list = [".trashcan"]
         ignore_dirs = r"\|".join(ignore_dirs_list)
         all_mounts_async_objs = []
         for mount in mounts:
-            cmd = (f"find {mount['mountpath']} -mindepth 1 | grep -ve '{ignore_dirs}'")
+            cmd = (
+                f"find {mount['mountpath']} -mindepth 1 | grep -ve '{ignore_dirs}'")
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
 
@@ -405,13 +422,13 @@ class IoOps(AbstractOps):
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] == 0:
-                self.logger.error(f"Mount {mounts[i]['mountpath']} on {mounts[i]['client']} is still having entries:\n{ret['msg']}")
+                self.logger.error(f"Mount {mounts[i]['mountpath']} on {mounts[i]['client']}"
+                                  f" is still having entries:\n{ret['msg']}")
                 _rc_lookup = False
-        if  not _rc_lookup:
+        if not _rc_lookup:
             self.logger.error("Failed to cleanup all mounts")
 
         return _rc_lookup
-
 
     def compare_dir_structure_mount_with_brick(self, mnthost, mntloc, brick_list, perm_type):
         """
@@ -436,7 +453,8 @@ class IoOps(AbstractOps):
         if perm_type == 2:
             statformat = '%A'
 
-        cmd = (f"find {mntloc} -mindepth 1 -type d | xargs -r stat -c '{statformat}'")
+        cmd = (
+            f"find {mntloc} -mindepth 1 -type d | xargs -r stat -c '{statformat}'")
         ret = self.execute_abstract_op_node(cmd, mnthost)
         all_dir_mnt_perm = ret['msg']
 
@@ -453,7 +471,7 @@ class IoOps(AbstractOps):
 
         return True
 
-    def run_linux_untar(self, clients, mountpoint, dirs=['.']):
+    def run_linux_untar(self, clients, mountpoint, dirs=('.')):
         """Run linux kernal untar on a given mount point
         Args:
         clients(str|list): Client nodes on which I/O
@@ -475,20 +493,20 @@ class IoOps(AbstractOps):
             # Download linux untar to root, so that it can be
             # utilized in subsequent run_linux_untar() calls.
             cmd = ("wget https://cdn.kernel.org/pub/linux/kernel/"
-                "v5.x/linux-5.4.54.tar.xz")
+                   "v5.x/linux-5.4.54.tar.xz")
             if not self.path_exists(client, '/root/linux-5.4.54.tar.xz'):
                 self.execute_abstract_op_node(cmd, client)
 
             for directory in dirs:
                 # copy linux tar to dir
-                cmd = (f"cp /root/linux-5.4.54.tar.xz {mountpoint['mountpath']}/{directory}")
+                cmd = (
+                    f"cp /root/linux-5.4.54.tar.xz {mountpoint['mountpath']}/{directory}")
                 self.execute_abstract_op_node(cmd, client)
 
                 # Start linux untar
                 cmd = ("cp /root/linux-5.4.54.tar.xz {}/{}"
-                   .format(mountpoint['mountpath'], directory))
-                async_obj = self.execute_command_async(cmd,client)
+                       .format(mountpoint['mountpath'], directory))
+                async_obj = self.execute_command_async(cmd, client)
                 list_of_procs.append(async_obj)
 
         return list_of_procs
-

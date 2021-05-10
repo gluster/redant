@@ -58,6 +58,3 @@ class TestCase(AbstractTest):
         redant.cleanup_mounts(mountpoints)
         redant.execute_io_cmd("rm -rf /root/mount1",self.server_list[0])
         redant.execute_io_cmd("rm -rf /root/mount2",self.server_list[0])
-
-
-        
