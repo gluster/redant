@@ -571,7 +571,6 @@ class VolumeOps(AbstractOps):
             ret_val = self.get_volume_options(volname, opt, node)
             if ret_val[opt] != val:
                 raise ValueError
-        return
 
     def reset_volume_option(self, volname: str, option: str,
                             node: str = None, force: bool = False):
