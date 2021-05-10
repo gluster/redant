@@ -19,6 +19,7 @@ class GlusterOps(AbstractOps):
         Args:
             node (str|list): The node(s) on which the glusterd service
                              is to be started.
+            enable_retry (bool): If true a retry takes place else not.
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -64,6 +65,7 @@ class GlusterOps(AbstractOps):
         Args:
             node (str|list): The node(s) on which the glusterd service
                              is to be restarted.
+            enable_retry (bool): If true a retry takes places
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
