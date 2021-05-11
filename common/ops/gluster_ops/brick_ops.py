@@ -77,12 +77,16 @@ class BrickOps:
         if "dist_count" in conf_hash and "replica_count" in conf_hash:
             num_bricks = num_bricks + 2
 
+        server_brick = {}
+
         for i in range(num_bricks):
 
             server_val = server_list[server_iter]
 
             brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac+i}"
-            self.volds[volname]["brickdata"][server_val].append(brick_path_val)
+            if server_val not in server_brick:
+                server_brick[server_val] = []
+            server_brick[server_val].append(brick_path_val)
 
             brick_cmd = f"{server_val}:{brick_path_val}"
 
@@ -120,6 +124,9 @@ class BrickOps:
             cmd = f"{cmd} force"
 
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
+
+        for each in server_brick:
+            self.volds[volname]["brickdata"][each].extend(server_brick[each])
 
         return ret
 
@@ -184,6 +191,7 @@ class BrickOps:
         if "dist_count" in conf_hash and "replica_count" in conf_hash:
             num_bricks = num_bricks + 2
 
+        server_brick = {}
         for i in range(num_bricks):
 
             server_val = server_list[server_iter]
@@ -191,7 +199,10 @@ class BrickOps:
             brick_path_val = (f"{brick_root[server_val]}"
                               f"/{volname}-{mul_fac-i-1}")
 
-            self.volds[volname]["brickdata"][server_val].append(brick_path_val)
+            if server_val not in server_brick:
+                server_brick[server_val] = []
+
+            server_brick[server_val].append(brick_path_val)
 
             brick_cmd = f"{server_val}:{brick_path_val}"
 
@@ -224,6 +235,11 @@ class BrickOps:
 
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
+        
+        for each_server in server_brick:
+            for each_brick in server_brick[each_server]:
+                self.volds[volname]["brickdata"][each_server].remove(each_brick)
+
         return ret
 
     def replace_brick(self, node: str, volname: str,
@@ -247,6 +263,7 @@ class BrickOps:
                     - cmd : command that got executed
                     - node : node on which the command got executed
         """
+        #TODO: server val to modify the new brick path
         cmd = (f"gluster volume replace-brick "
                f"{volname} {src_brick} {dest_brick} "
                f"commit force --xml")
