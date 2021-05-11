@@ -34,7 +34,7 @@ class TestDefaultLogLevelOfCLI(AbstractTest):
         3) Run volume status command
         4) Run volume stop command
         5) Run volume start command
-        6) Check the default log level of main.log
+        6) Check the default log level of cli.log
         """
         # Check volume info operation
         redant.get_volume_info(self.server_list[0])
@@ -50,13 +50,10 @@ class TestDefaultLogLevelOfCLI(AbstractTest):
         redant.volume_start(self.vol_name, self.server_list[0])
 
         # Check the default log level of cli.log
-        cmd = "ls -tr /tmp/redant/ | tail -1"
-        ret = redant.execute_command(cmd, self.server_list[0])
-        log_file = ret['msg'][0][:-1]
-        cmd = f"cat /tmp/redant/'{log_file}'/main.log | grep -F DEBUG | wc -l"
+        cmd = 'cat /var/log/glusterfs/cli.log | grep -F "] D [" | wc -l'
         ret = redant.execute_command(cmd, self.server_list[0])
 
         if int(ret['msg'][0].split("\\")[0]) == 0:
             redant.logger.info("The default log level is INFO")
         else:
-            redant.logger.info("The default log level is DEBUG")
+            raise Exception("Default log level not INFO")
