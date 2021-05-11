@@ -23,11 +23,12 @@ Description:
 
 from tests.abstract_test import AbstractTest
 
+
 class TestGlusterDQuorumCLICommands(AbstractTest):
     """ Testing Quorum CLI commands in GlusterD """
 
     def _set_and_validate_quorum_option(self, options_dict: dict,
-                                        for_all: bool=False):
+                                        for_all: bool = False):
         """
         Method to handle the repetitive calls for setting quorum
         options such as quorum ratio and quorum type.
