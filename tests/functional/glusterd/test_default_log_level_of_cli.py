@@ -1,56 +1,32 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-""" Description:
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
       Test to check that default log level of CLI should be INFO
 """
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (volume_start, volume_status,
-                                           volume_info, volume_stop)
+from tests.abstract_test import AbstractTest
+
+# nonDisruptive;rep
 
 
-@runs_on([['distributed', 'replicated', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed', 'arbiter',
-           'distributed-arbiter'], ['glusterfs']])
-class TestDefaultLogLevelOfCLI(GlusterBaseClass):
-    def setUp(self):
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+class TestDefaultLogLevelOfCLI(AbstractTest):
 
-        # Creating and starting the volume
-        ret = self.setup_volume()
-        if not ret:
-            raise ExecutionError("Volume creation/start operation"
-                                 " failed: %s" % self.volname)
-        g.log.info("Volme created and started successfully : %s", self.volname)
-
-    def tearDown(self):
-        # Stopping the volume and Cleaning up the volume
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to cleanup volume")
-        g.log.info("Volume deleted successfully : %s", self.volname)
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_default_log_level_of_cli(self):
+    def run_test(self, redant):
         """
         Test Case:
         1) Create and start a volume
@@ -58,40 +34,29 @@ class TestDefaultLogLevelOfCLI(GlusterBaseClass):
         3) Run volume status command
         4) Run volume stop command
         5) Run volume start command
-        6) Check the default log level of cli.log
+        6) Check the default log level of main.log
         """
         # Check volume info operation
-        ret, _, _ = volume_info(self.mnode)
-        self.assertEqual(ret, 0, "Failed to execute volume info"
-                         " command on node: %s" % self.mnode)
-        g.log.info("Successfully executed the volume info command on"
-                   " node: %s", self.mnode)
+        redant.get_volume_info(self.server_list[0])
 
         # Check volume status operation
-        ret, _, _ = volume_status(self.mnode)
-        self.assertEqual(ret, 0, "Failed to execute volume status command"
-                         " on node: %s" % self.mnode)
-        g.log.info("Successfully executed the volume status command"
-                   " on node: %s", self.mnode)
+        redant.get_volume_status(node=self.server_list[0])
 
         # Check volume stop operation
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to stop the volume %s on node: %s"
-                         % (self.volname, self.mnode))
-        g.log.info("Successfully stopped the volume %s on node: %s",
-                   self.volname, self.mnode)
+        redant.volume_stop(
+            self.vol_name, self.server_list[0], True)
 
         # Check volume start operation
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start the volume %s on node: %s"
-                         % (self.volname, self.mnode))
-        g.log.info("Successfully started the volume %s on node: %s",
-                   self.volname, self.mnode)
+        redant.volume_start(self.vol_name, self.server_list[0])
 
         # Check the default log level of cli.log
-        cmd = 'cat /var/log/glusterfs/cli.log | grep -F "] D [" | wc -l'
-        ret, out, _ = g.run(self.mnode, cmd)
-        self.assertEqual(ret, 0, "Failed to execute the command")
-        self.assertEqual(int(out), 0, "Unexpected: Default log level of "
-                         "cli.log is not INFO")
-        g.log.info("Default log level of cli.log is INFO as expected")
+        cmd = "ls -tr /tmp/redant/ | tail -1"
+        ret = redant.execute_command(cmd, self.server_list[0])
+        log_file = ret['msg'][0][:-1]
+        cmd = f"cat /tmp/redant/'{log_file}'/main.log | grep -F DEBUG | wc -l"
+        ret = redant.execute_command(cmd, self.server_list[0])
+
+        if int(ret['msg'][0].split("\\")[0]) == 0:
+            redant.logger.info("The default log level is INFO")
+        else:
+            redant.logger.info("The default log level is DEBUG")
