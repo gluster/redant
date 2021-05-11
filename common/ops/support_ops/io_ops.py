@@ -264,10 +264,9 @@ class IoOps(AbstractOps):
                                  f"{mounts[i]['mountpath']}")
         return _rc
 
-    # TODO: Uncomment the below function when snaphot library is added.
-    """
+    # TODO: Test the below function when snaphot library is added.
     def view_snaps_from_mount(self, mounts, snaps):
-
+        """
         View snaps from the mountpoint under ".snaps" directory
         Args:
             mounts (list): List of all  mountpoints.
@@ -276,6 +275,7 @@ class IoOps(AbstractOps):
             bool: True, if viewing all snaps under '.snaps' directory is
                         successful from all mounts.
                   False otherwise
+        """
 
         if isinstance(mounts, dict):
             mounts = [mounts]
@@ -324,7 +324,6 @@ class IoOps(AbstractOps):
                                          f"{mounts[i]['mountpath']} "
                                          f"- {snap_list}")
         return _rc
-    """
 
     def validate_io_procs(self, all_mounts_async_objs, mounts):
         """
