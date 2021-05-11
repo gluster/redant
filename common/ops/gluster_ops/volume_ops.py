@@ -540,7 +540,6 @@ class VolumeOps(AbstractOps):
         """
 
         volume_options = options
-
         if 'group' in volume_options:
             group_options = volume_options.pop('group')
             if not isinstance(group_options, list):
