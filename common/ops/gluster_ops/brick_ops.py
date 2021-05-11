@@ -235,10 +235,10 @@ class BrickOps:
 
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
-        
         for each_server in server_brick:
             for each_brick in server_brick[each_server]:
-                self.volds[volname]["brickdata"][each_server].remove(each_brick)
+                (self.volds[volname]["brickdata"][each_server]
+                 .remove(each_brick))
 
         return ret
 
@@ -263,7 +263,7 @@ class BrickOps:
                     - cmd : command that got executed
                     - node : node on which the command got executed
         """
-        #TODO: server val to modify the new brick path
+        # TODO:server val to modify the new brick path
         cmd = (f"gluster volume replace-brick "
                f"{volname} {src_brick} {dest_brick} "
                f"commit force --xml")
