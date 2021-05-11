@@ -102,23 +102,30 @@ class ResultHandler:
         row = 0
         style = xlwt.easyxf('font: bold 1')
 
+        result_sheet.write(row, 0, 'Total time taken (s)', style)
+        result_sheet.write(row, 1, total_time)
+        row += 1
+
+        test_case_count = len(test_results)
+        result_sheet.write(row, 0, 'Total number of TCs', style)
+        result_sheet.write(row, 1, test_case_count)
+        row += 1
+
         for item in test_results:
             result_sheet.write(row, 0, item, style)
-            row = row + 1
+            row += 1
             result_sheet.write(row, 0, 'Volume Type', style)
             result_sheet.write(row, 1, 'Test Result', style)
-            result_sheet.write(row, 2, 'Time Taken', style)
-            row = row + 1
+            result_sheet.write(row, 2, 'Time Taken (s)', style)
+            row += 1
 
             for each_vol_test in test_results[item]:
                 result_sheet.write(row, 0, each_vol_test['volType'])
                 result_sheet.write(row, 1, each_vol_test['testResult'])
                 result_sheet.write(row, 2, each_vol_test['timeTaken'])
-                row = row + 1
+                row += 1
 
-            row = row + 2
-        result_sheet.write(row, 0, 'Total time taken ', style)
-        result_sheet.write(row, 1, total_time)
+            row += 2
 
         wb.save(excel_sheet)
 
