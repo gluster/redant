@@ -21,7 +21,7 @@
 
 from tests.abstract_test import AbstractTest
 
-# nonDisruptive;rep
+# nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 
 
 class TestDefaultLogLevelOfCLI(AbstractTest):
