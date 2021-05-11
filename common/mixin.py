@@ -25,6 +25,7 @@ from ops.gluster_ops.peer_ops import PeerOps
 from ops.gluster_ops.volume_ops import VolumeOps
 from ops.gluster_ops.gluster_ops import GlusterOps
 
+
 class RedantMixin(GlusterOps, VolumeOps, PeerOps,
                   IoOps, Rexe, Logger):
 >>>>>>> 6fb0172... All the io_ops are added to single file

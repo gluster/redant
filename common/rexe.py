@@ -242,7 +242,7 @@ class Rexe:
         Returns:
             dict: Returns the resultant dictionary after the command ends.
         """
-        
+
         ret_dict = {}
         while not async_obj['stdout'].channel.exit_status_ready():
             time.sleep(1)
