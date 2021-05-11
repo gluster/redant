@@ -2,6 +2,7 @@
     Module Name:
     Purpose: Refer to the redhat_mixin.md for more information
 """
+import copy
 from rexe import Rexe
 from relog import Logger
 from ops.support_ops.io_ops import IoOps
@@ -29,6 +30,29 @@ class RedantMixin(GlusterOps, VolumeOps, PeerOps, IoOps, Rexe, Logger):
             dictionary of nodes and their list of mountpaths.
         """
         return self.volds[volname]['mountpath']
+
+    def get_mnt_pts_dict_in_list(self, volname: str) -> list:
+        """
+        Method to return a modified list of mountpath which contains
+        multiple client->mountpath relation.
+        Args:
+            volname (str)
+        Returns:
+            list of client->mountpath dictionaries.
+        """
+        if volname is None:
+            raise Exception("Volname not provided.")
+
+        mnt_list = []
+        for (client, mnts) in self.volds[volname]['mountpath'].items():
+            temp_dict = {}
+            for mnt in mnts:
+                temp_dict["client"] = client
+                temp_dict["mountpath"] = mnt
+                copy_dict = copy.deepcopy(temp_dict)
+                mnt_list.append(copy_dict)
+
+        return mnt_list
 
     def get_mnt_pts_list(self, volname: str, node: str = None) -> list:
         """
