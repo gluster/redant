@@ -130,9 +130,8 @@ class IoOps(AbstractOps):
             path (str): Path whose arequal is to be calculated.
                         Defaults to root of mountpoint
         Returns:
-            tuple(bool, list):
-                On success: (True, list of arequal-checksums of each mount)
-                On failure: (False, list of arequal-checksums of each mount)
+            list:
+                list of arequal-checksums of each mount
                 arequal-checksum for a mount would be 'None' when failed to
                 collect arequal for that mount.
         """
@@ -149,6 +148,7 @@ class IoOps(AbstractOps):
             all_mounts_async_objs.append(async_obj)
         all_mounts_arequal_checksums = []
         _rc = True
+        error_msg = ""
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
@@ -156,13 +156,13 @@ class IoOps(AbstractOps):
                                   f"{mounts[i]['client']}:"
                                   f"{mounts[i]['mountpath']}")
                 _rc = False
+                error_msg = ret['error_msg']
                 all_mounts_arequal_checksums.append(None)
             else:
-                self.logger.info(f"Collecting arequal-checksum successful on "
-                                 f"{mounts[i]['client']}:"
-                                 f"{mounts[i]['mountpath']}")
                 all_mounts_arequal_checksums.append(ret["msg"])
-        return (_rc, all_mounts_arequal_checksums)
+        if not _rc:
+            raise Exception(error_msg)
+        return all_mounts_arequal_checksums
 
     def log_mounts_info(self, mounts: list):
         """
@@ -207,9 +207,7 @@ class IoOps(AbstractOps):
         Args:
             mounts (list): List of all mountpoints.
         Returns:
-            bool: True, if recursively getting stat from all
-                        mounts is successful.
-                  False otherwise.
+            list: list of attributes of stat command
         """
 
         self.logger.info("Start getting stat of the mountpoint recursively")
@@ -221,6 +219,7 @@ class IoOps(AbstractOps):
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
         _rc = True
+        error_msg = ""
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
@@ -228,7 +227,11 @@ class IoOps(AbstractOps):
                                   f"{mounts[i]['client']}:"
                                   f"{mounts[i]['mountpath']} Failed")
                 _rc = False
-        return _rc
+                error_msg = ret['error_msg']
+
+        if not _rc:
+            raise Exception(error_msg)
+        return ret['msg']
 
     def list_all_files_and_dirs_mounts(self, mounts):
         """List all Files and Directories from mounts.
@@ -251,6 +254,7 @@ class IoOps(AbstractOps):
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
         _rc = True
+        error_msg = ""
         for i, async_obj in enumerate(all_mounts_async_objs):
             ret = self.wait_till_async_command_ends(async_obj)
             if ret['error_code'] != 0:
@@ -258,10 +262,9 @@ class IoOps(AbstractOps):
                                   f"{mounts[i]['client']}:"
                                   f"{mounts[i]['mountpath']}")
                 _rc = False
-            else:
-                self.logger.info(f"Successfully listed all files and dirs "
-                                 f"under {mounts[i]['client']}:"
-                                 f"{mounts[i]['mountpath']}")
+                error_msg = ret['error_msg']
+        if not _rc:
+            raise Exception(error_msg)
         return _rc
 
     # TODO: Test the below function when snaphot library is added.
@@ -317,12 +320,8 @@ class IoOps(AbstractOps):
                                           f"{mounts[i]['mountpath']}"
                                           f" - {snap_list}")
                         _rc = False
-                    else:
-                        self.logger.info(f"Successful listed snap {snap_name}"
-                                         f" in '.snaps' dir on "
-                                         f"{mounts[i]['client']}:"
-                                         f"{mounts[i]['mountpath']} "
-                                         f"- {snap_list}")
+        if not _rc:
+            raise Exception("Failed to list snaps for some mountpoints")
         return _rc
 
     def validate_io_procs(self, all_mounts_async_objs, mounts):
@@ -353,7 +352,6 @@ class IoOps(AbstractOps):
                                   f"{mounts[i]['mountpath']}")
                 _rc = False
         if _rc:
-            self.logger.info("IO is successful on all mounts")
             return True
         return False
 
