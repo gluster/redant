@@ -52,5 +52,4 @@ volume_types:
         
 #excluded_tests - Tests which are excluded during the test run.
 excluded_tests:
-    - tests/functional/glusterd/test1
-    - tests/functional/glusterd/test2
+    - tests/functional/glusterd/test_io.py
