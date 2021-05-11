@@ -4,10 +4,13 @@ This module takes care of:
 2) Tests-to-run list preparation (by test_list_builder).
 3) Invocation of the test_runner.
 """
+
+import signal
 import sys
 import time
 import datetime
 import argparse
+from signal_handler import signal_handler
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
@@ -104,4 +107,8 @@ def main():
 
 
 if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTSTP, signal_handler)
+
     main()
