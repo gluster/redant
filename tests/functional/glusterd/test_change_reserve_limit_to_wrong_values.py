@@ -46,23 +46,23 @@ class TestChangeReserveLimit(AbstractTest):
         # Creation of random data for storage.reserve volume option
         # Data has: alphabets, numbers, punctuations and their combinations
         key = 'storage.reserve'
-        try:
-            for char_type in (string.ascii_letters, string.punctuation,
-                              string.printable):
+        for char_type in (string.ascii_letters, string.punctuation,
+                          string.printable):
 
-                temp_val = self.get_random_string(char_type)
-                temp_val = temp_val.replace("'", "").replace("&", "")
-                value = "'{}'".format(temp_val)
+            temp_val = self.get_random_string(char_type)
+            temp_val = temp_val.replace("'", "").replace("&", "")
+            value = "'{}'".format(temp_val)
+            try:
                 redant.set_volume_options(self.vol_name, {key: value},
                                           self.server_list[0])
-        except Exception:
-            redant.logger.info("Wrong value was tested successfully")
+            except Exception:
+                redant.logger.info("Wrong value was tested successfully")
 
         # Passing an out of range value
-        try:
-            for value in ('-1%', '-101%', '101%', '-1', '-101'):
+        for value in ('-1%', '-101%', '101%', '-1', '-101'):
+            try:
                 redant.set_volume_options(self.vol_name,
                                           {key: value},
                                           self.server_list[0])
-        except Exception:
-            redant.logger.info("Wrong value was tested successfully")
+            except Exception:
+                redant.logger.info("Wrong value was tested successfully")
