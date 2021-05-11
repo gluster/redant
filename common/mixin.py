@@ -2,7 +2,6 @@
     Module Name:
     Purpose: Refer to the redhat_mixin.md for more information
 """
-<<<<<<< HEAD
 
 import copy
 from .rexe import Rexe
@@ -12,23 +11,10 @@ from .ops.gluster_ops.peer_ops import PeerOps
 from .ops.gluster_ops.volume_ops import VolumeOps
 from .ops.gluster_ops.gluster_ops import GlusterOps
 from .ops.gluster_ops.brick_ops import BrickOps
-from .ops.support_ops.io_ops_on_mountpoint import IoOpsOnMountPoint
 
 
-class RedantMixin(IoOpsOnMountPoint, GlusterOps, BrickOps, VolumeOps,
+class RedantMixin(GlusterOps, BrickOps, VolumeOps,
                   PeerOps, IoOps, Rexe, Logger):
-=======
-from rexe import Rexe
-from relog import Logger
-from ops.support_ops.io_ops import IoOps
-from ops.gluster_ops.peer_ops import PeerOps
-from ops.gluster_ops.volume_ops import VolumeOps
-from ops.gluster_ops.gluster_ops import GlusterOps
-
-
-class RedantMixin(GlusterOps, VolumeOps, PeerOps,
-                  IoOps, Rexe, Logger):
->>>>>>> 6fb0172... All the io_ops are added to single file
     """
     A mixin class for redant project to encompass all ops and support
     modules.

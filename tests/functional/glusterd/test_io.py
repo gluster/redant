@@ -43,15 +43,9 @@ class TestCase(AbstractTest):
 
         mountpoints = []
         for vol in volumes:
-            nodes = list(self.redant.volds[vol]["mountpath"].keys())
-            for node in nodes:
-                for mountpoint in self.redant.volds[vol]["mountpath"][node]:
-                    mount = {}
-                    mount["client"] = node
-                    mount["mountpath"] = mountpoint
-                    mountpoints.append(mount)
+            mountpoints += redant.get_mnt_pts_dict_in_list(vol)
 
-        #redant.collect_mounts_arequal(mountpoints)
+        # redant.collect_mounts_arequal(mountpoints)
         redant.get_mounts_stat(mountpoints)
         redant.list_all_files_and_dirs_mounts(mountpoints)
         async_obj = redant.execute_command_async("ls", self.server_list[0])
