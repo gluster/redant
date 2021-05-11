@@ -32,11 +32,13 @@ class TestDefaultMaxBricksPerProcess(AbstractTest):
         1) Create a volume and start it.
         2) Fetch the max bricks per process value
         3) Reset the volume options
-        4) Fetch the max bricks per process value
-        5) Compare the value fetched in last step with the initial value
-        6) Enable brick-multiplexing in the cluster
-        7) Fetch the max bricks per process value
-        8) Compare the value fetched in last step with the initial value
+        4) Comparing the initial value with the recent value
+           (fetching and comparison both take place in validate
+           volume option)
+        5) Enable brick-multiplexing in the cluster
+        6) Comparing the initial value with the recent value
+           (fetching and comparison both take place in validate
+           volume option)
         """
         # Fetch the max bricks per process value
         ret = redant.get_volume_options(node=self.server_list[0])
@@ -45,7 +47,8 @@ class TestDefaultMaxBricksPerProcess(AbstractTest):
         # Reset the volume options
         redant.reset_volume_option('all', 'all', self.server_list[0])
 
-        # Fetch the max bricks per process value
+        # Fetch the max bricks per process value and compare
+        # with the initial value
         redant.validate_volume_option(
             'all', {'cluster.max-bricks-per-process': initial_value},
             self.server_list[0])
@@ -55,6 +58,8 @@ class TestDefaultMaxBricksPerProcess(AbstractTest):
             'all', {'cluster.brick-multiplex': 'enable'},
             self.server_list[0])
 
+        # Fetch the max bricks per process value and compare
+        # with the initial value
         redant.validate_volume_option(
             'all', {'cluster.max-bricks-per-process': initial_value},
             self.server_list[0])
