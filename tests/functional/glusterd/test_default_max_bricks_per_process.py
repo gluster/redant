@@ -46,26 +46,15 @@ class TestDefaultMaxBricksPerProcess(AbstractTest):
         redant.reset_volume_option('all', 'all', self.server_list[0])
 
         # Fetch the max bricks per process value
-        ret = redant.get_volume_options(node=self.server_list[0])
-
-        # Comparing the values
-        second_value = ret['cluster.max-bricks-per-process']
-
-        if initial_value != second_value:
-            raise Exception("Unexpected: Max"
-                            " bricks per-process value is not equal")
+        redant.validate_volume_option('all',
+                                      {'cluster.max-bricks-per-process': initial_value},
+                                      self.server_list[0])
 
         # Enable brick-multiplex in the cluster
         redant.set_volume_options(
             'all', {'cluster.brick-multiplex': 'enable'},
             self.server_list[0])
 
-        # Fetch the max bricks per process value
-        ret = redant.get_volume_options(node=self.server_list[0])
-
-        # Comparing the values
-        third_value = ret['cluster.max-bricks-per-process']
-
-        if third_value != initial_value:
-            raise Exception("Unexpected: Max"
-                            " bricks per-process value is not equal")
+        redant.validate_volume_option('all',
+                                      {'cluster.max-bricks-per-process': initial_value},
+                                      self.server_list[0])
