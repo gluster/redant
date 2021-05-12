@@ -51,8 +51,8 @@ class TestMaxSupportedOpVersion(AbstractTest):
         # Checking vol file exist in all servers or not
         file_path = '/var/lib/glusterd/vols/' + self.vol_name + '/info'
         for server in self.server_list:
-            cmd = f'ls -ld {file_path}'
-            ret = redant.execute_command(cmd, server)
+            if not redant.file_exists(file_path, server):
+                raise Exception("File does not exist")
 
         # Getting version number from vol info file
         # cmd: grepping  version from vol info file
@@ -70,11 +70,8 @@ class TestMaxSupportedOpVersion(AbstractTest):
                 'all', {'cluster.op-version': max_op_version},
                 self.server_list[0])
 
-            # vol set operation
-            ret = redant.set_volume_options(
-                'all', {'version': version_no},
-                self.server_list[0])
             # Grepping version number from vol info file after
+            # vol set operation
             ret = redant.execute_command(file_path_cmd,
                                          self.server_list[0])
             out = ret['msg'][0]
