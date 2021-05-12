@@ -45,5 +45,7 @@ class TestPosixStorageReserveOption(AbstractTest):
         # check df -h output
         cmd = f"df -h | grep -i {mount_point}"
         ret = redant.execute_command(cmd, self.client_list[0])
-        if "52%" not in ret['msg'][0].split(" "):
-            raise Exception("52% not in the list")
+        out = ret['msg'][0].split(" ")[-2][:-1]
+        
+        if int(out) < 50:
+            raise Exception("lesser than 50 percent in the list")
