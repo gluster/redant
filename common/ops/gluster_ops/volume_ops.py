@@ -654,16 +654,3 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
-
-    def cleanup_volume(self, volname: str, node: str):
-        """
-        A cleanup function is required for re-setting the cluter back
-        to normal after an exception had occured. Also, if user mandated it.
-        Args:
-            volname (str)
-            node (str)
-
-        Returns:
-            ret (bool)
-        """
-        ...
