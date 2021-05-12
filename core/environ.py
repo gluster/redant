@@ -58,7 +58,6 @@ class environ:
             self.redant.start_glusterd()
             self.redant.create_cluster(self.server_list)
         except Exception as error:
-            print(error)
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)

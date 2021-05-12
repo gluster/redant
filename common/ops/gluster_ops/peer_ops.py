@@ -7,7 +7,6 @@ from the test case.
 import random
 from time import sleep
 import socket
-import re
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -22,8 +21,8 @@ class PeerOps(AbstractOps):
         """
         Adds a new peer to the cluster
         Args:
-            node (str): The node in the cluster where peer probe is to be run
             server (str): The server to probe
+            node (str): The node in the cluster where peer probe is to be run
 
         Returns:
             ret: A dictionary consisting
@@ -37,11 +36,11 @@ class PeerOps(AbstractOps):
 
         cmd = f'gluster --xml peer probe {server}'
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        self.execute_abstract_op_node(cmd, node)
 
-        ret_probe = self.wait_for_peers_to_connect(node, server)
+        ret = self.wait_for_peers_to_connect(node, server)
 
-        if not ret_probe:
+        if not ret:
             raise Exception(f"Peer {node} could not be connected.")
 
         return ret
@@ -50,8 +49,10 @@ class PeerOps(AbstractOps):
         """
         Detach the specified server.
         Args:
-            node (str): Node on which command has to be executed.
             server (str): Server to be detached from the cluster
+            node (str): Node on which command has to be executed.
+            force (bool): if set to true will exceute the peer
+                          detach command with force option.
 
         Kwargs:
             force (bool): option to detach peer. Defaults to False.
@@ -227,7 +228,7 @@ class PeerOps(AbstractOps):
         """
         Checks whether specified peers are in cluster and 'Connected' state.
         Args:
-            node (str): Node from which peer probe has to be executed.
+            node (str): Node from which peer status has to be executed.
             servers (str|list): A server|List of servers to be validated.
         Returns
             bool : True on success (peer in cluster and connected), False on
@@ -245,29 +246,16 @@ class PeerOps(AbstractOps):
         elif not isinstance(peer_status_list, list):
             peer_status_list = [peer_status_list]
 
-        # Convert all hostnames to ip's
-        server_ips = []
-        for server in servers:
-            server_ips.append(socket.gethostbyname(server))
-
         is_connected = True
         for peer_stat in peer_status_list:
-            if socket.gethostbyname(peer_stat['hostname']) in server_ips:
-                if (re.match(r'([0-9a-f]{8})(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}',
-                             peer_stat['uuid'], re.I) is None):
-                    self.logger.error(
-                        f"Invalid UUID for the node '{peer_stat['hostname']}'")
-                    is_connected = False
-                if (peer_stat['stateStr'] != "Peer in Cluster"
-                        or peer_stat['connected'] != '1'):
-                    self.logger.error(f"Peer '{peer_stat['hostname']}' "
-                                      f"not in connected state")
-                    is_connected = False
+            if (socket.gethostbyname(peer_stat['hostname']) in servers
+                and (peer_stat['stateStr'] != "Peer in Cluster"
+                     or peer_stat['connected'] != '1')):
+                self.logger.error(f"Peer '{peer_stat['hostname']}' "
+                                  f"not in connected state")
+                is_connected = False
 
-        if not is_connected:
-            return False
-
-        return True
+        return is_connected
 
     def wait_for_peers_to_connect(self, node: str, servers: list,
                                   wait_timeout: int = 10) -> bool:
@@ -292,5 +280,4 @@ class PeerOps(AbstractOps):
                 return True
             sleep(1)
             count += 1
-        self.logger.error(f"Peers are not in connected state: {servers}")
         return False
