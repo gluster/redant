@@ -241,7 +241,7 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.add_data_to_cleands(self.get_brickdata[volname])
+        self.add_data_to_cleands(self.get_brickdata(volname))
         self.remove_volume_data(volname)
         return ret
 
