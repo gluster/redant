@@ -121,26 +121,6 @@ class IoOps(AbstractOps):
 
         return _rc
 
-    def file_exists(self, file_path: str, node: str):
-        """
-        Checks if the file exists on the node
-        Args:
-            file_path (str) : Path of the file
-            node (str) : Node on which file has to be checked
-        Returns:
-            bool: True if file exists else False.
-        """
-        cmd = f'ls -ld {file_path}'
-        ret = self.execute_command(cmd, node)
-        _rc = True
-
-        if ret['error_code'] != 0:
-            error_string = ret['error_msg'].rstrip("\n")
-            self.logger.error(f"{error_string} on node {node}")
-            _rc = False
-
-        return _rc
-
     def collect_mounts_arequal(self, mounts: dict, path=''):
         """
         Collects arequal from all the mounts
