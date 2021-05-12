@@ -25,19 +25,13 @@ from tests.abstract_test import AbstractTest
 
 
 class TestGlusterDQuorumCLICommands(AbstractTest):
-    """ Testing Quorum CLI commands in GlusterD """
 
     def _set_and_validate_quorum_option(self, options_dict: dict,
-                                        for_all: bool = False):
+                                        vol: str = 'all'):
         """
         Method to handle the repetitive calls for setting quorum
         options such as quorum ratio and quorum type.
         """
-        vol = ""
-        if for_all:
-            vol = "all"
-        else:
-            vol = self.vol_name
         self.redant.set_volume_options(vol, options_dict, self.server_list[0])
         self.redant.validate_volume_option(vol, options_dict,
                                            self.server_list[0])
@@ -52,15 +46,15 @@ class TestGlusterDQuorumCLICommands(AbstractTest):
         """
         # Set server quorum type to 'server' and validate it
         self._set_and_validate_quorum_option({'cluster.server-quorum-type':
-                                              'server'})
+                                              'server'}, self.vol_name)
 
         # Set server quorum type to 'none' and validate it
         self._set_and_validate_quorum_option({'cluster.server-quorum-type':
-                                              'none'})
+                                              'none'}, self.vol_name)
 
         # Set server quorum ratio to 90% and validate it
         self._set_and_validate_quorum_option({'cluster.server-quorum-ratio':
-                                              '90%'}, True)
+                                              '90%'})
 
         # Resetting all volume options.
         redant.reset_volume_option(self.vol_name, "all", self.server_list[0])
