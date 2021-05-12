@@ -258,8 +258,8 @@ class PeerOps(AbstractOps):
                     self.logger.error(
                         f"Invalid UUID for the node '{peer_stat['hostname']}'")
                     is_connected = False
-                if (peer_stat['stateStr'] != "Peer in Cluster" or
-                        peer_stat['connected'] != '1'):
+                if (peer_stat['stateStr'] != "Peer in Cluster"
+                        or peer_stat['connected'] != '1'):
                     self.logger.error(f"Peer '{peer_stat['hostname']}' "
                                       f"not in connected state")
                     is_connected = False
