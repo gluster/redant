@@ -165,6 +165,8 @@ class PeerOps(AbstractOps):
                               be represented by ip or hostname.
             node (str): The node which is represented by localhost. Has to
                         be replaced by corresponding IP.
+        Returns:
+            list : list of converted IPs
         """
         if 'localhost' in node_list:
             node_list.remove('localhost')
