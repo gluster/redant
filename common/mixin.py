@@ -46,9 +46,9 @@ class RedantMixin(GlusterOps, BrickOps, VolumeOps,
                                node ip and values as list of bricks lying
                                under the said node.
         """
-        self.volds[volname] = {"voltype" : {}, "options" : {},
-                               "mountpath" : {}, "brickdata" : brickdata,
-                               "started" : False}
+        self.volds[volname] = {"voltype": {}, "options": {},
+                               "mountpath": {}, "brickdata": brickdata,
+                               "started": False}
 
     def remove_volume_data(self, volname: str):
         """
@@ -243,7 +243,7 @@ class RedantMixin(GlusterOps, BrickOps, VolumeOps,
                 self.cleands[node] = []
             self.cleands[node].append(brickdata[node])
 
-    def get_cleands_data(self, node: list=None) -> dict:
+    def get_cleands_data(self, node: list = None) -> dict:
         """
         Method to obtain the cleands values pertaining to a node
         or all nodes.
