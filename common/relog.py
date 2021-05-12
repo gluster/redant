@@ -51,9 +51,9 @@ class Logger(logging.Logger):
         Module for Redant logg dir creation.
         Args:
             parent_path (str): The parent log directory path.
-            test_path_list (list) 
-            Returns:
-                None
+            test_path_list (list)
+        Returns:
+            None
         """
         if not os.path.isdir(parent_path):
             os.makedirs(parent_path)
