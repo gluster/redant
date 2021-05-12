@@ -4,10 +4,10 @@ starting and stopping of glusterd service.
 """
 # nonDisruptive;dist
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestCase(AbstractTest):
+class TestCase(NdParentTest):
     """
     The test case contains one function to test
     for glusterd service operations

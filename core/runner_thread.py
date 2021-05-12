@@ -22,11 +22,11 @@ class RunnerThread:
             'volType': volume_type
         }
 
-    def run_thread(self, mname: str, volume_type: str, thread_flag: bool):
+    def run_thread(self):
         """
         Method to trigger the run test and the terminate test functions.
         """
-        self.run_test_func(mname, volume_type, thread_flag)
+        self.run_test_func()
         self.terminate_test_func()
         self.test_stats['testResult'] = self.tc_obj.TEST_RES
         return self.test_stats

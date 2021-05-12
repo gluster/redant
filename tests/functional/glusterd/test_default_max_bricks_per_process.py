@@ -19,12 +19,12 @@
       Default max bricks per-process should be 250
 """
 
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 # disruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 
 
-class TestDefaultMaxBricksPerProcess(AbstractTest):
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         """

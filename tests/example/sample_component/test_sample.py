@@ -8,7 +8,7 @@ service operations
 from tests.abstract_test import AbstractTest
 
 
-class TestCase(AbstractTest):
+class TestCase(NdParentTest):
     """
     The test case contains one function to test
     for glusterd service operations

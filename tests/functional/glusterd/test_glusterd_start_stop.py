@@ -4,10 +4,10 @@ starting and stopping of glusterd service.
 """
 # disruptive;
 
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(AbstractTest):
+class TestCase(DParentTest):
     """
     The test case contains one function to test
     for glusterd service operations

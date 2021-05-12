@@ -21,10 +21,10 @@
 
 # nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestCase(AbstractTest):
+class TestCase(NdParentTest):
     """ Testing set and reset of Reserve limit in GlusterD """
 
     def run_test(self, redant):

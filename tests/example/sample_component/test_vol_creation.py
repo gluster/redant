@@ -7,7 +7,7 @@ the creation of different volume types.
 from tests.abstract_test import AbstractTest
 
 
-class TestCase(AbstractTest):
+class TestCase(NdParentTest):
     """
     The test case contains one function to test
     for the creation of different types of files and

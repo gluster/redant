@@ -20,10 +20,10 @@
 """
 
 # nonDisruptive;dist-rep
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestPosixStorageReserveOption(AbstractTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """

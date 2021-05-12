@@ -19,12 +19,12 @@
       Test to check that default log level of CLI should be INFO
 """
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parentt_test import NdParentTest
 
 # nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 
 
-class TestDefaultLogLevelOfCLI(AbstractTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """

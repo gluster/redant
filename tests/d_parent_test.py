@@ -3,11 +3,11 @@ import abc
 from common.mixin import RedantMixin
 
 
-class AbstractTest(metaclass=abc.ABCMeta):
+class DParentTest(metaclass=abc.ABCMeta):
 
     """
     This class contains the standard info and methods which are needed by
-    most of the tests
+    disruptive testss
 
     TEST_RES: states the result of the test case
 
@@ -55,18 +55,17 @@ class AbstractTest(metaclass=abc.ABCMeta):
     def run_test(self, redant):
         pass
 
-    def parent_run_test(self, mname: str, volume_type: str, thread_flag: bool):
+    def parent_run_test(self):
         """
         Function to handle the exception logic and invokes the run_test
         which is overridden by every TC.
         """
         try:
-            if not thread_flag:
-                self.redant.start_glusterd()
-                self.redant.create_cluster(self.server_list)
+            self.redant.start_glusterd()
+            self.redant.create_cluster(self.server_list)
 
             if self.volume_type != "Generic":
-                self.vol_name = (f"{mname}-{volume_type}")
+                self.vol_name = (f"{self.test_name}-{self.volume_type}")
                 self.redant.volume_create(
                     self.vol_name, self.server_list[0],
                     self.vol_type_inf[self.conv_dict[volume_type]],

@@ -21,10 +21,10 @@
 
 # disruptive;rep,dist,disp,arb,dist-arb,dist-rep
 
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParenttTest
 
 
-class TestGlusterDQuorumCLICommands(AbstractTest):
+class TestCase(DParentTest):
 
     def _set_and_validate_quorum_option(self, options_dict: dict,
                                         vol: str = 'all'):
