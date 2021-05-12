@@ -1,3 +1,4 @@
+"""
 #  Copyright (C) 2018  Red Hat, Inc. <http://www.redhat.com>
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -14,48 +15,18 @@
 #  with this program; if not, write to the Free Software Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-""" Description:
+Description:
       Test for setting up the max supported op-version and
       verifying  version number in info file
 """
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterfile import file_exists
-from glustolibs.gluster.volume_ops import (get_volume_options,
-                                           set_volume_options)
+# nonDisruptive;dist-rep
+from tests.abstract_test import AbstractTest
 
 
-@runs_on([['distributed-replicated'], ['glusterfs']])
-class TestMaxSupportedOpVersion(GlusterBaseClass):
+class TestMaxSupportedOpVersion(AbstractTest):
 
-    def setUp(self):
-        """
-        setUp method for every test
-        """
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Creating Volume
-        g.log.info("Started creating volume")
-        ret = self.setup_volume()
-        if not ret:
-            raise ExecutionError("Volume creation failed: %s" % self.volname)
-
-    def tearDown(self):
-        """
-        tearDown for every test
-        """
-        # stopping the volume and Cleaning up the volume
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed Cleanup the Volume %s" % self.volname)
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_op_version(self):
+    def run_test(self, redant):
         '''
         -> Create Volume
         -> Get the current op-version
@@ -70,26 +41,24 @@ class TestMaxSupportedOpVersion(GlusterBaseClass):
         '''
 
         # Getting current op-version
-        vol_dict = get_volume_options(self.mnode, 'all',
-                                      'cluster.op-version')
-        current_op_version = int(vol_dict['cluster.op-version'])
+        ret = redant.get_volume_options(node=self.server_list[0])
+        current_op_version = int(ret['cluster.op-version'])
 
         # Getting Max op-verison
-        all_dict = get_volume_options(self.mnode, 'all')
-        max_op_version = int(all_dict['cluster.max-op-version'])
+        max_op_version = int(ret['cluster.max-op-version'])
 
         # File_path: path for vol info file
         # Checking vol file exist in all servers or not
-        file_path = '/var/lib/glusterd/vols/' + self.volname + '/info'
-        for server in self.servers:
-            ret = file_exists(server, file_path)
-            self.assertTrue(ret, "Vol file not found in server %s" % server)
-            g.log.info("vol file found in server %s", server)
+        file_path = '/var/lib/glusterd/vols/' + self.vol_name + '/info'
+        for server in self.server_list:
+            cmd = f'ls -ld {file_path}'
+            ret = redant.execute_command(cmd, server)
 
         # Getting version number from vol info file
         # cmd: grepping  version from vol info file
-        ret, out, _ = g.run(self.mnode,
-                            ' '.join(['grep', "'^version'", file_path]))
+        file_path_cmd = ' '.join(['grep', "'^version'", file_path])
+        ret = redant.execute_command(file_path_cmd, self.server_list[0])
+        out = ret['msg'][0]
         version_list = out.split('=')
         version_no = int(version_list[1]) + 1
 
@@ -97,32 +66,32 @@ class TestMaxSupportedOpVersion(GlusterBaseClass):
         if current_op_version < max_op_version:
 
             # Set max-op-version
-            ret = set_volume_options(self.mnode, 'all',
-                                     {'cluster.op-version': max_op_version})
-            self.assertTrue(ret, "Failed to set max op-version for cluster")
-            g.log.info("Setting up max-op-version is successful for cluster")
+            ret = redant.set_volume_options(
+                'all', {'cluster.op-version': max_op_version},
+                self.server_list[0])
 
-            # Grepping version number from vol info file after
             # vol set operation
-            ret, out, _ = g.run(self.mnode,
-                                ' '.join(['grep', "'^version'", file_path]))
+            ret = redant.set_volume_options(
+                'all', {'version': version_no},
+                self.server_list[0])
+            # Grepping version number from vol info file after
+            ret = redant.execute_command(file_path_cmd,
+                                         self.server_list[0])
+            out = ret['msg'][0]
             version_list = out.split('=')
             after_version_no = int(version_list[1])
 
             # Comparing version number before and after vol set operations
-            self.assertEqual(version_no, after_version_no,
-                             "After volume set operation version "
-                             "number not increased by one")
-            g.log.info("After volume set operation version number "
-                       "increased by one")
-
+            if version_no != after_version_no:
+                raise Exception(
+                    "After volume set operation version "
+                    "number not increased by one"
+                )
             # Getting current op-version
-            vol_dict = get_volume_options(self.mnode, 'all',
-                                          'cluster.op-version')
-            current_op_version = int(vol_dict['cluster.op-version'])
+            ret = redant.get_volume_options(node=self.server_list[0])
+            current_op_version = int(ret['cluster.op-version'])
 
         # Checking current-op-version and max-op-version equal or not
-        self.assertEqual(current_op_version, max_op_version,
-                         "Current op-version and max op-version "
-                         "are not same")
-        g.log.info("current-op-version and max-op-version of cluster are same")
+        elif current_op_version == max_op_version:
+            redant.logger.info("Current op-version and max"
+                               " op-version are same")
