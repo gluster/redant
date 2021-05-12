@@ -38,9 +38,7 @@ class VolumeOps(AbstractOps):
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        if node not in self.volds[volname]["mountpath"].keys():
-            self.volds[volname]["mountpath"][node] = []
-        self.volds[volname]["mountpath"][node].append(path)
+        self.add_new_mountpath(volname, node, path)
         return ret
 
     def volume_unmount(self, volname: str, path: str, node: str = None):
@@ -67,10 +65,7 @@ class VolumeOps(AbstractOps):
         cmd = f"umount {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        if len(self.volds[volname]["mountpath"][node]) == 1:
-            del self.volds[volname]["mountpath"][node]
-        else:
-            self.volds[volname]["mountpath"][node].remove(path)
+        self.remove_mountpath(volname, node, path)
         return ret
 
     def volume_create(self, volname: str, node: str, conf_hash: dict,
@@ -102,6 +97,7 @@ class VolumeOps(AbstractOps):
         server_iter = 0
         mul_fac = 0
         cmd = ""
+        brick_dict = {}
         if "replica_count" in conf_hash:
             mul_fac = conf_hash["replica_count"]
 
@@ -120,18 +116,16 @@ class VolumeOps(AbstractOps):
         else:
             mul_fac = conf_hash["disperse_count"]
 
-        self.volds[volname] = {"brickdata": {}, "mountpath": {}}
-
         server_iter = 0
         for iteration in range(mul_fac):
             if server_iter == len(server_list):
                 server_iter = 0
             server_val = server_list[server_iter]
-            if server_val not in self.volds[volname]["brickdata"].keys():
-                self.volds[volname]["brickdata"][server_val] = []
+            if server_val not in brick_dict.keys():
+                brick_dict[server_val] = []
             brick_path_val = \
                 f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
-            self.volds[volname]["brickdata"][server_val].append(brick_path_val)
+            brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1
 
@@ -158,6 +152,7 @@ class VolumeOps(AbstractOps):
             cmd = (f"{cmd} force")
 
         ret = self.execute_abstract_op_node(cmd, node)
+        self.set_new_volume(volname, brick_dict)
 
         return ret
 
@@ -190,6 +185,7 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster volume start {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
+        self.set_volume_start_status(volname, True)
 
         return ret
 
@@ -220,6 +216,7 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster volume stop {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
+        self.set_volume_start_status(volname, False)
 
         return ret
 
@@ -244,8 +241,30 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
+        self.add_data_to_cleands(self.get_brickdata[volname])
+        self.remove_volume_data(volname)
+        return ret
+
+    def volume_delete_and_brick_cleanup(self, volname: str, node: str = None):
+        """
+        Deletes the gluster volume if given volume exists in
+        gluster.
+        Args:
+            node (str): Node on which cmd has to be executed.
+            volname (str): Name of the volume to delete
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
+        """
+
+        ret = self.volume_delete(volname, node)
         # TODO cleanup of the brick dirs after the volume is deleted.
-        del self.volds[volname]
         return ret
 
     def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
