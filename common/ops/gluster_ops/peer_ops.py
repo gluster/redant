@@ -8,7 +8,6 @@ import random
 from time import sleep
 import socket
 import re
-from time import sleep
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -85,7 +84,8 @@ class PeerOps(AbstractOps):
 
         Returns:
             'peer'(list|dict): If single peer is present then dict is returned
-                               If multiple peers are present then list is returned
+                               If multiple peers are present then list is
+                               returned
         """
 
         cmd = 'gluster --xml peer status'
@@ -260,8 +260,8 @@ class PeerOps(AbstractOps):
                     is_connected = False
                 if (peer_stat['stateStr'] != "Peer in Cluster" or
                         peer_stat['connected'] != '1'):
-                    self.logger.error(
-                        f"Peer '{peer_stat['hostname']}' not in connected state")
+                    self.logger.error(f"Peer '{peer_stat['hostname']}' "
+                                      f"not in connected state")
                     is_connected = False
 
         if not is_connected:
@@ -269,7 +269,8 @@ class PeerOps(AbstractOps):
 
         return True
 
-    def wait_for_peers_to_connect(self, node: str, servers: list, wait_timeout: int = 10) -> bool:
+    def wait_for_peers_to_connect(self, node: str, servers: list,
+                                  wait_timeout: int = 10) -> bool:
         """
         Checks nodes are peer connected with timeout.
         Args:
