@@ -68,7 +68,7 @@ class DParentTest(metaclass=abc.ABCMeta):
                 self.vol_name = (f"{self.test_name}-{self.volume_type}")
                 self.redant.volume_create(
                     self.vol_name, self.server_list[0],
-                    self.vol_type_inf[self.conv_dict[volume_type]],
+                    self.vol_type_inf[self.conv_dict[self.volume_type]],
                     self.server_list, self.brick_roots, True)
                 self.redant.volume_start(self.vol_name, self.server_list[0])
                 self.mountpoint = (f"/mnt/{self.vol_name}")
