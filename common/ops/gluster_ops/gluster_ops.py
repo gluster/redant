@@ -219,15 +219,13 @@ class GlusterOps(AbstractOps):
         Returns:
             bool: True if glusterd is running on the node(s) or else False.
         """
-        if not isinstance(node, list) and node is not None:
-            node = [node]
-        elif node is None:
+        if node is None:
             return False
 
         count = 0
         while count <= timeout:
             ret = self.is_glusterd_running(node)
-            if not ret:
+            if ret:
                 return True
             sleep(1)
             count += 1
