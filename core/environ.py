@@ -1,5 +1,6 @@
 import sys
 from socket import timeout
+import traceback
 import paramiko
 sys.path.insert(1, ".")
 from common.mixin import RedantMixin
@@ -53,8 +54,14 @@ class environ:
         """
         Setting up of the environment before the TC execution begins.
         """
-        self.redant.start_glusterd()
-        self.redant.create_cluster(self.server_list)
+        try:
+            self.redant.start_glusterd()
+            self.redant.create_cluster(self.server_list)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+            sys.exit(0)
 
     def teardown_env(self):
         """
