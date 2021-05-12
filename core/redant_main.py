@@ -73,17 +73,13 @@ def main():
 
     # Building the test list and obtaining the TC details.
     excluded_tests = param_obj.get_excluded_tests()
-    test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
+    test_cases_dict = TestListBuilder.create_test_dict(args.test_dir,
                                                         excluded_tests,
                                                         args.spec_test)
-    test_cases_dict = test_cases_tuple[0]
-    test_cases_component = test_cases_tuple[1]
-    excluded_tests = test_cases_tuple[2]
 
     # Creating log dirs.
     args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
-    Logger.log_dir_creation(args.log_dir, test_cases_component,
-                            test_cases_dict)
+    Logger.log_dir_creation(args.log_dir, TestListBuilder.get_test_path_list())
 
     # Pre test run test list builder is modified.
     test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
@@ -93,8 +89,8 @@ def main():
     env_obj.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(test_cases_dict, param_obj, excluded_tests, args.log_dir,
-                    args.log_level, args.concur_count)
+    TestRunner.init(test_cases_dict, param_obj, args.log_dir, args.log_level, 
+                    args.concur_count)
     result_queue = TestRunner.run_tests()
 
     # Environment cleanup. TBD.

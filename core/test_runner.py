@@ -16,15 +16,14 @@ class TestRunner:
     """
 
     @classmethod
-    def init(cls, test_run_dict: dict, param_obj: dict, excluded_tests: list,
-             base_log_path: str, log_level: str, multiprocess_count: int):
+    def init(cls, test_run_dict: dict, param_obj: dict, base_log_path: str,
+             log_level: str, multiprocess_count: int):
         cls.param_obj = param_obj
         cls.concur_count = multiprocess_count
         cls.base_log_path = base_log_path
         cls.log_level = log_level
         cls.concur_test = test_run_dict["nonDisruptive"]
         cls.non_concur_test = test_run_dict["disruptive"]
-        cls.excluded_tests = excluded_tests
         cls.threadList = []
         cls.job_result_queue = Queue()
         cls.nd_job_queue = Queue()
@@ -61,13 +60,6 @@ class TestRunner:
         # TODO: Handle it without sleep.
         while cls.job_result_queue.empty():
             time.sleep(1)
-
-        if len(cls.excluded_tests) > 0:
-            print("Excluded tests: " + str(len(cls.excluded_tests)))
-            for test in cls.excluded_tests:
-                print(Fore.YELLOW + test)
-
-            print(Style.RESET_ALL)
 
         return cls.job_result_queue
 

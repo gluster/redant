@@ -15,6 +15,14 @@ class Logger(logging.Logger):
     Info, Debug and Error.
     """
 
+    def get_test_log_dir(self, log_file_path: str) -> str:
+        """
+        Method to obtain the absolute path for the parent dir of a
+        test case.
+        """
+        demarcation_index = log_file_path.rfind("/")
+        return log_file_path[:demarcation_index]
+
     def init_logger(self, mname: str, log_file_path: str,
                     log_file_level: str = "I"):
         """
@@ -30,85 +38,27 @@ class Logger(logging.Logger):
             print("Invalid log level given, Taking Log Level as Info.")
             log_file_level = 'I'
         self.logger.setLevel(log_level_dict[log_file_level])
+        test_log_dir = self.get_test_log_dir(log_file_path)
+        if not os.path.isdir(test_log_dir):
+            os.makedirs(test_log_dir)
         log_file_handler = logging.handlers.WatchedFileHandler(log_file_path)
         log_file_handler.setFormatter(log_format)
         self.logger.addHandler(log_file_handler)
 
     @classmethod
-    def log_dir_creation(cls, path: str, component_dict: dict,
-                         test_dict: dict):
+    def log_dir_creation(cls, parent_path: str, test_path_list: list):
         """
         Module for Redant logg dir creation.
         Args:
-            path (str): The directory path.
-            component_dict (dict): The dict containing component lists
-            example,
-                   {
-                     "functional" : ["component1", "component2", ...],
-                     "performance" : ["component1", "component2", ...],
-                     "example" : ["component1", "component2", ...]
-                   }
-            test_dict (dict): Dictionary containing list of TCs
-            example,
-                    {
-                      "disruptive" : [
-                                       {
-                                         "volType" : ["volT1", "volT2",..],
-                                         "modulePath" : "module_path",
-                                         "moduleName" : "module_name",
-                                         "componentName" : "component_name",
-                                         "testClass" : "test_class",
-                                         "testType" : "test_type"
-                                       },
-                                       {
-                                           ...
-                                       }
-                                     ],
-                     "nonDisruptive" : [
-                                         {
-                                           "volType" : ["volT1", "volT2",..],
-                                           "modulePath" : "module_path",
-                                           "moduleName" : "module_name",
-                                           "componentName" : "component_name",
-                                           "testClass" : "test_class",
-                                           "testType" : "test_type"
-                                         },
-                                         {
-                                             ...
-                                         }
-                                      ]
-                   }
+            parent_path (str): The parent log directory path.
+            test_path_list (list) 
             Returns:
                 None
         """
-        if not os.path.isdir(path):
-            os.makedirs(path)
+        if not os.path.isdir(parent_path):
+            os.makedirs(parent_path)
 
-        # Component wise directory creation.
-        for test_type in component_dict:
-            test_type_path = f"{path}/{test_type}"
-            if not os.path.isdir(test_type_path):
-                os.makedirs(test_type_path)
-            components = component_dict[test_type]
-            for component in components:
-                if not os.path.isdir(f"{test_type_path}/{component}"):
-                    os.makedirs(f"{test_type_path}/{component}")
-
-        # TC wise directory creation.
-        for test in test_dict["disruptive"]:
-            test_case_dir = f'{path}/{test["modulePath"][5:-3]}'
-            if not os.path.isdir(test_case_dir):
-                os.makedirs(test_case_dir)
-            for vol in test["volType"]:
-                voltype_dir = f"{test_case_dir}/{vol}"
-                if not os.path.isdir(voltype_dir):
-                    os.makedirs(voltype_dir)
-
-        for test in test_dict["nonDisruptive"]:
-            test_case_dir = f'{path}/{test["modulePath"][5:-3]}'
-            if not os.path.isdir(test_case_dir):
-                os.makedirs(test_case_dir)
-            for vol in test["volType"]:
-                voltype_dir = f"{test_case_dir}/{vol}"
-                if not os.path.isdir(voltype_dir):
-                    os.makedirs(voltype_dir)
+        for test_path in test_path_list:
+            dir_creation_path = f"{parent_path}/{test_path[6:-3]}"
+            if not os.path.isdir(dir_creation_path):
+                os.makedirs(dir_creation_path)
