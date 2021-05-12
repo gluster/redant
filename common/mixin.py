@@ -249,6 +249,8 @@ class RedantMixin(GlusterOps, BrickOps, VolumeOps,
         or all nodes.
         Arg:
            node (list) : Can be None or list of nodes.
+        Returns:
+            a dictionary of bricks to be cleaned for a node.
         """
         if node is None:
             return self.cleands
