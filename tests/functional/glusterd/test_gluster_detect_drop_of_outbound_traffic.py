@@ -19,7 +19,7 @@
       Gluster should detect drop of outbound traffic as network failure
 """
 
-# nonDisruptive;rep,dist,disp,arb,dist-arb,dist-rep
+# disruptive;rep,dist,disp,arb,dist-arb,dist-rep
 
 from tests.abstract_test import AbstractTest
 
