@@ -86,7 +86,7 @@ class TestRunner:
             job_vol = vol_queue.get()
             job_queue = queue_map[job_vol]
             while not job_queue.empty():
-                job_data = nd_queue.get()
+                job_data = job_queue.get()
                 job_data['volType'] = job_vol
                 cls._run_test(job_data, True)
     
