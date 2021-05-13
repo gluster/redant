@@ -16,8 +16,18 @@ class TestRunner:
     """
 
     @classmethod
-    def init(cls, TestListBuilder, param_obj: dict, base_log_path: str,
-             log_level: str, multiprocess_count: int):
+    def init(cls, TestListBuilder, param_obj, base_log_path: str,
+             log_level: str, multiprocess_count: int, spec_test: bool):
+        """
+        Test runner intialization.
+        Args:
+            TestListBuilder (class)
+            param_obj (object)
+            base_log_path (str)
+            log_level (str)
+            multiprocess_count (int)
+            spec_test (bool) True if only one test is run.
+        """
         cls.param_obj = param_obj
         cls.concur_count = multiprocess_count
         cls.base_log_path = base_log_path
@@ -26,12 +36,15 @@ class TestRunner:
         cls.get_dtest_fn = TestListBuilder.get_dtest_list
         cls.get_ndtest_fn = TestListBuilder.get_ndtest_list
         cls.get_snd_test_fn = TestListBuilder.get_special_tests_dict
-        cls._prepare_queues()
+        cls.get_spec_vol_types_fn = TestListBuilder.get_spec_vol_types
+        cls._prepare_thread_queues(spec_test)
 
     @classmethod
-    def _prepare_thread_queues(cls):
+    def _prepare_thread_queues(cls, spec_test: bool):
         """
         This method creates the requisite queues for the test run.
+        Arg:
+            spec_test (bool) True if only one test is to be run.
         """
         cls.job_result_queue = Queue()
         cls.r_nd_jobq = Queue()
@@ -54,6 +67,13 @@ class TestRunner:
         special_test_dict = cls.get_snd_test_fn()
 
         if special_test_dict != []:
+            if spec_test:
+                spec_vols = cls.get_spec_vol_types_fn()
+                if spec_vols == []:
+                    vol_types = []
+                else:
+                    vol_types = spec_vols
+                
             for vol_type in vol_types:
                 cls.queue_map[vol_type].put(special_test_dict[0])
 
@@ -91,7 +111,7 @@ class TestRunner:
                 cls._run_test(job_data)
 
     @classmethod
-    def run_tests(cls):
+    def run_tests(cls, env_obj):
         """
         The test runs are of three stages,
         1. Stage 1 is for non disruptive test cases which can run in the
@@ -100,11 +120,12 @@ class TestRunner:
            Generic type.
         3. Stage 3 is the run of non-Disruptive test cases.
         """
+        cls.env_obj = env_obj
         # Stage 1
         jobs = []
         if bool(cls.concur_count):
             for _ in range(cls.concur_count):
-                proc = Process(target=cls._worker_process,
+                proc = Process(target=cls._nd_worker_process,
                                args=(cls.nd_vol_queue, cls.queue_map,))
                 jobs.append(proc)
                 proc.start()
@@ -120,7 +141,7 @@ class TestRunner:
         # Stage 2 for Generic concurrent tests.
 
         # Stage 3
-        for test in cls.non_concur_test:
+        for test in cls.get_dtest_fn():
             cls._run_test(test)
 
         # Because of the infinitesimal delay in value being reflected in Queue
@@ -150,7 +171,8 @@ class TestRunner:
         start = time.time()
 
         runner_thread_obj = RunnerThread(tc_class, cls.param_obj, volume_type,
-                                         mname, tc_log_path, cls.log_level)
+                                         mname, cls.env_obj, tc_log_path,
+                                         cls.log_level)
 
         test_stats = runner_thread_obj.run_thread()
 

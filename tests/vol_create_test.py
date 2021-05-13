@@ -19,7 +19,7 @@ Description:
     Test case which creates a volume of said type.
 """
 
-from lazy_parent_test import LazyParentTest
+from .lazy_parent_test import LazyParentTest
 
 
 class VolCreate(LazyParentTest):
@@ -33,7 +33,7 @@ class VolCreate(LazyParentTest):
         redant.volume_create(self.vol_name, self.server_list[0], vol_param,
                              self.server_list, self.brick_roots, True)
         redant.volume_start(self.vol_name, self.server_list[0])
-        mountpoint = (f"/mnt/{self.vol_name}")
-        redant.execute_io_cmd(f"mkdir -p {mountpoint}", self.client_list[0])
-        redant.volume_mount(self.server_list[0], self.volname, self.mountpoint,
-                            self.client_list[0])
+        redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
+                              self.client_list[0])
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[0])

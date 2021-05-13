@@ -100,13 +100,26 @@ class TestListBuilder:
                 raise Exception(f"Invalid test nature : "
                                 f" {test_flags['tcNature']}")
 
+        cls.spec_vol = []
         nd_tests_count = 0
         for (vol_t, listv) in cls.nd_category.items():
             if vol_t == "Generic":
                 continue
             nd_tests_count += len(listv)
+            if single_tc and len(listv) != 0:
+                cls.spec_vol.append(vol_t)
         if nd_tests_count > 0:
             cls._create_nd_special_tests()
+
+    @classmethod
+    def get_spec_vol_types(cls):
+        """
+        Method to obtain the list of volume types for which this
+        specifc test has to run.
+        Returns:
+            list
+        """
+        return cls.spec_vol
 
     @classmethod
     def _create_nd_special_tests(cls):

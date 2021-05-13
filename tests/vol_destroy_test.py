@@ -19,7 +19,7 @@ Description:
     Test case which destroys a volume of said type.
 """
 
-from lazy_parent_test import LazyParentTest
+from .lazy_parent_test import LazyParentTest
 
 
 class VolDestroy(LazyParentTest):
@@ -29,8 +29,9 @@ class VolDestroy(LazyParentTest):
         This child is responsible for the destruction of a volume
         of said type and its mountpoint.
         """
-        mountpoint = (f"/mnt/{self.vol_name}")
-        redant.volume_unmount(self.vol_name, mountpoint, self.client_list[0])
-        redant.execute_io_cmd(f"rm -rf {mountpoint}", self.client_list[0])
+        redant.volume_unmount(self.vol_name, self.mountpoint,
+                              self.client_list[0])
+        redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
+                              self.client_list[0])
         redant.volume_stop(self.vol_name, self.server_list[0], True)
         redant.volume_delete(self.vol_name, self.server_list[0])

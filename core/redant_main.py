@@ -86,8 +86,8 @@ def main():
 
     # invoke the test_runner.
     TestRunner.init(TestListBuilder, param_obj, args.log_dir, args.log_level,
-                    args.concur_count)
-    result_queue = TestRunner.run_tests()
+                    args.concur_count, args.spec_test)
+    result_queue = TestRunner.run_tests(env_obj)
 
     # Environment cleanup. TBD.
     total_time = time.time() - start
