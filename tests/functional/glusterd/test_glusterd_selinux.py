@@ -1,48 +1,38 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-    Description:
+  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+
+Description:
     Test Cases in this module tests Gluster against SELinux Labels and Policies
 """
-
-import pytest
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.glusterfile import file_exists
+# nonDisruptive;
+from tests.abstract_test import AbstractTest
 
 
-class TestGlusterAgainstSELinux(GlusterBaseClass):
-    """Glusterd checks against SELinux Labels and Policies
-    """
+class TestGlusterAgainstSELinux(AbstractTest):
 
     @staticmethod
-    def run_cmd(host, cmd, opts='', operate_on=''):
+    def get_cmd(cmd, opts='', operate_on=''):
         if opts:
             opts = '-'+opts
-        command = "{} {} {}".format(cmd, opts, operate_on)
-        rcode, rout, rerr = g.run(host, command)
-        if not rcode:
-            return True, rout
+        command = f"{cmd} {opts} {operate_on}"
+        return command
 
-        g.log.error("On '%s', '%s' returned '%s'", host, command, rerr)
-        return False, rout
-
-    @pytest.mark.test_selinux_label
-    def test_selinux_label(self):
+    def run_test(self, redant):
         """
         TestCase:
         1. Check the existence of '/usr/lib/firewalld/services/glusterfs.xml'
@@ -52,24 +42,26 @@ class TestGlusterAgainstSELinux(GlusterBaseClass):
 
         fqpath = '/usr/lib/firewalld/services/glusterfs.xml'
 
-        for server in self.all_servers_info:
+        for server in self.server_list:
             # Check existence of xml file
-            self.assertTrue(file_exists(server, fqpath), "Failed to verify "
-                            "existence of '{}' in {} ".format(fqpath, server))
-            g.log.info("Validated the existence of required xml file")
+            if not redant.path_exists(server, fqpath):
+                redant.logger.error("Failed to verify existence of"
+                                    f"'{fqpath}' in {server} ")
+                continue
 
             # Check owner of xml file
-            status, result = self.run_cmd(server, 'rpm', 'qf', fqpath)
-            self.assertTrue(status, "Fail: Not able to find owner for {} on "
-                            "{}".format(fqpath, server))
+            command = self.get_cmd('rpm', 'qf', fqpath)
+            ret = redant.execute_io_cmd(command, server)
             exp_str = 'glusterfs-server'
-            self.assertIn(exp_str, result, "Fail: Owner of {} should be "
-                          "{} on {}".format(fqpath, exp_str, server))
+            ret_msg = " ".join(ret['msg'])
+            if exp_str not in ret_msg:
+                redant.logger.error(f"Fail: Owner of {fqpath} should be "
+                                    f"{exp_str} on {server}")
 
             # Validate SELinux label
-            status, result = self.run_cmd(server, 'ls', 'lZ', fqpath)
-            self.assertTrue(status, "Fail: Not able to find SELinux label "
-                            "for {} on {}".format(fqpath, server))
+            command = self.get_cmd('ls', 'lZ', fqpath)
+            ret = redant.execute_io_cmd(command, server)
             exp_str = 'system_u:object_r:lib_t:s0'
-            self.assertIn(exp_str, result, "Fail: SELinux label on {}"
-                          "should be {} on {}".format(fqpath, exp_str, server))
+            if exp_str not in ret_msg:
+                redant.logger.error(f"Fail: SELinux label on {fqpath}"
+                                    f"should be {exp_str} on {server}")
