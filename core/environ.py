@@ -122,12 +122,12 @@ class FrameworkEnv:
         """
         self.volds[volname] = {"started": False, "options": {},
                                "mountpath": {}, "brickdata": brickdata,
-                               "voltype": {"dict_count" : 0,
-                                           "replica_count" : 0,
-                                           "disperse_count" : 0,
-                                           "arbiter_count" : 0,
-                                           "redundancy_count" : 0,
-                                           "transport" : ""}}
+                               "voltype": {"dict_count": 0,
+                                           "replica_count": 0,
+                                           "disperse_count": 0,
+                                           "arbiter_count": 0,
+                                           "redundancy_count": 0,
+                                           "transport": ""}}
 
     def does_volume_exists(self, volname: str) -> bool:
         """
@@ -186,8 +186,8 @@ class FrameworkEnv:
         for (pre_voltk, pre_voltv) in pre_voltype.items():
             if pre_voltk == "transport":
                 continue
-            change_volt[pre_voltk] = pre_voltv - self.volds[volname][voltype]\
-                                                           [pre_voltk]
+            change_volt[pre_voltk] = pre_voltv - \
+                self.volds[volname]['voltype'][pre_voltk]
         return change_volt
 
     def add_new_mountpath(self, volname: str, node: str, path: str):
@@ -358,7 +358,7 @@ class FrameworkEnv:
             option_list (dict) : dict of key value pair of options to be set.
         """
         self._validate_volname(volname)
-        for (opt, opt_val) in option_dict.items():
+        for (opt, opt_val) in options_dict.items():
             self.volds[volname]['options'][opt] = opt_val
 
     def set_vol_options_for_all(self, option_list: list):
@@ -376,7 +376,7 @@ class FrameworkEnv:
         Arg:
             volname (str)
         Returns:
-            Dictionary 
+            Dictionary
         """
         self._validate_volname(volname)
         return self.volds[volname]['options']

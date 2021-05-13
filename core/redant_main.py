@@ -83,12 +83,11 @@ def main():
     # Framework Environment datastructure.
     env_obj = FrameworkEnv()
     env_obj.init_ds()
-    
+
     # Environment setup.
     env_set = environ(param_obj, env_obj, f"{args.log_dir}/main.log",
                       args.log_level)
     env_set.setup_env()
-
 
     # invoke the test_runner.
     TestRunner.init(TestListBuilder, param_obj, args.log_dir, args.log_level,
