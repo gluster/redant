@@ -73,7 +73,7 @@ class TestRunner:
                     vol_types = []
                 else:
                     vol_types = spec_vols
-                
+
             for vol_type in vol_types:
                 cls.queue_map[vol_type].put(special_test_dict[0])
 

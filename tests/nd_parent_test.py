@@ -31,7 +31,6 @@ class NdParentTest(metaclass=abc.ABCMeta):
 
         server_details = param_obj.get_server_config()
         client_details = param_obj.get_client_config()
-
         self.TEST_RES = True
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
