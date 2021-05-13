@@ -21,7 +21,7 @@
 
 # disruptive;rep,dist,disp,arb,dist-arb,dist-rep
 
-from tests.d_parent_test import DParenttTest
+from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):

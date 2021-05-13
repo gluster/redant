@@ -18,6 +18,7 @@ from comment_parser.comment_parser import extract_comments
 valid_vol_types = ['rep', 'dist', 'arb', 'disp', 'dist-rep', 'dist-arb',
                    'dist-disp', "Generic"]
 
+
 class TestListBuilder:
     """
     The test list builder is concerned with parsing
@@ -37,10 +38,10 @@ class TestListBuilder:
     dtest_list = []
     test_nd_volc_dict = {}
     test_nd_vold_dict = {}
-    nd_category = {'rep' : r_ndtest_list, 'dist' : dt_ndtest_list,
-                   'arb' : a_ndtest_list, 'disp' : ds_ndtest_list,
-                   'dist-rep' : dtr_ndtest_list, 'dist-arb' : dta_ndtest_list,
-                   'dist-disp' : dtds_ndtest_list, 'Generic': gen_ndtest_list}
+    nd_category = {'rep': r_ndtest_list, 'dist': dt_ndtest_list,
+                   'arb': a_ndtest_list, 'disp': ds_ndtest_list,
+                   'dist-rep': dtr_ndtest_list, 'dist-arb': dta_ndtest_list,
+                   'dist-disp': dtds_ndtest_list, 'Generic': gen_ndtest_list}
 
     @classmethod
     def create_test_dict(cls, path: str, excluded_tests: list,
@@ -68,7 +69,6 @@ class TestListBuilder:
 
             except Exception as e:
                 print(e)
-                return {}
         elif path not in excluded_tests:
             cls.tests_path_list.append(path)
 

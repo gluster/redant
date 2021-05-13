@@ -5,7 +5,7 @@ service operations
 """
 # nonDisruptive;dist,rep,dist-rep,arb,dist-arb,disp,dist-disp
 
-from tests.nd_parent_test import NdParenttTest
+from tests.nd_parent_test import NdParentTest
 
 
 class TestCase(NdParentTest):

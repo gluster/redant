@@ -19,7 +19,7 @@
       Test to check that default log level of CLI should be INFO
 """
 
-from tests.nd_parentt_test import NdParentTest
+from tests.nd_parent_test import NdParentTest
 
 # nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 

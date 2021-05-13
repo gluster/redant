@@ -45,10 +45,10 @@ class TestRunner:
         cls.nd_vol_queue = Queue()
         vol_types = ['rep', 'dist', 'disp', 'arb', 'dist-rep', 'dist-disp',
                      'dist-arb']
-        cls.queue_map = {'arb' : cls.a_nd_jobq, 'disp' : cls.ds_nd_jobq,
-                         'dist-rep' : cls.dtr_nd_jobq, 'rep' : cls.r_nd_jobq,
-                         'dist-arb' : cls.dta_nd_jobq, 'dist' : cls.dt_nd_jobq,
-                         'dist-disp' : cls.dtds_nd_jobq}
+        cls.queue_map = {'arb': cls.a_nd_jobq, 'disp': cls.ds_nd_jobq,
+                         'dist-rep': cls.dtr_nd_jobq, 'rep': cls.r_nd_jobq,
+                         'dist-arb': cls.dta_nd_jobq, 'dist': cls.dt_nd_jobq,
+                         'dist-disp': cls.dtds_nd_jobq}
 
         # Get special tests dict
         special_test_dict = cls.get_snd_test_fn()
@@ -88,13 +88,13 @@ class TestRunner:
             while not job_queue.empty():
                 job_data = job_queue.get()
                 job_data['volType'] = job_vol
-                cls._run_test(job_data, True)
-    
+                cls._run_test(job_data)
+
     @classmethod
     def run_tests(cls):
         """
         The test runs are of three stages,
-        1. Stage 1 is for non disruptive test cases which can run in the 
+        1. Stage 1 is for non disruptive test cases which can run in the
            concurrent flow and can use a pre-existing volume.
         2. Stage 2 is for non disruptive test cases which belong to the
            Generic type.
@@ -133,12 +133,12 @@ class TestRunner:
         return cls.job_result_queue
 
     @classmethod
-    def _run_test(cls, test_dict: dict, thread_flag: bool=False):
+    def _run_test(cls, test_dict: dict):
         """
         A generic method handling the run of both disruptive and non
         disruptive tests.
         """
-        
+
         tc_class = test_dict["testClass"]
         volume_type = test_dict["volType"]
         mname = test_dict["moduleName"][:-3]
