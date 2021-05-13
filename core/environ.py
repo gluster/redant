@@ -358,10 +358,12 @@ class FrameworkEnv:
             option_list (dict) : dict of key value pair of options to be set.
         """
         self._validate_volname(volname)
+        if 'options' not in self.volds[volname].keys():
+            self.volds[volname]['options'] = {}
         for (opt, opt_val) in options_dict.items():
             self.volds[volname]['options'][opt] = opt_val
 
-    def set_vol_options_for_all(self, option_list: list):
+    def set_vol_options_all(self, option_list: list):
         """
         Method to set a said list of volume options for all volumes.
         Arg:
@@ -418,8 +420,12 @@ class FrameworkEnv:
         """
         Method to clear out a volume option for all volumes.
         """
-        for volume in self.vold.keys():
-            del self.volds[volume]['options'][option]
+        if option == "all":
+            for volume in self.volds.keys():
+                self.reset_volume_options_dict(volume)
+        else:
+            for volume in self.volds.keys():
+                del self.volds[volume]['options'][option]
 
     def add_data_to_cleands(self, brickdata: dict):
         """

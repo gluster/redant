@@ -35,10 +35,12 @@ class DParentTest(metaclass=abc.ABCMeta):
         client_details = param_obj.get_client_config()
 
         self.TEST_RES = True
+        print(volume_type)
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
-        self._configure(f"{mname}-{volume_type}", server_details,
-                        client_details, env_obj, log_path, log_level)
+        self.vol_name = (f"{mname}-{volume_type}")
+        self._configure(self.vol_name, server_details, client_details,
+                        env_obj, log_path, log_level)
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
@@ -50,7 +52,6 @@ class DParentTest(metaclass=abc.ABCMeta):
         self.redant = RedantMixin(machine_detail, env_obj)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
-        self.test_name = mname
 
     @abc.abstractmethod
     def run_test(self, redant):
@@ -66,7 +67,6 @@ class DParentTest(metaclass=abc.ABCMeta):
             self.redant.create_cluster(self.server_list)
 
             if self.volume_type != "Generic":
-                self.vol_name = (f"{self.test_name}-{self.volume_type}")
                 self.redant.volume_create(
                     self.vol_name, self.server_list[0],
                     self.vol_type_inf[self.conv_dict[self.volume_type]],
@@ -101,10 +101,12 @@ class DParentTest(metaclass=abc.ABCMeta):
         """
         # Perform cleanups. Stage 1 being stopping the volume if its still
         # running.
-        if self.redant.es.get_volume_start_status(self.vol_name):
-            self.redant.volume_stop(
-                self.vol_name, self.server_list[0], True)
-        if self.redant.es.volume_exists(self.vol_name):
-            self.redant.does_volume_delete(self.vol_name, self.server_list[0])
-
+        try:
+            if self.redant.es.get_volume_start_status(self.vol_name):
+                self.redant.volume_stop(
+                    self.vol_name, self.server_list[0], True)
+            if self.redant.es.does_volume_exists(self.vol_name):
+                self.redant.volume_delete(self.vol_name, self.server_list[0])
+        except:
+            pass
         self.redant.deconstruct_connection()

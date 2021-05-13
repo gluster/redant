@@ -573,6 +573,11 @@ class VolumeOps(AbstractOps):
                    f"{volume_options[option]} --mode=script --xml")
 
             self.execute_abstract_op_node(cmd, node)
+            if volname != 'all':
+                self.es.set_vol_option(volname,
+                                       {option: volume_options[option]})
+            else:
+                self.es.set_vol_options_all({option: volume_options[option]})
 
     def validate_volume_option(self, volname: str, options: dict,
                                node: str = None):
