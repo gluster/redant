@@ -19,7 +19,7 @@ Description:
     Test case which destroys a volume of said type.
 """
 
-from tests.lazy_parent_test import LazyParentTest
+from lazy_parent_test import LazyParentTest
 
 
 class VolDestroy(LazyParentTest):
