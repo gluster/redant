@@ -1,5 +1,6 @@
 import sys
 from socket import timeout
+import copy
 import traceback
 import paramiko
 sys.path.insert(1, ".")
@@ -17,8 +18,6 @@ class environ:
         Redant mixin obj to be used for server setup and teardown operations
         has to be created.
         """
-        self.volds = {}
-        self.cleands = {}
         self.redant = RedantMixin(param_obj.get_server_config())
         self.redant.init_logger("environ", log_path, log_level)
         try:
@@ -70,6 +69,35 @@ class environ:
         The teardown of the complete environment once the test framework
         ends.
         """
+
+class FrameworkEnv:
+    """
+    A class for handling the framework environemnt details. This won't
+    affect the environment directly. It is more of a data store.
+    """
+
+    __instance = None
+    @staticmethod
+    def getInstance():
+        """ Static access method """
+        if FrameworkEnv.__instance == None:
+            FrameworkEnv()
+        return Framework.__instance
+
+    def __init__(self):
+        """ vpc """
+        if FrameworkEnv.__instance != None:
+            raise Exception("Singleton class can have only one Instance.")
+        else:
+            FrameworkEnv.__instance = self
+
+    def init_ds(self):
+        """
+        Method to handle the creation of data structures to store the
+        current state of the environment used to run the framework.
+        """
+        self.volds = {}
+        self.cleands = {}
 
     def _validate_volname(self, volname: str):                                     
         """                                                                        

@@ -3,7 +3,6 @@
     Purpose: Refer to the redhat_mixin.md for more information
 """
 
-import copy
 from .rexe import Rexe
 from .relog import Logger
 from .ops.support_ops.io_ops import IoOps

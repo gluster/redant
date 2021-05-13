@@ -38,7 +38,7 @@ class VolumeOps(AbstractOps):
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.add_new_mountpath(volname, node, path)
+        self.es.add_new_mountpath(volname, node, path)
         return ret
 
     def volume_unmount(self, volname: str, path: str, node: str = None):
@@ -65,7 +65,7 @@ class VolumeOps(AbstractOps):
         cmd = f"umount {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.remove_mountpath(volname, node, path)
+        self.es.remove_mountpath(volname, node, path)
         return ret
 
     def volume_create(self, volname: str, node: str, conf_hash: dict,
@@ -152,7 +152,7 @@ class VolumeOps(AbstractOps):
             cmd = (f"{cmd} force")
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.set_new_volume(volname, brick_dict)
+        self.es.set_new_volume(volname, brick_dict)
 
         return ret
 
@@ -185,7 +185,7 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster volume start {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.set_volume_start_status(volname, True)
+        self.es.set_volume_start_status(volname, True)
 
         return ret
 
@@ -216,7 +216,7 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster volume stop {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.set_volume_start_status(volname, False)
+        self.es.set_volume_start_status(volname, False)
 
         return ret
 
@@ -241,8 +241,8 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.add_data_to_cleands(self.get_brickdata(volname))
-        self.remove_volume_data(volname)
+        self.es.add_data_to_cleands(self.get_brickdata(volname))
+        self.es.remove_volume_data(volname)
         return ret
 
     def volume_delete_and_brick_cleanup(self, volname: str, node: str = None):
