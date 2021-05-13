@@ -120,9 +120,24 @@ class FrameworkEnv:
                                node ip and values as list of bricks lying
                                under the said node.
         """
-        self.volds[volname] = {"voltype": {}, "options": {},
+        self.volds[volname] = {"started": False, "options": {},
                                "mountpath": {}, "brickdata": brickdata,
-                               "started": False}
+                               "voltype": {"dict_count" : 0,
+                                           "replica_count" : 0,
+                                           "disperse_count" : 0,
+                                           "arbiter_count" : 0,
+                                           "redundancy_count" : 0,
+                                           "transport" : ""}}
+
+    def does_volume_exists(self, volname: str) -> bool:
+        """
+        Method checks if the said volume already exists.
+        Arg:
+            volname (str)
+        """
+        if volname in self.volds.keys():
+            return True
+        return False
 
     def remove_volume_data(self, volname: str):
         """
@@ -143,6 +158,37 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         return self.volds[volname]
+
+    def set_vol_type(self, volname: str, voltype_dict: dict):
+        """
+        Modify volds voltype based on voltype_dict.
+        Args:
+            volname (str)
+            voltype_dict (dict)
+        """
+        self._validate_volname(volname)
+        for (volt_key, volt_val) in voltype_dict.items():
+            self.volds[volname]['voltype'][volt_key] = volt_val
+
+    def get_vol_type_changes(self, volname: str, pre_voltype: dict) -> dict:
+        """
+        Method to identify the difference between a pre-test voltype dictionary
+        and a post test run voltype dicitonary.
+        Args:
+            volname (str)
+            pre_voltype (dict)
+        Returns:
+            A dictionary which contains the factor by which counts vary.
+            The final result will be calculated by pre minus post values.
+        """
+        self._validate_volname(volname)
+        change_volt = {}
+        for (pre_voltk, pre_voltv) in pre_voltype.items():
+            if pre_voltk == "transport":
+                continue
+            change_volt[pre_voltk] = pre_voltv - self.volds[volname][voltype]\
+                                                           [pre_voltk]
+        return change_volt
 
     def add_new_mountpath(self, volname: str, node: str, path: str):
         """
@@ -302,6 +348,78 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         return self.volds[volname]['started']
+
+    def set_vol_option(self, volname: str, options_dict: dict):
+        """
+        Method to set a volume option for said volume
+        based on the dictionary of options
+        Args:
+            volname (str)
+            option_list (dict) : dict of key value pair of options to be set.
+        """
+        self._validate_volname(volname)
+        for (opt, opt_val) in option_dict.items():
+            self.volds[volname]['options'][opt] = opt_val
+
+    def set_vol_options_for_all(self, option_list: list):
+        """
+        Method to set a said list of volume options for all volumes.
+        Arg:
+            option_list (list)
+        """
+        for vol in self.volds.keys():
+            self.set_vol_option(vol, option_list)
+
+    def get_vol_option(self, volname: str) -> dict:
+        """
+        Method to obtain the volume options changed during the TC run.
+        Arg:
+            volname (str)
+        Returns:
+            Dictionary 
+        """
+        self._validate_volname(volname)
+        return self.volds[volname]['options']
+
+    def is_volume_options_populated(self, volname: str) -> bool:
+        """
+        Method to reflect if the volume options are
+        populated or not.
+        Arg:
+            volname (str)
+        Returns:
+            bool
+        """
+        self._validate_volname(volname)
+        if self.volds[volname]['options'] == {}:
+            return False
+        return True
+
+    def reset_volume_options_dict(self, volname: str):
+        """
+        Method to remove volume options data from the volds.
+        Arg:
+            volname (str)
+        """
+        self._validate_volname(volname)
+        del self.volds[volname]['options']
+
+    def reset_volume_options(self, volname: str, option: str):
+        """
+        Method to remove a volume option data from volds.
+        Args:
+            volname (str)
+            option (str)
+        """
+        self._validate_volname(volname)
+        del self.volds[volname]['options'][option]
+
+    def reset_all_volume_options(self, option: str):
+        """
+        Method to clear out a volume option for all volumes.
+        """
+        for volume in self.vold.keys():
+            del self.volds[volume]['options'][option]
 
     def add_data_to_cleands(self, brickdata: dict):
         """

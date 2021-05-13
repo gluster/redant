@@ -49,6 +49,7 @@ class NdParentTest(metaclass=abc.ABCMeta):
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
         self.test_name = mname
+        self.pre_test_env = env_obj
 
     @abc.abstractmethod
     def run_test(self, redant):
@@ -69,6 +70,18 @@ class NdParentTest(metaclass=abc.ABCMeta):
 
     def terminate(self):
         """
-        Closes connection for now.
+        Closes connection and checks the env
         """
+        # Check if the post_test env state is same as that of the
+        # pre_test env state.
+        # Condition 1. Volume started state.
+        if not self.redant.es.get_volume_start_status(self.vol_name):
+            self.redant.volume_start(self.vol_name, self.server_list[0])
+
+        # Condition 2. Volume options if set to be reset.
+        if self.redant.es.is_volume_options_populated(self.vol_name):
+            vol_options = self.redant.es.get_vol_option(self.vol_name)
+            for (opt, opt_val) in vol_options.items():
+                self.redant.reset_volume_option(self.vol_name, opt,
+                                                self.server_list[0])
         self.redant.deconstruct_connection()

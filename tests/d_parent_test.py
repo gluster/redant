@@ -99,4 +99,12 @@ class DParentTest(metaclass=abc.ABCMeta):
         """
         Closes connection for now.
         """
+        # Perform cleanups. Stage 1 being stopping the volume if its still
+        # running.
+        if self.redant.es.get_volume_start_status(self.vol_name):
+            self.redant.volume_stop(
+                self.vol_name, self.server_list[0], True)
+        if self.redant.es.volume_exists(self.vol_name):
+            self.redant.does_volume_delete(self.vol_name, self.server_list[0])
+
         self.redant.deconstruct_connection()
