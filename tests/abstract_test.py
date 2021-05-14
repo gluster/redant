@@ -73,7 +73,7 @@ class AbstractTest(metaclass=abc.ABCMeta):
                     self.server_list, self.brick_roots, True)
                 self.redant.volume_start(self.vol_name, self.server_list[0])
                 self.mountpoint = (f"/mnt/{self.vol_name}")
-                self.redant.execute_io_cmd(f"mkdir -p {self.mountpoint}",
+                self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
                                            self.client_list[0])
                 self.redant.volume_mount(self.server_list[0], self.vol_name,
                                          self.mountpoint, self.client_list[0])
@@ -82,7 +82,7 @@ class AbstractTest(metaclass=abc.ABCMeta):
             if self.volume_type != 'Generic':
                 self.redant.volume_unmount(self.vol_name, self.mountpoint,
                                            self.client_list[0])
-                self.redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
+                self.redant.execute_abstract_op_node(f"rm -rf {self.mountpoint}",
                                            self.client_list[0])
                 self.redant.volume_stop(
                     self.vol_name, self.server_list[0], True)
