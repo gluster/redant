@@ -16,8 +16,7 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   Description:
-        No Errors should generate in glusterd.log while detaching
-        node from gluster
+        Check for error in glusterd logs when a peer is detached
 """
 
 import random
@@ -48,7 +47,7 @@ class GlusterdLogsWhilePeerDetach(AbstractTest):
                                               self.server_list[0])
 
         # Clearing the existing glusterd log file
-        ret = redant.execute_abstract_op_node('echo > /var/log/glusterfs/'
+        ret = redant.execute_abstract_op_node('> /var/log/glusterfs/'
                                               'glusterd.log',
                                               self.server_list[0])
 
@@ -61,5 +60,5 @@ class GlusterdLogsWhilePeerDetach(AbstractTest):
                                               "glusterd.log | wc -l",
                                               self.server_list[0])
         if int(ret['msg'][0]) != 0:
-            redant.logger.info("Found Error messages in glusterd log "
-                               "file after peer detach")
+            raise Exception("Found Error messages in glusterd "
+                            "log file after peer detach")
