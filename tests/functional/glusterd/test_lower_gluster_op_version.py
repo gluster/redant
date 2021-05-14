@@ -16,8 +16,8 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-        Test Cases in this module related to Glusterd volume reset validation
-        with bitd, scrub and snapd daemons running or not
+        Test Cases in this module related to setting
+        valid and invalid op-version values.
 """
 
 # nonDisruptive;rep
@@ -48,13 +48,19 @@ class LowerGlusterOpVersion(AbstractTest):
         invalid_op_version_dict = {'cluster.op-version': invalid_op_version}
 
         # Set the volume option with lower op-version
-        ret = redant.set_volume_options('all', lower_op_version_dict,
-                                        self.server_list[0])
+        try:
+            ret = redant.set_volume_options('all', lower_op_version_dict,
+                                            self.server_list[0])
+        except Exception as error:
+            redant.logger.info(error)
+            redant.logger.info("Failed: setting lower"
+                               " op-version.")
+
         # Setting invalid opversion
         try:
             ret = redant.set_volume_options('all', invalid_op_version_dict,
                                             self.server_list[0])
         except Exception as error:
+            redant.logger.info(error)
             redant.logger.info("Successfully tested setting invalid"
                                " op-version.")
-            redant.logger.info(error)
