@@ -75,7 +75,7 @@ class TestGlusterdFriendUpdatesWhenPeerRejoins(AbstractTest):
                            f" grep '_handle_friend_update' | grep {uuid}"
                            f" | wc -l")
                     ret = redant.execute_abstract_op_node(cmd, server)
-                    if int(ret['msg'][0]) != 0:
+                    if int(ret['msg'][0].rstrip("\n")) != 0:
                         raise Exception("Unexpected: Found friend updates"
                                         " between other nodes")
 
@@ -83,10 +83,10 @@ class TestGlusterdFriendUpdatesWhenPeerRejoins(AbstractTest):
                            " peer nodes")
 
         # Check friend updates between rejoined node and other nodes
-        cmd = (f"awk '/{curr_time}/,0' /var/log/glusterfs/glusterd.log "
+        cmd = (f"awk '/{curr_time}/,0' {glusterd_log_path} "
                f"| grep '_handle_friend_update' | wc -l")
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
-        count = int(ret['msg'][0])
+        count = int(ret['msg'][0].rstrip("\n"))
 
         # Calculate the expected friend updates for a given cluster size
         expected_frnd_updts = min_updt * (crnt_clstr_size - min_clstr_sz + 1)
