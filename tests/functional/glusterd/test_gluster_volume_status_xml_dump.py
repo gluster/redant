@@ -38,13 +38,13 @@ class GetVolumeStatusXmlDump(AbstractTest):
         redant.volume_stop(self.vol_name, self.server_list[0], force=True)
         out = redant.get_volume_status(self.mnode)
         if out is None:
-            redant.logger.error("Failed to get volume status on "
-                                f"{self.server_list[0]}")
+            raise Exception("Failed to get volume status on "
+                            f"{self.server_list[0]}")
 
         for _ in range(4):
             sleep(2)
             out1 = redant.get_volume_status(self.mnode)
             if out1 is None:
-                redant.logger.error("Failed to get volume status on "
-                                    f"{self.server_list[0]}")
+                raise Exception("Failed to get volume status on "
+                                f"{self.server_list[0]}")
             self.assertEqual(out1, out)
