@@ -30,23 +30,23 @@ class GlusterdLogsWhilePeerDetach(AbstractTest):
 
     def run_test(self, redant):
         '''
-        -> Detach the node from peer
-        -> Check that any error messages related to peer detach
-        in glusterd log file
-        -> No errors should be there in glusterd log file
+            1) Detach the node from peer
+            2) Check that any error messages related to peer detach
+                in glusterd log file
+            3) No errors should be there in glusterd log file
         '''
 
         # Getting timestamp
-        ret = redant.execute_io_cmd('date +%s', self.server_list[0])
+        ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
         timestamp = ret['msg'][0].rstrip("\n")
 
         #  glusterd logs
-        ret = redant.execute_io_cmd('cp /var/log/glusterfs/glusterd.log /var/'
+        ret = redant.execute_abstract_op_node('cp /var/log/glusterfs/glusterd.log /var/'
                                     f'log/glusterfs/glusterd_{timestamp}.log',
                                     self.server_list[0])
 
         # Clearing the existing glusterd log file
-        ret = redant.execute_io_cmd('echo > /var/log/glusterfs/glusterd.log',
+        ret = redant.execute_abstract_op_node('echo > /var/log/glusterfs/glusterd.log',
                                     self.server_list[0])
 
         # Performing peer detach
@@ -54,9 +54,9 @@ class GlusterdLogsWhilePeerDetach(AbstractTest):
         ret = redant.peer_detach(random_server, self.server_list[0])
 
         # Searching for error message in log
-        ret = redant.execute_io_cmd("grep ' E ' /var/log/glusterfs/"
+        ret = redant.execute_abstract_op_node("grep ' E ' /var/log/glusterfs/"
                                     "glusterd.log | wc -l",
                                     self.server_list[0])
-        if int(ret['msg'][0].rstrip("\n")) != 0:
+        if int(ret['msg'][0]) != 0:
             redant.logger.info("Found Error messages in glusterd log "
                                "file after peer detach")
