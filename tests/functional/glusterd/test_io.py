@@ -53,5 +53,7 @@ class TestCase(AbstractTest):
         redant.volume_unmount(volumes[0], "/root/mount1", self.server_list[0])
         redant.volume_unmount(volumes[0], "/root/mount2", self.server_list[0])
         redant.cleanup_mounts(mountpoints)
-        redant.execute_abstract_op_node("rm -rf /root/mount1", self.server_list[0])
-        redant.execute_abstract_op_node("rm -rf /root/mount2", self.server_list[0])
+        redant.execute_abstract_op_node(
+            "rm -rf /root/mount1", self.server_list[0])
+        redant.execute_abstract_op_node(
+            "rm -rf /root/mount2", self.server_list[0])

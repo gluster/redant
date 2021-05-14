@@ -31,14 +31,18 @@ class TestCase(AbstractTest):
         redant.execute_abstract_op_node("ls -l /root", servera)
         volume_status = redant.get_volume_status(self.vol_name, servera)
         redant.logger.info(volume_status)
-        redant.execute_abstract_op_node(f"cd {self.mountpoint} && touch " + "{1..100}",
-                              self.client_list[0])
-        redant.execute_abstract_op_node(f"ls -l {self.mountpoint}", self.client_list[0])
+        redant.execute_abstract_op_node(f"cd {self.mountpoint} "
+                                        "&& touch " + "{1..100}",
+                                        self.client_list[0])
+        redant.execute_abstract_op_node(
+            f"ls -l {self.mountpoint}", self.client_list[0])
         redant.execute_abstract_op_node(f"cd {self.mountpoint} && rm -rf ./*",
-                              self.client_list[0])
-        redant.execute_abstract_op_node(f"ls -l {self.mountpoint}", self.client_list[0])
+                                        self.client_list[0])
+        redant.execute_abstract_op_node(
+            f"ls -l {self.mountpoint}", self.client_list[0])
 
         try:
-            redant.execute_abstract_op_node("ls -l /non-exsisting-path", servera)
+            redant.execute_abstract_op_node(
+                "ls -l /non-exsisting-path", servera)
         except Exception as error:
             redant.logger.error(error)
