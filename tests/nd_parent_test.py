@@ -38,6 +38,7 @@ class NdParentTest(metaclass=abc.ABCMeta):
                         client_details, env_obj, log_path, log_level)
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
+        self.brick_roots = param_obj.get_brick_roots()
         self.vol_name = (f"redant-{volume_type}")
         self.mountpoint = (f"/mnt/{self.vol_name}")
 
@@ -75,13 +76,18 @@ class NdParentTest(metaclass=abc.ABCMeta):
         # Check if the post_test env state is same as that of the
         # pre_test env state.
         # Condition 1. Volume started state.
-        if not self.redant.es.get_volume_start_status(self.vol_name):
-            self.redant.volume_start(self.vol_name, self.server_list[0])
+        try:
+            if not self.redant.es.get_volume_start_status(self.vol_name):
+                self.redant.volume_start(self.vol_name, self.server_list[0])
 
         # Condition 2. Volume options if set to be reset.
-        if self.redant.es.is_volume_options_populated(self.vol_name):
-            vol_options = self.redant.es.get_vol_option(self.vol_name)
-            for opt in vol_options:
-                self.redant.reset_volume_option(self.vol_name, opt,
+            if self.redant.es.is_volume_options_populated(self.vol_name):
+                vol_options = self.redant.es.get_vol_option(self.vol_name)
+                for opt in vol_options:
+                    self.redant.reset_volume_option(self.vol_name, opt,
                                                 self.server_list[0])
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.redant.logger.error(e)
+            self.redant.logger.error(tb)
         self.redant.deconstruct_connection()

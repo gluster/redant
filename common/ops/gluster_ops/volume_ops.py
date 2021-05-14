@@ -629,10 +629,7 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster vol reset {volname} {option} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        if volname != "all":
-            self.es.reset_volume_options(volname, option)
-        else:
-            self.es.reset_all_volume_options(option)
+        self.es.reset_volume_option(volname, option)
 
         return ret
 

@@ -167,7 +167,7 @@ class FrameworkEnv:
             voltype_dict (dict)
         """
         self._validate_volname(volname)
-        for (volt_key, volt_val) in voltype_dict.items():
+        for (volt_key, volt_val) in (voltype_dict.items()):
             self.volds[volname]['voltype'][volt_key] = volt_val
 
     def get_vol_type_changes(self, volname: str, pre_voltype: dict) -> dict:
@@ -183,7 +183,7 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         change_volt = {}
-        for (pre_voltk, pre_voltv) in pre_voltype.items():
+        for (pre_voltk, pre_voltv) in list(pre_voltype.items()):
             if pre_voltk == "transport":
                 continue
             change_volt[pre_voltk] = pre_voltv - \
@@ -242,7 +242,7 @@ class FrameworkEnv:
         self._validate_volname(volname)
 
         mnt_list = []
-        for (client, mnts) in self.volds[volname]['mountpath'].items():
+        for (client, mnts) in list(self.volds[volname]['mountpath'].items()):
             temp_dict = {}
             for mnt in mnts:
                 temp_dict["client"] = client
@@ -265,7 +265,7 @@ class FrameworkEnv:
         self._validate_volname(volname)
         if node is None:
             mount_point_list = []
-            for (_, mnt_pts) in self.volds[volname]['mountpath'].items():
+            for (_, mnt_pts) in list(self.volds[volname]['mountpath'].items()):
                 mount_point_list.append(mnt_pts)
             return mount_point_list
         elif node not in self.volds[volname]['mountpath'].keys():
@@ -299,6 +299,16 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         self.volds[volname]['brickdata'] = brick_dict
+
+    def remove_bricks_from_brickdata(self, volname: str, brick_data: dict):
+        """
+        Method to remove the brick brickdata and add it to the cleands
+        dictionary.
+        """
+        self._validate_volname(volname)
+        for node in brick_data:
+            self.volds[volname]["brickdata"][node].remove(brick_data[node])
+        self.add_data_to_cleands(brick_data)
 
     def get_brickdata(self, volname: str) -> dict:
         """
@@ -358,9 +368,9 @@ class FrameworkEnv:
             option_list (dict) : dict of key value pair of options to be set.
         """
         self._validate_volname(volname)
-        if 'options' not in self.volds[volname].keys():
+        if 'options' not in list(self.volds[volname]):
             self.volds[volname]['options'] = {}
-        for (opt, opt_val) in options_dict.items():
+        for (opt, opt_val) in list(options_dict.items()):
             self.volds[volname]['options'][opt] = opt_val
 
     def set_vol_options_all(self, option_list: list):
@@ -369,7 +379,7 @@ class FrameworkEnv:
         Arg:
             option_list (list)
         """
-        for vol in self.volds.keys():
+        for vol in list(self.volds):
             self.set_vol_option(vol, option_list)
 
     def get_vol_option(self, volname: str) -> dict:
@@ -397,35 +407,33 @@ class FrameworkEnv:
             return False
         return True
 
-    def reset_volume_options_dict(self, volname: str):
+    def _reset_all_options_in_a_vol(self, volname):
         """
-        Method to remove volume options data from the volds.
-        Arg:
-            volname (str)
+        Method to reset all options of a given volume.
         """
-        self._validate_volname(volname)
-        del self.volds[volname]['options']
+        if self.volds[volname]['options'] != {}:
+            for opt in list(self.volds[volname]['options']):
+                del self.volds[volname]['options'][opt]
 
-    def reset_volume_options(self, volname: str, option: str):
+    def reset_volume_option(self, volname: str, option: str):
         """
-        Method to remove a volume option data from volds.
-        Args:
-            volname (str)
-            option (str)
+        Method to handle the reseting of the volume options
+        populated inside the volds.
         """
-        self._validate_volname(volname)
-        del self.volds[volname]['options'][option]
-
-    def reset_all_volume_options(self, option: str):
-        """
-        Method to clear out a volume option for all volumes.
-        """
-        if option == "all":
-            for volume in self.volds.keys():
-                self.reset_volume_options_dict(volume)
-        else:
-            for volume in self.volds.keys():
-                del self.volds[volume]['options'][option]
+        if volname == "all" and option == "all":
+            for volname in list(self.volds):
+                self._reset_all_options_in_a_vol(volname)
+        elif volname == "all":
+            for volname in list(self.volds):
+                if self.volds[volname]['options'] != {}:
+                    del self.volds[volname]['options'][option]
+        elif option == "all":
+            if self.volds[volname]['options'] != {}:
+                for opt in list(self.volds[volname]['options']):
+                    del self.volds[volname]['options'][opt]
+        elif self.volds[volname]['options'] != {} and \
+                option in self.volds[volname]['options']:
+            del self.volds[volname]['options'][option]
 
     def add_data_to_cleands(self, brickdata: dict):
         """
@@ -437,7 +445,7 @@ class FrameworkEnv:
                                brick paths.
         """
         for node in brickdata:
-            if node not in self.cleands.keys():
+            if node not in list(self.cleands):
                 self.cleands[node] = []
             self.cleands[node].append(brickdata[node])
 

@@ -35,7 +35,6 @@ class DParentTest(metaclass=abc.ABCMeta):
         client_details = param_obj.get_client_config()
 
         self.TEST_RES = True
-        print(volume_type)
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
         self.vol_name = (f"{mname}-{volume_type}")
