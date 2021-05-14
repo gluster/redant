@@ -39,10 +39,9 @@ class TestSettingVolumeLevelOptionToCluster(AbstractTest):
 
         # Set transport.listen-backlog to 128 for all volumes.(Should fail!)
         try:
-            ret = (redant.
-                   set_volume_options('all',
+            redant.set_volume_options('all',
                                       {'transport.listen-backlog': '128'},
-                                      self.server_list[0]))
+                                      self.server_list[0])
         except Exception as error:
             redant.logger.info(error)
             redant.logger.info("Successfully tested"
