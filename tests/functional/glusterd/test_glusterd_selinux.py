@@ -45,23 +45,22 @@ class TestGlusterAgainstSELinux(AbstractTest):
         for server in self.server_list:
             # Check existence of xml file
             if not redant.path_exists(server, fqpath):
-                redant.logger.error("Failed to verify existence of"
-                                    f"'{fqpath}' in {server} ")
-                continue
+                raise Exception("Failed to verify existence of"
+                                f"'{fqpath}' in {server}")
 
             # Check owner of xml file
             command = self.get_cmd('rpm', 'qf', fqpath)
-            ret = redant.execute_io_cmd(command, server)
+            ret = redant.execute_abstract_op_node(command, server)
             exp_str = 'glusterfs-server'
             ret_msg = " ".join(ret['msg'])
             if exp_str not in ret_msg:
-                redant.logger.error(f"Fail: Owner of {fqpath} should be "
-                                    f"{exp_str} on {server}")
+                raise Exception(f"Fail: Owner of {fqpath} should be "
+                                f"{exp_str} on {server}")
 
             # Validate SELinux label
             command = self.get_cmd('ls', 'lZ', fqpath)
-            ret = redant.execute_io_cmd(command, server)
+            ret = redant.execute_abstract_op_node(command, server)
             exp_str = 'system_u:object_r:lib_t:s0'
             if exp_str not in ret_msg:
-                redant.logger.error(f"Fail: SELinux label on {fqpath}"
-                                    f"should be {exp_str} on {server}")
+                raise Exception(f"Fail: SELinux label on {fqpath}"
+                                f"should be {exp_str} on {server}")
