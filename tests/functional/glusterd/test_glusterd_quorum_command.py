@@ -15,8 +15,8 @@
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-Description:
-    Test quorum cli commands in glusterd
+  Description:
+      Test quorum cli commands in glusterd
 """
 
 # disruptive;rep,dist,disp,arb,dist-arb,dist-rep

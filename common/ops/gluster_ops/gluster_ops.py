@@ -13,7 +13,7 @@ class GlusterOps(AbstractOps):
     the glusterd service on either the client or the sever.
     """
 
-    def start_glusterd(self, node=None, enable_retry: bool = True):
+    def start_glusterd(self, node=None, enable_retry: bool = True) -> dict:
         """
         Starts the glusterd service on the specified node or nodes.
         Args:
@@ -59,7 +59,7 @@ class GlusterOps(AbstractOps):
 
         return ret
 
-    def restart_glusterd(self, node: str, enable_retry: bool = True):
+    def restart_glusterd(self, node: str, enable_retry: bool = True) -> dict:
         """
         Restarts the glusterd service on the specified node or nodes.
         Args:
@@ -103,7 +103,7 @@ class GlusterOps(AbstractOps):
 
         return ret
 
-    def stop_glusterd(self, node=None):
+    def stop_glusterd(self, node=None) -> dict:
         """
         Stops the glusterd service on the specified node(s).
         Args:
@@ -206,7 +206,7 @@ class GlusterOps(AbstractOps):
 
         return is_active
 
-    def wait_for_glusterd_to_start(self, node=None, timeout: int = 80):
+    def wait_for_glusterd_to_start(self, node: str, timeout: int = 80) -> bool:
         """
         Checks if the glusterd has started already or waits for
         it till the timeout is reached.
