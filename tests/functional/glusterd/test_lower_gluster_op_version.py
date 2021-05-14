@@ -37,8 +37,6 @@ class LowerGlusterOpVersion(AbstractTest):
         ret = redant.get_volume_options(node=self.server_list[0])
         cluster_op = ret['cluster.op-version']
 
-        if cluster_op is None:
-            raise Exception("Failed to get the op-version")
         redant.logger.info("Successfully got the op-version")
 
         # Lowest opversion is 30000
