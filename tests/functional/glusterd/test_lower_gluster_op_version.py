@@ -34,9 +34,10 @@ class LowerGlusterOpVersion(AbstractTest):
         - Set the invalid op-version
         """
         # Get the volume op-version
-        ret = redant.get_volume_options(node=self.server_list[0])
-        cluster_op = ret['cluster.op-version']
-
+        ret = (redant.
+               get_volume_options(node=self.server_list[0])
+               ['cluster.op-version'])
+        redant.logger.info(f"Op-verion: {ret}")
         redant.logger.info("Successfully got the op-version")
 
         # Lowest opversion is 30000
