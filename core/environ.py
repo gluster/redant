@@ -167,7 +167,7 @@ class FrameworkEnv:
             voltype_dict (dict)
         """
         self._validate_volname(volname)
-        for (volt_key, volt_val) in (voltype_dict.items()):
+        for (volt_key, volt_val) in list(voltype_dict.items()):
             self.volds[volname]['voltype'][volt_key] = volt_val
 
     def get_vol_type_changes(self, volname: str, pre_voltype: dict) -> dict:
@@ -421,12 +421,12 @@ class FrameworkEnv:
         populated inside the volds.
         """
         if volname == "all" and option == "all":
-            for volname in list(self.volds):
-                self._reset_all_options_in_a_vol(volname)
+            for vol_name in list(self.volds):
+                self._reset_all_options_in_a_vol(vol_name)
         elif volname == "all":
-            for volname in list(self.volds):
-                if self.volds[volname]['options'] != {}:
-                    del self.volds[volname]['options'][option]
+            for vol_name in list(self.volds):
+                if self.volds[vol_name]['options'] != {}:
+                    del self.volds[vol_name]['options'][option]
         elif option == "all":
             if self.volds[volname]['options'] != {}:
                 for opt in list(self.volds[volname]['options']):
