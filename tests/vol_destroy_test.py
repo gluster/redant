@@ -31,7 +31,7 @@ class VolDestroy(LazyParentTest):
         """
         redant.volume_unmount(self.vol_name, self.mountpoint,
                               self.client_list[0])
-        redant.execute_io_cmd(f"rm -rf {self.mountpoint}",
-                              self.client_list[0])
+        redant.execute_abstract_op_node(f"rm -rf {self.mountpoint}",
+                                        self.client_list[0])
         redant.volume_stop(self.vol_name, self.server_list[0], True)
         redant.volume_delete(self.vol_name, self.server_list[0])
