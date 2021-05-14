@@ -48,8 +48,8 @@ class LowerGlusterOpVersion(AbstractTest):
 
         # Set the volume option with lower op-version
         try:
-            ret = redant.set_volume_options('all', lower_op_version_dict,
-                                            self.server_list[0])
+            redant.set_volume_options('all', lower_op_version_dict,
+                                      self.server_list[0])
         except Exception as error:
             redant.logger.info(error)
             redant.logger.info("Failed: setting lower"
@@ -57,8 +57,8 @@ class LowerGlusterOpVersion(AbstractTest):
 
         # Setting invalid opversion
         try:
-            ret = redant.set_volume_options('all', invalid_op_version_dict,
-                                            self.server_list[0])
+            redant.set_volume_options('all', invalid_op_version_dict,
+                                      self.server_list[0])
         except Exception as error:
             redant.logger.info(error)
             redant.logger.info("Successfully tested setting invalid"
