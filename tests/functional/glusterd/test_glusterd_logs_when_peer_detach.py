@@ -41,13 +41,16 @@ class GlusterdLogsWhilePeerDetach(AbstractTest):
         timestamp = ret['msg'][0].rstrip("\n")
 
         #  glusterd logs
-        ret = redant.execute_abstract_op_node('cp /var/log/glusterfs/glusterd.log /var/'
-                                    f'log/glusterfs/glusterd_{timestamp}.log',
-                                    self.server_list[0])
+        ret = redant.execute_abstract_op_node('cp /var/log/glusterfs/'
+                                              'glusterd.log /var/log/'
+                                              'glusterfs/'
+                                              f'glusterd_{timestamp}.log',
+                                              self.server_list[0])
 
         # Clearing the existing glusterd log file
-        ret = redant.execute_abstract_op_node('echo > /var/log/glusterfs/glusterd.log',
-                                    self.server_list[0])
+        ret = redant.execute_abstract_op_node('echo > /var/log/glusterfs/'
+                                              'glusterd.log',
+                                              self.server_list[0])
 
         # Performing peer detach
         random_server = random.choice(self.server_list[1:])
@@ -55,8 +58,8 @@ class GlusterdLogsWhilePeerDetach(AbstractTest):
 
         # Searching for error message in log
         ret = redant.execute_abstract_op_node("grep ' E ' /var/log/glusterfs/"
-                                    "glusterd.log | wc -l",
-                                    self.server_list[0])
+                                              "glusterd.log | wc -l",
+                                              self.server_list[0])
         if int(ret['msg'][0]) != 0:
             redant.logger.info("Found Error messages in glusterd log "
                                "file after peer detach")
