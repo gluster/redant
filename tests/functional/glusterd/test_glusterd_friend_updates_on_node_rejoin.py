@@ -66,14 +66,15 @@ class TestGlusterdFriendUpdatesWhenPeerRejoins(AbstractTest):
 
         # Check if there are any friend update between other nodes
         # and the restarted node
+        glusterd_log_path = "/var/log/glusterfs/glusterd.log"
         for server in self.server_list:
             # Don't check on the restarted node
             if server != self.server_list[0]:
                 for uuid in peer_lst:
-                    cmd = ("awk '/%s/,0' /var/log/glusterfs/glusterd.log |"
-                           " grep '_handle_friend_update' | grep %s | wc -l"
-                           % (curr_time, uuid))
-                    ret = redant.execute_command(cmd, self.server_list[0])
+                    cmd = (f"awk '/{curr_time}/,0' {glusterd_log_path} |"
+                           f" grep '_handle_friend_update' | grep {uuid}"
+                           f" | wc -l")
+                    ret = redant.execute_abstract_op_node(cmd, server)
                     if int(ret['msg'][0]) != 0:
                         raise Exception("Unexpected: Found friend updates"
                                         " between other nodes")
@@ -82,9 +83,9 @@ class TestGlusterdFriendUpdatesWhenPeerRejoins(AbstractTest):
                            " peer nodes")
 
         # Check friend updates between rejoined node and other nodes
-        cmd = ("awk '/%s/,0' /var/log/glusterfs/glusterd.log "
-               "| grep '_handle_friend_update' | wc -l" % curr_time)
-        ret = redant.execute_command(cmd, self.server_list[0])
+        cmd = (f"awk '/{curr_time}/,0' /var/log/glusterfs/glusterd.log "
+               f"| grep '_handle_friend_update' | wc -l")
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
         count = int(ret['msg'][0])
 
         # Calculate the expected friend updates for a given cluster size
