@@ -14,29 +14,6 @@ class IoOps(AbstractOps):
     the other the io_ops which execute on mountpoints.
     """
 
-    def execute_io_cmd(self, cmd: str, host: str = None):
-        '''
-        Used for all the IO commands
-
-        Args:
-            cmd (str): The IO command which is to be run
-            host (str): The node in the cluster where the command is to be run
-
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-
-        '''
-
-        ret = self.execute_abstract_op_node(cmd, host)
-
-        return ret
-
     def create_file(self, path: str, filename: str, node: str):
         """
         Creates a file in the specified specified path
