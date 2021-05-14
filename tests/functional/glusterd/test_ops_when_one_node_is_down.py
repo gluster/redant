@@ -17,15 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
 This test deals with testing ops when one node is down.
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_init import (
-    start_glusterd, stop_glusterd, wait_for_glusterd_to_start)
-from glustolibs.gluster.peer_ops import peer_status, wait_for_peers_to_connect
-from glustolibs.gluster.volume_ops import volume_list, volume_info
-from glustolibs.gluster.volume_libs import (cleanup_volume, setup_volume)
 """
 
 
@@ -75,10 +66,14 @@ class TestOpsWhenOneNodeIsDown(AbstractTest):
         redant.logger.info("Successfully started glusterd.")
 
         for server in self.server_list:
-            redant.wait_for_glusterd_to_start(server)
+            ret = redant.wait_for_glusterd_to_start(server)
+            if not ret:
+                raise Exception("Failed: wait for glusterd to start")
         redant.logger.info("Glusterd start on the nodes succeeded")
 
         # Checking if peer is connected.
-        redant.wait_for_peers_to_connect(self.server_list[0],
-                                         self.server_list)
+        ret = redant.wait_for_peers_to_connect(self.server_list[0],
+                                               self.server_list)
+        if not ret:
+            raise Exception("Failed : Wait for peers to connect")
         redant.logger.info("Peers is in connected state.")
