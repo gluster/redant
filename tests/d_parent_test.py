@@ -62,7 +62,7 @@ class DParentTest(metaclass=abc.ABCMeta):
         which is overridden by every TC.
         """
         try:
-            self.redant.start_glusterd()
+            self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
 
             if self.volume_type != "Generic":

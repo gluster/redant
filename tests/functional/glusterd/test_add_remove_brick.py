@@ -2,7 +2,7 @@
 This file contains a test case
 that checks the add-brick and remove-brick functionality
 """
-# nonDisruptive;dist-rep,rep,dist,arb
+# nonDisruptive;rep,arb,dist-rep,dist
 from tests.nd_parent_test import NdParentTest
 
 
