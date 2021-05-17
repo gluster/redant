@@ -79,7 +79,7 @@ class NdParentTest(metaclass=abc.ABCMeta):
         try:
             if not self.redant.es.get_volume_start_status(self.vol_name):
                 self.redant.volume_start(self.vol_name, self.server_list[0])
-        
+
         # Condition 2. Volume options if set to be reset.
             if self.redant.es.is_volume_options_populated(self.vol_name):
                 vol_options = self.redant.es.get_vol_option(self.vol_name)
