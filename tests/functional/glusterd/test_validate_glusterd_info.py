@@ -65,12 +65,12 @@ class TestGlusterdInfo(AbstractTest):
             for node in self.server_list:
                 uuid_list = []
                 if node != server:
-                    peer_status = redant.get_peer_status(node)
-                    if isinstance(peer_status, list):
-                        for i in peer_status:
-                            uuid_list.append(i["uuid"])
+                    peer_status_list = redant.get_peer_status(node)
+                    if isinstance(peer_status_list, list):
+                        for peer in peer_status_list:
+                            uuid_list.append(peer["uuid"])
                     else:
-                        uuid_list.append(peer_status["uuid"])
+                        uuid_list.append(peer_status_list["uuid"])
 
                     if get_uuid.rstrip("\n") not in uuid_list:
                         raise Exception(f"uuid not matched in {node}")
