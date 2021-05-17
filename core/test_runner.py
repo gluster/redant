@@ -111,6 +111,17 @@ class TestRunner:
                 cls._run_test(job_data)
 
     @classmethod
+    def _gen_worker_process(cls, test_queue):
+        """
+        Worker process for handling non disruptive test cases of
+        generic nature.
+        """
+        while not test_queue.empty():
+            job_data = test_queue.get()
+            job_data["volType"] = "Generic"
+            cls._run_test(job_data)
+
+    @classmethod
     def run_tests(cls, env_obj):
         """
         The test runs are of three stages,
@@ -138,7 +149,20 @@ class TestRunner:
             for _ in range(cls.concur_count):
                 proc.join()
 
-        # Stage 2 for Generic concurrent tests.
+            # Stage 2 for Generic concurrent tests.
+            jobs = []
+            for _ in range(cls.concur_count):
+                proc = Process(target=cls._gen_worker_process,
+                               args=(cls.gen_nd_jobq,))
+                jobs.append(proc)
+                proc.start()
+
+            while len(jobs) > 0:
+                jobs = [job for job in jobs if job.is_alive()]
+                time.sleep(1)
+
+            for _ in range(cls.concur_count):
+                proc.join()
 
         # Stage 3
         for test in cls.get_dtest_fn():
