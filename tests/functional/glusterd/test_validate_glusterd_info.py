@@ -24,6 +24,8 @@ class TestGlusterdInfo(AbstractTest):
 
     def run_test(self, redant):
         """
+        test_glusterd_config_file_check test function is merged with
+        test_validate _glusterd_info test function.
         Steps:
             1. Check for the presence of /var/lib/glusterd/glusterd.info file
             2. Get the UUID of the current NODE
@@ -32,23 +34,25 @@ class TestGlusterdInfo(AbstractTest):
             4. Check the uuid value shown by other node in the cluster
                 for the same node "gluster peer status"
                 on one node will give the UUID of the other node
+            5. Check the location of glusterd socket file ( glusterd.socket )
+                ls  /var/run/ | grep -i glusterd.socket
+            6. systemctl is-enabled glusterd -> enabled
         """
-        uuid_list = []
         for server in self.server_list:
 
             # Getting UUID from glusterd.info
             redant.logger.info("Getting the UUID from glusterd.info")
-            ret = redant.execute_abstract_op_node(
-                "grep -i uuid /var/lib/glusterd/glusterd.info", server)
+            ret = redant.execute_abstract_op_node("grep -i uuid /var/lib/"
+                                                  "glusterd/glusterd.info",
+                                                  server)
             glusterd_volinfo = " ".join(ret['msg'])
-            uuid_list.append(glusterd_volinfo)
             glusterd_volinfo = (glusterd_volinfo.split("="))[1]
             if not glusterd_volinfo:
                 raise Exception("UUID not found in 'glusterd.info' file ")
 
             # Getting UUID from cmd 'gluster system uuid get'
-            ret = redant.execute_abstract_op_node(
-                "gluster system uuid get | awk {'print $2'}", server)
+            ret = redant.execute_abstract_op_node("gluster system:: uuid get |"
+                                                  " awk {'print $2'}", server)
             get_uuid = " ".join(ret['msg'])
             if not get_uuid:
                 raise Exception("UUID not found")
@@ -59,26 +63,19 @@ class TestGlusterdInfo(AbstractTest):
 
             # Geting the UUID from cmd "gluster peer status"
             for node in self.server_list:
-                peer_status = redant.get_peer_status(node)
-                if isinstance(peer_status, list):
-                    for i in redant.get_peer_status(node):
-                        uuid_list.append(i["uuid"])
-                else:
-                    uuid_list.append(peer_status["uuid"])
+                uuid_list = []
+                if node != server:
+                    peer_status = redant.get_peer_status(node)
+                    if isinstance(peer_status, list):
+                        for i in peer_status:
+                            uuid_list.append(i["uuid"])
+                    else:
+                        uuid_list.append(peer_status["uuid"])
 
-                if server != node and get_uuid.rstrip("\n") not in uuid_list:
-                    raise Exception(f"uuid not matched in {node}")
-        self.test_glusterd_config_file_check(redant)
+                    if get_uuid.rstrip("\n") not in uuid_list:
+                        raise Exception(f"uuid not matched in {node}")
 
-    def test_glusterd_config_file_check(self, redant):
-        """
-        Steps:
-            1. Check the location of glusterd socket file ( glusterd.socket )
-                ls  /var/run/ | grep -i glusterd.socket
-            2. systemctl is-enabled glusterd -> enabled
-
-        """
-
+        # Merged test_glusterd_config_file_check into this test case
         cmd = "ls  /var/run/ | grep -i glusterd.socket"
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
         msg = " ".join(ret['msg'])
