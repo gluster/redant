@@ -68,12 +68,12 @@ class TestOpsWhenOneNodeIsDown(AbstractTest):
         for server in self.server_list:
             ret = redant.wait_for_glusterd_to_start(server)
             if not ret:
-                raise Exception("Failed: wait for glusterd to start")
+                raise Exception(f"Failed: Glusterd not started on {server}")
         redant.logger.info("Glusterd start on the nodes succeeded")
 
         # Checking if peer is connected.
         ret = redant.wait_for_peers_to_connect(self.server_list[0],
                                                self.server_list)
         if not ret:
-            raise Exception("Failed : Wait for peers to connect")
+            raise Exception("Failed : All the peer are not connected")
         redant.logger.info("Peers is in connected state.")
