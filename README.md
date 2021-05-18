@@ -85,7 +85,7 @@ One can also run the scripts given under the tools dir which will reduce the
 lengthy commands to be typed out everytime. Check out the README.md at the link
 [Tools-README](./tools/README.md)
 
-## Those looking to get into the action of migratingtest cases.
+## Those looking to get into the action of migrating test cases.
 
 Please refer the doc : [migratingTC.md](./docs/BP/migratingTC.md)
 
