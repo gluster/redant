@@ -125,9 +125,7 @@ class BrickOps:
 
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
 
-        for each in server_brick:
-            self.volds[volname]["brickdata"][each].extend(server_brick[each])
-
+        self.es.add_bricks_to_brickdata(volname, server_brick)
         return ret
 
     def remove_brick(self, node: str, volname: str, conf_hash: dict,
@@ -234,11 +232,7 @@ class BrickOps:
                    f"{volname} {' '.join(bricks_list)} {option} --xml")
 
         ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-
-        for each_server in server_brick:
-            for each_brick in server_brick[each_server]:
-                (self.volds[volname]["brickdata"][each_server]
-                 .remove(each_brick))
+        self.es.remove_bricks_from_brickdata(volname, server_brick)
 
         return ret
 

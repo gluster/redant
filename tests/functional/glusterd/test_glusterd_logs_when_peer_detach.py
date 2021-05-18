@@ -20,12 +20,12 @@
 """
 
 import random
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 # disruptive;
 
 
-class GlusterdLogsWhilePeerDetach(AbstractTest):
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         '''

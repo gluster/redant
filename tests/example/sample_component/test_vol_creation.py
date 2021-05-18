@@ -4,10 +4,10 @@ the creation of different volume types.
 """
 # nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestCase(AbstractTest):
+class TestCase(NdParentTest):
     """
     The test case contains one function to test
     for the creation of different types of files and

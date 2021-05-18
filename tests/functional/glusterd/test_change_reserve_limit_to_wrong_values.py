@@ -21,12 +21,12 @@
 
 import string
 from random import choice
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 # nonDisruptive;dist-rep
 
 
-class TestChangeReserveLimit(AbstractTest):
+class TestCase(NdParentTest):
     """
     Test to validate behaviour of 'storage.reserve' option on supplying
     erroneous values.

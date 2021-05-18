@@ -3,11 +3,11 @@ import abc
 from common.mixin import RedantMixin
 
 
-class AbstractTest(metaclass=abc.ABCMeta):
+class DParentTest(metaclass=abc.ABCMeta):
 
     """
     This class contains the standard info and methods which are needed by
-    most of the tests
+    disruptive testss
 
     TEST_RES: states the result of the test case
 
@@ -24,7 +24,7 @@ class AbstractTest(metaclass=abc.ABCMeta):
     }
 
     def __init__(self, mname: str, param_obj, volume_type: str,
-                 log_path: str, log_level: str = 'I'):
+                 env_obj, log_path: str, log_level: str = 'I'):
         """
         Creates volume
         And runs the specific component in the
@@ -37,39 +37,38 @@ class AbstractTest(metaclass=abc.ABCMeta):
         self.TEST_RES = True
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
-        self._configure(f"{mname}-{volume_type}", server_details,
-                        client_details, log_path, log_level)
+        self.vol_name = (f"{mname}-{volume_type}")
+        self._configure(self.vol_name, server_details, client_details,
+                        env_obj, log_path, log_level)
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
 
     def _configure(self, mname: str, server_details: dict,
-                   client_details: dict, log_path: str, log_level: str):
+                   client_details: dict, env_obj, log_path: str,
+                   log_level: str):
         machine_detail = {**client_details, **server_details}
-        self.redant = RedantMixin(machine_detail)
+        self.redant = RedantMixin(machine_detail, env_obj)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
-        self.test_name = mname
 
     @abc.abstractmethod
     def run_test(self, redant):
         pass
 
-    def parent_run_test(self, mname: str, volume_type: str, thread_flag: bool):
+    def parent_run_test(self):
         """
         Function to handle the exception logic and invokes the run_test
         which is overridden by every TC.
         """
         try:
-            if not thread_flag:
-                self.redant.start_glusterd()
-                self.redant.create_cluster(self.server_list)
+            self.redant.start_glusterd(self.server_list)
+            self.redant.create_cluster(self.server_list)
 
             if self.volume_type != "Generic":
-                self.vol_name = (f"{mname}-{volume_type}")
                 self.redant.volume_create(
                     self.vol_name, self.server_list[0],
-                    self.vol_type_inf[self.conv_dict[volume_type]],
+                    self.vol_type_inf[self.conv_dict[self.volume_type]],
                     self.server_list, self.brick_roots, True)
                 self.redant.volume_start(self.vol_name, self.server_list[0])
                 self.mountpoint = (f"/mnt/{self.vol_name}")
@@ -99,4 +98,14 @@ class AbstractTest(metaclass=abc.ABCMeta):
         """
         Closes connection for now.
         """
+        # Perform cleanups. Stage 1 being stopping the volume if its still
+        # running.
+        try:
+            if self.redant.es.get_volume_start_status(self.vol_name):
+                self.redant.volume_stop(
+                    self.vol_name, self.server_list[0], True)
+            if self.redant.es.does_volume_exists(self.vol_name):
+                self.redant.volume_delete(self.vol_name, self.server_list[0])
+        except:
+            pass
         self.redant.deconstruct_connection()

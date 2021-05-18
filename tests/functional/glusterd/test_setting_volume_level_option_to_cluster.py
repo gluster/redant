@@ -21,10 +21,10 @@ In this test we are testing the volume level option to cluster
 
 # nonDisruptive;
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestSettingVolumeLevelOptionToCluster(AbstractTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """

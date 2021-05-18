@@ -20,10 +20,10 @@
     Test Cases in this module tests Gluster against SELinux Labels and Policies
 """
 # nonDisruptive;
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestGlusterAgainstSELinux(AbstractTest):
+class TestCase(NdParentTest):
 
     @staticmethod
     def get_cmd(cmd, opts='', operate_on=''):

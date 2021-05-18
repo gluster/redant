@@ -20,10 +20,10 @@
 """
 
 # nonDisruptive;dist-rep
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestPosixStorageReserveOption(AbstractTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
@@ -39,7 +39,7 @@ class TestPosixStorageReserveOption(AbstractTest):
             self.server_list[0])
 
         # Get the mount point
-        mount_point = redant.get_mnt_pts_dict(self.vol_name)
+        mount_point = redant.es.get_mnt_pts_dict(self.vol_name)
         mount_point = mount_point[self.client_list[0]][0]
 
         # check df -h output
