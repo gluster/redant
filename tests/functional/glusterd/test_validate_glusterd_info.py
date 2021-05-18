@@ -17,10 +17,10 @@
 """
 
 # nonDisruptive;
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestGlusterdInfo(AbstractTest):
+class TestGlusterdInfo(NdParentTest):
 
     def run_test(self, redant):
         """
@@ -76,6 +76,7 @@ class TestGlusterdInfo(AbstractTest):
                         raise Exception(f"uuid not matched in {node}")
 
         # Merged test_glusterd_config_file_check into this test case
+        # TODO: replace the below operation with path_exists function call
         cmd = "ls  /var/run/ | grep -i glusterd.socket"
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
         msg = " ".join(ret['msg'])
