@@ -23,10 +23,10 @@ This test deals with testing ops when one node is down.
 # disruptive;rep
 
 from random import randint
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 
-class TestOpsWhenOneNodeIsDown(AbstractTest):
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
