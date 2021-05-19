@@ -28,13 +28,14 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def check_options_file(self, redant, option: str):
+    def check_options_file(self, redant, option: str) -> str:
         """
         This function checks 'options' file
         for quorum related entries
 
         Args:
         redant: Redant object
+        option (str) : the option to check
 
         Returns:
         The message from dictionary ret.
