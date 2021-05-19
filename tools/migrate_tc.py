@@ -1,4 +1,4 @@
-""" 
+"""
 Migration script for test case migration from Glusto-tests to
 redant repository. For more information, check the help flag.
 """
