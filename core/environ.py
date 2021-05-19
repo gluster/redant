@@ -286,7 +286,7 @@ class FrameworkEnv:
         for node in brick_dict:
             if node not in self.volds[volname]['brickdata'].keys():
                 self.volds[volname]['brickdata'][node] = []
-            self.volds[volname]['brickdata'][node].append(brick_dict[node])
+            self.volds[volname]['brickdata'][node].extend(brick_dict[node])
 
     def set_brickdata(self, volname: str, brick_dict: dict):
         """
@@ -307,8 +307,10 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         for node in brick_data:
-            self.volds[volname]["brickdata"][node].remove(brick_data[node])
+            for brick in brick_data[node]:
+                self.volds[volname]["brickdata"][node].remove(brick)
         self.add_data_to_cleands(brick_data)
+        
 
     def get_brickdata(self, volname: str) -> dict:
         """
