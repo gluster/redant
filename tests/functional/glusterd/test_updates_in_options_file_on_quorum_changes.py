@@ -37,11 +37,11 @@ class TestCase(DParentTest):
         redant: Redant object
 
         Returns:
-        op-version: the op version
+        The message from dictionary ret.
         """
         cmd = f"cat /var/lib/glusterd/options | grep {option}"
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
-        return ret
+        return ret['msg'][0]
 
     def run_test(self, redant):
         """
@@ -57,7 +57,7 @@ class TestCase(DParentTest):
         # Checking 'options' file for quorum related entries
         ret = self.check_options_file(redant,
                                       "global-option-version")
-        out = ret['msg'][0].rstrip('\n')
+        out = ret.rstrip('\n')
         prev_global_op_ver = out.split('=')[1]
 
         # Setting Quorum ratio in percentage
@@ -67,7 +67,7 @@ class TestCase(DParentTest):
         # Checking 'options' file for quorum related entries
         ret = self.check_options_file(redant,
                                       "global-option-version")
-        out = ret['msg'][0].rstrip('\n')
+        out = ret.rstrip('\n')
         new_global_op_ver = out.split('=')[1]
 
         if int(prev_global_op_ver) + 1 != int(new_global_op_ver):
@@ -79,7 +79,7 @@ class TestCase(DParentTest):
 
         ret = self.check_options_file(redant,
                                       "server-quorum-ratio")
-        out = ret['msg'][0].split("%")[0]
+        out = ret.split("%")[0]
         if out != "cluster.server-quorum-ratio=70":
             raise Exception("Server-quorum-ratio is not updated in"
                             " options file")
