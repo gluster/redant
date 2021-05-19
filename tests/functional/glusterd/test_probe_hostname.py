@@ -29,7 +29,7 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def vol_operations(self, redant, volname: str):
+    def _vol_operations(self, redant, volname: str):
         """
         This function performs a
         set of colume operations like
@@ -115,7 +115,7 @@ class TestCase(DParentTest):
         redant.logger.info("Volume: test-vol created successfully")
 
         # perform the set of volume operations
-        self.vol_operations(redant, "test-vol")
+        self._vol_operations(redant, "test-vol")
 
         # Getting FQDN (Full qualified domain name) of each host and
         # replacing ip with FQDN name for each brick for example
@@ -140,7 +140,7 @@ class TestCase(DParentTest):
         redant.es.set_new_volume("test-vol-fqdn", brick_dict)
 
         # perform the set of volume operations
-        self.vol_operations(redant, "test-vol-fqdn")
+        self._vol_operations(redant, "test-vol-fqdn")
 
         # creating the cluster back again
         ret = redant.create_cluster(self.server_list)
