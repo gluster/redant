@@ -44,7 +44,7 @@ class IoOps(AbstractOps):
         cmd = f"mkdir -p {path}/{dirname}"
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def create_dirs(self, list_of_nodes: list, list_of_dir_paths: list):
+    def create_dirs(self, list_of_nodes: list, list_of_dir_paths: list) -> bool:
         """
         Create directories on nodes.
         Args:
@@ -75,7 +75,7 @@ class IoOps(AbstractOps):
 
         return _rc
 
-    def path_exists(self, list_of_nodes, list_of_paths):
+    def path_exists(self, list_of_nodes: list, list_of_paths: list) -> bool:
         """Check if paths exist on nodes.
         Args:
             list_of_nodes (list): List of nodes.
@@ -211,7 +211,7 @@ class IoOps(AbstractOps):
             self.logger.info("No core files found ")
             return False
 
-    def collect_mounts_arequal(self, mounts: dict, path=''):
+    def collect_mounts_arequal(self, mounts: dict, path='') -> list:
         """
         Collects arequal from all the mounts
         Args:
@@ -291,7 +291,7 @@ class IoOps(AbstractOps):
             ret = self.execute_abstract_op_node(cmd, host)
             self.logger.info(ret['msg'])
 
-    def get_mounts_stat(self, mounts):
+    def get_mounts_stat(self, mounts: list) -> list:
         """
         Recursively get stat of the mountpoint
         Args:
@@ -323,7 +323,7 @@ class IoOps(AbstractOps):
             raise Exception(error_msg)
         return ret['msg']
 
-    def list_all_files_and_dirs_mounts(self, mounts):
+    def list_all_files_and_dirs_mounts(self, mounts: list) -> bool:
         """List all Files and Directories from mounts.
         Args:
             mounts (list): List of all GlusterMount objs.
@@ -358,7 +358,7 @@ class IoOps(AbstractOps):
         return _rc
 
     # TODO: Test the below function when snaphot library is added.
-    def view_snaps_from_mount(self, mounts, snaps):
+    def view_snaps_from_mount(self, mounts: list, snaps: list) -> list:
         """
         View snaps from the mountpoint under ".snaps" directory
         Args:
@@ -414,14 +414,16 @@ class IoOps(AbstractOps):
             raise Exception("Failed to list snaps for some mountpoints")
         return _rc
 
-    def validate_io_procs(self, all_mounts_async_objs, mounts):
+    def validate_io_procs(self, all_mounts_async_objs: list,
+                          mounts: list) -> bool:
         """
         Validate whether IO was successful or not.
         Args:
-            all_mounts_async_objs (list): List of open connection descriptor as
-                returned by self.execute_command_async method.
+            all_mounts_async_objs (list): List of open connection descriptor
+                                          as returned by
+                                          self.execute_command_async method.
             mounts (list): List of all mountpoints on which process were
-                started.
+                           started.
         Returns:
             bool: True if IO is successful on all mounts. False otherwise.
         """
@@ -445,14 +447,15 @@ class IoOps(AbstractOps):
             return True
         return False
 
-    def wait_for_io_to_complete(self, all_mounts_async_objs, mounts):
+    def wait_for_io_to_complete(self, all_mounts_async_objs: list,
+                                mounts: list) -> bool:
         """
         Waits for IO to complete
         Args:
-            all_mounts_async_objs (list): List of open connection descriptor as
-                returned by g.run_async method.
+            all_mounts_async_objs (list): List of open connection descriptor
+                                          as returned by g.run_async method.
             mounts (list): List of all mountpoints on which process were
-                started.
+                           started.
         Returns:
             bool: True if IO is complete on all mounts. False otherwise.
         """
@@ -473,13 +476,14 @@ class IoOps(AbstractOps):
 
         return _rc
 
-    def cleanup_mounts(self, mounts):
+    def cleanup_mounts(self, mounts: list) -> bool:
         """
         Removes all the data from all the mountpoints
         Args:
             mounts (list): List of all GlusterMount objs.
         Returns:
-            bool: True if cleanup is successful on all mounts. False otherwise.
+            bool: True if cleanup is successful on all mounts
+                  False otherwise.
         """
         if isinstance(mounts, dict):
             mounts = [mounts]
@@ -539,8 +543,10 @@ class IoOps(AbstractOps):
 
         return _rc_lookup
 
-    def compare_dir_structure_mount_with_brick(self, mnthost, mntloc,
-                                               brick_list, perm_type):
+    def compare_dir_structure_mount_with_brick(self, mnthost: str,
+                                               mntloc: str,
+                                               brick_list: list,
+                                               perm_type: int) -> bool:
         """
         Compare mount point dir structure with brick path along
         with stat param.
@@ -548,12 +554,12 @@ class IoOps(AbstractOps):
             mnthost (str): hostname or ip of mnt system
             mntloc (str) : mount location of gluster file system
             brick_list (list) : list of all brick ip's with brick path
-            type  (int) : 0 represent user permission
+            perm_type  (int) : 0 represent user permission
                         : 1 represent group permission
                         : 2 represent access permission
         Returns:
-            True if directory structure are same
-            False if structure is not same
+            bool: True if directory structure are same,
+                  False if structure is not same
         """
 
         statformat = ''
@@ -583,18 +589,19 @@ class IoOps(AbstractOps):
 
         return True
 
-    def run_linux_untar(self, clients, mountpoint, dirs=('.')):
+    def run_linux_untar(self, clients: list, mountpoint: str,
+                        dirs: tuple=('.')) -> list:
         """Run linux kernal untar on a given mount point
         Args:
-        clients(str|list): Client nodes on which I/O
-                            has to be started.
-        mountpoint(str): Mount point where the volume is
-                        mounted.
+            clients(str|list): Client nodes on which I/O
+                               has to be started.
+            mountpoint(str): Mount point where the volume is
+                             mounted.
         Kwagrs:
-        dirs(tuple): A tuple of dirs where untar has to
-                        started. (Default:('.'))
+            dirs(tuple): A tuple of dirs where untar has to
+                         started. (Default:('.'))
         Returns:
-        list: Returns a list of process object
+            list: Returns a list of process object
         """
         # Checking and convering clients to list.
         if not isinstance(clients, list):
@@ -612,12 +619,12 @@ class IoOps(AbstractOps):
             for directory in dirs:
                 # copy linux tar to dir
                 cmd = (f"cp /root/linux-5.4.54.tar.xz "
-                       f"{mountpoint['mountpath']}/{directory}")
+                       f"{mountpoint}/{directory}")
                 self.execute_abstract_op_node(cmd, client)
 
                 # Start linux untar
-                cmd = ("cp /root/linux-5.4.54.tar.xz {}/{}"
-                       .format(mountpoint['mountpath'], directory))
+                cmd = ("cd {}/{}; tar -xvf linux-5.4.54.tar.xz"
+                       .format(mountpoint, directory))
                 async_obj = self.execute_command_async(cmd, client)
                 list_of_procs.append(async_obj)
 
