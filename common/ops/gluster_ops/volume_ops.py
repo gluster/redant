@@ -432,6 +432,7 @@ class VolumeOps(AbstractOps):
                 the function returns the output of gluster volume status
         Returns:
             dict: volume status in dict of dictionary format
+            None: In case no volumes are present
         Example:
             get_volume_status("test-vol1",server)
          >>>{ 'test-vol1': {
@@ -468,6 +469,10 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         volume_status = ret['msg']['volStatus']['volumes']
+
+        if volume_status is None:
+            return None
+
         ret_dict = {}
         volume_list = volume_status['volume']
         if not isinstance(volume_list, list):
