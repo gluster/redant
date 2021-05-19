@@ -310,7 +310,6 @@ class FrameworkEnv:
             for brick in brick_data[node]:
                 self.volds[volname]["brickdata"][node].remove(brick)
         self.add_data_to_cleands(brick_data)
-        
 
     def get_brickdata(self, volname: str) -> dict:
         """
