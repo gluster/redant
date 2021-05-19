@@ -28,6 +28,21 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    def check_options_file(self, redant, option: str):
+        """
+        This function checks 'options' file
+        for quorum related entries
+
+        Args:
+        redant: Redant object
+
+        Returns:
+        op-version: the op version
+        """
+        cmd = f"cat /var/lib/glusterd/options | grep {option}"
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
+        return ret
+
     def run_test(self, redant):
         """
         Test Case:
@@ -40,8 +55,8 @@ class TestCase(DParentTest):
            if the value of 'server-quorum-ratio' is set to 70%
         """
         # Checking 'options' file for quorum related entries
-        cmd = "cat /var/lib/glusterd/options | grep global-option-version"
-        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
+        ret = self.check_options_file(redant,
+                                      "global-option-version")
         out = ret['msg'][0].rstrip('\n')
         prev_global_op_ver = out.split('=')[1]
 
@@ -50,8 +65,8 @@ class TestCase(DParentTest):
         redant.set_volume_options('all', quorum_perecent, self.server_list[0])
 
         # Checking 'options' file for quorum related entries
-        cmd = "cat /var/lib/glusterd/options | grep global-option-version"
-        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
+        ret = self.check_options_file(redant,
+                                      "global-option-version")
         out = ret['msg'][0].rstrip('\n')
         new_global_op_ver = out.split('=')[1]
 
@@ -62,8 +77,8 @@ class TestCase(DParentTest):
         redant.logger.info("The global-option-version was successfully "
                            " updated in the options file")
 
-        cmd = "cat /var/lib/glusterd/options | grep server-quorum-ratio"
-        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
+        ret = self.check_options_file(redant,
+                                      "server-quorum-ratio")
         out = ret['msg'][0].split("%")[0]
         if out != "cluster.server-quorum-ratio=70":
             raise Exception("Server-quorum-ratio is not updated in"
