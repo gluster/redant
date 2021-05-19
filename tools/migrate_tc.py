@@ -1,4 +1,7 @@
-""" Migration script for glusto to redant. To be used only for test cases."""
+""" 
+Migration script for test case migration from Glusto-tests to
+redant repository. For more information, check the help flag.
+"""
 
 from os import path, system, chdir
 import argparse
