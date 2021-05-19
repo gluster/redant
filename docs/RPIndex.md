@@ -13,5 +13,6 @@ REDANT project.
 * [Documentation on Core features](./RP/Core/Index.md)
 * [Documentation on Common features](./RP/Common/Index.md)
 * [Documentation on Test features](./RP/Test/Index.md)
+* [Documentaiton on Tools](./RP/Tools/Index.md)
 * [Taking the Blue Pill of how to use Redant](./BPIndex.md)
 
