@@ -20,31 +20,43 @@ Description:
     Test Default volume behavior and quorum options
 """
 
-# nonDisruptive;dist-arb
+
 from time import sleep
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class GetVolumeStatusXmlDump(AbstractTest):
+# nonDisruptive;dist-arb
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
-        Setps:
+        Steps:
         1. stop one of the volume
             (i.e) gluster volume stop <vol-name>
         2. Get the status of the volumes with --xml dump
             XML dump should be consistent
         """
+
+        volume_type1 = 'dist'
+        volume_name1 = f"{self.test_name}-{volume_type1}-1"
+        redant.volume_create(volume_name1, self.server_list[0],
+                             self.vol_type_inf[self.conv_dict[volume_type1]],
+                             self.server_list, self.brick_roots, True)
+        redant.volume_start(volume_name1, self.server_list[0])
         redant.volume_stop(self.vol_name, self.server_list[0], force=True)
-        out = redant.get_volume_status(self.mnode)
+        out = redant.get_volume_status(node=self.server_list[0])
         if out is None:
             raise Exception("Failed to get volume status on "
                             f"{self.server_list[0]}")
 
         for _ in range(4):
             sleep(2)
-            out1 = redant.get_volume_status(self.mnode)
+            out1 = redant.get_volume_status(node=self.server_list[0])
             if out1 is None:
                 raise Exception("Failed to get volume status on "
                                 f"{self.server_list[0]}")
-            self.assertEqual(out1, out)
+            if out1 != out:
+                raise Exception
+
+        redant.volume_stop(volume_name1, self.server_list[0])
+        redant.volume_delete(volume_name1, self.server_list[0])
