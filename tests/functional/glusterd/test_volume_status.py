@@ -38,8 +38,11 @@ class TestCase(NdParentTest):
         Check that files in mount point listing properly or not.
         '''
 
+        # Get mountpoint list
+        mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
         # Check if the volume is mounted
-        redant.get_mounts_stat(self.mountpoint)
+        redant.get_mounts_stat(mnt_list)
 
         # run IO on mountpoint
         redant.logger.info("Starting IO on all mounts...")
@@ -57,9 +60,6 @@ class TestCase(NdParentTest):
             redant.execute_abstract_op_node(cmd, server)
             redant.logger.info(f"Successful in logging volume status"
                                f"inode of volume {self.vol_name}")
-
-        # Get mountpoint list
-        mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Validate IO
         ret = redant.validate_io_procs(list_of_procs, mnt_list)
