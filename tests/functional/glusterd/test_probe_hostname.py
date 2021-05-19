@@ -35,10 +35,6 @@ class TestCase(DParentTest):
         set of colume operations like
         start, volume status, info,
         volume delete.
-
-        Args:
-            redant: Redant object
-            volname (str): Name of the volume
         """
 
         # Start a volume
