@@ -44,7 +44,8 @@ class IoOps(AbstractOps):
         cmd = f"mkdir -p {path}/{dirname}"
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def create_dirs(self, list_of_nodes: list, list_of_dir_paths: list) -> bool:
+    def create_dirs(self, list_of_nodes: list,
+                    list_of_dir_paths: list) -> bool:
         """
         Create directories on nodes.
         Args:
@@ -590,7 +591,7 @@ class IoOps(AbstractOps):
         return True
 
     def run_linux_untar(self, clients: list, mountpoint: str,
-                        dirs: tuple=('.')) -> list:
+                        dirs: tuple = ('.')) -> list:
         """Run linux kernal untar on a given mount point
         Args:
             clients(str|list): Client nodes on which I/O
