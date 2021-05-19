@@ -25,7 +25,7 @@ class PeerOps(AbstractOps):
             node (str): The node in the cluster where peer probe is to be run
 
         Returns:
-            ret: Boolean value
+            ret: bool: True on success, false on failure
         """
 
         cmd = f'gluster --xml peer probe {server}'
