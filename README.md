@@ -22,18 +22,8 @@ how to get things running and that's it, take the blue pill.
 * [Blue Pill Index](./docs/BPIndex.md)
 
 # Contents
-* [Structure](#structure)
 * [Set up](#set-up)
 * [About](#flags)
-
-## Structure:
-
-core: contains the core redant framework which includes parsing,
-test_list_builder, test_runner, runner_thread and redant_main.<br>
-common: consists of the libs and ops that will help in running the
-test cases and the mixin class.<br>
-tests: holds the test cases as performace and functional tests and includes
-abstract test. Add any new test cases here.<br>
 
 ## Set up
 
@@ -69,17 +59,17 @@ the functional and performace dirs. And inside the component directory,
 the Test case specific directory will be created which inturn will contain
 volume specific log files.
 So for example to see the log files of a test case which is,
-`tests/functional/glusterd/test_sample_glusterd.py`
+`functional/<gluster_component>/<test_name>/test_sample.py`
 one would have to go to the directory,
-`<base_log_dir>/functional/glusterd/test_sample_glusterd/`, which will inturn
-contain the log files specific to volume type.
+`<base_log_dir>/<time_stamp>/functional/<gluster_component>/test_sample`, 
+which will inturn contain the log files specific to volume type.
 
 In addition to running TCs from within a suite, either performance or
 functional or even under a more granular level of component, one can select to
 run a specific TC also. To do this, one simply has to use the `-sp` flag while
 invoking redant and instead of the directory path provide the path of the TC.
 For example,
-`python3 core/redant_main.py -c core/parsing/config.yml -t tests/example/sample_component/test_sample.py -sp`
+`python3 core/redant_main.py -c core/parsing/config.yml -t tests/example/sample_component`
 
 One can also run the scripts given under the tools dir which will reduce the
 lengthy commands to be typed out everytime. Check out the README.md at the link
@@ -91,10 +81,21 @@ Please refer the doc : [migratingTC.md](./docs/BP/migratingTC.md)
 
 ### Flags
 
-* -c, --config : Stores the path of the config file(s) to read. You need to provide the path else by default it is `None`. Moreover, this is a required argument so you need to provide it for sure.
-* -t, --test-dir : The path of the test directory where test cases exist. You can also provide the path to the specific test file. But in that case remember the `-sp` flag :upside_down_face:. This is also a required argument so don't forget it.
-*   -l, --log-dir : It stores the path of the log directory where you want the log files to be kept. By default it stores `/tmp/redant` and it is not a required argument.
-* -ll, --log-level : The log level you want for the execution.By default the log level is `I` (INFO). There are other log levels also like `D`(DEBUG), `W`(WARN) etc.
-* -cc, --concurrency-count : It stores the number of concurrent tests run. By default it is 4.
-* -rf, --result-file : It stores the path of the result file. By default it is `None`
-* -xls, --excel-sheet : It stores the path of the excel sheet. By default it is `None`.
+* -c, --config : Stores the path of the config file(s) to read. You need to 
+provide the path else by default it is `None`. Moreover, this is a required 
+argument so you need to provide it for sure.
+* -t, --test-dir : The path of the test directory where test cases exist. 
+You can also provide the path to the specific test file. But in that case 
+remember the `-sp` flag :upside_down_face:. This is also a required argument 
+so don't forget it.
+*   -l, --log-dir : It stores the path of the log directory where you want 
+the log files to be kept. By default it stores `/tmp/redant` and it 
+is not a required argument.
+* -ll, --log-level : The log level you want for the execution.By default 
+the log level is `I` (INFO). There are other log levels also like `D`(DEBUG).
+* -cc, --concurrency-count : It stores the number of concurrent tests run. 
+By default it is 2.
+* -rf, --result-file : It stores the path of the result file. By default it 
+is `None`
+* -xls, --excel-sheet : It stores the path of the excel sheet. By default it 
+is `None`.
