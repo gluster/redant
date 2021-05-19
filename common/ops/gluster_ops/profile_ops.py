@@ -92,7 +92,8 @@ class ProfileOps(AbstractOps):
         return ret
 
     def check_profile_options(self, options: str) -> bool:
-        """Helper function to valid if profile options.
+        """
+        Helper function to validate the profile options.
         Args:
             options (str): Options can be nothing or
             [peek|incremental [peek]|cumulative|clear].
