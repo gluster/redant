@@ -1,73 +1,70 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+
+This test deals with testing peer probe
+using hostnames.
+"""
 
 import socket
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.peer_ops import (peer_probe, peer_detach,
-                                         peer_probe_servers,
-                                         nodes_from_pool_list)
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.volume_ops import (volume_create, volume_start,
-                                           get_volume_list, volume_stop,
-                                           get_volume_info, get_volume_status)
-from glustolibs.gluster.volume_libs import cleanup_volume
-from glustolibs.gluster.exceptions import ExecutionError
+from tests.d_parent_test import DParentTest
+
+# disruptive;
 
 
-class TestPeerProbe(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def setUp(self):
-        # Performing peer detach
-        for server in self.servers[1:]:
-            # Peer detach
-            ret, _, _ = peer_detach(self.mnode, server)
-            if ret:
-                raise ExecutionError("Peer detach failed")
-            g.log.info("Peer detach SUCCESSFUL.")
+    def vol_operations(self, redant, volname: str):
+        """
+        This function performs a
+        set of colume operations like
+        start, volume status, info,
+        volume delete.
 
-        self.get_super_method(self, 'setUp')()
+        Args:
+            redant: Redant object
+            volname (str): Name of the volume
+        """
 
-    def tearDown(self):
+        # Start a volume
+        redant.volume_start(volname, self.server_list[0])
+        redant.logger.info(f"Volume: {volname} started successfully")
 
-        # clean up all volumes and detaches peers from cluster
-        vol_list = get_volume_list(self.mnode)
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Failed to Cleanup the "
-                                     "Volume %s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
+        # Get volume info
+        volinfo = redant.get_volume_info(self.server_list[0], volname)
+        if volinfo is None:
+            raise Exception(f"Failed to get volume info of {volname}")
+        redant.logger.info(f"Vol info: {volinfo}")
 
-        # Peer probe detached servers
-        pool = nodes_from_pool_list(self.mnode)
-        for node in pool:
-            peer_detach(self.mnode, node)
-        ret = peer_probe_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to probe detached "
-                                 "servers %s" % self.servers)
-        g.log.info("Peer probe success for detached "
-                   "servers %s", self.servers)
+        # Get volume status
+        vol_status = redant.get_volume_status(volname,
+                                              self.server_list[0])
+        if vol_status is None:
+            raise Exception(f"Failed to get volume status of {volname}")
+        redant.logger.info(f"Vol status: {vol_status}")
 
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        # stop volume
+        redant.volume_stop(volname, self.server_list[0], True)
 
-    def test_peer_probe_validation(self):
-        # pylint: disable=too-many-statements
+        # delete the volume
+        redant.volume_delete(volname, self.server_list[0])
+
+    def run_test(self, redant):
         '''
         -> Create trusted storage pool, by probing with networkshort names
         -> Create volume using IP of host
@@ -83,108 +80,70 @@ class TestPeerProbe(GlusterBaseClass):
             -> gluster volume status <vol>
             -> gluster volume stop <vol>
         '''
+
+        # detaching all the peers first
+        for server in self.server_list[1:]:
+            redant.peer_detach(server, self.server_list[0], True)
+
+        redant.logger.info("Peer detach successfull")
+
         # Peer probing using short name
-        for server in self.servers[1:]:
-            ret, hostname, _ = g.run(server, "hostname -s")
-            self.assertEqual(ret, 0, ("Unable to get short name "
-                                      "for server % s" % server))
-            ret, _, _ = peer_probe(self.mnode, hostname)
+        for server in self.server_list[1:]:
+            ret = redant.execute_abstract_op_node("hostname -s", server)
+            hostname = ret['msg'][0].rstrip('\n')
 
-            if ret == 1:
-                ret, hostname, _ = g.run(server, "hostname")
-                self.assertEqual(ret, 0, ("Unable to get short name "
-                                          "for server % s" % server))
+            ret = redant.peer_probe(hostname, self.server_list[0])
 
+            if not ret:
+                ret = redant.execute_abstract_op_node("hostname",
+                                                      server)
+                hostname = ret['msg'][0].rstrip('\n')
                 hostname = hostname.split(".")[0]+"."+hostname.split(".")[1]
-                ret, _, _ = peer_probe(self.mnode, hostname)
+                ret = redant.peer_probe(hostname, self.server_list[0])
 
-            self.assertEqual(ret, 0, "Unable to peer"
-                             "probe to the server % s" % hostname)
-            g.log.info("Peer probe succeeded for server %s", hostname)
+                if not ret:
+                    raise Exception(f"Unable to peer probe to"
+                                    f" the server {hostname}")
 
-        # Create a volume
-        self.volname = "test-vol"
-        self.brick_list = form_bricks_list(self.mnode, self.volname, 3,
-                                           self.servers,
-                                           self.all_servers_info)
-        g.log.info("Creating a volume")
-        ret, _, _ = volume_create(self.mnode, self.volname,
-                                  self.brick_list, force=False)
-        self.assertEqual(ret, 0, "Unable"
-                         "to create volume % s" % self.volname)
-        g.log.info("Volume created successfully % s", self.volname)
-
-        # Start a volume
-        g.log.info("Start a volume")
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Unable"
-                         "to start volume % s" % self.volname)
-        g.log.info("Volume started successfully % s", self.volname)
-
-        # Get volume info
-        g.log.info("get volume info")
-        volinfo = get_volume_info(self.mnode, self.volname)
-        self.assertIsNotNone(volinfo, "Failed to get the volume "
-                                      "info for %s" % self.volname)
-
-        # Get volume status
-        vol_status = get_volume_status(self.mnode, self.volname)
-        self.assertIsNotNone(vol_status, "Failed to get volume "
-                                         "status for %s" % self.volname)
-
-        # stop volume
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Unable"
-                         "to stop volume % s" % self.volname)
-        g.log.info("Volume stopped successfully % s", self.volname)
+            redant.logger.info(f"Peer probe succeeded for {hostname}")
 
         # Create a volume
-        self.volname = "test-vol-fqdn"
+        redant.volume_create("test-vol", self.server_list[0],
+                             self.vol_type_inf[self.conv_dict['dist']],
+                             self.server_list, self.brick_roots, True)
 
-        self.brick_list = form_bricks_list(self.mnode, self.volname, 3,
-                                           self.servers,
-                                           self.all_servers_info)
+        redant.logger.info("Volume: test-vol created successfully")
+
+        # perform the set of volume operations
+        self.vol_operations(redant, "test-vol")
 
         # Getting FQDN (Full qualified domain name) of each host and
         # replacing ip with FQDN name for each brick for example
         # 10.70.37.219:/bricks/brick0/vol1 is a brick, here ip is replaced
         # with FQDN name now brick looks like
         # dhcp35-219.lab.eng.blr.redhat.com:/bricks/brick0/vol1
+        brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
+                                                      self.brick_roots,
+                                                      "test-vol-fqdn", 3)
+        brick_list = brick_cmd.split()
+        fqdn_brick_cmd = ""
 
-        my_brick_list = []
-        for brick in self.brick_list:
+        for brick in brick_list:
             fqdn_list = brick.split(":")
             fqdn = socket.getfqdn(fqdn_list[0])
-            fqdn = fqdn + ":" + fqdn_list[1]
-            my_brick_list.append(fqdn)
+            fqdn = f"{fqdn}:{fqdn_list[1]}"
+            fqdn_brick_cmd = f"{fqdn_brick_cmd} {fqdn}"
 
-        g.log.info("Creating a volume")
-        ret, _, _ = volume_create(self.mnode, self.volname,
-                                  my_brick_list, force=False)
-        self.assertEqual(ret, 0, "Unable"
-                         "to create volume % s" % self.volname)
-        g.log.info("Volume created successfully % s", self.volname)
+        # create a volume
+        cmd = f"gluster vol create test-vol-fqdn{fqdn_brick_cmd} force"
+        redant.execute_abstract_op_node(cmd, self.server_list[0])
+        redant.es.set_new_volume("test-vol-fqdn", brick_dict)
 
-        # Start a volume
-        g.log.info("Start a volume")
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Unable"
-                         "to start volume % s" % self.volname)
-        g.log.info("Volume started successfully % s", self.volname)
+        # perform the set of volume operations
+        self.vol_operations(redant, "test-vol-fqdn")
 
-        # Get volume info
-        g.log.info("get volume info")
-        volinfo = get_volume_info(self.mnode, self.volname)
-        self.assertIsNotNone(volinfo, "Failed to get the volume "
-                                      "info for %s" % self.volname)
+        # creating the cluster back again
+        ret = redant.create_cluster(self.server_list)
 
-        # Get volume status
-        vol_status = get_volume_status(self.mnode, self.volname)
-        self.assertIsNotNone(vol_status, "Failed to get volume "
-                                         "status for %s" % self.volname)
-
-        # stop volume
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Unable"
-                         "to stop volume % s" % self.volname)
-        g.log.info("Volume stopped successfully % s", self.volname)
+        if not ret:
+            raise Exception("Cluster creation failed")

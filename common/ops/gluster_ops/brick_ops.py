@@ -308,3 +308,23 @@ class BrickOps:
         ret = self.execute_abstract_op_node(cmd=cmd, node=node)
 
         return ret
+
+    def form_brick_cmd(self, server_list: list, brick_root: list,
+                       volname: str, mul_fac: int):
+        brick_dict = {}
+        brick_cmd = ""
+        server_iter = 0
+
+        for iteration in range(mul_fac):
+            if server_iter == len(server_list):
+                server_iter = 0
+            server_val = server_list[server_iter]
+            if server_val not in brick_dict.keys():
+                brick_dict[server_val] = []
+            brick_path_val = \
+                f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
+            brick_dict[server_val].append(brick_path_val)
+            brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
+            server_iter += 1
+
+        return (brick_dict, brick_cmd)
