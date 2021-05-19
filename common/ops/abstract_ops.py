@@ -15,7 +15,8 @@ class AbstractOps:
     commands on the nodes
     """
 
-    def execute_abstract_op_node(self, cmd: str, node: str = None):
+    def execute_abstract_op_node(self, cmd: str, node: str = None,
+                                 excep: bool = True):
         """
         Calls the function in the remote executioner to execute
         commands on the nodes. Logging is also performed along
@@ -29,6 +30,9 @@ class AbstractOps:
         self.logger.info(f"Running {cmd} on {node}")
 
         ret = self.execute_command(cmd, node)
+
+        if not excep:
+            return ret
 
         if ret['error_code'] != 0:
             self.logger.error(ret['error_msg'])
