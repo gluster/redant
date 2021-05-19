@@ -14,11 +14,11 @@ class ProfileOps(AbstractOps):
     check_profile_options etc.
     """
 
-    def profile_start(self, volname: str, node: str) -> dict:
+    def profile_start(self, volname: str, node: str = None) -> dict:
         """
         Start profile on the specified volume.
         Args:
-            volname (str): Volume on which profile has to started.
+            volname (str): Volume on which profile has to be started.
             node (str): Node on which command has to be executed.
         Returns:
             ret: A dictionary consisting
@@ -38,18 +38,17 @@ class ProfileOps(AbstractOps):
 
         return ret
 
-    def profile_info(self, volname: str, node: str,
-                     options: str = '') -> dict:
+    def profile_info(self, volname: str, options: str = '',
+                     node: str = None) -> dict:
         """
         Run profile info on the specified volume.
         Args:
             volname (str): Volume for which profile info has to be retrived.
-            node (str): Node on which command has to be executed.
-        Kwargs:
             options (str): Options can be
-            [peek|incremental [peek]|cumulative|clear].If not given the
-            function returns the output of gluster volume profile <volname>
-            info.
+                           [peek|incremental [peek]|cumulative|clear].If not
+                           given the function returns the output of gluster
+                           volume profile <volname> info.
+            node (str): Node on which command has to be executed.
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -70,7 +69,7 @@ class ProfileOps(AbstractOps):
 
         return ret
 
-    def profile_stop(self, volname: str, node: str) -> dict:
+    def profile_stop(self, volname: str, node: str = None) -> dict:
         """Stop profile on the specified volume.
         Args:
             volname (str): Volume on which profile has to be stopped.
