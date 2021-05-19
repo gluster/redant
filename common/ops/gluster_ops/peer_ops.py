@@ -17,7 +17,7 @@ class PeerOps(AbstractOps):
     and list of peers in the pool.
     """
 
-    def peer_probe(self, server: str, node: str) -> dict:
+    def peer_probe(self, server: str, node: str) -> bool:
         """
         Adds a new peer to the cluster
         Args:
@@ -25,13 +25,7 @@ class PeerOps(AbstractOps):
             node (str): The node in the cluster where peer probe is to be run
 
         Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
+            ret: bool: True on success, false on failure
         """
 
         cmd = f'gluster --xml peer probe {server}'

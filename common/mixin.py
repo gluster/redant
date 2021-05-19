@@ -13,7 +13,7 @@ from .ops.gluster_ops.brick_ops import BrickOps
 from .ops.gluster_ops.profile_ops import ProfileOps
 
 
-class RedantMixin(GlusterOps, BrickOps, VolumeOps, PeerOps,
+class RedantMixin(GlusterOps, VolumeOps, BrickOps, PeerOps,
                   IoOps, ProfileOps, Rexe, Logger):
     """
     A mixin class for redant project to encompass all ops, support

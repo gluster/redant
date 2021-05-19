@@ -94,7 +94,6 @@ class VolumeOps(AbstractOps):
 
         """
         brick_cmd = ""
-        server_iter = 0
         mul_fac = 0
         cmd = ""
         brick_dict = {}
@@ -116,19 +115,8 @@ class VolumeOps(AbstractOps):
         else:
             mul_fac = conf_hash["disperse_count"]
 
-        server_iter = 0
-        for iteration in range(mul_fac):
-            if server_iter == len(server_list):
-                server_iter = 0
-            server_val = server_list[server_iter]
-            if server_val not in brick_dict.keys():
-                brick_dict[server_val] = []
-            brick_path_val = \
-                f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
-            brick_dict[server_val].append(brick_path_val)
-            brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
-            server_iter += 1
-
+        brick_dict, brick_cmd = self.form_brick_cmd(server_list, brick_root,
+                                                    volname, mul_fac)
         if "replica_count" in conf_hash:
             # arbiter vol and distributed-arbiter vol
             if "arbiter_count" in conf_hash:
