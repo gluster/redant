@@ -54,8 +54,6 @@ class TestCase(DParentTest):
         # Stop glusterd on one of the node randomly
         node_on_glusterd_to_stop = choice(self.server_list[1:])
         redant.stop_glusterd(node_on_glusterd_to_stop)
-        redant.logger.info(f"glusterd stop on the node: "
-                           f"{node_on_glusterd_to_stop} succeeded")
 
         # checking whether peers are connected or not
         for _ in range(5):
@@ -78,8 +76,6 @@ class TestCase(DParentTest):
 
         # Start glusterd on the node where it is stopped
         redant.start_glusterd(node_on_glusterd_to_stop)
-        redant.logger.info(f"Successfully started glusterd "
-                           f" on {node_on_glusterd_to_stop}")
 
         for _ in range(5):
             ret = redant.validate_peers_are_connected(self.server_list[:],
