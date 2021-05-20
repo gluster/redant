@@ -312,6 +312,25 @@ class BrickOps:
 
     def form_brick_cmd(self, server_list: list, brick_root: list,
                        volname: str, mul_fac: int):
+        """
+        This function helps in forming
+        the brick command
+
+        Args:
+            server_list (list): List of servers
+            brick_root (list) : List of brick roots
+            volname (str) : Name of the volume
+            mul_fac (int) : Stores the number of bricks
+                            needed to form the brick command
+        
+        Returns:
+
+        A tuple containing: 
+            brick_dict (dict) : Dictionary of servers and their
+                                corresponding brick roots
+            brick_cmd (str) : Command which contains the brick
+                              paths. 
+        """
         brick_dict = {}
         brick_cmd = ""
         server_iter = 0
