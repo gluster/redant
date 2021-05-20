@@ -277,3 +277,38 @@ class PeerOps(AbstractOps):
             sleep(1)
             count += 1
         return False
+
+    def validate_peers_are_connected(self, server_list: list,
+                                     node: str) -> bool:
+        """
+        Validate whether each server in the cluster is connected to
+        all other servers in cluster.
+
+        Returns (bool): True if all peers are in connected
+                        state with other peers.
+                        False otherwise.
+        """
+        # if the setup has single node cluster
+        # then by-pass this validation
+        if len(server_list) == 1:
+            return True
+
+        # validate if peer is connected from all
+        # the servers
+        self.logger.info(f"Validating if {server_list} are connnected in"
+                         f" the cluster")
+
+        for server in server_list:
+            self.logger.info(f"Is peer connected {server}->{server_list}")
+            ret = self.is_peer_connected(server, server_list)
+            self.logger.info(f"Peer {server} is connected")
+
+            if not ret:
+                self.logger.error(f"Servers are not in connected state"
+                                  f" from {server}")
+                return False
+
+        self.logger.info("Successfully validated. All the servers"
+                         " in the cluster are connected")
+        self.get_peer_status(node)
+        return True
