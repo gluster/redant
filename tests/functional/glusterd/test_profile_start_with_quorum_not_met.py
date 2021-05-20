@@ -59,7 +59,7 @@ class TestCase(DParentTest):
         for _ in range(5):
             ret = redant.validate_peers_are_connected(self.server_list[:],
                                                       self.server_list[0])
-            if ret:
+            if not ret:
                 break
             sleep(2)
 
@@ -83,7 +83,7 @@ class TestCase(DParentTest):
         for _ in range(5):
             ret = redant.validate_peers_are_connected(self.server_list[:],
                                                       self.server_list[0])
-            if not ret:
+            if ret:
                 break
             sleep(2)
 
