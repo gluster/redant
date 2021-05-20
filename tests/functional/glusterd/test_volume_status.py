@@ -16,7 +16,7 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    Check volume status inode while IO is in progress
+    Check volume status inode and fd while IO is in progress
 """
 
 # nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
@@ -60,6 +60,20 @@ class TestCase(NdParentTest):
             redant.execute_abstract_op_node(cmd, server)
             redant.logger.info(f"Successful in logging volume status"
                                f"inode of volume {self.vol_name}")
+
+        # Merged the TC test_volume_status_fd into this one
+
+        # performing  "gluster volume status volname fd" command on
+        # all cluster servers randomly while io is in progress,
+        # this command should not get hang while io is in progress
+        count = 0
+        while count < 300:
+            cmd = f"gluster volume status {self.vol_name} fd"
+            server = random.choice(self.server_list)
+            redant.execute_abstract_op_node(cmd, server)
+            redant.logger.info(f"Successful in logging volume status"
+                               f"fd of volume {self.vol_name}")
+            count += 1
 
         # Validate IO
         ret = redant.validate_io_procs(list_of_procs, mnt_list)
