@@ -131,13 +131,14 @@ class BrickOps:
     def remove_brick(self, node: str, volname: str, conf_hash: dict,
                      server_list: list, brick_root: list, option: str):
         """
-        This function removes a brick from the volume volname
+        This function removes a brick or set of bricks
+        from the volume volname
 
         Args:
 
             node (str): Node on which the command has to be executed.
             volname (str): The volume from which brick(s) have to be removed.
-            conf_has (dict):Config hash providing parameters for
+            conf_hash (dict):Config hash providing parameters for
                 deleting bricks
             brick_root (list): The list of brick root paths
             option (str): Remove brick options:
