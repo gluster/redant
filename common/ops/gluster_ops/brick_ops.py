@@ -322,14 +322,14 @@ class BrickOps:
             volname (str) : Name of the volume
             mul_fac (int) : Stores the number of bricks
                             needed to form the brick command
-        
+
         Returns:
 
-        A tuple containing: 
+        A tuple containing:
             brick_dict (dict) : Dictionary of servers and their
                                 corresponding brick roots
             brick_cmd (str) : Command which contains the brick
-                              paths. 
+                              paths.
         """
         brick_dict = {}
         brick_cmd = ""
