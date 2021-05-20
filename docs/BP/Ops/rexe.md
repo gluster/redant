@@ -331,3 +331,57 @@ ret = self.execute_command(cmd)
 # or
 ret = self.execute_command(cmd, node_list)
 ```
+
+10. `execute_abstract_op_node`
+* Parameters:
+    a) cmd which is to be executed at the said node in string.
+    b) node wherein the command is to be executed. This parameter can be
+       ignored and the default value is None.
+* Return valus: 
+
+ ``` javascript
+ {
+   "cmd" : "<command_which_was_run>",
+   "node" : "Node wherein it was run",
+   "Flag" : True/False,
+   "msg" : "<stdout response>",
+   "error_msg" : "<stderr response>",
+   "error_code" : BASH error code
+ }
+ ```
+
+wherein,
+-> cmd is the command which we gave the method to run in the very first place.
+-> node is where the command was run
+-> Flag is True if the command was successful or False when it isn't
+-> msg is the stdout response received after the command run is finished.
+-> error_msg is the stderr response received after the command run is finished.
+-> error_code is the standard BASH return value for the said command after it
+has run its course.
+
+* Purpose: This method encapsulates the calls to the `execute_command`. And
+was created to reduce the code duplicity seen in the handling of the 
+exceptions seen across the ops functions whenever the command execution
+had failed at the server.
+* When can I use it : This is the standard function which can be used if the
+user doesn't want to go ahead in the test case flow if the operation which had
+been requested has failed. If the `execute_command` sends back a response
+wherein the error code is assigned some value other than 0 ( which means
+success ), then this method will raise an exception.
+* Example:
+
+-> Whether we use is inside an ops or directly in a test case ( in case of a 
+test case, use `redant.` instead of `.self`),
+
+```
+cmd = "<some ops command>
+ret = self.execute_abstract_op_node(cmd)
+# or
+ret = self.execute_abstract_op_node(cmd, node)
+```
+
+
+11. `execute_abstract_op_multinode`
+This method is similar to `execute_abstract_op_node` and forms an abstraction
+layer over the method `execute_command_multinode`. Rather than repeating the
+terminologies again, I'll let the user to refer to these methods.
