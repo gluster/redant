@@ -1,138 +1,69 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_ops import (volume_create, volume_status,
-                                           get_volume_status, volume_start)
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.peer_ops import (peer_probe_servers, peer_detach,
-                                         peer_detach_servers,
-                                         nodes_from_pool_list)
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestVolumeStatusxml(GlusterBaseClass):
+from tests.d_parent_test import DParentTest
 
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
+# disruptive;
 
-        # check whether peers are in connected state
-        ret = self.validate_peers_are_connected()
-        if not ret:
-            raise ExecutionError("Peers are not in connected state")
 
-        # detach all the nodes
-        ret = peer_detach_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Peer detach failed to all the servers from "
-                                 "the node %s." % self.mnode)
-        g.log.info("Peer detach SUCCESSFUL.")
+class TestCase(DParentTest):
 
-    def tearDown(self):
-
-        # stopping and cleaning up the volume
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to Cleanup the Volume %s"
-                                 % self.volname)
-
-        pool = nodes_from_pool_list(self.mnode)
-        for node in pool:
-            peer_detach(self.mnode, node)
-
-        ret = peer_probe_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to probe detached "
-                                 "servers %s" % self.servers)
-        self.get_super_method(self, 'tearDown')()
-
-    def _get_test_specific_glusterd_log(self, node):
-        """Gets the test specific glusterd log"""
-        # Extract the test specific cmds from cmd_hostory
-        start_msg = "Starting Test : %s : %s" % (self.id(),
-                                                 self.glustotest_run_id)
-        end_msg = "Ending Test: %s : %s" % (self.id(),
-                                            self.glustotest_run_id)
-        glusterd_log = "/var/log/glusterfs/glusterd.log"
-        cmd = ("awk '/{}/ {{p=1}}; p; /{}/ {{p=0}}' {}"
-               .format(start_msg, end_msg, glusterd_log))
-        ret, test_specific_glusterd_log, err = g.run(node, cmd)
-        self.assertEqual(ret, 0, "Failed to extract glusterd log specific"
-                                 " to the current test case. "
-                                 "Error : %s" % err)
-        return test_specific_glusterd_log
-
-    def test_volume_status_xml(self):
+    def run_test(self, redant):
+        """
+        Test Steps:
+        1. Create a two node cluster.
+        2. Create 1 node distribute volume.
+        3. Query for volume status with and without xml options, there
+        should be no reply.
+        4. Start the volume.
+        5. Query volume status again.
+        """
 
         # create a two node cluster
-        ret = peer_probe_servers(self.servers[0], self.servers[1])
-        self.assertTrue(ret, "Peer probe failed to %s from %s"
-                        % (self.mnode, self.servers[1]))
+        cluster_nodes = self.server_list[:2]
+        redant.create_cluster(cluster_nodes)
 
         # create a distributed volume with single node
-        number_of_bricks = 1
-        servers_info_from_single_node = {}
-        servers_info_from_single_node[
-            self.servers[0]] = self.all_servers_info[self.servers[0]]
-
-        bricks_list = form_bricks_list(self.mnode, self.volname,
-                                       number_of_bricks, self.servers[0],
-                                       servers_info_from_single_node)
-        ret, _, _ = volume_create(self.servers[0], self.volname, bricks_list)
-        self.assertEqual(ret, 0, "Volume creation failed")
-        g.log.info("Volume %s created successfully", self.volname)
+        volume_type = 'dist'
+        self.vol_type_inf[self.conv_dict[volume_type]]['dist_count'] = 1
+        redant.volume_create(self.vol_name, self.server_list[0],
+                             self.vol_type_inf[self.conv_dict[volume_type]],
+                             self.server_list, self.brick_roots, True)
 
         # Get volume status
-        ret, _, err = volume_status(self.servers[1], self.volname)
-        self.assertNotEqual(ret, 0, ("Unexpected: volume status is success for"
-                                     " %s, even though volume is not started "
-                                     "yet" % self.volname))
-        self.assertIn("is not started", err, ("volume status exited with"
-                                              " incorrect error message"))
+        cmd = f'gluster vol status {self.vol_name}'
+        ret = redant.execute_command(cmd, self.server_list[0])
+        if ret['error_msg'] != f'Volume {self.vol_name} is not started\n':
+            raise Exception("Volume status erraneous")
+
+        try:
+            redant.get_volume_status(self.vol_name, self.server_list[0])
+        except:
+            redant.logger.info("Volume hasn't started hence no status for it.")
+
+        # Start the volume
+        redant.volume_start(self.vol_name, self.server_list[0])
+
+        cmd = f'gluster vol status {self.vol_name}'
+        ret = redant.execute_command(cmd, self.server_list[0])
+        if ret['error_code'] != 0:
+            raise Exception("Volume status erraneous")
 
         # Get volume status with --xml
-        vol_status = get_volume_status(self.servers[1], self.volname)
-        self.assertIsNone(vol_status, ("Unexpected: volume status --xml for %s"
-                                       " is success even though the volume is"
-                                       " not stared yet" % self.volname))
-
-        # start the volume
-        ret, _, _ = volume_start(self.servers[1], self.volname)
-        self.assertEqual(ret, 0, "Failed to start volume %s" % self.volname)
-
-        # Get volume status
-        ret, _, _ = volume_status(self.servers[1], self.volname)
-        self.assertEqual(ret, 0, ("Failed to get volume status for %s"
-                                  % self.volname))
-
-        # Get volume status with --xml
-        vol_status = get_volume_status(self.servers[1], self.volname)
-        self.assertIsNotNone(vol_status, ("Failed to get volume "
-                                          "status --xml for %s"
-                                          % self.volname))
-
-        # Verify there are no crashes while executing gluster volume status
-        status = True
-        glusterd_log = (self._get_test_specific_glusterd_log(self.mnode)
-                        .split("\n"))
-        for line in glusterd_log:
-            if ' E ' in glusterd_log:
-                status = False
-                g.log.info("Unexpected! Error found %s", line)
-
-        self.assertTrue(status, "Error found in glusterd logs")
+        redant.get_volume_status(self.vol_name, self.server_list[0])
