@@ -60,9 +60,12 @@ class TestCase(DParentTest):
             ret = redant.validate_peers_are_connected(self.server_list[:],
                                                       self.server_list[0])
             if ret:
-                redant.logger.error("Peers are in connected state even after "
-                                    "stopping glusterd on one node")
+                break
             sleep(2)
+
+        if ret:
+            redant.logger.error("Peers are in connected state even after "
+                                "stopping glusterd on one node")
 
         # Starting volume profile when quorum is not met
         new_servers = self.server_list[:]
@@ -81,8 +84,11 @@ class TestCase(DParentTest):
             ret = redant.validate_peers_are_connected(self.server_list[:],
                                                       self.server_list[0])
             if not ret:
-                redant.logger.error("Peers are not in connected state")
+                break
             sleep(2)
+
+        if not ret:
+            redant.logger.error("Peers are not in connected state")
 
         # Starting profile when volume quorum is met
         redant.profile_start(self.vol_name, self.server_list[0])
