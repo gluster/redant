@@ -77,7 +77,7 @@ lengthy commands to be typed out everytime. Check out the README.md at the link
 
 ## Those looking to get into the action of migrating test cases.
 
-Please refer the doc : [migratingTC.md](./docs/BP/migratingTC.md)
+Please refer the doc : [migratingTC.md](./docs/BP/Tools/migratingTC.md)
 
 ### Flags
 
