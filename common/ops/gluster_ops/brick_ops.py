@@ -378,13 +378,19 @@ class BrickOps:
         """
 
         vol_status = self.get_volume_status(volname, node)
-
+        status_count = 0
         brick_count = 0
         for each_node in brick_dict:
             brick_count += len(brick_dict[each_node])
 
-        if brick_count != int(vol_status[volname]['nodeCount']):
+        for brick_data in vol_status[volname]['node']:
+            if brick_data['status'] == 1:
+                status_count += 1
+
+        if brick_count != status_count:
+            self.logger.info("Some bricks are offline")
             return True
 
+        self.logger.info("All bricks are online")
         return False
 >>>>>>> d6ec396... Migrated test_add_brick_when_quorum_not_met
