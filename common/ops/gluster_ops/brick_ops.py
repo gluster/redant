@@ -349,6 +349,7 @@ class BrickOps:
 
         return (brick_dict, brick_cmd)
 
+<<<<<<< HEAD
     def cleanup_brick_dirs(self):
         """
         This function requests for the cleands and clears the brick dirs which
@@ -359,3 +360,31 @@ class BrickOps:
             for b_dir in b_dir_l:
                 self.execute_abstract_op_node(f"rm -rf {b_dir}", node)
                 self.es.remove_val_from_cleands(node, b_dir)
+=======
+    def are_bricks_offline(self, volname: str,
+                           brick_dict: dict, node: str) -> bool:
+        """
+        This function checks if the bricks are
+        offline.
+
+        Args:
+            volname (str) : Volume name
+            brick_dict (dict) : the brick dictionary to compare
+            node (str) : the node on which comparison has to be done
+
+        Returns:
+            boolean value: True, if bricks are offline
+                           False if online
+        """
+
+        vol_status = self.get_volume_status(volname, node)
+
+        brick_count = 0
+        for each_node in brick_dict:
+            brick_count += len(brick_dict[each_node])
+
+        if brick_count != int(vol_status[volname]['nodeCount']):
+            return True
+
+        return False
+>>>>>>> d6ec396... Migrated test_add_brick_when_quorum_not_met

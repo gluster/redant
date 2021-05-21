@@ -1,168 +1,135 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+
+ This test checks for the add brick functionality when quorum is not met.
+"""
 
 from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import runs_on, GlusterBaseClass
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import setup_volume
-from glustolibs.gluster.volume_ops import (set_volume_options,
-                                           volume_reset,
-                                           get_volume_status)
-from glustolibs.gluster.gluster_init import (stop_glusterd, start_glusterd,
-                                             is_glusterd_running)
-from glustolibs.gluster.brick_libs import get_all_bricks, are_bricks_offline
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.lib_utils import form_bricks_list
+from tests.d_parent_test import DParentTest
+
+# disruptive;dist
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestAddBrickWhenQuorumNotMet(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def tearDown(self):
-
-        ret = is_glusterd_running(self.servers)
-        if ret:
-            ret = start_glusterd(self.servers)
-            if not ret:
-                raise ExecutionError("Failed to start glusterd on servers")
-
-        g.log.info("glusterd is running on all the nodes")
-
-        # checking for peer status from every node
-        count = 0
-        while count < 80:
-            ret = self.validate_peers_are_connected()
-            if ret:
-                break
-            sleep(2)
-            count += 1
-
-        if not ret:
-            raise ExecutionError("Servers are not in connected state")
-
-        g.log.info("Peers are in connected state")
-
-        # stopping the volume and Cleaning up the volume
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to Cleanup the Volume %s"
-                                 % self.volname)
-        g.log.info("Volume deleted successfully : %s", self.volname)
-
-        # Reset Cluster options
-        ret = volume_reset(self.mnode, 'all')
-        if not ret:
-            raise ExecutionError("Failed to reset cluster options on %s"
-                                 % self.volname)
-        g.log.info("Cluster options reset successfully on %s",
-                   self.servers)
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_add_brick_when_quorum_not_met(self):
-
-        # pylint: disable=too-many-statements
-        # create and start a volume
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, ("Failed to create "
-                              "and start volume %s" % self.volname))
-        g.log.info("Volume is created and started successfully")
+    def run_test(self, redant):
+        """
+        1. Create and start a volume.
+        2. Set the volume options :
+             {'cluster.server-quorum-type': 'server'}
+        3. Stop glusterd in half of the nodes in server list
+        4. Confirm glusterd is not running in those servers
+        5. Get volume status
+        6. Check if bricks are offline
+        7. Add brick which should fail
+        8. Set the volume options :
+             {'cluster.server-quorum-type': 'none'}
+        9. Check if glusterd is running,
+            if not then start glusterd on that node
+        10. Validate peers are connected
+        """
 
         # set cluster.server-quorum-type as server
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'cluster.server-quorum-type': 'server'})
-        self.assertTrue(ret, ("Failed to set the quorum type as a server"
-                              " on volume %s", self.volname))
-        g.log.info("Able to set server quorum successfully on volume %s",
-                   self.volname)
+        redant.set_volume_options(self.vol_name,
+                                  {'cluster.server-quorum-type': 'server'},
+                                  self.server_list[0])
 
         # Setting quorum ratio to 95%
-        ret = set_volume_options(self.mnode, 'all',
-                                 {'cluster.server-quorum-ratio': '95%'})
-        self.assertTrue(ret, "Failed to set server quorum ratio on %s"
-                        % self.volname)
-        g.log.info("Able to set server quorum ratio successfully on %s",
-                   self.servers)
+        redant.set_volume_options('all',
+                                  {'cluster.server-quorum-ratio': '95%'},
+                                  self.server_list[0])
 
         # bring down glusterd of half nodes
-        num_of_servers = len(self.servers)
+        num_of_servers = len(self.server_list)
         num_of_nodes_to_bring_down = num_of_servers//2
 
         for node in range(num_of_nodes_to_bring_down, num_of_servers):
-            ret = stop_glusterd(self.servers[node])
-            self.assertTrue(ret, ("Failed to stop glusterd on %s"
-                                  % self.servers[node]))
-            g.log.info("Glusterd stopped successfully on server %s",
-                       self.servers[node])
+            redant.stop_glusterd(self.server_list[node])
 
         for node in range(num_of_nodes_to_bring_down, num_of_servers):
             count = 0
             while count < 80:
-                ret = is_glusterd_running(self.servers[node])
-                if ret:
+                ret = redant.is_glusterd_running(self.server_list[node])
+                if ret == 0:
                     break
                 sleep(2)
                 count += 1
-            self.assertNotEqual(ret, 0, "glusterd is still running on %s"
-                                % self.servers[node])
+
+            if ret != 0:
+                raise Exception(f"Error: glusterd is still running on "
+                                f"{self.server_list[node]}")
 
         # Verifying node count in volume status after glusterd stopped
         # on half of the servers, Its not possible to check the brick status
         # immediately in volume status after glusterd stop
-        count = 0
-        while count < 100:
-            vol_status = get_volume_status(self.mnode, self.volname)
-            servers_count = len(vol_status[self.volname])
-            if servers_count == (num_of_servers - num_of_nodes_to_bring_down):
+        for count in range(100):
+            vol_status = redant.get_volume_status(self.vol_name,
+                                                  self.server_list[0])
+            active_servers = []
+            for node in vol_status[self.vol_name]['node']:
+                if node['hostname'] not in active_servers:
+                    active_servers.append(node['hostname'])
+
+            if len(active_servers) == (num_of_servers
+                                       - num_of_nodes_to_bring_down):
                 break
             sleep(2)
-            count += 1
 
         # confirm that quorum is not met, brick process should be down
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, "Failed to get the brick list")
-        bricks_to_check = bricks_list[0:num_of_nodes_to_bring_down]
-        ret = are_bricks_offline(self.mnode, self.volname, bricks_to_check)
-        self.assertTrue(ret, "Unexpected: Server quorum is not met, "
-                        "Bricks are up")
-        g.log.info("Server quorum is not met, bricks are down as expected")
+        bricks_to_check = redant.es.get_brickdata(self.vol_name)
+        ret = redant.are_bricks_offline(self.vol_name, bricks_to_check,
+                                        self.server_list[0])
+        if not ret:
+            raise Exception("Unexpected: Server quorum is not met, "
+                            "bricks are up")
 
-        # try add brick operation, which should fail
-        num_bricks_to_add = 1
-        brick = form_bricks_list(self.mnode, self.volname, num_bricks_to_add,
-                                 self.servers, self.all_servers_info)
-        ret, _, _ = add_brick(self.mnode, self.volname, brick)
-        self.assertNotEqual(ret, 0, ("Unexpected: add brick is success, "
-                                     "when quorum is not met"))
-        g.log.info("Add brick is failed as expected, when quorum is not met")
-
-        # confirm that, newly added brick is not part of volume
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, "Failed to get the brick list")
-        if brick in bricks_list:
-            ret = False
-            self.assertTrue(ret, ("Unexpected: add brick is success, "
-                                  "when quorum is not met"))
-        g.log.info("Add brick is failed as expected, when quorum is not met")
+        vol_dict = self.conv_dict[self.volume_type]
+        try:
+            redant.add_brick(self.vol_name, self.server_list[0],
+                             self.vol_type_inf[vol_dict],
+                             self.server_list, self.brick_roots, True)
+        except Exception as error:
+            redant.logger.info(f"Add brick failed as expected: {error}")
 
         # set cluster.server-quorum-type as none
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'cluster.server-quorum-type': 'none'})
-        self.assertTrue(ret, ("Failed to set the quorum type as a server"
-                              " on volume %s", self.volname))
-        g.log.info("Able to set server quorum successfully on volume %s",
-                   self.volname)
+        redant.set_volume_options(self.vol_name,
+                                  {'cluster.server-quorum-type': 'none'},
+                                  self.server_list[0])
+
+        # check if all the servers are having glusterd running
+        for server in self.server_list:
+            ret = redant.is_glusterd_running(server)
+            if ret != 1:
+                redant.start_glusterd(server)
+                sleep(15)
+
+        redant.logger.info("Glusterd running on all the servers")
+
+        # checking for peer status from every node
+        for count in range(80):
+            ret = redant.validate_peers_are_connected(self.server_list,
+                                                      self.server_list[0])
+            if ret:
+                break
+            sleep(2)
+
+        if not ret:
+            raise Exception("Servers are not in connected state")
+
+        redant.logger.info("Peers are in connected state")
