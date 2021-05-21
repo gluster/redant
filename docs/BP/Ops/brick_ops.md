@@ -111,7 +111,7 @@ A loop runs from 0 to `mul_fac-1` and creates the brick command using the `serve
 
 ## are_bricks_offline()
 
-This function checks if the bricks are offline. The comparison is made between the nodeCount and the number of bricks in the brick-dict. If equal that means all bricks are online else a few or all may be offline.
+This function checks if the bricks are offline. The status is 1 if the bricks are online and 0 if offline. This count can tell if all the bricks are online or not.
 
 ```m
 Args:
