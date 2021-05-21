@@ -108,3 +108,14 @@ mul_fac (int) : Stores the number of bricks
 ### How does it work?
 
 A loop runs from 0 to `mul_fac-1` and creates the brick command using the `server_val` and `brick_path_val`. The paths are appended in the brick_dict for the following servers and then are returned with the brick command `brick_cmd`.
+
+## are_bricks_offline()
+
+This function checks if the bricks are offline. The comparison is made between the nodeCount and the number of bricks in the brick-dict. If equal that means all bricks are online else a few or all may be offline.
+
+```m
+Args:
+volname (str) : Volume name
+brick_dict (dict) : the brick dictionary to compare
+node (str) : the node on which comparison has to be done
+```
