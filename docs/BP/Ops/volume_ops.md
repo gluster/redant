@@ -1,6 +1,6 @@
 # Volume Ops
 
-Volume Ops contains all the functions required to carry out the volume related operatins. Given below are all the details about all the functions implemented in the Volume Ops library:
+Volume Ops contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops library:
 
 1) [**volume_mount**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L16)<br>
         Mounts the gluster volume to the client's filesystem.
