@@ -284,6 +284,10 @@ class PeerOps(AbstractOps):
         Validate whether each server in the cluster is connected to
         all other servers in cluster.
 
+        Args:
+            server_list (list) : List of servers
+            node (str) : node on which peer status is to be checked
+
         Returns (bool): True if all peers are in connected
                         state with other peers.
                         False otherwise.
