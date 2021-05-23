@@ -3,5 +3,5 @@
 1. [Peer Ops]()
 2. [Brick Ops](./brick_ops.md)
 3. [Volume Ops]()
-4. [Profile Ops]()
+4. [Profile Ops](./peer_ops.md)
 5. [Remore execution functions](./rexe.md)
