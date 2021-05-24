@@ -129,6 +129,14 @@ class FrameworkEnv:
                                            "redundancy_count": 0,
                                            "transport": ""}}
 
+    def get_volnames(self) -> list:
+        """
+        Method returns a list of existing volume names
+        Returns:
+            list : list of volume names
+        """
+        return list(self.volds.keys())
+
     def does_volume_exists(self, volname: str) -> bool:
         """
         Method checks if the said volume already exists.
