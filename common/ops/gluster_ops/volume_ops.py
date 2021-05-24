@@ -3,6 +3,7 @@ This file contains one class - VolumeOps which
 holds volume related APIs which will be called
 from the test case.
 """
+from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -405,7 +406,8 @@ class VolumeOps(AbstractOps):
         return ret
 
     def get_volume_status(self, volname: str = 'all', node: str = None,
-                          service: str = '', options: str = '') -> dict:
+                          service: str = '', options: str = '',
+                          excep: bool = True) -> dict:
         """
         Gets the status of all or the specified volume
         Args:
@@ -418,6 +420,11 @@ class VolumeOps(AbstractOps):
             options (str): options can be,
                 [detail|clients|mem|inode|fd|callpool|tasks]. If not given,
                 the function returns the output of gluster volume status
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
+
         Returns:
             dict: volume status in dict of dictionary format
             None: In case no volumes are present
@@ -451,10 +458,21 @@ class VolumeOps(AbstractOps):
                            }
             }
         """
+        ret = {}
 
         cmd = f"gluster volume status {volname} {service} {options} --xml"
+        if not excep:
+            ret = self.execute_abstract_op_node(cmd, node, excep=False)
 
-        ret = self.execute_abstract_op_node(cmd, node)
+            if ret['error_code'] != 0:
+                self.logger.error(ret['error_msg'])
+                return ret
+            elif isinstance(ret['msg'], (OrderedDict, dict)):
+                if int(ret['msg']['opRet']) != 0:
+                    self.logger.error(ret['msg']['opErrstr'])
+                    return ret
+        else:
+            ret = self.execute_abstract_op_node(cmd, node)
 
         volume_status = ret['msg']['volStatus']['volumes']
 
