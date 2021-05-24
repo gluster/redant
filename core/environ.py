@@ -64,7 +64,7 @@ class environ:
         if not self.redant.path_exists(self.client_list,
                                        [io_script_dpath]):
             for node in self.client_list:
-                self.logger.info(f'Copying file_dir_ops to {node}')
+                self.redant.logger.info(f'Copying file_dir_ops to {node}')
                 self.redant.transfer_file_from_local(io_script_spath,
                                                      io_script_dpath, node)
 
