@@ -81,6 +81,7 @@ class TestListBuilder:
             test_dict["componentName"] = test_case_path.split("/")[-2]
             test_dict["testClass"] = cls._get_test_class(test_case_path)
             test_dict["testType"] = test_case_path.split("/")[-3]
+            test_dict["tcNature"] = test_flags["tcNature"]
             if test_flags["tcNature"] == "disruptive":
                 for vol_type in test_flags["volType"]:
                     if vol_type not in valid_vol_types:

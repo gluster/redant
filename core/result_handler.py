@@ -30,6 +30,12 @@ class ResultHandler:
 
         """
         cls.result = "Table:\n"
+        dcount = 0
+        ndcount = 0
+        dpass = 0
+        ndpass = 0
+        dtest = 0
+        ndtest = 0
 
         for item in test_results:
             if colorify:
@@ -40,13 +46,44 @@ class ResultHandler:
 
             table = PrettyTable(
                 ['Volume Type', 'Test Result', 'Time taken (sec)'])
+
+            if test_results[item][0]['tcNature'] == 'disruptive':
+                dtest += 1
+            elif test_results[item][0]['tcNature'] == 'nonDisruptive':
+                ndtest += 1
             for each_vol_test in test_results[item]:
 
                 table.add_row(
                     [each_vol_test['volType'], each_vol_test['testResult'],
                      each_vol_test['timeTaken']])
 
-            cls.result = (f"{cls.result}{str(table)}\n")
+                if each_vol_test['tcNature'] == 'disruptive':
+                    dcount += 1
+                    if each_vol_test['testResult'] == 'PASS':
+                        dpass += 1
+                elif each_vol_test['tcNature'] == 'nonDisruptive':
+                    ndcount += 1
+                    if each_vol_test['testResult'] == 'PASS':
+                        ndpass += 1
+
+            cls.result = (f"{cls.result}{str(table)}\n\n")
+
+        cls.result = (f"{cls.result} {Fore.BLUE}Summary:\n")
+        cls.result = (f"{cls.result} {Style.RESET_ALL}\n")
+
+        table = PrettyTable(['Category',
+                             'Cases',
+                             'Pass Percent'])
+
+        table.add_row(['nonDisruptive', ndtest,
+                       0 if ndcount == 0 else (ndpass/ndcount)*100])
+        table.add_row(['Disruptive', dtest,
+                       0 if dcount == 0 else (dpass/dcount)*100])
+        table.add_row(['Total', ndtest+dtest,
+                       (0 if (ndcount + dcount == 0)
+                        else ((ndpass + dpass)/(ndcount + dcount))*100)])
+
+        cls.result = (f"{cls.result}{str(table)}\n")
 
         cls.result = (f"{cls.result}\nFramework runtime : {total_time}\n")
 
