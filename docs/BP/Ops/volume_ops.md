@@ -2,7 +2,7 @@
 
 Volume Ops contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops library:
 
-1) [**volume_mount**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L16)<br>
+1) [**volume_mount**](../../../common/ops/gluster_ops/volume_ops.py#L16)<br>
         Mounts the gluster volume to the client's filesystem.
 
         Args:
@@ -22,7 +22,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                 - node : node on which the command got executed
         volume_mount(self.server_list[0], self.vol_name, self.mountpoint, self.client_list[0])
 
-2) [**volume_unmount**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L44)<br>
+2) [**volume_unmount**](../../../common/ops/gluster_ops/volume_ops.py#L44)<br>
     Unmounts the gluster volume from its client.
 
         Args:
@@ -42,7 +42,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_unmount(self.vol_name, self.mountpoint, self.client_list[0])
 
-3) [**volume_create**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L71)<br>
+3) [**volume_create**](../../../common/ops/gluster_ops/volume_ops.py#L71)<br>
     Create the gluster volume with specified configuration
 
         Args:
@@ -70,7 +70,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                           self.vol_type_inf[self.conv_dict[volume_type1]],
                           self.server_list, self.brick_roots, True)
 
-4) [**volume_start**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L147)<br>
+4) [**volume_start**](../../../common/ops/gluster_ops/volume_ops.py#L147)<br>
     Starts the gluster volume
 
         Args:
@@ -92,7 +92,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_start(self.vol_name,self.server_list[0])
 
-5) [**volume_stop**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L180)<br>
+5) [**volume_stop**](../../../common/ops/gluster_ops/volume_ops.py#L180)<br>
     Stops the gluster volume
 
         Args:
@@ -113,7 +113,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_stop(self.vol_name, self.server_list[0], True)
 
-6) [**volume_delete**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L211)<br>
+6) [**volume_delete**](../../../common/ops/gluster_ops/volume_ops.py#L211)<br>
     Deletes the gluster volume if given volume exists in gluster.
 
         Args:
@@ -131,7 +131,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_delete(self.vol_name, self.server_list[0])
 
-7) [**volume_delete_and_brick_cleanup**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L236)<br>
+7) [**volume_delete_and_brick_cleanup**](../../../common/ops/gluster_ops/volume_ops.py#L236)<br>
     Deletes the gluster volume if given volume exists in gluster.
 
         Args:
@@ -149,7 +149,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_delete_and_brick_cleanup(self.vol_name, self.server_list[0])
 
-8) [**get_volume_info**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L258)<br>
+8) [**get_volume_info**](../../../common/ops/gluster_ops/volume_ops.py#L258)<br>
     Gives volume information.
 
         Kwargs:
@@ -202,7 +202,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                              }
                }
 
-9) [**get_volume_list**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L351)<br>
+9) [**get_volume_list**](../../../common/ops/gluster_ops/volume_ops.py#L351)<br>
     Fetches the volume names in the gluster.
         Uses xml output of volume list and parses it into to list
 
@@ -214,7 +214,7 @@ Volume Ops contains all the functions required to carry out the volume related o
             get_volume_list(server)
             >>>['testvol1', 'testvol2']
 
-10) [**volume_reset**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L374)<br>
+10) [**volume_reset**](../../../common/ops/gluster_ops/volume_ops.py#L374)<br>
     Resets the gluster volume of all the reconfigured options.
 
         Args:
@@ -235,7 +235,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_reset(self.vol_name,self.server_list[0])
 
-11) [**get_volume_status**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L407)<br>
+11) [**get_volume_status**](../../../common/ops/gluster_ops/volume_ops.py#L407)<br>
     Gets the status of all or the specified volume
 
         Kwargs:
@@ -247,6 +247,10 @@ Volume Ops contains all the functions required to carry out the volume related o
             options (str): options can be,
                 \[detail|clients|mem|inode|fd|callpool|tasks\]. If not given,
                 the function returns the output of gluster volume status. Default - ''
+            excep (bool): exception flag to bypass the exception if the
+                          cmd fails. If set to False the exception is
+                          bypassed and value from remote executioner is
+                          returned. Defaults to True
         Returns:
             dict: volume status in dict of dictionary format
             None: In case no volumes are present
@@ -280,7 +284,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                               }
                }
 
-12) [**get_volume_options**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L494)<br>
+12) [**get_volume_options**](../../../common/ops/gluster_ops/volume_ops.py#L494)<br>
      Gets the option values for a given volume.
 
         Args:
@@ -308,7 +312,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                  'cluster.brick-graceful-cleanup': 'disable (DEFAULT)'
                }
 
-13) [**set_volume_options**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L540)<br>
+13) [**set_volume_options**](../../../common/ops/gluster_ops/volume_ops.py#L540)<br>
      Sets the option values for the given volume.
 
         Args:
@@ -320,7 +324,7 @@ Volume Ops contains all the functions required to carry out the volume related o
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, self.server_list[0])
 
-14) [**validate_volume_option**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L575)<br>
+14) [**validate_volume_option**](../../../common/ops/gluster_ops/volume_ops.py#L575)<br>
      Validate the volume options
 
         Args:
@@ -335,7 +339,7 @@ Volume Ops contains all the functions required to carry out the volume related o
             validate_volume_option(sel.vol_name, options)
             
 
-15) [**reset_volume_option**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L592)<br>
+15) [**reset_volume_option**](../../../common/ops/gluster_ops/volume_ops.py#L592)<br>
     Resets the volume option
 
         Args:
@@ -361,7 +365,7 @@ Volume Ops contains all the functions required to carry out the volume related o
          Example:
             
 
-16) [**volume_sync**](https://github.com/srijan-sivakumar/redant/blob/d95bd1a1da8d16131bedf37f8d2ebf8f5c3259f9/common/ops/gluster_ops/volume_ops.py#L629)<br>
+16) [**volume_sync**](../../../common/ops/gluster_ops/volume_ops.py#L629)<br>
     Sync the volume to the specified host
     
         Args:
