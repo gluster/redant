@@ -68,9 +68,6 @@ class ResultHandler:
 
             cls.result = (f"{cls.result}{str(table)}\n\n")
 
-        cls.result = (f"{cls.result} {Fore.BLUE}Summary:\n")
-        cls.result = (f"{cls.result} {Style.RESET_ALL}\n")
-
         table = PrettyTable(['Category',
                              'Cases',
                              'Pass Percent'])
@@ -83,7 +80,7 @@ class ResultHandler:
                        (0 if (ndcount + dcount == 0)
                         else ((ndpass + dpass)/(ndcount + dcount))*100)])
 
-        cls.result = (f"{cls.result}{str(table)}\n")
+        cls.result = (f"Summary:\n{str(table)}\n{cls.result}\n")
 
         cls.result = (f"{cls.result}\nFramework runtime : {total_time}\n")
 
