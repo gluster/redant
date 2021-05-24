@@ -266,9 +266,8 @@ class VolumeOps(AbstractOps):
             # Check if mount dir exists in the node.
             mountdir = f"/mnt/{volname}"
             for node in client_list:
-                if not self.path_exists(node, mountdir):
-                    self.execute_abstract_op_node(f"mkdir -p {mountdir}",
-                                                  node)
+                self.execute_abstract_op_node(f"umount {mountdir}", node)
+                self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
                 self.volume_mount(server_list[0], volname, mountdir, node)
 
         # Clear out the mountpoint data.
@@ -298,12 +297,10 @@ class VolumeOps(AbstractOps):
                 # Check if mount dir exists in the node.
                 mounts = self.es.get_mnt_pts_dict_in_list(volname)
                 for mntd in mounts:
-                    if self.path_exists(mntd['client'], mntd['mountpath']):
-                        mount = mntd['mountpath']
-                        self.volume_unmount(volname, mount, mntd['client'])
-                        self.execute_abstract_op_node(f"rm -rf {mount}",
-                                                      mntd['client'])
-
+                    mount = mntd['mountpath']
+                    self.volume_unmount(volname, mount, mntd['client'])
+                    self.execute_abstract_op_node(f"rm -rf {mount}",
+                                                  mntd['client'])
             self.volume_stop(volname, server_list[0], True)
             self.volume_delete(volname, server_list[0])
 
