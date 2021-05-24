@@ -31,7 +31,7 @@ class AbstractOps:
                           cmd fails. If set to False the exception is
                           bypassed and value from remote executioner is
                           returned. Defaults to True
-            
+
         """
         self.logger.info(f"Running {cmd} on {node}")
 
