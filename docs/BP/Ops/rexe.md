@@ -7,7 +7,7 @@ them along with example.
 1. Rexe Class
 Why are we having a description about a class when we stated this document
 consists of functions falling under the category of remote execution
-operations ? Well, because the remote execution opeations can be performed
+operation ? Well, because the remote execution opeations can be performed
 only when an object for the Rexe class is instantiated. Now for people writing
 test cases, this is not directly visible as to where and how the connection
 is established as it is handled by the framework. To put it in short words,
@@ -79,7 +79,7 @@ ops functions. these ops functions will usually create the cmd but use the
 `execute_command` to actually execute those commands in the remote servers.
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of a 
+-> Whether we use it inside an ops or directly in a test case ( in case of a 
 test case, use `redant.` instead of `.self`),
 
 ```
@@ -133,7 +133,7 @@ would also need to use the other allied functions about which we will talk
 below.
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of a 
+-> Whether we use it inside an ops or directly in a test case ( in case of a 
 test case use `redant.` instead of `self.`),
 
 ```
@@ -155,7 +155,7 @@ if the need is to check whether the async command has finished execution or
 not.
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of
+-> Whether we use it inside an ops or directly in a test case ( in case of
 a test case use `redant.` instead of `self.`),
 
 ```
@@ -201,7 +201,7 @@ the execution has been finished. This can be used both at ops as well as
 test case level.
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of
+-> Whether we use it inside an ops or directly in a test case ( in case of
 a test case use `redant.` instead of `self.`),
 
 ```
@@ -250,7 +250,7 @@ requested for.
 requirement ).
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of
+-> Whether we use it inside an ops or directly in a test case ( in case of
 a test case use `redant.` instead of `self.`),
 
 ```
@@ -322,7 +322,7 @@ ops functions. these ops functions will usually create the cmd but use the
 remote servers.
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of a 
+-> Whether we use it inside an ops or directly in a test case ( in case of a 
 test case, use `redant.` instead of `.self`),
 
 ```
@@ -370,7 +370,7 @@ wherein the error code is assigned some value other than 0 ( which means
 success ), then this method will raise an exception.
 * Example:
 
--> Whether we use is inside an ops or directly in a test case ( in case of a 
+-> Whether we use it inside an ops or directly in a test case ( in case of a 
 test case, use `redant.` instead of `.self`),
 
 ```
