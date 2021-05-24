@@ -133,17 +133,64 @@ class ResultHandler:
 
         result_sheet = wb.add_sheet('Result Sheet')
 
+        dcount = 0
+        ndcount = 0
+        dpass = 0
+        ndpass = 0
+        dtest = 0
+        ndtest = 0
+
+        for item in test_results:
+            if test_results[item][0]['tcNature'] == 'disruptive':
+                dtest += 1
+            elif test_results[item][0]['tcNature'] == 'nonDisruptive':
+                ndtest += 1
+
+            for each_vol_test in test_results[item]:
+
+                if each_vol_test['tcNature'] == 'disruptive':
+                    dcount += 1
+                    if each_vol_test['testResult'] == 'PASS':
+                        dpass += 1
+                elif each_vol_test['tcNature'] == 'nonDisruptive':
+                    ndcount += 1
+                    if each_vol_test['testResult'] == 'PASS':
+                        ndpass += 1
+
         row = 0
         style = xlwt.easyxf('font: bold 1')
 
+        result_sheet.write(row, 0, 'Category', style)
+        result_sheet.write(row, 1, 'Cases', style)
+        result_sheet.write(row, 2, 'Pass Percent', style)
+
+        row += 1
+        result_sheet.write(row, 0, 'nonDisruptive')
+        result_sheet.write(row, 1, ndtest)
+        result_sheet.write(row, 2,
+                           0 if ndcount == 0
+                           else (ndpass/ndcount)*100)
+
+        row += 1
+        result_sheet.write(row, 0, 'Disruptive')
+        result_sheet.write(row, 1, dtest)
+        result_sheet.write(row, 2,
+                           0 if dcount == 0
+                           else (dpass/dcount)*100)
+
+        row += 1
+        result_sheet.write(row, 0, 'Total')
+        result_sheet.write(row, 1, ndtest + dtest)
+        result_sheet.write(row, 2,
+                           (0 if (ndcount + dcount == 0)
+                            else
+                            ((ndpass + dpass)/(ndcount + dcount))*100))
+
+        row += 2
+
         result_sheet.write(row, 0, 'Total time taken (s)', style)
         result_sheet.write(row, 1, total_time)
-        row += 1
-
-        test_case_count = len(test_results)
-        result_sheet.write(row, 0, 'Total number of TCs', style)
-        result_sheet.write(row, 1, test_case_count)
-        row += 1
+        row += 2
 
         for item in test_results:
             result_sheet.write(row, 0, item, style)
