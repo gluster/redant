@@ -30,3 +30,4 @@ class VolDestroy(LazyParentTest):
         of said type and its mountpoint.
         """
         redant.cleanup_volume(self.vol_name, self.server_list)
+        redant.cleanup_brick_dirs()

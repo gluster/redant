@@ -474,7 +474,19 @@ class FrameworkEnv:
         for node in brickdata:
             if node not in list(self.cleands):
                 self.cleands[node] = []
-            self.cleands[node].append(brickdata[node])
+            self.cleands[node] += brickdata[node]
+
+    def remove_val_from_cleands(self, node: str, brick_dir: str):
+        """
+        remove a specific brick_dir from the node list.
+        Args:
+            node (str)
+            brick_dir (str)
+        """
+        print(self.cleands)
+        #if len(self.cleands[node]) == 1:
+        #    del self.cleands[node]
+        #self.cleands[node].remove(brick_dir)
 
     def get_cleands_data(self, node: list = None) -> dict:
         """
@@ -486,7 +498,7 @@ class FrameworkEnv:
             A dictionary of bricks to be cleaned for a node.
         """
         if node is None:
-            return self.cleands
+            return copy.deepcopy(self.cleands)
         ret_val = {}
         for n in node:
             if n not in self.cleands.keys():

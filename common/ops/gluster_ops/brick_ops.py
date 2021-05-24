@@ -348,3 +348,14 @@ class BrickOps:
             server_iter += 1
 
         return (brick_dict, brick_cmd)
+
+    def cleanup_brick_dirs(self):
+        """
+        This function requests for the cleands and clears the brick dirs which
+        have been populated in it.
+        """
+        cleands_val = list(self.es.get_cleands_data().items())
+        for (node, b_dir_l) in cleands_val:
+            for b_dir in b_dir_l:
+                self.execute_abstract_op_node(f"rm -rf {b_dir}", node)
+                self.es.remove_val_from_cleands(node, b_dir)
