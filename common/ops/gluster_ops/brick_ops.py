@@ -362,7 +362,8 @@ class BrickOps:
                 self.es.remove_val_from_cleands(node, b_dir)
 =======
     def are_bricks_offline(self, volname: str,
-                           brick_dict: dict, node: str) -> bool:
+                           brick_dict: dict, node: str,
+                           strict: bool = True) -> bool:
         """
         This function checks if the bricks are
         offline.
@@ -371,6 +372,7 @@ class BrickOps:
             volname (str) : Volume name
             brick_dict (dict) : the brick dictionary to compare
             node (str) : the node on which comparison has to be done
+            strict (bool) : To check strictly if all bricks are offline
 
         Returns:
             boolean value: True, if bricks are offline
@@ -387,7 +389,11 @@ class BrickOps:
             if brick_data['status'] == 1:
                 status_count += 1
 
-        if brick_count != status_count:
+        if strict and status_count == 0:
+            self.logger.info("All bricks are offline")
+            return True
+
+        if not strict and brick_count != status_count:
             self.logger.info("Some bricks are offline")
             return True
 
