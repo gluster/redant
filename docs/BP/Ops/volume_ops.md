@@ -1,8 +1,8 @@
 # Volume Ops
 
-Volume Ops contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops library:
+[Volume Ops](../../../common/ops/gluster_ops/volume_ops.py) contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops library:
 
-1) [**volume_mount**](../../../common/ops/gluster_ops/volume_ops.py#L16)<br>
+1) **volume_mount**<br>
         Mounts the gluster volume to the client's filesystem.
 
         Args:
@@ -22,7 +22,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                 - node : node on which the command got executed
         volume_mount(self.server_list[0], self.vol_name, self.mountpoint, self.client_list[0])
 
-2) [**volume_unmount**](../../../common/ops/gluster_ops/volume_ops.py#L44)<br>
+2) **volume_unmount**<br>
     Unmounts the gluster volume from its client.
 
         Args:
@@ -42,7 +42,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_unmount(self.vol_name, self.mountpoint, self.client_list[0])
 
-3) [**volume_create**](../../../common/ops/gluster_ops/volume_ops.py#L71)<br>
+3) **volume_create**<br>
     Create the gluster volume with specified configuration
 
         Args:
@@ -70,7 +70,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                           self.vol_type_inf[self.conv_dict[volume_type1]],
                           self.server_list, self.brick_roots, True)
 
-4) [**volume_start**](../../../common/ops/gluster_ops/volume_ops.py#L147)<br>
+4) **volume_start**<br>
     Starts the gluster volume
 
         Args:
@@ -92,7 +92,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_start(self.vol_name,self.server_list[0])
 
-5) [**volume_stop**](../../../common/ops/gluster_ops/volume_ops.py#L180)<br>
+5) **volume_stop**<br>
     Stops the gluster volume
 
         Args:
@@ -113,7 +113,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_stop(self.vol_name, self.server_list[0], True)
 
-6) [**volume_delete**](../../../common/ops/gluster_ops/volume_ops.py#L211)<br>
+6) **volume_delete**<br>
     Deletes the gluster volume if given volume exists in gluster.
 
         Args:
@@ -131,7 +131,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_delete(self.vol_name, self.server_list[0])
 
-7) [**volume_delete_and_brick_cleanup**](../../../common/ops/gluster_ops/volume_ops.py#L236)<br>
+7) **volume_delete_and_brick_cleanup**<br>
     Deletes the gluster volume if given volume exists in gluster.
 
         Args:
@@ -149,7 +149,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_delete_and_brick_cleanup(self.vol_name, self.server_list[0])
 
-8) [**get_volume_info**](../../../common/ops/gluster_ops/volume_ops.py#L258)<br>
+8) **get_volume_info**<br>
     Gives volume information.
 
         Kwargs:
@@ -202,7 +202,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                              }
                }
 
-9) [**get_volume_list**](../../../common/ops/gluster_ops/volume_ops.py#L351)<br>
+9) **get_volume_list**<br>
     Fetches the volume names in the gluster.
         Uses xml output of volume list and parses it into to list
 
@@ -214,7 +214,7 @@ Volume Ops contains all the functions required to carry out the volume related o
             get_volume_list(server)
             >>>['testvol1', 'testvol2']
 
-10) [**volume_reset**](../../../common/ops/gluster_ops/volume_ops.py#L374)<br>
+10) **volume_reset**<br>
     Resets the gluster volume of all the reconfigured options.
 
         Args:
@@ -235,7 +235,7 @@ Volume Ops contains all the functions required to carry out the volume related o
         Example:
             volume_reset(self.vol_name,self.server_list[0])
 
-11) [**get_volume_status**](../../../common/ops/gluster_ops/volume_ops.py#L407)<br>
+11) **get_volume_status**<br>
     Gets the status of all or the specified volume
 
         Kwargs:
@@ -284,7 +284,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                               }
                }
 
-12) [**get_volume_options**](../../../common/ops/gluster_ops/volume_ops.py#L494)<br>
+12) **get_volume_options**<br>
      Gets the option values for a given volume.
 
         Args:
@@ -312,7 +312,7 @@ Volume Ops contains all the functions required to carry out the volume related o
                  'cluster.brick-graceful-cleanup': 'disable (DEFAULT)'
                }
 
-13) [**set_volume_options**](../../../common/ops/gluster_ops/volume_ops.py#L540)<br>
+13) **set_volume_options**<br>
      Sets the option values for the given volume.
 
         Args:
@@ -324,7 +324,7 @@ Volume Ops contains all the functions required to carry out the volume related o
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, self.server_list[0])
 
-14) [**validate_volume_option**](../../../common/ops/gluster_ops/volume_ops.py#L575)<br>
+14) **validate_volume_option**<br>
      Validate the volume options
 
         Args:
@@ -339,7 +339,7 @@ Volume Ops contains all the functions required to carry out the volume related o
             validate_volume_option(sel.vol_name, options)
             
 
-15) [**reset_volume_option**](../../../common/ops/gluster_ops/volume_ops.py#L592)<br>
+15) **reset_volume_option**<br>
     Resets the volume option
 
         Args:
@@ -365,7 +365,7 @@ Volume Ops contains all the functions required to carry out the volume related o
          Example:
             
 
-16) [**volume_sync**](../../../common/ops/gluster_ops/volume_ops.py#L629)<br>
+16) **volume_sync**<br>
     Sync the volume to the specified host
     
         Args:
