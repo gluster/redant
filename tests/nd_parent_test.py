@@ -46,8 +46,7 @@ class NdParentTest(metaclass=abc.ABCMeta):
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, env_obj, log_path: str,
                    log_level: str):
-        machine_detail = {**client_details, **server_details}
-        self.redant = RedantMixin(machine_detail, env_obj)
+        self.redant = RedantMixin(server_details, client_details, env_obj)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
         self.test_name = mname

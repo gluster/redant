@@ -9,9 +9,11 @@ from multipledispatch import dispatch
 
 
 class Rexe:
-    def __init__(self, host_dict):
+    def __init__(self, server_dict, client_dict):
         self.host_generic = ['alls', 'allp']
-        self.host_dict = host_dict
+        self.host_dict = {**client_dict, **server_dict}
+        self.server_dict = server_dict
+        self.client_dict = client_dict
 
     def _random_node(self):
         """
@@ -278,3 +280,15 @@ class Rexe:
                     print(f"Generated exception : {exc}")
         self.logger.info(ret_val)
         return ret_val
+
+    def transfer_file_from_local(self, source_path, dest_path, dest_node):
+        """
+        Method to transfer a given file from the source node to the dest node.
+        Args:
+            source_path (str)
+            dest_path (str)
+            dest_node (str)
+        """
+        sftp = self.node_dict[dest_node].open_sftp()
+        sftp.put(source_path, dest_path)
+        sftp.close()

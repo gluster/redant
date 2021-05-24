@@ -1,3 +1,4 @@
+import os
 import sys
 from socket import timeout
 import copy
@@ -18,7 +19,8 @@ class environ:
         Redant mixin obj to be used for server setup and teardown operations
         has to be created.
         """
-        self.redant = RedantMixin(param_obj.get_server_config(), es)
+        self.redant = RedantMixin(param_obj.get_server_config(),
+                                  param_obj.get_client_config(), es)
         self.redant.init_logger("environ", log_path, log_level)
         try:
             self.redant.establish_connection()
@@ -50,14 +52,30 @@ class environ:
             sys.exit(0)
 
         self.server_list = param_obj.get_server_ip_list()
+        self.client_list = param_obj.get_client_ip_list()
+
+    def _check_and_copy_io_script(self):
+        """
+        Check if the I/O script exists in the client
+        machines. If not transfer it there.
+        """
+        io_script_dpath = '/tmp/file_dir_ops.py'
+        io_script_spath = f'{os.getcwd()}/tools/file_dir_ops.py'
+        if not self.redant.path_exists(self.client_list,
+                                       [io_script_dpath]):
+            for node in self.client_list:
+                self.logger.info(f'Copying file_dir_ops to {node}')
+                self.redant.transfer_file_from_local(io_script_spath,
+                                                     io_script_dpath, node)
 
     def setup_env(self):
         """
         Setting up of the environment before the TC execution begins.
         """
         try:
-            self.redant.start_glusterd()
+            self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
+            self._check_and_copy_io_script()
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
