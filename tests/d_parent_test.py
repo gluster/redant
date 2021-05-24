@@ -78,15 +78,6 @@ class DParentTest(metaclass=abc.ABCMeta):
                                          self.mountpoint, self.client_list[0])
             self.run_test(self.redant)
 
-            if self.volume_type != 'Generic':
-                self.redant.volume_unmount(self.vol_name, self.mountpoint,
-                                           self.client_list[0])
-                self.redant.execute_abstract_op_node(f"rm -rf "
-                                                     f"{self.mountpoint}",
-                                                     self.client_list[0])
-                self.redant.volume_stop(
-                    self.vol_name, self.server_list[0], True)
-                self.redant.volume_delete(self.vol_name, self.server_list[0])
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -100,11 +91,21 @@ class DParentTest(metaclass=abc.ABCMeta):
         # Perform cleanups. Stage 1 being stopping the volume if its still
         # running.
         try:
-            if self.redant.es.get_volume_start_status(self.vol_name):
-                self.redant.volume_stop(
-                    self.vol_name, self.server_list[0], True)
-            if self.redant.es.does_volume_exists(self.vol_name):
-                self.redant.volume_delete(self.vol_name, self.server_list[0])
-        except:
+            volnames = self.redant.es.get_volnames()
+            for volname in volnames:
+                mountpoints = self.redant.es.get_mnt_pts_dict_in_list(volname)
+                for mountpoint in mountpoints:
+                    mountpath = mountpoint["mountpath"]
+                    client = mountpoint["client"]
+                    self.redant.volume_unmount(volname, mountpath, client)
+                    self.redant.execute_abstract_op_node(f"rm -rf "
+                                                         f"{mountpath}",
+                                                         client)
+                if self.redant.es.get_volume_start_status(volname):
+                    self.redant.volume_stop(
+                        volname, self.server_list[0], True)
+                if self.redant.es.does_volume_exists(volname):
+                    self.redant.volume_delete(volname, self.server_list[0])
+        except Exception:
             pass
         self.redant.deconstruct_connection()
