@@ -391,6 +391,5 @@ class BrickOps:
             self.logger.info("Some bricks are offline")
             return True
 
-        self.logger.info("All bricks are online")
         return False
 >>>>>>> d6ec396... Migrated test_add_brick_when_quorum_not_met

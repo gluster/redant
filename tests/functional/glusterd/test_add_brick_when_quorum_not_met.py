@@ -96,8 +96,7 @@ class TestCase(DParentTest):
         ret = redant.are_bricks_offline(self.vol_name, bricks_to_check,
                                         self.server_list[0])
         if not ret:
-            raise Exception("Unexpected: Server quorum is not met, "
-                            "bricks are up")
+            raise Exception("Unexpected: Few bricks are online")
 
         vol_dict = self.conv_dict[self.volume_type]
         try:
@@ -130,6 +129,6 @@ class TestCase(DParentTest):
             sleep(2)
 
         if not ret:
-            raise Exception("Servers are not in connected state")
+            raise Exception("Peers are not in connected state")
 
         redant.logger.info("Peers are in connected state")
