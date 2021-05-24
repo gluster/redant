@@ -234,27 +234,78 @@ class VolumeOps(AbstractOps):
         self.es.remove_volume_data(volname)
         return ret
 
-    def volume_delete_and_brick_cleanup(self, volname: str, node: str = None):
+    def sanitize_volume(self, volname: str, server_list: list,
+                        client_list: list, brick_root: dict, vol_param: dict):
         """
-        Deletes the gluster volume if given volume exists in
-        gluster.
+        Sanitizing of the volume will be getting the volume
+        ready for the next test case to be used (ND tests)
+        or even within a test case for maybe some untold
+        and strange scenario.
         Args:
-            node (str): Node on which cmd has to be executed.
-            volname (str): Name of the volume to delete
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-
+            volname (str): Name of the volume to be sanitized.
+            server_list (list) : A list of strings consisting of server IPs.
+            client_list (list) : A list of strings consisting of client IPs.
+            brick_root (dict) : The mapping of the brick roots with the
+                                nodes.
+            vol_param (dict) : Raw recipe for creating volume
         """
+        # Check if the volume exists.
+        if not self.es.does_volume_exists(volname):
+            # A test case is for sure doing what it isn't supposed to..
+            # But the framework here takes the higher ground and handles
+            # things for the betterment of all TCs.
+            self.volume_create(volname, server_list[0], vol_param,
+                               server_list, brick_root, True)
 
-        ret = self.volume_delete(volname, node)
-        # TODO cleanup of the brick dirs after the volume is deleted.
-        return ret
+        # Check if the volume is started.
+        if not self.es.get_volume_start_status(volname):
+            self.volume_start(volname, server_list[0])
+
+        # Check if the volume is mounted on a client.
+        if self.es.get_mnt_pts_dict_in_list(volname) == []:
+            # Check if mount dir exists in the node.
+            mountdir = f"/mnt/{volname}"
+            for node in client_list:
+                if not self.path_exists(node, mountdir):
+                    self.execute_abstract_op_node(f"mkdir -p {mountdir}",
+                                                  node)
+                self.volume_mount(server_list[0], volname, mountdir, node)
+
+        # Clear out the mountpoint data.
+        mount_list = self.es.get_mnt_pts_dict_in_list(volname)
+        for mntd in mount_list:
+            self.execute_abstract_op_node(f"rm -rf {mntd['mountpath']}/*",
+                                          mntd['client'])
+
+    def cleanup_volume(self, volname: str, server_list: list):
+        """
+        Sanitizing of the volume will be getting the volume
+        ready for the next test case to be used (ND tests)
+        or even within a test case for maybe some untold
+        and strange scenario.
+        Args:
+            volname (str): Name of the volume to be sanitized.
+            server_list (list) : A list of strings consisting of server IPs.
+        """
+        # Check if the volume exists.
+        if self.es.does_volume_exists(volname):
+            # Check if the volume is started.
+            if not self.es.get_volume_start_status(volname):
+                self.volume_start(volname, server_list[0])
+
+            # Check if the volume is mounted on a client.
+            if not self.es.get_mnt_pts_dict_in_list(volname) == []:
+                # Check if mount dir exists in the node.
+                mounts = self.es.get_mnt_pts_dict_in_list(volname)
+                for mntd in mounts:
+                    if self.path_exists(mntd['client'], mntd['mountpath']):
+                        mount = mntd['mountpath']
+                        self.volume_unmount(volname, mount, mntd['client'])
+                        self.execute_abstract_op_node(f"rm -rf {mount}",
+                                                      mntd['client'])
+
+            self.volume_stop(volname, server_list[0], True)
+            self.volume_delete(volname, server_list[0])
 
     def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
         """

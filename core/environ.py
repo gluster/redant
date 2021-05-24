@@ -161,7 +161,7 @@ class FrameworkEnv:
         Arg:
             volname (str)
         """
-        if volname in self.volds.keys():
+        if volname in list(self.volds.keys()):
             return True
         return False
 
@@ -183,7 +183,7 @@ class FrameworkEnv:
             volds dictionary specific to given volume.
         """
         self._validate_volname(volname)
-        return self.volds[volname]
+        return list(self.volds[volname])
 
     def set_vol_type(self, volname: str, voltype_dict: dict):
         """
@@ -254,7 +254,7 @@ class FrameworkEnv:
             dictionary of nodes and their list of mountpaths.
         """
         self._validate_volname(volname)
-        return self.volds[volname]['mountpath']
+        return list(self.volds[volname]['mountpath'])
 
     def get_mnt_pts_dict_in_list(self, volname: str) -> list:
         """
@@ -418,7 +418,7 @@ class FrameworkEnv:
             Dictionary
         """
         self._validate_volname(volname)
-        return self.volds[volname]['options']
+        return copy.deepcopy(self.volds[volname]['options'])
 
     def is_volume_options_populated(self, volname: str) -> bool:
         """

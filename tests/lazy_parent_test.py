@@ -60,7 +60,7 @@ class LazyParentTest(metaclass=abc.ABCMeta):
         """
         try:
             self.vol_name = (f"redant-{self.volume_type}")
-            self.mountpoint = (f"/mnt/{self.volume_type}")
+            self.mountpoint = (f"/mnt/redant-{self.volume_type}")
             self.run_test(self.redant)
         except Exception as error:
             tb = traceback.format_exc()

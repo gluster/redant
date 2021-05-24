@@ -39,12 +39,11 @@ class TestCase(NdParentTest):
             self.server_list[0])
 
         # Get the mount point
-        mount_point = redant.es.get_mnt_pts_dict(self.vol_name)
-        mount_point = mount_point[self.client_list[0]][0]
+        mount_point = redant.es.get_mnt_pts_dict_in_list(self.vol_name)[0]
 
         # check df -h output
-        cmd = f"df -h | grep -i {mount_point}"
-        ret = redant.execute_command(cmd, self.client_list[0])
+        cmd = f"df -h | grep -i {mount_point['mountpath']}"
+        ret = redant.execute_command(cmd, mount_point['client'])
         out = ret['msg'][0].split(" ")[-2][:-1]
 
         if int(out) < 50:

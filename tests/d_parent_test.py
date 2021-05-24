@@ -93,7 +93,7 @@ class DParentTest(metaclass=abc.ABCMeta):
         try:
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
-                mountpoints = self.redant.es.get_mnt_pts_dict_in_list(volname)
+"""                mountpoints = self.redant.es.get_mnt_pts_dict_in_list(volname)
                 for mountpoint in mountpoints:
                     mountpath = mountpoint["mountpath"]
                     client = mountpoint["client"]
@@ -105,7 +105,8 @@ class DParentTest(metaclass=abc.ABCMeta):
                     self.redant.volume_stop(
                         volname, self.server_list[0], True)
                 if self.redant.es.does_volume_exists(volname):
-                    self.redant.volume_delete(volname, self.server_list[0])
+                    self.redant.volume_delete(volname, self.server_list[0])"""
+                self.redant.cleanup_volume(volname, self.server_list)
         except Exception:
             pass
         self.redant.deconstruct_connection()
