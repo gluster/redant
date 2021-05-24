@@ -85,8 +85,6 @@ class IoOps(AbstractOps):
         if not isinstance(list_of_paths, list):
             list_of_paths = (list_of_paths.split(" "))
 
-        _rc = True
-
         for path in list_of_paths:
             cmd = f"ls -l {path}"
             ret = self.execute_command_multinode(cmd, list_of_nodes)
@@ -94,9 +92,9 @@ class IoOps(AbstractOps):
             if each_ret['error_code'] != 0:
                 error_string = each_ret['error_msg'].rstrip('\n')
                 self.logger.error(f"{error_string} on node {each_ret['node']}")
-                _rc = False
+                return False
 
-        return _rc
+        return True
 
     def collect_mounts_arequal(self, mounts: dict, path=''):
         """
