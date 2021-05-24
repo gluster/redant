@@ -201,6 +201,7 @@ class TestRunner:
         test_stats = runner_thread_obj.run_thread()
 
         test_stats['timeTaken'] = time.time() - start
+        test_stats['tcNature'] = test_dict['tcNature']
         result_text = f"{test_dict['moduleName'][:-3]}-{test_dict['volType']}"
         if test_stats['testResult']:
             test_stats['testResult'] = "PASS"
