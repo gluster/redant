@@ -420,6 +420,11 @@ class VolumeOps(AbstractOps):
             options (str): options can be,
                 [detail|clients|mem|inode|fd|callpool|tasks]. If not given,
                 the function returns the output of gluster volume status
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
+
         Returns:
             dict: volume status in dict of dictionary format
             None: In case no volumes are present
