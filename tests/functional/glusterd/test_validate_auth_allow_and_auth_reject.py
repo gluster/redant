@@ -41,7 +41,7 @@ class TestCase(DParentTest):
                                       {option: mount_det[0]['client']},
                                       self.server_list[0])
 
-        # # Unmount only if the volume is supposed to be mounted
+        # Unmount only if the volume is supposed to be mounted
         if is_allowed:
             redant.volume_unmount(self.vol_name,
                                   mount_det[0]['mountpath'],
@@ -66,18 +66,18 @@ class TestCase(DParentTest):
         # Setting auth.allow option and then mounting and unmounting volume
         self._set_option_and_unmount_and_mount_volumes(redant, "auth.allow")
 
-        # # Reseting the volume options
+        # Reseting the volume options
         redant.volume_reset(self.vol_name, self.server_list[0])
 
-        # # Setting auth.reject option and then checking mounting of volume
+        # Setting auth.reject option and then checking mounting of volume
         self._set_option_and_unmount_and_mount_volumes(redant,
                                                        "auth.reject",
                                                        False)
 
-        # # Reseting the volume options
+        # Reseting the volume options
         redant.volume_reset(self.vol_name, self.server_list[0])
 
-        # # Check mounting and unmounting of volume without setting any options
+        # Check mounting and unmounting of volume without setting any options
         self._set_option_and_unmount_and_mount_volumes(redant)
 
     def run_test(self, redant):
