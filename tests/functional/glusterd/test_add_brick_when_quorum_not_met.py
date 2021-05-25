@@ -117,7 +117,6 @@ class TestCase(DParentTest):
             ret = redant.is_glusterd_running(server)
             if ret != 1:
                 redant.start_glusterd(server)
-                sleep(1)
                 redant.wait_for_glusterd_to_start(server)
 
         redant.logger.info("Glusterd running on all the servers")
