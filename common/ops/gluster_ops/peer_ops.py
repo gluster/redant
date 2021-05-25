@@ -233,6 +233,9 @@ class PeerOps(AbstractOps):
         if not isinstance(servers, list):
             servers = [servers]
 
+        for index, server in enumerate(servers):
+            servers[index] = socket.gethostbyname(server)
+
         if node in servers:
             servers.remove(node)
 
@@ -246,6 +249,7 @@ class PeerOps(AbstractOps):
         for peer_stat in peer_status_list:
             if (socket.gethostbyname(peer_stat['hostname']) in servers
                 and (peer_stat['stateStr'] != "Peer in Cluster"
+                     or peer_stat['state'] != '3'
                      or peer_stat['connected'] != '1')):
                 self.logger.error(f"Peer '{peer_stat['hostname']}' "
                                   f"not in connected state")
