@@ -93,19 +93,6 @@ class DParentTest(metaclass=abc.ABCMeta):
         try:
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
-                """mountpoints = self.redant.es.get_mnt_pts_dict_in_list(volname)
-                for mountpoint in mountpoints:
-                    mountpath = mountpoint["mountpath"]
-                    client = mountpoint["client"]
-                    self.redant.volume_unmount(volname, mountpath, client)
-                    self.redant.execute_abstract_op_node(f"rm -rf "
-                                                         f"{mountpath}",
-                                                         client)
-                if self.redant.es.get_volume_start_status(volname):
-                    self.redant.volume_stop(
-                        volname, self.server_list[0], True)
-                if self.redant.es.does_volume_exists(volname):
-                    self.redant.volume_delete(volname, self.server_list[0])"""
                 self.redant.cleanup_volume(volname, self.server_list)
         except Exception:
             pass

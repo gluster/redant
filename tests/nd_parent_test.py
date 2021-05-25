@@ -77,12 +77,13 @@ class NdParentTest(metaclass=abc.ABCMeta):
         # pre_test env state.
         if self.volume_type != "Generic":
             try:
-            # Condition 1. Volume started state.
+                # Condition 1. Volume started state.
                 vol_param = self.vol_type_inf[self.conv_dict[self.volume_type]]
                 self.redant.sanitize_volume(self.vol_name, self.server_list,
                                             self.client_list, self.brick_roots,
                                             vol_param)
-            # Condition 2. Volume options if set to be reset.
+
+                # Condition 2. Volume options if set to be reset.
                 if self.redant.es.is_volume_options_populated(self.vol_name):
                     vol_options = self.redant.es.get_vol_option(self.vol_name)
                     for opt in vol_options:
