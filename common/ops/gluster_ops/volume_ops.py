@@ -66,7 +66,7 @@ class VolumeOps(AbstractOps):
         cmd = f"umount {path}"
 
         ret = self.execute_abstract_op_node(cmd, node)
-        self.es.remove_mountpath(volname, node, path)
+        #self.es.remove_mountpath(volname, node, path)
         return ret
 
     def volume_create(self, volname: str, node: str, conf_hash: dict,

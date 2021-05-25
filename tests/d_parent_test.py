@@ -95,7 +95,10 @@ class DParentTest(metaclass=abc.ABCMeta):
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
                 self.redant.cleanup_volume(volname, self.server_list)
-        except Exception:
-            pass
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+            self.TEST_RES = False
         self.redant.cleanup_brick_dirs()
         self.redant.deconstruct_connection()
