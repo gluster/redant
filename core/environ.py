@@ -161,7 +161,7 @@ class FrameworkEnv:
         Arg:
             volname (str)
         """
-        if volname in self.volds.keys():
+        if volname in list(self.volds.keys()):
             return True
         return False
 
@@ -183,7 +183,7 @@ class FrameworkEnv:
             volds dictionary specific to given volume.
         """
         self._validate_volname(volname)
-        return self.volds[volname]
+        return list(self.volds[volname])
 
     def set_vol_type(self, volname: str, voltype_dict: dict):
         """
@@ -254,7 +254,7 @@ class FrameworkEnv:
             dictionary of nodes and their list of mountpaths.
         """
         self._validate_volname(volname)
-        return self.volds[volname]['mountpath']
+        return list(self.volds[volname]['mountpath'])
 
     def get_mnt_pts_dict_in_list(self, volname: str) -> list:
         """
@@ -418,7 +418,7 @@ class FrameworkEnv:
             Dictionary
         """
         self._validate_volname(volname)
-        return self.volds[volname]['options']
+        return copy.deepcopy(self.volds[volname]['options'])
 
     def is_volume_options_populated(self, volname: str) -> bool:
         """
@@ -474,7 +474,19 @@ class FrameworkEnv:
         for node in brickdata:
             if node not in list(self.cleands):
                 self.cleands[node] = []
-            self.cleands[node].append(brickdata[node])
+            self.cleands[node] += brickdata[node]
+
+    def remove_val_from_cleands(self, node: str, brick_dir: str):
+        """
+        remove a specific brick_dir from the node list.
+        Args:
+            node (str)
+            brick_dir (str)
+        """
+        if len(self.cleands[node]) == 1:
+            del self.cleands[node]
+        else:
+            self.cleands[node].remove(brick_dir)
 
     def get_cleands_data(self, node: list = None) -> dict:
         """
@@ -486,7 +498,7 @@ class FrameworkEnv:
             A dictionary of bricks to be cleaned for a node.
         """
         if node is None:
-            return self.cleands
+            return copy.deepcopy(self.cleands)
         ret_val = {}
         for n in node:
             if n not in self.cleands.keys():
