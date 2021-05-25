@@ -91,6 +91,7 @@ class DParentTest(metaclass=abc.ABCMeta):
         # Perform cleanups. Stage 1 being stopping the volume if its still
         # running.
         try:
+            self.redant.reset_volume_option('all', 'all', self.server_list[0])
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
                 self.redant.cleanup_volume(volname, self.server_list)

@@ -84,11 +84,8 @@ class NdParentTest(metaclass=abc.ABCMeta):
                                             vol_param)
 
                 # Condition 2. Volume options if set to be reset.
-                if self.redant.es.is_volume_options_populated(self.vol_name):
-                    vol_options = self.redant.es.get_vol_option(self.vol_name)
-                    for opt in vol_options:
-                        self.redant.reset_volume_option(self.vol_name, opt,
-                                                        self.server_list[0])
+                self.redant.reset_volume_option(self.vol_name, 'all',
+                                                self.server_list[0])
             except Exception as e:
                 self.TEST_RES = False
                 tb = traceback.format_exc()
