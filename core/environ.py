@@ -185,6 +185,14 @@ class FrameworkEnv:
         self._validate_volname(volname)
         return list(self.volds[volname])
 
+    def get_volds(self) -> dict:
+        """
+        Get the volds.
+        Returns:
+            volds dictionary as a whole.
+        """
+        return copy.deepcopy(self.volds)
+
     def set_vol_type(self, volname: str, voltype_dict: dict):
         """
         Modify volds voltype based on voltype_dict.
