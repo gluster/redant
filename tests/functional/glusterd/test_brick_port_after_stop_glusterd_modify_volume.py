@@ -1,176 +1,101 @@
-#  Copyright (C) 2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2020  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
 from time import sleep
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (volume_create, volume_start,
-                                           get_volume_list, get_volume_status,
-                                           set_volume_options)
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.volume_libs import (cleanup_volume)
-from glustolibs.gluster.peer_ops import (peer_probe, peer_detach,
-                                         peer_probe_servers,
-                                         peer_detach_servers,
-                                         nodes_from_pool_list,
-                                         wait_for_peers_to_connect)
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_init import (start_glusterd, stop_glusterd,
-                                             wait_for_glusterd_to_start)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestBrickPortAfterModifyVolume(GlusterBaseClass):
+# disruptive;dist
+class TestCase(DParentTest):
 
-    def setUp(self):
-
-        # Performing peer detach
-        ret = peer_detach_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to probe detached "
-                                 "servers %s" % self.servers)
-        g.log.info("Peer detach SUCCESSFUL.")
-        self.get_super_method(self, 'setUp')()
-
-    def tearDown(self):
-        """
-        clean up all volumes and peer probe to form cluster
-        """
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is not None:
-            for volume in vol_list:
-                ret = cleanup_volume(self.mnode, volume)
-                if not ret:
-                    raise ExecutionError("Failed to cleanup volume")
-                g.log.info("Volume deleted successfully : %s", volume)
-
-        # Peer probe detached servers
-        pool = nodes_from_pool_list(self.mnode)
-        for node in pool:
-            peer_detach(self.mnode, node)
-        ret = peer_probe_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to probe detached "
-                                 "servers %s" % self.servers)
-        g.log.info("Peer probe success for detached "
-                   "servers %s", self.servers)
-        self.get_super_method(self, 'tearDown')()
-
-    def test_brick_port(self):
+    def run_test(self, redant):
         # pylint: disable=too-many-statements, too-many-branches
         """
         In this test case:
-        1. Trusted storage Pool of 2 nodes
-        2. Create a distributed volumes with 2 bricks
-        3. Start the volume
-        4. Stop glusterd on one node 2
-        5. Modify any of the volume option on node 1
-        6. Start glusterd on node 2
-        7. Check volume status, brick should get port
+        1. Stop glusterd on node 2.
+        2. Modify any of the volume option on node 1
+        3. Start glusterd on node 2
+        4. Check volume status, brick should get port
+        # TODO: Add start_glusterd in teardown
         """
-        my_server_info = {
-            self.servers[0]: self.all_servers_info[self.servers[0]]
-        }
-        my_servers = self.servers[0:2]
-        index = 1
-        ret, _, _ = peer_probe(self.servers[0], self.servers[index])
-        self.assertEqual(ret, 0, ("peer probe from %s to %s is failed",
-                                  self.servers[0], self.servers[index]))
-        g.log.info("peer probe is success from %s to "
-                   "%s", self.servers[0], self.servers[index])
-        key = self.servers[index]
-        my_server_info[key] = self.all_servers_info[key]
+        bricks_list = redant.es.get_brickdata(self.vol_name)
+        if bricks_list is None:
+            raise Exception("Failed to get the brick list")
 
-        self.volname = "testvol"
-        bricks_list = form_bricks_list(self.mnode, self.volname, 2,
-                                       my_servers,
-                                       my_server_info)
-        g.log.info("Creating a volume %s ", self.volname)
-        ret = volume_create(self.mnode, self.volname,
-                            bricks_list, force=False)
-        self.assertEqual(ret[0], 0, ("Unable"
-                                     "to create volume %s" % self.volname))
-        g.log.info("Volume created successfully %s", self.volname)
+        vol_status = redant.get_volume_status(self.vol_name,
+                                              self.server_list[0])
+        if vol_status is None:
+            raise Exception("Failed to get volume "
+                            f"status for {self.vol_name}")
 
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to start the "
-                                  "volume %s", self.volname))
-        g.log.info("Get all the bricks of the volume")
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, "Failed to get the brick list")
-
-        g.log.info("Successfully got the list of bricks of volume")
-
-        vol_status = get_volume_status(self.mnode, self.volname)
-        self.assertIsNotNone(vol_status, "Failed to get volume "
-                             "status for %s" % self.volname)
+        vol_bricks = vol_status[self.vol_name]['node']
+        if not isinstance(vol_bricks, list):
+            vol_bricks = [vol_bricks]
         totport = 0
-        for _, value in vol_status.items():
-            for _, val in value.items():
-                for _, value1 in val.items():
-                    if int(value1["port"]) > 0:
-                        totport += 1
+        for vol_brick in vol_bricks:
+            if vol_brick["port"] == 'N/A':
+                continue
+            if int(vol_brick["port"]) > 0:
+                totport += 1
 
-        self.assertEqual(totport, 2, ("Volume %s is not started successfully"
-                                      "because no. of brick port is not equal"
-                                      " to 2", self.volname))
+        if totport != 4:
+            raise Exception(f"Volume {self.vol_name} is not started "
+                            "successfully because no. of brick port "
+                            "is not equal to 4")
 
-        ret = stop_glusterd(self.servers[1])
-        self.assertTrue(ret, "Failed to stop glusterd on one of the node")
-        ret = wait_for_glusterd_to_start(self.servers[1])
-        self.assertFalse(ret, "glusterd is still running on %s"
-                         % self.servers[1])
-        g.log.info("Glusterd stop on the nodes : %s "
-                   "succeeded", self.servers[1])
+        redant.stop_glusterd(self.server_list[1])
+
+        redant.wait_for_glusterd_to_stop(self.server_list[1])
 
         option = {'performance.readdir-ahead': 'on'}
-        ret = set_volume_options(self.servers[0], self.volname, option)
-        self.assertTrue(ret, "gluster volume set %s performance.readdir-ahead"
-                             "on is failed on server %s"
-                        % (self.volname, self.servers[0]))
-        g.log.info("gluster volume set %s performance.readdir-ahead on"
-                   "successfully on :%s", self.volname, self.servers[0])
+        ret = redant.set_volume_options(self.vol_name, option,
+                                        self.server_list[0])
 
-        ret = start_glusterd(self.servers[1])
-        self.assertTrue(ret, "Failed to start glusterd on one of the node")
-        g.log.info("Glusterd start on the nodes : %s "
-                   "succeeded", self.servers[1])
-        ret = wait_for_glusterd_to_start(self.servers[1])
-        self.assertTrue(ret, "glusterd is not running on %s"
-                        % self.servers[1])
-        g.log.info("Glusterd start on the nodes : %s "
-                   "succeeded", self.servers[1])
+        redant.start_glusterd(self.server_list[1])
+        redant.logger.info("Glusterd start on the nodes : %s "
+                           "succeeded", self.server_list[1])
+        redant.wait_for_glusterd_to_start(self.server_list[1])
 
-        ret = wait_for_peers_to_connect(self.servers[0], self.servers[1])
-        self.assertTrue(ret, "glusterd is not connected %s with peer %s"
-                        % (self.servers[0], self.servers[1]))
+        ret = redant.wait_for_peers_to_connect(self.server_list[0],
+                                               self.server_list[1])
+        if not ret:
+            raise Exception("glusterd is not connected "
+                            f"{self.server_list[0]} with peer "
+                            f"{self.server_list[1]}")
 
-        # Waiting for 5 sec so that the brick will get port
-        sleep(5)
-        vol_status = get_volume_status(self.mnode, self.volname)
-        self.assertIsNotNone(vol_status, "Failed to get volume "
-                             "status for %s" % self.volname)
+        # Waiting for 10 sec so that the brick will get port
+        sleep(10)
+        vol_status = redant.get_volume_status(self.vol_name,
+                                              self.server_list[0])
+        if vol_status is None:
+            raise Exception("Failed to get volume "
+                            f"status for {self.vol_name}")
+
+        vol_bricks = vol_status[self.vol_name]['node']
+        if not isinstance(vol_bricks, list):
+            vol_bricks = [vol_bricks]
         totport = 0
-        for _, value in vol_status.items():
-            for _, val in value.items():
-                for _, value1 in val.items():
-                    if int(value1["port"]) > 0:
-                        totport += 1
+        for vol_brick in vol_bricks:
+            if vol_brick["port"] == 'N/A':
+                continue
+            if int(vol_brick["port"]) > 0:
+                totport += 1
 
-        self.assertEqual(totport, 2, ("Volume %s is not started successfully"
-                                      "because no. of brick port is not equal"
-                                      " to 2", self.volname))
+        if totport != 4:
+            raise Exception(f"Volume {self.vol_name} is not started "
+                            "successfully because no. of brick port "
+                            "is not equal to 4")
