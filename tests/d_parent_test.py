@@ -109,4 +109,5 @@ class DParentTest(metaclass=abc.ABCMeta):
                 self.redant.cleanup_volume(volname, self.server_list)
         except Exception:
             pass
+        self.redant.cleanup_brick_dirs()
         self.redant.deconstruct_connection()

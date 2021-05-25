@@ -483,10 +483,10 @@ class FrameworkEnv:
             node (str)
             brick_dir (str)
         """
-        print(self.cleands)
-        #if len(self.cleands[node]) == 1:
-        #    del self.cleands[node]
-        #self.cleands[node].remove(brick_dir)
+        if len(self.cleands[node]) == 1:
+            del self.cleands[node]
+        else:
+            self.cleands[node].remove(brick_dir)
 
     def get_cleands_data(self, node: list = None) -> dict:
         """
