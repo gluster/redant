@@ -360,30 +360,65 @@ class BrickOps:
                 self.execute_abstract_op_node(f"rm -rf {b_dir}", node)
                 self.es.remove_val_from_cleands(node, b_dir)
 
-    def are_bricks_offline(self, volname: str,
-                           brick_dict: dict, node: str) -> bool:
+    def get_brick_dict_list(self, brick_dict: dict):
         """
-        This function checks if the bricks are
-        offline.
+        This function creates a list of
+        bricks from the brick dictionary
+
+        Args:
+            brick_dict: the brick dictionary
+
+        Returns:
+            List of bricks
+        """
+        brick_list = []
+        for server in brick_dict:
+            for brick in brick_dict[server]:
+                brick = f"{server}:{brick}"
+                brick_list.append(brick)
+
+        return brick_list
+
+    def are_bricks_offline(self, volname: str,
+                           bricks_list: list, node: str,
+                           strict: bool = True) -> bool:
+        """
+        This function checks if the given list of
+        bricks are offline.
 
         Args:
             volname (str) : Volume name
-            brick_dict (dict) : the brick dictionary to compare
+            bricks_list (list) : list of bricks to check
             node (str) : the node on which comparison has to be done
-
+            strict (bool) : To check strictly if all bricks are offline
         Returns:
             boolean value: True, if bricks are offline
                            False if online
         """
-        # TODO: take care of the scenario where a certain
-        # number of bricks have to be checked
         vol_status = self.get_volume_status(volname, node)
 
-        brick_count = 0
-        for each_node in brick_dict:
-            brick_count += len(brick_dict[each_node])
+        vol_status_brick_list = []
+        for n in vol_status[volname]['node']:
+            if n['status'] == 1:
+                brick = f"{n['hostname']}:{n['path']}"
+                vol_status_brick_list.append(brick)
 
-        if brick_count != int(vol_status[volname]['nodeCount']):
-            return True
+        online_brick_list = []
+        ret = True
 
-        return False
+        for brick in bricks_list:
+            if strict and brick in vol_status_brick_list:
+                online_brick_list.append(brick)
+                self.logger.error(f"Brick: {brick} is not offline")
+                ret = False
+            elif brick in vol_status_brick_list:
+                self.logger.error(f"Brick: {brick} is not offline")
+                return False
+
+        if not ret:
+            self.logger.error(f"Some of the bricks are not "
+                              f"offline: {online_brick_list}")
+            return ret
+
+        self.logger.info(f"All bricks are offline: {bricks_list}")
+        return ret

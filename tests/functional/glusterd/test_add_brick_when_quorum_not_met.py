@@ -92,7 +92,9 @@ class TestCase(DParentTest):
             sleep(2)
 
         # confirm that quorum is not met, brick process should be down
-        bricks_to_check = redant.es.get_brickdata(self.vol_name)
+        brick_d = redant.es.get_brickdata(self.vol_name)
+        bricks_to_check = redant.get_brick_dict_list(brick_d)
+        bricks_to_check = bricks_to_check[0:num_of_nodes_to_bring_down]
         ret = redant.are_bricks_offline(self.vol_name, bricks_to_check,
                                         self.server_list[0])
         if not ret:
