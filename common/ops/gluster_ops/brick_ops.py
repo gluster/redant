@@ -403,3 +403,27 @@ class BrickOps:
 
         self.logger.info(f"All bricks are offline: {bricks_list}")
         return ret
+
+    def check_if_bricks_list_changed(self,
+                                     bricks_list: list,
+                                     volname: str,
+                                     node: str) -> bool:
+        """
+        Checks if the brick list changed.
+
+        Returns:
+        bool: True is list changed
+              else False
+        """
+        vol_info = self.get_volume_info(node, volname)
+
+        vol_info_brick_list = []
+        for n in vol_info[volname]['bricks']:
+            vol_info_brick_list.append(n['name'])
+
+        if len(vol_info_brick_list) == len(bricks_list):
+            for each in bricks_list:
+                if each not in vol_info_brick_list:
+                    return True
+            return False
+        return True

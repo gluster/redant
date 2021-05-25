@@ -92,8 +92,8 @@ class TestCase(DParentTest):
             sleep(2)
 
         # confirm that quorum is not met, brick process should be down
-        bricks_to_check = redant.es.get_all_bricks_list(self.vol_name)
-        bricks_to_check = bricks_to_check[0:num_of_nodes_to_bring_down]
+        all_bricks = redant.es.get_all_bricks_list(self.vol_name)
+        bricks_to_check = all_bricks[0:num_of_nodes_to_bring_down]
         ret = redant.are_bricks_offline(self.vol_name, bricks_to_check,
                                         self.server_list[0])
         if not ret:
@@ -108,6 +108,11 @@ class TestCase(DParentTest):
         except Exception as error:
             redant.logger.info(f"Add brick failed as expected: {error}")
 
+        ret = redant.check_if_bricks_list_changed(all_bricks, self.vol_name,
+                                                  self.server_list[0])
+
+        if ret:
+            raise Exception("Unexpected: Bricks were added.")
         # set cluster.server-quorum-type as none
         redant.set_volume_options(self.vol_name,
                                   {'cluster.server-quorum-type': 'none'},
