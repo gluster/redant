@@ -360,25 +360,6 @@ class BrickOps:
                 self.execute_abstract_op_node(f"rm -rf {b_dir}", node)
                 self.es.remove_val_from_cleands(node, b_dir)
 
-    def get_brick_dict_list(self, brick_dict: dict):
-        """
-        This function creates a list of
-        bricks from the brick dictionary
-
-        Args:
-            brick_dict: the brick dictionary
-
-        Returns:
-            List of bricks
-        """
-        brick_list = []
-        for server in brick_dict:
-            for brick in brick_dict[server]:
-                brick = f"{server}:{brick}"
-                brick_list.append(brick)
-
-        return brick_list
-
     def are_bricks_offline(self, volname: str,
                            bricks_list: list, node: str,
                            strict: bool = True) -> bool:
