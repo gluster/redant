@@ -324,10 +324,12 @@ class VolumeOps(AbstractOps):
                                          'name': 'server-vm1:/brick1',
                                          'isArbiter': '0',
                                          '#text': 'server-vm1:/brick1'
+                                         'hostUuid': '56d8....'
                                         },
                                         {'name': 'server-vm1:/brick3',
                                          'isArbiter': '0',
                                          '#text': 'server-vm1:/brick3'
+                                         'hostUuid': '56d8....'
                                          }],
                             'optCount': '4',
                             'options': {
@@ -346,6 +348,7 @@ class VolumeOps(AbstractOps):
                                          'name': 'server-vm1:/brick2',
                                          'isArbiter': '0',
                                          '#text': 'server-vm1:/brick2'
+                                         'hostUuid': '56d8....'
                                         }],
                             'optCount': '4',
                             'options': {
