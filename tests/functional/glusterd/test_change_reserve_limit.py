@@ -1,86 +1,50 @@
-#  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
 
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.gluster.volume_libs import (cleanup_volume, setup_volume)
-from glustolibs.gluster.volume_ops import (get_volume_list, set_volume_options)
-from glustolibs.gluster.mount_ops import mount_volume, umount_volume
-from glustolibs.io.utils import validate_io_procs
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.brick_ops import remove_brick
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along`
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+  Changing reserve limits to higher and lower limits and
+  performing io operations
+
+"""
+
+import traceback
+from tests.nd_parent_test import NdParentTest
 
 
-@runs_on([['distributed-replicated'], ['glusterfs']])
-class TestChangeReservcelimit(GlusterBaseClass):
+# nonDisruptive;dist-rep
+class TestChangeReservcelimit(NdParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.counter = 1
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Uploading file_dir script in all client direcotries
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to "
-                                 "clients %s" % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def tearDown(self):
-
-        # Unmounting the volume.
-        ret, _, _ = umount_volume(mclient=self.mounts[0].client_system,
-                                  mpoint=self.mounts[0].mountpoint)
-        if ret:
-            raise ExecutionError("Volume %s is not unmounted" % self.volname)
-        g.log.info("Volume unmounted successfully : %s", self.volname)
-
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if not vol_list:
-            raise ExecutionError("Failed to get the volume list")
-
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
+    def terminate(self):
+        """
+        The voume created in the test case is destroyed.
+        """
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
             if not ret:
-                raise ExecutionError("Unable to delete volume % s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
+                raise Exception("IO failed on some of the clients")
+            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Cleaning the deleted volume bricks
-        for brick in self.brick_list:
-            node, brick_path = brick.split(r':')
-            cmd = "rm -rf " + brick_path
-            ret, _, _ = g.run(node, cmd)
-            if ret:
-                raise ExecutionError("Failed to delete the brick "
-                                     "dir's of deleted volume")
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_change_reserve_limit_to_lower_value(self):
-
-        # pylint: disable=too-many-statements
+    def set_storage_reserve_value(self, redant, vol_name, storage_res_val):
         """
         Test Case:
         1) Create a distributed-replicated volume and start it.
@@ -90,166 +54,79 @@ class TestChangeReservcelimit(GlusterBaseClass):
         4) Write some data on the mount points.
         5) Start remove-brick operation.
         6) While remove-brick is in-progress change the reserve limit to a
-           lower value.
+           lower or higher value.
         """
-
-        # Create and start a volume
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start volume")
+        counter = 1
 
         # Setting storage.reserve to 50
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'storage.reserve': '50'})
-        self.assertTrue(ret, "Failed to set storage reserve on %s"
-                        % self.mnode)
-        g.log.info("Able to set storage reserve successfully on %s",
-                   self.mnode)
-
-        # Mounting the volume.
-        ret, _, _ = mount_volume(self.volname, mtype=self.mount_type,
-                                 mpoint=self.mounts[0].mountpoint,
-                                 mserver=self.mnode,
-                                 mclient=self.mounts[0].client_system)
-        self.assertEqual(ret, 0, ("Volume %s is not mounted") % self.volname)
-        g.log.info("Volume mounted successfully : %s", self.volname)
+        redant.set_volume_options(vol_name, {'storage.reserve': '50'},
+                                  self.server_list[0])
 
         # Run IOs
-        g.log.info("Starting IO on all mounts...")
+        redant.logger.info("Starting IO on all mounts...")
         self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 5 "
-                   "--max-num-of-dirs 3 "
-                   "--num-of-files 10 %s" % (self.script_upload_path,
-                                             self.counter,
-                                             mount_obj.mountpoint))
-
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(vol_name)
+        for mount in self.mounts:
+            redant.logger.info(f"Starting IO on {mount['client']}:"
+                               f"{mount['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                      counter, 2, 3, 4, 10,
+                                                      mount['client'])
             self.all_mounts_procs.append(proc)
-            self.counter = self.counter + 10
+            counter = counter + 10
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed on some of the clients")
 
-        # Getting a list of all the bricks.
-        g.log.info("Get all the bricks of the volume")
-        self.brick_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(self.brick_list, "Failed to get the brick list")
-        g.log.info("Successfully got the list of bricks of volume")
+        # Remove brick
+        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+        ret = redant.remove_brick(self.server_list[0], vol_name,
+                                  conf_dict, self.server_list,
+                                  self.brick_roots, 'start')
 
-        # Removing bricks from volume.
-        remove_brick_list = self.brick_list[3:6]
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 remove_brick_list, 'start')
-        self.assertEqual(ret, 0, "Failed to start remove brick operation.")
-        g.log.info("Remove bricks operation started successfully.")
+        if ret['error_code'] != 0:
+            raise Exception("Failed to start remove brick operation.")
 
-        # Setting storage.reserve to 33
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'storage.reserve': '33'})
-        self.assertTrue(ret, "Failed to set storage reserve on %s"
-                        % self.mnode)
-        g.log.info("Able to set storage reserve successfully on %s",
-                   self.mnode)
+        # Setting storage.reserve to 33 or 99
+        redant.set_volume_options(vol_name,
+                                  {'storage.reserve': storage_res_val},
+                                  self.server_list[0])
 
-        # Stopping brick remove opeation.
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 remove_brick_list, 'stop')
-        self.assertEqual(ret, 0, "Failed to stop remove brick operation")
-        g.log.info("Remove bricks operation stop successfully")
+        ret = redant.remove_brick(self.server_list[0], vol_name,
+                                  conf_dict, self.server_list,
+                                  self.brick_roots, 'stop')
 
-    def test_change_reserve_limit_to_higher_value(self):
+        if ret['error_code'] != 0:
+            raise Exception("Failed to start remove brick operation.")
 
-        # pylint: disable=too-many-statements
+    def run_test(self, redant):
         """
-        Test Case:
-        1) Create a distributed-replicated volume and start it.
-        2) Enable storage.reserve option on the volume using below command:
-            gluster volume set <volname> storage.reserve <value>
-        3) Mount the volume on a client.
-        4) Write some data on the mount points.
-        5) Start remove-brick operation.
-        6) While remove-brick is in-progress change the reserve limit to
-           a higher value.
+        Steps:
+        1) Change the reserve limit to a lower value.
+        2) Create a new distributed-replicated volume for setting
+           reserve limit to a higher value.
+        3) Change the reserve limit to a higher value on the newly created
+           volume
+        4) Delete the volume created in the test case.
         """
+        # change_reserve_limit_to_lower_value
+        self.set_storage_reserve_value(redant, self.vol_name, "33")
+        # volume creation for setting reserve limit to higher value.
+        self.volume_type1 = 'dist-rep'
+        self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
+        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+        redant.setup_volume(self.volume_name1, self.server_list[0],
+                            conf_dict, self.server_list,
+                            self.brick_roots, True)
+        mountpoint = f"/mnt/{self.volume_name1}"
+        redant.execute_abstract_op_node(f"mkdir -p {mountpoint}",
+                                        self.client_list[0])
+        redant.volume_mount(self.server_list[0], self.volume_name1,
+                            mountpoint, self.client_list[0])
 
-        # Create and start a volume
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start volume")
+        # change_reserve_limit_to_higher_value
+        self.set_storage_reserve_value(redant, self.volume_name1, "99")
 
-        # Setting storage.reserve to 50
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'storage.reserve': '50'})
-        self.assertTrue(ret, "Failed to set storage reserve on %s"
-                        % self.mnode)
-        g.log.info("Able to set storage reserve successfully on %s",
-                   self.mnode)
-
-        # Mounting the volume.
-        ret, _, _ = mount_volume(self.volname, mtype=self.mount_type,
-                                 mpoint=self.mounts[0].mountpoint,
-                                 mserver=self.mnode,
-                                 mclient=self.mounts[0].client_system)
-        self.assertEqual(ret, 0, ("Volume %s is not mounted") % self.volname)
-        g.log.info("Volume mounted successfully : %s", self.volname)
-
-        # Run IOs
-        g.log.info("Starting IO on all mounts...")
-        self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 5 "
-                   "--max-num-of-dirs 3 "
-                   "--num-of-files 10 %s" % (self.script_upload_path,
-                                             self.counter,
-                                             mount_obj.mountpoint))
-
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            self.all_mounts_procs.append(proc)
-            self.counter = self.counter + 10
-
-        # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
-
-        # Getting a list of all the bricks.
-        g.log.info("Get all the bricks of the volume")
-        self.brick_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(self.brick_list, "Failed to get the brick list")
-        g.log.info("Successfully got the list of bricks of volume")
-
-        # Removing bricks from volume.
-        remove_brick_list = self.brick_list[3:6]
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 remove_brick_list, 'start')
-        self.assertEqual(ret, 0, "Failed to start remove brick operation.")
-        g.log.info("Remove bricks operation started successfully.")
-
-        # Setting storage.reserve to 99
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'storage.reserve': '99'})
-        self.assertTrue(ret, "Failed to set storage reserve on %s"
-                        % self.mnode)
-        g.log.info("Able to set storage reserve successfully on %s",
-                   self.mnode)
-
-        # Stopping brick remove opeation.
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 remove_brick_list, 'stop')
-        self.assertEqual(ret, 0, "Failed to stop remove brick operation")
-        g.log.info("Remove bricks operation stop successfully")
+        redant.volume_stop(self.volume_name1, self.server_list[0])
+        redant.volume_delete(self.volume_name1, self.server_list[0])
