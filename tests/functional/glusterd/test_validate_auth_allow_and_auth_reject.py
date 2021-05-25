@@ -27,7 +27,7 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def _set_option_and_mount_and_unmount_volumes(self, redant, option="",
+    def _set_option_and_unmount_and_mount_volumes(self, redant, option="",
                                                   is_allowed=True):
         """
         Setting volume option and then mounting and unmounting the volume
@@ -58,33 +58,27 @@ class TestCase(DParentTest):
             else:
                 redant.logger.info(f"Expected: {error}")
 
-    def _reset_the_volume(self, redant):
-        """
-        Resetting the volume
-        """
-        redant.volume_reset(self.vol_name, self.server_list[0])
-
     def _check_validate_test(self, redant):
         """
         Checking volume mounting and unmounting with auth.allow
         and auth.reject option set for it
         """
         # Setting auth.allow option and then mounting and unmounting volume
-        self._set_option_and_mount_and_unmount_volumes(redant, "auth.allow")
+        self._set_option_and_unmount_and_mount_volumes(redant, "auth.allow")
 
         # # Reseting the volume options
-        self._reset_the_volume(redant)
+        redant.volume_reset(self.vol_name, self.server_list[0])
 
         # # Setting auth.reject option and then checking mounting of volume
-        self._set_option_and_mount_and_unmount_volumes(redant,
+        self._set_option_and_unmount_and_mount_volumes(redant,
                                                        "auth.reject",
                                                        False)
 
         # # Reseting the volume options
-        self._reset_the_volume(redant)
+        redant.volume_reset(self.vol_name, self.server_list[0])
 
         # # Check mounting and unmounting of volume without setting any options
-        self._set_option_and_mount_and_unmount_volumes(redant)
+        self._set_option_and_unmount_and_mount_volumes(redant)
 
     def run_test(self, redant):
         """
