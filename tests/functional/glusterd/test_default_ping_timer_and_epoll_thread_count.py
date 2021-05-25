@@ -20,12 +20,12 @@ Description:
     thread count is 1
 """
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
-# nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
+# nonDisruptive;
 
 
-class TestPingTimerAndEpollThreadCountDefaultValue(AbstractTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
@@ -38,6 +38,7 @@ class TestPingTimerAndEpollThreadCountDefaultValue(AbstractTest):
         6. Check epoll thread count of glusterd should be 1
         """
         # Fetch the ping timeout value from glusterd.vol file
+        # TODO: this path might change as per the installation
         cmd = "cat /usr/local/etc/glusterfs/glusterd.vol |\
                grep -i ping-timeout"
 
