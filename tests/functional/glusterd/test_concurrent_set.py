@@ -1,102 +1,86 @@
-#  Copyright (C) 2016-2017  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2016-2017  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+  Performing concurrent volume set operations on two
+  different volumes and checking for existence os core file.
+"""
 
 import random
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_libs import cleanup_volume
-from glustolibs.gluster.volume_ops import (get_volume_list, volume_create)
-from glustolibs.gluster.lib_utils import (form_bricks_list,
-                                          is_core_file_created)
+import traceback
+from tests.nd_parent_test import NdParentTest
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestConcurrentSet(GlusterBaseClass):
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-        g.log.info("Starting %s ", cls.__name__)
-        ret = cls.validate_peers_are_connected()
-        if not ret:
-            raise ExecutionError("Nodes are not in peer probe state")
+# nonDisruptive;dist
+class TestCase(NdParentTest):
 
-    def tearDown(self):
-        '''
-        clean up all volumes and detaches peers from cluster
-        '''
-        vol_list = get_volume_list(self.mnode)
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            self.assertTrue(ret, "Failed to Cleanup the Volume %s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
+    def terminate(self):
+        try:
+            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        self.get_super_method(self, 'tearDown')()
-
-    def test_concurrent_set(self):
+    def run_test(self, redant):
+        """
+        1) Create a distributed volume. Use both existing and
+           created volumes for the operation.
+        2) Form volume set command for both volumes.
+        3) Execute the commands on both the volumes asyncronously.
+        4) Check for the completion of the concurrent execution.
+        5) Check for the core file creation in the end.
+        """
         # time stamp of current test case
-        ret, test_timestamp, _ = g.run_local('date +%s')
-        test_timestamp = test_timestamp.strip()
-        # Create a volume
-        self.volname = "first-vol"
-        self.brick_list = form_bricks_list(self.mnode, self.volname, 3,
-                                           self.servers,
-                                           self.all_servers_info)
-
-        ret = volume_create(self.mnode, self.volname,
-                            self.brick_list, force=False)
-        self.assertEqual(ret[0], 0, ("Unable"
-                                     "to create volume %s" % self.volname))
-        g.log.info("Volume created successfully %s", self.volname)
+        ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
+        timestamp = ret['msg'][0].rstrip("\n")
 
         # Create a volume
-        self.volname = "second-vol"
-        self.brick_list = form_bricks_list(self.mnode, self.volname, 3,
-                                           self.servers,
-                                           self.all_servers_info)
-        g.log.info("Creating a volume")
-        ret = volume_create(self.mnode, self.volname,
-                            self.brick_list, force=False)
-        self.assertEqual(ret[0], 0, ("Unable"
-                                     "to create volume %s" % self.volname))
-        g.log.info("Volume created successfully %s", self.volname)
+        volume_type1 = 'dist'
+        self.volume_name1 = f"{self.test_name}-{volume_type1}-1"
+        redant.volume_create(self.volume_name1, self.server_list[0],
+                             self.vol_type_inf[self.conv_dict[volume_type1]],
+                             self.server_list, self.brick_roots, True)
 
-        cmd1 = ("for i in `seq 1 100`; do gluster volume set first-vol "
-                "read-ahead on; done")
-        cmd2 = ("for i in `seq 1 100`; do gluster volume set second-vol "
-                "write-behind on; done")
+        cmd1 = ("for i in `seq 1 100`; do gluster volume set "
+                f"{self.vol_name} read-ahead on; done")
+        cmd2 = ("for i in `seq 1 100`; do gluster volume set "
+                f"{self.volume_name1} write-behind on; done")
 
-        proc1 = g.run_async(random.choice(self.servers), cmd1)
-        proc2 = g.run_async(random.choice(self.servers), cmd2)
+        proc1 = redant.execute_command_async(cmd1,
+                                             random.choice(self.server_list))
+        proc2 = redant.execute_command_async(cmd2,
+                                             random.choice(self.server_list))
 
-        ret1, _, _ = proc1.async_communicate()
-        ret2, _, _ = proc2.async_communicate()
+        ret1 = redant.wait_till_async_command_ends(proc1)
+        ret2 = redant.wait_till_async_command_ends(proc2)
 
-        self.assertEqual(ret1, 0, "Concurrent volume set on different volumes "
-                         "simultaneously failed")
-        self.assertEqual(ret2, 0, "Concurrent volume set on different volumes "
-                         "simultaneously failed")
+        if ret1['error_code'] != 0:
+            raise Exception("Concurrent volume set on different volumes "
+                            "simultaneously failed")
+        if ret2['error_code'] != 0:
+            raise Exception("Concurrent volume set on different volumes "
+                            "simultaneously failed")
 
-        g.log.info("Setting options on different volumes @ same time "
-                   "successfully completed")
-        ret = is_core_file_created(self.servers, test_timestamp)
-        if ret:
-            g.log.info("No core file found, glusterd service "
-                       "running successfully")
+        ret = redant.check_core_file_exists(self.server_list, timestamp)
+        if not ret:
+            redant.logger.info("No core file found, glusterd service "
+                               "running successfully")
         else:
-            g.log.error("core file found in directory, it "
-                        "indicates the glusterd service crash")
-            self.assertTrue(ret, ("glusterd service should not crash"))
+            raise Exception("core file found in directory, it "
+                            "indicates the glusterd service crash")
