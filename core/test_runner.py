@@ -151,18 +151,19 @@ class TestRunner:
 
             # Stage 2 for Generic concurrent tests.
             jobs = []
-            for _ in range(cls.concur_count):
-                proc = Process(target=cls._gen_worker_process,
-                               args=(cls.gen_nd_jobq,))
-                jobs.append(proc)
-                proc.start()
+            if cls.gen_nd_jobq.qsize() != 0:
+                for _ in range(cls.concur_count):
+                    proc = Process(target=cls._gen_worker_process,
+                                   args=(cls.gen_nd_jobq,))
+                    jobs.append(proc)
+                    proc.start()
 
-            while len(jobs) > 0:
-                jobs = [job for job in jobs if job.is_alive()]
-                time.sleep(1)
+                while len(jobs) > 0:
+                    jobs = [job for job in jobs if job.is_alive()]
+                    time.sleep(1)
 
-            for _ in range(cls.concur_count):
-                proc.join()
+                for _ in range(cls.concur_count):
+                    proc.join()
 
         # Stage 3
         for test in cls.get_dtest_fn():
