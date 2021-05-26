@@ -20,6 +20,7 @@
   making changes on the volume and starting the glusterd
   again.
 """
+import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest
 
@@ -33,9 +34,13 @@ class TestCase(DParentTest):
         glusterd stopped then the glusterd is started on that node
         and then the terminate function in the DParentTest is called
         """
-        if self.glusterd_stopped:
+        try:
             self.redant.start_glusterd(self.server_list[1])
             self.redant.wait_for_glusterd_to_start(self.server_list[1])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
         super().terminate()
 
     def run_test(self, redant):
@@ -72,8 +77,6 @@ class TestCase(DParentTest):
                             "is not equal to 4")
 
         redant.stop_glusterd(self.server_list[1])
-        self.glusterd_stopped = True
-
         redant.wait_for_glusterd_to_stop(self.server_list[1])
 
         option = {'performance.readdir-ahead': 'on'}
@@ -81,8 +84,6 @@ class TestCase(DParentTest):
                                         self.server_list[0])
 
         redant.start_glusterd(self.server_list[1])
-        self.glusterd_stopped = False
-
         redant.wait_for_glusterd_to_start(self.server_list[1])
 
         ret = redant.wait_for_peers_to_connect(self.server_list[0],
