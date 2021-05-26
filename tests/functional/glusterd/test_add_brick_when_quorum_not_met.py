@@ -28,6 +28,32 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    def terminate(self):
+
+        # check if all the servers are having glusterd running
+        for server in self.server_list:
+            ret = self.redant.is_glusterd_running(server)
+            if ret != 1:
+                self.redant.start_glusterd(server)
+                self.redant.wait_for_glusterd_to_start(server)
+
+        self.redant.logger.info("Glusterd running on all the servers")
+
+        # checking for peer status from every node
+        for _ in range(80):
+            ret = self.redant.validate_peers_are_connected(self.server_list,
+                                                           self.server_list[0])
+            if ret:
+                break
+            sleep(2)
+
+        if not ret:
+            raise Exception("Servers are not in connected state")
+
+        self.redant.logger.info("Peers are in connected state")
+
+        super().terminate()
+
     def run_test(self, redant):
         """
         1. Create and start a volume.
@@ -63,22 +89,15 @@ class TestCase(DParentTest):
             redant.stop_glusterd(self.server_list[node])
 
         for node in range(num_of_nodes_to_bring_down, num_of_servers):
-            count = 0
-            while count < 80:
-                ret = redant.is_glusterd_running(self.server_list[node])
-                if ret == 0:
-                    break
-                sleep(2)
-                count += 1
-
-            if ret != 0:
+            ret = redant.wait_for_glusterd_to_stop(self.server_list[node])
+            if not ret:
                 raise Exception(f"Error: glusterd is still running on "
                                 f"{self.server_list[node]}")
 
         # Verifying node count in volume status after glusterd stopped
         # on half of the servers, Its not possible to check the brick status
         # immediately in volume status after glusterd stop
-        for count in range(100):
+        for _ in range(100):
             vol_status = redant.get_volume_status(self.vol_name,
                                                   self.server_list[0])
             active_servers = []
@@ -113,29 +132,3 @@ class TestCase(DParentTest):
 
         if ret:
             raise Exception("Unexpected: Bricks were added.")
-        # set cluster.server-quorum-type as none
-        redant.set_volume_options(self.vol_name,
-                                  {'cluster.server-quorum-type': 'none'},
-                                  self.server_list[0])
-
-        # check if all the servers are having glusterd running
-        for server in self.server_list:
-            ret = redant.is_glusterd_running(server)
-            if ret != 1:
-                redant.start_glusterd(server)
-                redant.wait_for_glusterd_to_start(server)
-
-        redant.logger.info("Glusterd running on all the servers")
-
-        # checking for peer status from every node
-        for count in range(80):
-            ret = redant.validate_peers_are_connected(self.server_list,
-                                                      self.server_list[0])
-            if ret:
-                break
-            sleep(2)
-
-        if not ret:
-            raise Exception("Servers are not in connected state")
-
-        redant.logger.info("Peers are in connected state")
