@@ -24,7 +24,7 @@ class TestCase(DParentTest):
 
     def terminate(self):
         if not self.redant.is_glusterd_running(self.server_list[1]):
-            self.redant.stop_glusterd(self.server_list[0])
+            self.redant.start_glusterd(self.server_list[0])
         super().terminate()
 
     def run_test(self, redant):
