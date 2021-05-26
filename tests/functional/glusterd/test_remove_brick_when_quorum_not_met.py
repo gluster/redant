@@ -88,11 +88,13 @@ class TestCase(DParentTest):
             sleep(2)
 
         # confirm that quorum is not met, brick process should be down
-        bricks_to_check = redant.es.get_brickdata(self.vol_name)
+        all_bricks = redant.es.get_all_bricks_list(self.vol_name)
+        bricks_to_check = all_bricks[0:num_of_nodes_to_bring_down]
         ret = redant.are_bricks_offline(self.vol_name, bricks_to_check,
                                         self.server_list[0])
         if not ret:
-            raise Exception("Unexpected: Few bricks are online")
+            raise Exception("Unexpected: Server quorum is met, "
+                            "Few bricks are up")
 
         vol_dict = self.conv_dict[self.volume_type]
 
@@ -100,9 +102,15 @@ class TestCase(DParentTest):
         try:
             redant.remove_brick(self.server_list[0], self.vol_name,
                                 self.vol_type_inf[vol_dict],
-                                self.server_list, self.brick_roots, True)
+                                self.server_list, self.brick_roots, 'force')
         except Exception as error:
-            redant.logger.info(f"Add brick failed as expected: {error}")
+            redant.logger.info(f"Remove brick failed as expected: {error}")
+
+        ret = redant.check_if_bricks_list_changed(all_bricks, self.vol_name,
+                                                  self.server_list[0])
+
+        if ret:
+            raise Exception("Unexpected: Bricks were removed.")
 
         # set cluster.server-quorum-type as none
         redant.set_volume_options(self.vol_name,
@@ -114,7 +122,7 @@ class TestCase(DParentTest):
             ret = redant.is_glusterd_running(server)
             if ret != 1:
                 redant.start_glusterd(server)
-                sleep(15)
+                redant.wait_for_glusterd_to_start(server)
 
         redant.logger.info("Glusterd running on all the servers")
 
