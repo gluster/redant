@@ -234,9 +234,10 @@ class FrameworkEnv:
                          mountpath :p )
         """
         self._validate_volname(volname)
-        if node not in self.volds[volname]['mountpath'].keys():
+        if node not in list(self.volds[volname]['mountpath'].keys()):
             self.volds[volname]['mountpath'][node] = []
-        self.volds[volname]['mountpath'][node].append(path)
+        if path not in list(self.volds[volname]['mountpath'][node]):
+            self.volds[volname]['mountpath'][node].append(path)
 
     def remove_mountpath(self, volname: str, node: str, path: str):
         """
