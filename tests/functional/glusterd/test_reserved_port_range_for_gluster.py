@@ -1,22 +1,22 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-""" Description:
-      Setting reserved port range for gluster
 """
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+  Setting reserved port range for gluster
 
 from random import choice
 from glusto.core import Glusto as g
@@ -28,32 +28,31 @@ from glustolibs.gluster.volume_libs import cleanup_volume
 from glustolibs.gluster.lib_utils import get_servers_bricks_dict
 from glustolibs.gluster.gluster_init import restart_glusterd
 from glustolibs.gluster.peer_ops import wait_for_peers_to_connect
+"""
+
+# disruptive;
+
+from tests.d_parent_test import DParentTest
+from time import sleep
 
 
-class TestReservedPortRangeForGluster(GlusterBaseClass):
-    def tearDown(self):
+class TestCase(DParentTest):
+
+    def terminate(self):
+        """
+        In case the test fails in midway
+        then the port range needs to be brought
+        back to the previous state.
+        """
         # Reset port range if some test fails
         if self.port_range_changed:
-            cmd = "sed -i 's/49200/60999/' /etc/glusterfs/glusterd.vol"
-            ret, _, _ = g.run(self.mnode, cmd)
-            self.assertEqual(ret, 0, "Failed to set the max-port back to"
-                             " 60999 in glusterd.vol file")
+            cmd = ("sed -i 's/49200/60999/' "
+                   "/usr/local/etc/glusterfs/glusterd.vol")
+            self.redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
+        super().terminate()
 
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Unable to delete volume %s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
-
-        # Calling baseclass tearDown method
-        self.get_super_method(self, 'tearDown')()
-
-    def test_reserved_port_range_for_gluster(self):
+    def run_test(self, redant):
         """
         Test Case:
         1) Set the max-port option in glusterd.vol file to 49200
@@ -66,87 +65,79 @@ class TestReservedPortRangeForGluster(GlusterBaseClass):
         8) Restart glusterd on the same node
         9) Starting the 50th volume should succeed now
         """
-        # Set max port number as 49200 in glusterd.vol file
-        cmd = "sed -i 's/60999/49200/' /etc/glusterfs/glusterd.vol"
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertEqual(ret, 0, "Failed to set the max-port to 49200 in"
-                         " glusterd.vol file")
+        try:
 
-        self.port_range_changed = True
+            # Set max port number as 49200 in glusterd.vol file
+            cmd = ("sed -i 's/60999/49200/' "
+                   "/usr/local/etc/glusterfs/glusterd.vol")
+            redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        # Restart glusterd
-        ret = restart_glusterd(self.mnode)
-        self.assertTrue(ret, "Failed to restart glusterd")
-        g.log.info("Successfully restarted glusterd on node: %s", self.mnode)
+            self.port_range_changed = True
+            # Restart glusterd
+            redant.restart_glusterd(self.server_list[0])
+            sleep(2)
 
-        # Check node on which glusterd was restarted is back to 'Connected'
-        # state from any other peer
-        ret = wait_for_peers_to_connect(self.servers[1], self.servers)
-        self.assertTrue(ret, "All the peers are not in connected state")
+            # Check node on which glusterd was restarted is back to 'Connected'
+            # state from any other peer
+            servers = self.server_list[:]
+            redant.wait_for_peers_to_connect(servers[0], servers)
 
-        # Fetch the available bricks dict
-        bricks_dict = get_servers_bricks_dict(self.servers,
-                                              self.all_servers_info)
-        self.assertIsNotNone(bricks_dict, "Failed to get the bricks dict")
+            # Create 50 volumes in a loop
+            for i in range(1, 51):
+                volname = f"{self.vol_name}-volume-{i}"
+                redant.volume_create(volname, self.server_list[0],
+                                     self.vol_type_inf[self.conv_dict['dist']],
+                                     self.server_list, self.brick_roots, True)
 
-        # Create 50 volumes in a loop
-        for i in range(1, 51):
-            self.volname = "volume-%d" % i
-            bricks_list = []
-            j = 0
-            for key, value in bricks_dict.items():
-                j += 1
-                brick = choice(value)
-                brick = "{}:{}/{}_brick-{}".format(key, brick,
-                                                   self.volname, j)
-                bricks_list.append(brick)
+            # Try to start 1 volumes in loop
+            for i in range(1, 51):
+                volname = f"{self.vol_name}-volume-{i}"
 
-            ret, _, _ = volume_create(self.mnode, self.volname, bricks_list)
-            self.assertEqual(ret, 0, "Failed to create volume: %s"
-                             % self.volname)
-            g.log.info("Successfully created volume: %s", self.volname)
+                ret = redant.volume_start(volname,
+                                          self.server_list[0])
+                if ret['error_code'] != 0:
+                    break
 
-        # Try to start 50 volumes in loop
-        for i in range(1, 51):
-            self.volname = "volume-%d" % i
-            ret, _, err = volume_start(self.mnode, self.volname)
-            if ret:
-                break
-        g.log.info("Successfully started all the volumes until volume: %s",
-                   self.volname)
+            # Confirm if the 50th volume failed to start
+            print(i)
+            if i != 50:
+                raise Exception("Failed to start volumes 1"
+                                " to volume 49 in a loop")
 
-        # Confirm if the 50th volume failed to start
-        self.assertEqual(i, 50, "Failed to start the volumes volume-1 to"
-                         " volume-49 in a loop")
+            # Confirm the error message on volume start fail
+            err_msg = (f"volume start: {self.vol_name}-volume-50: "
+                       f"failed: Commit failed on localhost. "
+                       f"Please check log file for details.")
+            err = ret['error_msg'].rstrip('\n')
+            print(f"err: {err}\n")
 
-        # Confirm the error message on volume start fail
-        err_msg = ("volume start: volume-50: failed: Commit failed on"
-                   " localhost. Please check log file for details.")
-        self.assertEqual(err.strip(), err_msg, "Volume start failed with"
-                         " a different error message")
+            # Confirm the error message from the log file
+            cmd = ("cat /var/log/glusterfs/glusterd.log | "
+                   "grep -i 'All the ports in the range are"
+                   " exhausted' | wc -l")
+            ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        # Confirm the error message from the log file
-        cmd = ("cat /var/log/glusterfs/glusterd.log | %s"
-               % "grep -i 'All the ports in the range are exhausted' | wc -l")
-        ret, out, _ = g.run(self.mnode, cmd)
-        self.assertEqual(ret, 0, "Failed to 'grep' the glusterd.log file")
-        self.assertNotEqual(out, "0", "Volume start didn't fail with expected"
-                            " error message")
+            out = ret['msg'][0].rstrip('\n')
+            if int(out) == 0:
+                raise Exception("Volume start didn't fail with expected"
+                                " error message")
 
-        # Set max port number back to default value in glusterd.vol file
-        cmd = "sed -i 's/49200/60999/' /etc/glusterfs/glusterd.vol"
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertEqual(ret, 0, "Failed to set the max-port back to 60999 in"
-                         " glusterd.vol file")
+            # Set max port number back to default value in glusterd.vol file
+            cmd = ("sed -i 's/49200/60999/' "
+                   "/usr/local/etc/glusterfs/glusterd.vol")
+            redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        self.port_range_changed = False
+            self.port_range_changed = False
 
-        # Restart glusterd on the same node
-        ret = restart_glusterd(self.mnode)
-        self.assertTrue(ret, "Failed to restart glusterd")
-        g.log.info("Successfully restarted glusterd on node: %s", self.mnode)
+            # Restart glusterd on the same node
+            redant.restart_glusterd(self.server_list[0])
 
-        # Starting the 50th volume should succeed now
-        self.volname = "volume-%d" % i
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start volume: %s" % self.volname)
+            # Starting the 50th volume should succeed now
+            # self.volname = "volume-%d" % i
+            volname = f"{self.vol_name}-volume-50"
+
+            redant.volume_start(volname,
+                                self.server_list[0])
+
+        except Exception as error:
+            redant.logger.error(error)
