@@ -212,8 +212,7 @@ class GlusterOps(AbstractOps):
         it till the timeout is reached.
 
         Args:
-            node (str): Node on which this is
-            to be executed.
+            node (str): Node on which this is to be executed.
             timeout (int) : We cannot wait till eternity right :p
 
         Returns:
@@ -223,6 +222,27 @@ class GlusterOps(AbstractOps):
         while count <= timeout:
             ret = self.is_glusterd_running(node)
             if ret == 1:
+                return True
+            sleep(1)
+            count += 1
+        return False
+
+    def wait_for_glusterd_to_stop(self, node: str, timeout: int = 80) -> bool:
+        """
+        Checks if the glusterd has stopeed already or waits for
+        it till the timeout is reached.
+
+        Args:
+            node (str): Node on which this is to be executed.
+            timeout (int) : We cannot wait till eternity right :p
+
+        Returns:
+            bool: True if glusterd is running on the node or else False.
+        """
+        count = 0
+        while count <= timeout:
+            ret = self.is_glusterd_running(node)
+            if ret == 0:
                 return True
             sleep(1)
             count += 1
