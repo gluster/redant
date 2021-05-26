@@ -17,23 +17,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
   Setting reserved port range for gluster
-
-from random import choice
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.volume_ops import (volume_create, volume_start,
-                                           get_volume_list)
-from glustolibs.gluster.volume_libs import cleanup_volume
-from glustolibs.gluster.lib_utils import get_servers_bricks_dict
-from glustolibs.gluster.gluster_init import restart_glusterd
-from glustolibs.gluster.peer_ops import wait_for_peers_to_connect
 """
 
 # disruptive;
 
-from tests.d_parent_test import DParentTest
 from time import sleep
+from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
@@ -83,33 +72,34 @@ class TestCase(DParentTest):
             redant.wait_for_peers_to_connect(servers[0], servers)
 
             # Create 50 volumes in a loop
-            for i in range(1, 51):
+            for i in range(1, 26):
                 volname = f"{self.vol_name}-volume-{i}"
                 redant.volume_create(volname, self.server_list[0],
                                      self.vol_type_inf[self.conv_dict['dist']],
                                      self.server_list, self.brick_roots, True)
 
             # Try to start 1 volumes in loop
-            for i in range(1, 51):
+            for i in range(1, 26):
                 volname = f"{self.vol_name}-volume-{i}"
-
-                ret = redant.volume_start(volname,
-                                          self.server_list[0])
-                if ret['error_code'] != 0:
+                try:
+                    ret = redant.volume_start(volname,
+                                              self.server_list[0])
+                except Exception as error:
+                    out = str(error)
                     break
 
             # Confirm if the 50th volume failed to start
-            print(i)
-            if i != 50:
+            if i != 25:
                 raise Exception("Failed to start volumes 1"
-                                " to volume 49 in a loop")
+                                " to volume 25 in a loop")
 
             # Confirm the error message on volume start fail
-            err_msg = (f"volume start: {self.vol_name}-volume-50: "
-                       f"failed: Commit failed on localhost. "
-                       f"Please check log file for details.")
-            err = ret['error_msg'].rstrip('\n')
-            print(f"err: {err}\n")
+            err_msg = ("Commit failed on localhost. "
+                       "Please check log file for details.")
+
+            if out != err_msg:
+                raise Exception("Volume start didn't fail with the "
+                                "expected error message")
 
             # Confirm the error message from the log file
             cmd = ("cat /var/log/glusterfs/glusterd.log | "
@@ -134,7 +124,7 @@ class TestCase(DParentTest):
 
             # Starting the 50th volume should succeed now
             # self.volname = "volume-%d" % i
-            volname = f"{self.vol_name}-volume-50"
+            volname = f"{self.vol_name}-volume-25"
 
             redant.volume_start(volname,
                                 self.server_list[0])
