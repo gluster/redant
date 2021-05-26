@@ -36,31 +36,26 @@ class TestCase(NdParentTest):
         5. set 'read-only off' on the volume
         6. perform some I/O's on mount point
         """
+        error_msg = "Read-only file system"
 
         # Setting Read-only on volume
         redant.set_volume_options(self.vol_name, {'read-only': 'on'},
                                   self.server_list[0])
 
         # run IO
-        cmd = (f'cd /mnt/{self.volume_type};'
-               'for i in {1..100};do mkdir '
-               ' dir${i}; for j in {1..30};do echo "sample" > dir${i}/f${j};'
-               'done;done')
-        async_object = redant.execute_command_async(cmd, self.client_list[0])
+        ret = redant.create_dir(self.mountpoint, "temp", self.client_list[0],
+                                False)
+        if error_msg in ret['error_msg'] and ret['error_code'] == 1:
+            redant.logger.info("Readonly file system. Hence IO will fail.")
+        else:
+            raise Exception("IO succeeded in readonly file system.")
 
         # Setting read only off in volume options.
         redant.set_volume_options(self.vol_name, {'read-only': 'off'},
                                   self.server_list[0])
-        """ # Setting Read only off volume
-        ret = set_volume_options(self.mnode, self.volname,{'read-only': 'off'})
 
-        # run IOs
-        self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files ""--dirname-start-num %d ""--dir-depth 2 ""--dir-length 2 ""--max-num-of-dirs 2 ""--num-of-files 5 %s" % (self.script_upload_path,self.counter,mount_obj.mountpoint))
-
-            proc = g.run_async(mount_obj.client_system, cmd,user=mount_obj.user)
-            self.all_mounts_procs.append(proc)
-            self.counter = self.counter + 10
-
-        # Validate IO"""
+        # run IO
+        ret = redant.create_dir(self.mountpoint, "temp", self.client_list[0],
+                                False)
+        if not ret['error_code'] == 0:
+            raise Exception("IO falied in a read/write file system.")

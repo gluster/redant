@@ -27,7 +27,7 @@ class IoOps(AbstractOps):
         cmd = f"touch {path}/{filename}"
         self.execute_abstract_op_node(cmd, node)
 
-    def create_dir(self, path: str, dirname: str, node: str):
+    def create_dir(self, path: str, dirname: str, node: str, excep: bool=True):
         """
         Creates a directory in the specified path
         Args:
@@ -36,9 +36,11 @@ class IoOps(AbstractOps):
             dirname (str): Name of the directory
             node (str): The node on which command
                         has to run.
+            excep (bool): Whether to bypass the exception handling in
+                          abstract ops.
         """
         cmd = f"mkdir -p {path}/{dirname}"
-        self.execute_abstract_op_node(cmd, node)
+        return self.execute_abstract_op_node(cmd, node, excep)
 
     def create_dirs(self, list_of_nodes: list, list_of_dir_paths: list):
         """
