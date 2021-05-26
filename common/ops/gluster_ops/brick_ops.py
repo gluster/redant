@@ -411,6 +411,11 @@ class BrickOps:
         """
         Checks if the brick list changed.
 
+        Args:
+            bricks_list: list of bricks
+            volname: Name of volume
+            node: Node on which to execute vol info
+
         Returns:
         bool: True is list changed
               else False
