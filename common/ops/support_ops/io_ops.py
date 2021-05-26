@@ -101,6 +101,7 @@ class IoOps(AbstractOps):
 
         return True
 
+<<<<<<< HEAD
     def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
                                     dir_depth: int, dir_length: int,
                                     max_no_dirs: int, no_files: int,
@@ -126,80 +127,85 @@ class IoOps(AbstractOps):
                f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
                f"--num-of-files {no_files} {path}")
         return self.execute_command_async(cmd, node)
+=======
+    def check_core_file_exists(self, nodes, testrun_timestamp,
+                               paths=['/', '/var/log/core',
+                                      '/tmp', '/var/crash', '~/']):
+        '''
+        Listing directories and files in "/", /var/log/core, /tmp,
+        "/var/crash", "~/" directory for checking if the core file
+        created or not
+>>>>>>> b395fe5... removed lint issues
 
-    def check_core_file_exists(nodes, testrun_timestamp,
-                         paths=['/', '/var/log/core',
-                                '/tmp', '/var/crash', '~/']):
-    '''
-    Listing directories and files in "/", /var/log/core, /tmp,
-    "/var/crash", "~/" directory for checking if the core file created or not
+        Args:
 
-    Args:
+        nodes(list):
+            List of nodes need to pass from test method
+        testrun_timestamp:
+            This time stamp need to pass from test method
+            test case running started time, time format is EPOCH
+            time format, use below command for getting timestamp
+            of test case 'date +%s'
+        paths(list):
+            By default core file will be verified in "/","/tmp",
+            "/var/log/core", "/var/crash", "~/"
+        If test case need to verify core file in specific path,
+        need to pass path from test method
+        '''
+        count = 0
+        cmd_list = []
+        for path in paths:
+            cmd = ' '.join(['cd', path, '&&', 'ls', 'core*'])
+            cmd_list.append(cmd)
 
-    nodes(list):
-        List of nodes need to pass from test method
-    testrun_timestamp:
-        This time stamp need to pass from test method
-        test case running started time, time format is EPOCH
-        time format, use below command for getting timestamp
-        of test case 'date +%s'
-    paths(list):
-        By default core file will be verified in "/","/tmp",
-        "/var/log/core", "/var/crash", "~/"
-       If test case need to verify core file in specific path,
-       need to pass path from test method
-    '''
-    count = 0
-    cmd_list = []
-    for path in paths:
-        cmd = ' '.join(['cd', path, '&&', 'ls', 'core*'])
-        cmd_list.append(cmd)
+        # Checks for core file in "/", "/var/log/core", "/tmp" "/var/crash",
+        # "~/" directory
+        for node in nodes:
+            cmd = 'grep -r "time of crash" /var/log/glusterfs/'
+            ret = self.execute_abstract_op_node(cmd, node)
+            logfiles = ret['msg'][0].rstrip("\n")
+            print(f"ret['msg']:\n{ret['msg']}")
 
-    # Checks for core file in "/", "/var/log/core", "/tmp" "/var/crash",
-    # "~/" directory
-    for node in nodes:
-        cmd = 'grep -r "time of crash" /var/log/glusterfs/'
-        ret = self.execute_abstract_op_node(cmd, node)
-        logfiles = ret['msg'][0].rstrip("\n")
-        print(f"ret['msg']:\n{ret['msg']}")
+            if ret['error_code'] == 0:
+                self.logger.error(" Seems like there was a crash,"
+                                  " kindly check the logfiles, "
+                                  "even if you don't see a core file")
+                for logfile in logfiles.strip('\n').split('\n'):
+                    self.logger.error(f"Core was found in "
+                                      f"{logfile.split(':')[0]}")
+            for cmd in cmd_list:
+                ret, out, _ = self.execute_abstract_op_node(cmd, node)
+                out = ret['msg'][0].rstrip("\n")
+                print(f"out, ret['msg']: {ret['msg']}")
+                self.logger.info("storing all files and directory "
+                                 "names into list")
+                dir_list = re.split(r'\s+', out)
 
-        if ret['error_code'] == 0:
-            self.logger.error(" Seems like there was a crash, kindly check "
-                              "the logfiles, even if you don't see a core file")
-            for logfile in logfiles.strip('\n').split('\n'):
-                redant.logger.error(f"Core was found in {logfile.split(':')[0]}")
-        for cmd in cmd_list:
-            ret, out, _ = self.execute_abstract_op_node(cmd, node)
-            out = ret['msg'][0].rstrip("\n")
-            print(f"out, ret['msg']: {ret['msg']}")
-            self.logger.info("storing all files and directory names into list")
-            dir_list = re.split(r'\s+', out)
-
-            # checking for core file created or not in "/"
-            # "/var/log/core", "/tmp" directory
-            self.logger.info("checking core file created or not")
-            for file1 in dir_list:
-                if (re.search(r'\bcore\.[\S]+\b', file1)):
-                    file_path_list = re.split(r'[\s]+', cmd)
-                    file_path = file_path_list[1] + '/' + file1
-                    time_cmd = 'stat ' + '-c ' + '%X ' + file_path
-                    ret = self.execute_abstract_op_node(time_cmd, node)
-                    file_timestamp = ret['msg'][0].rstrip('\n')
-                    print(f"Timestap:{ret['msg']}")
-                    file_timestamp = file_timestamp.strip()
-                    if(file_timestamp > testrun_timestamp):
-                        count += 1
-                        self.logger.error(f"New core file was created and found  "
-                                          f"at {file1}")
-                    else:
-                        self.logger.info("Old core file Found")
-    # return the status of core file
-    if (count >= 1):
-        self.logger.error("Core file created glusterd crashed")
-        return False
-    else:
-        self.logger.info("No core files found ")
-        return True
+                # checking for core file created or not in "/"
+                # "/var/log/core", "/tmp" directory
+                self.logger.info("checking core file created or not")
+                for file1 in dir_list:
+                    if (re.search(r'\bcore\.[\S]+\b', file1)):
+                        file_path_list = re.split(r'[\s]+', cmd)
+                        file_path = file_path_list[1] + '/' + file1
+                        time_cmd = 'stat ' + '-c ' + '%X ' + file_path
+                        ret = self.execute_abstract_op_node(time_cmd, node)
+                        file_timestamp = ret['msg'][0].rstrip('\n')
+                        print(f"Timestap:{ret['msg']}")
+                        file_timestamp = file_timestamp.strip()
+                        if(file_timestamp > testrun_timestamp):
+                            count += 1
+                            self.logger.error(f"New core file was created "
+                                              f"and found at {file1}")
+                        else:
+                            self.logger.info("Old core file Found")
+        # return the status of core file
+        if (count >= 1):
+            self.logger.error("Core file created glusterd crashed")
+            return False
+        else:
+            self.logger.info("No core files found ")
+            return True
 
     def collect_mounts_arequal(self, mounts: dict, path=''):
         """
