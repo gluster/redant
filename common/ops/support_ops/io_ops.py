@@ -99,6 +99,32 @@ class IoOps(AbstractOps):
 
         return True
 
+    def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
+                                    dir_depth: int, dir_length: int,
+                                    max_no_dirs: int, no_files: int,
+                                    node: str):
+        """
+        Create deep directories and files. This function encapsulates the
+        operation of the file_dir_ops script present in the client machines.
+        Args:
+            path (str) : Path wherein this io is to be done.
+            dir_start_no (int) : From which number, the dir numbering will be
+                                 started
+            dir_depth (int) : The depth till which dirs have to be created.
+            dir_length (int) : The number of dirs at the top level.
+            max_no_dirs (int) : The number of dirs in a level.
+            no_files (int) : The number of files to be created under a
+                             directory.
+            node (str) : Node wherein the commad has to be run.
+        Returns:
+            async_object
+        """
+        cmd = (f"python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
+               f"--dirname-start-num {dir_start_no} --dir-depth {dir_depth}"
+               f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
+               f"--num-of-files {no_files} {path}")
+        return self.execute_command_async(cmd, node)
+
     def collect_mounts_arequal(self, mounts: dict, path=''):
         """
         Collects arequal from all the mounts

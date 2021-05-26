@@ -1,6 +1,5 @@
 """
-This file contains a test-case which tests glusterd
-starting and stopping of glusterd service.
+Sample test for showing how special IO operations can be handled.
 """
 # nonDisruptive;dist
 
@@ -15,18 +14,25 @@ class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
-        This particular test case tests the io_functions
-        on mountpoints. The steps taken are:
-        1) call collect_mounts_arequal function
-        2) call get_mounts_stat function
-        3) call list_all_files_and_dirs_mounts function
-        4) execute a command in async and call validate_io_procs function
-        5) call cleanup_mounts
+        The purpose of this test case is for verifying the IO
+        ops functions present in redant and also to give code
+        references for people looking for inspiration of how to use
+        an ops function. This test case will deal with the following
+        flows,
+        1. Using the special function for IO, create_deep_dirs_with_files.
+        2. Performing a simple IO operation.
         """
+        # Test the create_deep_dirs_with_files.
+        async_obj = redant.create_deep_dirs_with_files(self.mountpoint, 1, 2,
+                                                       3, 4, 10,
+                                                       self.client_list[0])
+        ret_dict = redant.wait_till_async_command_ends(async_obj)
+        if ret_dict['error_code'] != 0:
+            raise Exception(f"Failure : {ret_dict['error_msg']}")
 
-        # redant.collect_mounts_arequal(mountpoints)
-        redant.get_mounts_stat(self.mountpoint)
-        redant.list_all_files_and_dirs_mounts(self.mountpoint)
-        async_obj = redant.execute_command_async("ls", self.server_list[0])
-        redant.validate_io_procs(async_obj, self.mountpoint)
-        redant.cleanup_mounts(self.mountpoint)
+        # Performing simple IO opreation.
+        cmd = (f"ls {self.mountpoint}/*")
+        ret_dict = redant.execute_abstract_op_node(cmd, self.client_list[0],
+                                                   False)
+        if ret_dict['error_code'] != 0:
+            raise Exception(f"Failure : {ret_dict['error_msg']}")
