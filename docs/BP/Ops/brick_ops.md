@@ -108,3 +108,44 @@ mul_fac (int) : Stores the number of bricks
 ### How does it work?
 
 A loop runs from 0 to `mul_fac-1` and creates the brick command using the `server_val` and `brick_path_val`. The paths are appended in the brick_dict for the following servers and then are returned with the brick command `brick_cmd`.
+
+## are_bricks_offline()
+
+This function checks if the given list of bricks are offline.
+
+```m
+Args:
+    volname (str) : Volume name
+    bricks_list (list) : list of bricks to check
+    node (str) : the node on which comparison has to be done
+    strict (bool) : To check strictly if all bricks are offline
+Returns:
+    boolean value: True, if bricks are offline
+                    False if online
+```
+
+```js
+ex 1: redant.are_bricks_offline(self.vol_name, bricks_list, self.server_list[0])
+
+ex 2: redant.are_bricks_offline(self.vol_name, bricks_list, self.server_list[0], False)
+```
+
+## check_if_bricks_list_changed()
+
+It checks if the bricks list changed. Basically, compares the bricks list with the bricks attained from volume info.
+
+```m
+ Args:
+    bricks_list: list of bricks
+    volname: Name of volume
+    node: Node on which to execute vol info
+
+Returns:
+bool: True is list changed
+        else False
+```
+
+```js
+Ex:
+redant.check_if_bricks_list_changed(bricks_list, self.vol_name, self.server_list[0])
+```

@@ -357,6 +357,25 @@ class FrameworkEnv:
         self._validate_volname(volname)
         return self.volds[volname]['brickdata']
 
+    def get_all_bricks_list(self, volname: str) -> list:
+        """
+        This function creates a list of
+        bricks from the brick dictionary
+
+        Args:
+            volname: Name of volume
+        Returns:
+            List of bricks
+        """
+        brick_dict = self.get_brickdata(volname)
+        brick_list = []
+        for server in brick_dict:
+            for brick in brick_dict[server]:
+                brick = f"{server}:{brick}"
+                brick_list.append(brick)
+
+        return brick_list
+
     def get_brick_list(self, volname: str, node: str) -> list:
         """
         Method to obtain brick list

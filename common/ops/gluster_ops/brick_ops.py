@@ -359,3 +359,76 @@ class BrickOps:
             for b_dir in b_dir_l:
                 self.execute_abstract_op_node(f"rm -rf {b_dir}", node)
                 self.es.remove_val_from_cleands(node, b_dir)
+
+    def are_bricks_offline(self, volname: str,
+                           bricks_list: list, node: str,
+                           strict: bool = True) -> bool:
+        """
+        This function checks if the given list of
+        bricks are offline.
+
+        Args:
+            volname (str) : Volume name
+            bricks_list (list) : list of bricks to check
+            node (str) : the node on which comparison has to be done
+            strict (bool) : To check strictly if all bricks are offline
+        Returns:
+            boolean value: True, if bricks are offline
+                           False if online
+        """
+        vol_status = self.get_volume_status(volname, node)
+
+        vol_status_brick_list = []
+        for n in vol_status[volname]['node']:
+            if n['status'] == 1:
+                brick = f"{n['hostname']}:{n['path']}"
+                vol_status_brick_list.append(brick)
+
+        online_brick_list = []
+        ret = True
+
+        for brick in bricks_list:
+            if strict and brick in vol_status_brick_list:
+                online_brick_list.append(brick)
+                self.logger.error(f"Brick: {brick} is not offline")
+                ret = False
+            elif brick in vol_status_brick_list:
+                self.logger.error(f"Brick: {brick} is not offline")
+                return False
+
+        if not ret:
+            self.logger.error(f"Some of the bricks are not "
+                              f"offline: {online_brick_list}")
+            return ret
+
+        self.logger.info(f"All bricks are offline: {bricks_list}")
+        return ret
+
+    def check_if_bricks_list_changed(self,
+                                     bricks_list: list,
+                                     volname: str,
+                                     node: str) -> bool:
+        """
+        Checks if the brick list changed.
+
+        Args:
+            bricks_list: list of bricks
+            volname: Name of volume
+            node: Node on which to execute vol info
+
+        Returns:
+        bool: True is list changed
+              else False
+        """
+        vol_info = self.get_volume_info(node, volname)
+
+        vol_info_brick_list = []
+        for n in vol_info[volname]['bricks']:
+            vol_info_brick_list.append(n['name'])
+
+        if len(vol_info_brick_list) == len(bricks_list):
+            for each in bricks_list:
+                if each not in vol_info_brick_list:
+                    return True
+            return False
+        return True
