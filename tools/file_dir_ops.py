@@ -32,8 +32,17 @@ import shutil
 import string
 import subprocess
 import sys
+import pkg_resources
 
-from docx import Document
+required = {'numpy', 'sh'}
+installed = {pkg.key for pkg in pkg_resources.working_set}
+missing = required - installed
+
+if missing:
+    python = sys.executable
+    subprocess.check_call([python, '-m', 'pip', 'install', *missing],
+                          stdout=subprocess.DEVNULL)
+
 import numpy as np
 from sh import rsync as sh_rsync
 
@@ -277,19 +286,6 @@ def _create_file(file_abs_path, file_type, file_size):
                 print("Unable to write to file '%s' : %s" % (
                     file_abs_path, err.strerror))
                 rc = 1
-
-    elif file_type == 'docx':
-        file_abs_path += ".docx"
-        try:
-            document = Document()
-            str_to_write = list(string.ascii_letters + string.digits)
-            file_str = ''.join(np.random.choice(str_to_write, file_size))
-            document.add_paragraph(file_str)
-            document.save(file_abs_path)
-        except Exception as err:
-            print("Unable to write to file '%s' : %s" % (
-                file_abs_path, err.strerror))
-            rc = 1
 
     elif file_type == 'empty_file':
         try:
