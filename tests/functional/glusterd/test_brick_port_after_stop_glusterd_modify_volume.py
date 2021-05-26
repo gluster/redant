@@ -14,6 +14,11 @@
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+  Testing brick port allocation after stopping glusterd,
+  making changes on the volume and starting the glusterd
+  again.
 """
 from time import sleep
 from tests.d_parent_test import DParentTest
@@ -23,12 +28,11 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def terminate(self):
-        if not self.redant.is_glusterd_running(self.server_list[1]):
-            self.redant.start_glusterd(self.server_list[0])
+        if self.glusterd_stopped:
+            self.redant.start_glusterd(self.server_list[1])
         super().terminate()
 
     def run_test(self, redant):
-        # pylint: disable=too-many-statements, too-many-branches
         """
         In this test case:
         1. Stop glusterd on node 2.
@@ -62,6 +66,7 @@ class TestCase(DParentTest):
                             "is not equal to 4")
 
         redant.stop_glusterd(self.server_list[1])
+        self.glusterd_stopped = True
 
         redant.wait_for_glusterd_to_stop(self.server_list[1])
 
@@ -70,8 +75,8 @@ class TestCase(DParentTest):
                                         self.server_list[0])
 
         redant.start_glusterd(self.server_list[1])
-        redant.logger.info("Glusterd start on the nodes : %s "
-                           "succeeded", self.server_list[1])
+        self.glusterd_stopped = False
+
         redant.wait_for_glusterd_to_start(self.server_list[1])
 
         ret = redant.wait_for_peers_to_connect(self.server_list[0],
