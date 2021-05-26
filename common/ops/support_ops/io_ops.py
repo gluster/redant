@@ -27,7 +27,8 @@ class IoOps(AbstractOps):
         cmd = f"touch {path}/{filename}"
         self.execute_abstract_op_node(cmd, node)
 
-    def create_dir(self, path: str, dirname: str, node: str, excep: bool=True):
+    def create_dir(self, path: str, dirname: str, node: str,
+                   excep: bool = True):
         """
         Creates a directory in the specified path
         Args:
