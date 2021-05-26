@@ -32,8 +32,6 @@ class TestCase(DParentTest):
                 self.redant.start_glusterd(server)
                 self.redant.wait_for_glusterd_to_start(server)
 
-        self.redant.logger.info("Glusterd running on all the servers")
-
         # checking for peer status from every node
         for _ in range(80):
             ret = (self.redant.
@@ -46,7 +44,6 @@ class TestCase(DParentTest):
         if not ret:
             raise Exception("Peers are not in connected state")
 
-        self.redant.logger.info("Peers are in connected state")
         super().terminate()
 
     def run_test(self, redant):
