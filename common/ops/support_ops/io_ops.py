@@ -160,7 +160,7 @@ class IoOps(AbstractOps):
     for node in nodes:
         cmd = 'grep -r "time of crash" /var/log/glusterfs/'
         ret = self.execute_abstract_op_node(cmd, node)
-        logfiles = ret['msg'][0]
+        logfiles = ret['msg'][0].rstrip("\n")
         print(f"ret['msg']:\n{ret['msg']}")
 
         if ret['error_code'] == 0:
@@ -169,8 +169,8 @@ class IoOps(AbstractOps):
             for logfile in logfiles.strip('\n').split('\n'):
                 redant.logger.error(f"Core was found in {logfile.split(':')[0]}")
         for cmd in cmd_list:
-            ret, out, _ = g.run(node, cmd)
-            out = ret['msg'][0]
+            ret, out, _ = self.execute_abstract_op_node(cmd, node)
+            out = ret['msg'][0].rstrip("\n")
             print(f"out, ret['msg']: {ret['msg']}")
             self.logger.info("storing all files and directory names into list")
             dir_list = re.split(r'\s+', out)
@@ -184,7 +184,7 @@ class IoOps(AbstractOps):
                     file_path = file_path_list[1] + '/' + file1
                     time_cmd = 'stat ' + '-c ' + '%X ' + file_path
                     ret = self.execute_abstract_op_node(time_cmd, node)
-                    file_timestamp = ret['msg'][0]
+                    file_timestamp = ret['msg'][0].rstrip('\n')
                     print(f"Timestap:{ret['msg']}")
                     file_timestamp = file_timestamp.strip()
                     if(file_timestamp > testrun_timestamp):
