@@ -28,8 +28,14 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def terminate(self):
+        """
+        In case the test fails midway and one of the nodes has
+        glusterd stopped then the glusterd is started on that node
+        and then the terminate function in the DParentTest is called
+        """
         if self.glusterd_stopped:
             self.redant.start_glusterd(self.server_list[1])
+            self.redant.wait_for_glusterd_to_start(self.server_list[1])
         super().terminate()
 
     def run_test(self, redant):
