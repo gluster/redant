@@ -185,7 +185,7 @@ class IoOps(AbstractOps):
                 # "/var/log/core", "/tmp" directory
                 self.logger.info("checking core file created or not")
                 for file1 in dir_list:
-                    if (re.search(r'\bcore\.[\S]+\b', file1)):
+                    if re.search(r'\bcore\.[\S]+\b', file1):
                         file_path_list = re.split(r'[\s]+', cmd)
                         file_path = file_path_list[1] + '/' + file1
                         time_cmd = 'stat ' + '-c ' + '%X ' + file_path
@@ -193,14 +193,14 @@ class IoOps(AbstractOps):
                         file_timestamp = ret['msg'][0].rstrip('\n')
                         print(f"Timestap:{ret['msg']}")
                         file_timestamp = file_timestamp.strip()
-                        if(file_timestamp > testrun_timestamp):
+                        if file_timestamp > testrun_timestamp:
                             count += 1
                             self.logger.error(f"New core file was created "
                                               f"and found at {file1}")
                         else:
                             self.logger.info("Old core file Found")
         # return the status of core file
-        if (count >= 1):
+        if count >= 1:
             self.logger.error("Core file created glusterd crashed")
             return False
         else:
