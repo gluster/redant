@@ -33,40 +33,28 @@ class TestCase(DParentTest):
         3) Start Volume and compare the failure message
         4) Check the gluster volume status and compare the status message
         """
+        
         # Fetching the brick list
-        redant.logger.info("Fetch all the bricks of the volume")
+        redant.volume_stop(self.vol_name, self.server_list[0])
         brick_list = redant.es.get_brickdata(self.vol_name)
-        if brick_list is None:
-            raise Exception("Failed to get the brick list")
-
+       
         # Removing any one brick directory
         brick_list = list(brick_list.items())
         random_brick = random.choice(brick_list)
         random_brick_path = random.choice(random_brick[1])
         cmd = f'rm -rf {random_brick_path}'
-        redant.execute_abstract_op_node(cmd, random_brick[0])
-        redant.logger.info("Brick directory removed successfully")
-
-        redant.volume_stop(self.vol_name, self.server_list[0])
+        redant.execute_abstract_op_node(cmd, random_brick[0])        
+        
         # Starting volume
         err_msg = 'Failed to find brick directory'
-        cmd = f"gluster volume start {self.vol_name}"
-        ret = redant.execute_command(cmd, self.server_list[0])
-        if err_msg not in ret['error_msg']:
-            raise Exception("Unexpected!!")
-        try:
-            redant.volume_start(self.vol_name, self.server_list[0])
-        except:
-            redant.logger.info(f"Expected: Failed to start volume"
-                               f"{self.vol_name}")
-
+        ret = redant.volume_start(self.vol_name, self.server_list[0], excep = False)
+        if err_msg not in ret['msg']['opErrstr']:
+            raise Exception("Unexpected:Volume started successfully"
+                            " even though brick is deleted.")
+       
         # Checking volume status
-        cmd = f'gluster vol status {self.vol_name}'
-        ret = redant.execute_command(cmd, self.server_list[0])
-        if ret['error_msg'] != f'Volume {self.vol_name} is not started\n':
-            raise Exception("Volume status erraneous")
-
-        try:
-            redant.get_volume_status(self.vol_name, self.server_list[0])
-        except:
-            redant.logger.info("Volume hasn't started hence no status for it.")
+        ret = redant.get_volume_status(self.vol_name, self.server_list[0], excep = False)
+        if ret['msg']['opErrstr'] != f'Volume {self.vol_name} is not started':
+            raise Exception("Incorrect error message for gluster vol "
+                            "status")
+       
