@@ -61,6 +61,7 @@ class TestCase(NdParentTest):
             command = self.get_cmd('ls', 'lZ', fqpath)
             ret = redant.execute_abstract_op_node(command, server)
             exp_str = 'system_u:object_r:lib_t:s0'
+            ret_msg = " ".join(ret['msg'])
             if exp_str not in ret_msg:
                 raise Exception(f"Fail: SELinux label on {fqpath}"
                                 f"should be {exp_str} on {server}")
