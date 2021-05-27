@@ -543,4 +543,5 @@ class FrameworkEnv:
         Returns:
             list : list of nodes whose bricks are part of the volume.
         """
+        self._validate_volname(volname)
         return list(self.volds[volname]['brickdata'].keys())
