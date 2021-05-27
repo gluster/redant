@@ -137,16 +137,19 @@ class IoOps(AbstractOps):
 
         Args:
 
-        nodes(list):
-            List of nodes need to pass from test method
-        testrun_timestamp:
-            This time stamp need to pass from test method
-            test case running started time, time format is EPOCH
-            time format, use below command for getting timestamp
-            of test case 'date +%s'
-        paths(list):
-            By default core file will be verified in "/","/tmp",
-            "/var/log/core", "/var/crash", "~/"
+            nodes(list):
+                List of nodes need to pass from test method
+            testrun_timestamp:
+                This time stamp need to pass from test method
+                test case running started time, time format is EPOCH
+                time format, use below command for getting timestamp
+                of test case 'date +%s'
+            paths(list):
+                By default core file will be verified in "/","/tmp",
+                "/var/log/core", "/var/crash", "~/"
+        Return:
+         bool : True if core file was created
+                else False
         If test case need to verify core file in specific path,
         need to pass path from test method
         '''
@@ -162,8 +165,7 @@ class IoOps(AbstractOps):
             cmd = 'grep -r "time of crash" /var/log/glusterfs/'
             try:
                 ret = self.execute_abstract_op_node(cmd, node)
-                logfiles = ret['msg'][0].rstrip("\n")
-
+                logfiles = " ".join(ret['msg'])
                 if ret['error_code'] == 0:
                     self.logger.error(" Seems like there was a crash,"
                                       " kindly check the logfiles, "
@@ -177,8 +179,7 @@ class IoOps(AbstractOps):
             for cmd in cmd_list:
                 try:
                     ret = self.execute_abstract_op_node(cmd, node)
-                    out = ret['msg'][0].rstrip("\n")
-                    print(f"out, ret['msg']: {ret['msg']}")
+                    out = " ".join(ret['msg'])
                     self.logger.info("storing all files and directory "
                                      "names into list")
                     dir_list = re.split(r'\s+', out)
@@ -205,10 +206,10 @@ class IoOps(AbstractOps):
         # return the status of core file
         if count >= 1:
             self.logger.error("Core file created glusterd crashed")
-            return False
+            return True
         else:
             self.logger.info("No core files found ")
-            return True
+            return False
 
     def collect_mounts_arequal(self, mounts: dict, path=''):
         """

@@ -71,5 +71,5 @@ class TestCase(NdParentTest):
         # Chekcing core file created or not in "/", "/tmp" and
         # "/var/log/core" directory
         ret = redant.check_core_file_exists(self.server_list, test_timestamp)
-        if not ret:
+        if ret:
             raise Exception('Core file found')
