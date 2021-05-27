@@ -232,6 +232,8 @@ class PeerOps(AbstractOps):
         """
         if not isinstance(servers, list):
             servers = [servers]
+        else:
+            servers = servers[:]
 
         for index, server in enumerate(servers):
             servers[index] = socket.gethostbyname(server)
@@ -309,7 +311,6 @@ class PeerOps(AbstractOps):
         for server in server_list:
             self.logger.info(f"Is peer connected {server}->{server_list}")
             ret = self.is_peer_connected(server, server_list)
-            self.logger.info(f"Peer {server} is connected")
 
             if not ret:
                 self.logger.error(f"Servers are not in connected state"

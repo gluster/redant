@@ -622,14 +622,14 @@ class VolumeOps(AbstractOps):
         return ret_dict
 
     def set_volume_options(self, volname: str, options: dict,
-                           node: str = None):
+                           node: str = None, excep: bool = True):
         """
         Sets the option values for the given volume.
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
-            options (dict): volume options in key
-                value format
+            options (dict): volume options in key:value format
+            excep (bool): To bypass or not to bypass the exception handling.
         Example:
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, server)
@@ -643,13 +643,13 @@ class VolumeOps(AbstractOps):
             for group_option in group_options:
                 cmd = (f"gluster volume set {volname} group {group_option} "
                        "--mode=script --xml")
-                self.execute_abstract_op_node(cmd, node)
+                self.execute_abstract_op_node(cmd, node, excep)
 
         for option in volume_options:
             cmd = (f"gluster volume set {volname} {option} "
                    f"{volume_options[option]} --mode=script --xml")
 
-            self.execute_abstract_op_node(cmd, node)
+            self.execute_abstract_op_node(cmd, node, excep)
             if volname != 'all':
                 self.es.set_vol_option(volname,
                                        {option: volume_options[option]})
