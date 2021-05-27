@@ -101,7 +101,6 @@ class IoOps(AbstractOps):
 
         return True
 
-<<<<<<< HEAD
     def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
                                     dir_depth: int, dir_length: int,
                                     max_no_dirs: int, no_files: int,
@@ -127,15 +126,14 @@ class IoOps(AbstractOps):
                f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
                f"--num-of-files {no_files} {path}")
         return self.execute_command_async(cmd, node)
-=======
-    def check_core_file_exists(self, nodes, testrun_timestamp,
+
+    def check_core_file_exists(self, nodes: list, testrun_timestamp,
                                paths=['/', '/var/log/core',
                                       '/tmp', '/var/crash', '~/']):
         '''
         Listing directories and files in "/", /var/log/core, /tmp,
         "/var/crash", "~/" directory for checking if the core file
         created or not
->>>>>>> b395fe5... removed lint issues
 
         Args:
 
@@ -162,43 +160,48 @@ class IoOps(AbstractOps):
         # "~/" directory
         for node in nodes:
             cmd = 'grep -r "time of crash" /var/log/glusterfs/'
-            ret = self.execute_abstract_op_node(cmd, node)
-            logfiles = ret['msg'][0].rstrip("\n")
-            print(f"ret['msg']:\n{ret['msg']}")
+            try:
+                ret = self.execute_abstract_op_node(cmd, node)
+                logfiles = ret['msg'][0].rstrip("\n")
 
-            if ret['error_code'] == 0:
-                self.logger.error(" Seems like there was a crash,"
-                                  " kindly check the logfiles, "
-                                  "even if you don't see a core file")
+                if ret['error_code'] == 0:
+                    self.logger.error(" Seems like there was a crash,"
+                                      " kindly check the logfiles, "
+                                      "even if you don't see a core file")
                 for logfile in logfiles.strip('\n').split('\n'):
                     self.logger.error(f"Core was found in "
                                       f"{logfile.split(':')[0]}")
-            for cmd in cmd_list:
-                ret, out, _ = self.execute_abstract_op_node(cmd, node)
-                out = ret['msg'][0].rstrip("\n")
-                print(f"out, ret['msg']: {ret['msg']}")
-                self.logger.info("storing all files and directory "
-                                 "names into list")
-                dir_list = re.split(r'\s+', out)
+            except Exception as error:
+                self.logger.info(f"Error: {error}")
 
-                # checking for core file created or not in "/"
-                # "/var/log/core", "/tmp" directory
-                self.logger.info("checking core file created or not")
-                for file1 in dir_list:
-                    if re.search(r'\bcore\.[\S]+\b', file1):
-                        file_path_list = re.split(r'[\s]+', cmd)
-                        file_path = file_path_list[1] + '/' + file1
-                        time_cmd = 'stat ' + '-c ' + '%X ' + file_path
-                        ret = self.execute_abstract_op_node(time_cmd, node)
-                        file_timestamp = ret['msg'][0].rstrip('\n')
-                        print(f"Timestap:{ret['msg']}")
-                        file_timestamp = file_timestamp.strip()
-                        if file_timestamp > testrun_timestamp:
-                            count += 1
-                            self.logger.error(f"New core file was created "
-                                              f"and found at {file1}")
-                        else:
-                            self.logger.info("Old core file Found")
+            for cmd in cmd_list:
+                try:
+                    ret = self.execute_abstract_op_node(cmd, node)
+                    out = ret['msg'][0].rstrip("\n")
+                    print(f"out, ret['msg']: {ret['msg']}")
+                    self.logger.info("storing all files and directory "
+                                     "names into list")
+                    dir_list = re.split(r'\s+', out)
+
+                    # checking for core file created or not in "/"
+                    # "/var/log/core", "/tmp" directory
+                    self.logger.info("checking core file created or not")
+                    for file1 in dir_list:
+                        if re.search(r'\bcore\.[\S]+\b', file1):
+                            file_path_list = re.split(r'[\s]+', cmd)
+                            file_path = file_path_list[1] + '/' + file1
+                            time_cmd = 'stat ' + '-c ' + '%X ' + file_path
+                            ret = self.execute_abstract_op_node(time_cmd, node)
+                            file_timestamp = ret['msg'][0].rstrip('\n')
+                            file_timestamp = file_timestamp.strip()
+                            if file_timestamp > testrun_timestamp:
+                                count += 1
+                                self.logger.error(f"New core file was created "
+                                                  f"and found at {file1}")
+                            else:
+                                self.logger.info("Old core file Found")
+                except Exception as error:
+                    self.logger.info(f"Error: {error}")
         # return the status of core file
         if count >= 1:
             self.logger.error("Core file created glusterd crashed")
