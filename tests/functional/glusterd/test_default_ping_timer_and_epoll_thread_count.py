@@ -39,7 +39,7 @@ class TestCase(NdParentTest):
         """
         # Fetch the ping timeout value from glusterd.vol file
         # TODO: this path might change as per the installation
-        cmd = "cat /usr/local/etc/glusterfs/glusterd.vol |\
+        cmd = "cat /etc/glusterfs/glusterd.vol |\
                grep -i ping-timeout"
 
         ret = redant.execute_command(cmd, self.server_list[0])
