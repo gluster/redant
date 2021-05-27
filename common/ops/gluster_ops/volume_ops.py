@@ -42,7 +42,8 @@ class VolumeOps(AbstractOps):
         self.es.add_new_mountpath(volname, node, path)
         return ret
 
-    def volume_unmount(self, volname: str, path: str, node: str = None):
+    def volume_unmount(self, volname: str, path: str, node: str = None,
+                       excep: bool=True):
         """
         Unmounts the gluster volume .
         Args:
@@ -51,6 +52,7 @@ class VolumeOps(AbstractOps):
                         unmount is to be run
             server (str): Hostname or IP address
             path (str): The path of the mount directory(mount point)
+            excep (bool): To bypass or not to bypass the exception handling.
 
         Returns:
             ret: A dictionary consisting
@@ -65,7 +67,7 @@ class VolumeOps(AbstractOps):
 
         cmd = f"umount {path}"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.remove_mountpath(volname, node, path)
         return ret
 
@@ -278,10 +280,7 @@ class VolumeOps(AbstractOps):
 
     def cleanup_volume(self, volname: str, server_list: list):
         """
-        Sanitizing of the volume will be getting the volume
-        ready for the next test case to be used (ND tests)
-        or even within a test case for maybe some untold
-        and strange scenario.
+        Cleanup volume will delete the volume and its mountpoints.
         Args:
             volname (str): Name of the volume to be sanitized.
             server_list (list) : A list of strings consisting of server IPs.
@@ -298,7 +297,23 @@ class VolumeOps(AbstractOps):
                 mounts = self.es.get_mnt_pts_dict_in_list(volname)
                 for mntd in mounts:
                     mount = mntd['mountpath']
-                    self.volume_unmount(volname, mount, mntd['client'])
+                    # There might be a scenario wherein the mountpoint has
+                    # been deleted. Hence stat to check if the mountpoint
+                    # even exists. Also, we need to check if the mountpoint
+                    # is able to connect to the bricks. There might be a
+                    # Transport endpoint error too. But we can just unmount
+                    # and remove the values in that scenario.
+                    cmd = (f"stat {mount}")
+                    ret = self.execute_abstract_op_node(cmd, mntd['client'],
+                                                        False)
+                    transport_error = "Transport endpoint is not connected"
+                    if ret['error_code'] != 0:
+                        if transport_error not in ret['error_msg']:
+                            continue
+                    # One more scenario we have here is when the directory
+                    # was unmount but the data structure isn't updated. Hence
+                    # the unmout shouldn't be a strict check.
+                    self.volume_unmount(volname, mount, mntd['client'], False)
                     self.execute_abstract_op_node(f"rm -rf {mount}",
                                                   mntd['client'])
             self.volume_stop(volname, server_list[0], True)
