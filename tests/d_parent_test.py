@@ -37,6 +37,7 @@ class DParentTest(metaclass=abc.ABCMeta):
         self.TEST_RES = True
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
+        self.test_name = mname
         self.vol_name = (f"{mname}-{volume_type}")
         self._configure(self.vol_name, server_details, client_details,
                         env_obj, log_path, log_level)
@@ -94,7 +95,8 @@ class DParentTest(metaclass=abc.ABCMeta):
             self.redant.reset_volume_option('all', 'all', self.server_list[0])
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
-                self.redant.cleanup_volume(volname, self.server_list)
+                volume_nodes = self.redant.es.get_volume_nodes(volname)
+                self.redant.cleanup_volume(volname, volume_nodes[0])
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

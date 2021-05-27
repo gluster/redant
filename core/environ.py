@@ -533,3 +533,15 @@ class FrameworkEnv:
                 raise Exception(f"No data for node {n}")
             ret_val[n] = self.cleands[n]
         return ret_val
+
+    def get_volume_nodes(self, volname: str):
+        """
+        Function to get all the nodes whose bricks are
+        part of the volume given
+        Args:
+            volname (str): volume name whose nodes are to be returned.
+        Returns:
+            list : list of nodes whose bricks are part of the volume.
+        """
+        self._validate_volname(volname)
+        return list(self.volds[volname]['brickdata'].keys())

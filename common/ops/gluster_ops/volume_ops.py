@@ -125,12 +125,13 @@ class VolumeOps(AbstractOps):
             if "arbiter_count" in conf_hash:
                 cmd = (f"gluster volume create {volname} "
                        f"replica {conf_hash['replica_count']} "
-                       f"arbiter {conf_hash['arbiter_count']}{brick_cmd}")
+                       f"arbiter {conf_hash['arbiter_count']}{brick_cmd} "
+                       "--mode=script")
             # replicated vol
             else:
                 cmd = (f"gluster volume create {volname} "
                        f"replica {conf_hash['replica_count']}"
-                       f"{brick_cmd}")
+                       f"{brick_cmd} --mode=script")
         # dispersed vol and distributed-dispersed vol
         elif "disperse_count" in conf_hash:
             cmd = (f"gluster volume create {volname} disperse {mul_fac} "
@@ -138,7 +139,8 @@ class VolumeOps(AbstractOps):
                    f"--mode=script")
         # distributed vol
         else:
-            cmd = (f"gluster volume create {volname}{brick_cmd}")
+            cmd = (f"gluster volume create {volname}{brick_cmd} "
+                   "--mode=script")
         if force:
             cmd = (f"{cmd} force")
 
@@ -278,18 +280,18 @@ class VolumeOps(AbstractOps):
             self.execute_abstract_op_node(f"rm -rf {mntd['mountpath']}/*",
                                           mntd['client'])
 
-    def cleanup_volume(self, volname: str, server_list: list):
+    def cleanup_volume(self, volname: str, node: str):
         """
         Cleanup volume will delete the volume and its mountpoints.
         Args:
             volname (str): Name of the volume to be sanitized.
-            server_list (list) : A list of strings consisting of server IPs.
+            node (str) : Node on which the commands are run.
         """
         # Check if the volume exists.
         if self.es.does_volume_exists(volname):
             # Check if the volume is started.
             if not self.es.get_volume_start_status(volname):
-                self.volume_start(volname, server_list[0])
+                self.volume_start(volname, node)
 
             # Check if the volume is mounted on a client.
             if not self.es.get_mnt_pts_dict_in_list(volname) == []:
@@ -316,8 +318,8 @@ class VolumeOps(AbstractOps):
                     self.volume_unmount(volname, mount, mntd['client'], False)
                     self.execute_abstract_op_node(f"rm -rf {mount}",
                                                   mntd['client'])
-            self.volume_stop(volname, server_list[0], True)
-            self.volume_delete(volname, server_list[0])
+            self.volume_stop(volname, node, True)
+            self.volume_delete(volname, node)
 
     def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
         """
