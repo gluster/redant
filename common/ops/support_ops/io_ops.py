@@ -89,13 +89,14 @@ class IoOps(AbstractOps):
             list_of_paths = (list_of_paths.split(" "))
 
         for path in list_of_paths:
-            cmd = f"ls -l {path}"
+            cmd = f"stat {path}"
             ret = self.execute_command_multinode(cmd, list_of_nodes)
-        for each_ret in ret:
-            if each_ret['error_code'] != 0:
-                error_string = each_ret['error_msg'].rstrip('\n')
-                self.logger.error(f"{error_string} on node {each_ret['node']}")
-                return False
+            for each_ret in ret:
+                if each_ret['error_code'] != 0:
+                    error_string = each_ret['error_msg'].rstrip('\n')
+                    self.logger.error(f"{error_string} on node "
+                                      f"{each_ret['node']}")
+                    return False
 
         return True
 
