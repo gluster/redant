@@ -1,4 +1,4 @@
 # Blue Pill Index.
 
-* Migrating Test cases steps : [migratingTC.md](./BP/Tools/migratingTC.md)
-* Ops Function reference index : [opsIndex.md](./BP/Ops/opsIndex.md)
+* Tools Index : [Tools Index](./BP/Tools/README.md)
+* Ops Function reference index : [Ops Index](./BP/Ops/README.md)
