@@ -1,6 +1,6 @@
 # Volume Ops
 
-[Volume Ops](../../../common/ops/gluster_ops/volume_ops.py) contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops library:
+[Volume Ops](../../../common/ops/gluster_ops/volume_ops.py) contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops module:
 
 1) **volume_mount**<br>
         Mounts the gluster volume to the client's filesystem.
@@ -20,7 +20,8 @@
                 - error_code: error code returned
                 - cmd : command that got executed
                 - node : node on which the command got executed
-        volume_mount(self.server_list[0], self.vol_name, self.mountpoint, self.client_list[0])
+        Example:
+            volume_mount(self.server_list[0], self.vol_name, self.mountpoint, self.client_list[0])
 
 2) **volume_unmount**<br>
     Unmounts the gluster volume from its client.
