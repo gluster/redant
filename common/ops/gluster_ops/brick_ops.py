@@ -432,3 +432,36 @@ class BrickOps:
                     return True
             return False
         return True
+
+    def get_all_bricks(self, volname: str, node: str) -> list:
+        """
+        Get list of all the bricks of the specified volume.
+
+        Args:
+            volname (str): Name of the volume
+            node (str): Node on which command has to be executed
+
+        Returns:
+            list: List of all the bricks of the volume on Success.
+            NoneType: None on failure.
+        """
+
+        vol_info = self.get_volume_info(node, volname)
+        if vol_info is None:
+            self.logger.error(f"Unable to get "
+                              f"the volinfo of {volname}.")
+            return None
+
+        # Get bricks from a volume
+        all_bricks = []
+        if 'bricks' in vol_info[volname]:
+            for brick in vol_info[volname]['bricks']:
+                if 'name' in brick:
+                    all_bricks.append(brick['name'])
+                else:
+                    self.logger.error(f"Brick {brick} doesn't have the "
+                                      f"key 'name' for the volume {volname}")
+                    return None
+            return all_bricks
+        self.logger.error(f"Bricks not found in the volume {volname}")
+        return None
