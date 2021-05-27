@@ -43,7 +43,7 @@ class VolumeOps(AbstractOps):
         return ret
 
     def volume_unmount(self, volname: str, path: str, node: str = None,
-                       excep: bool=True):
+                       excep: bool = True):
         """
         Unmounts the gluster volume .
         Args:
