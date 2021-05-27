@@ -66,7 +66,7 @@ class TestCase(DParentTest):
 
         # Stop glusterd on one of the node randomly
         self.node_on_glusterd_to_stop = choice(self.server_list[1:])
-        ret = redant.stop_glusterd(self.node_on_glusterd_to_stop)
+        redant.stop_glusterd(self.node_on_glusterd_to_stop)
 
         # checking whether peers are connected or not
         count = 0
@@ -86,19 +86,19 @@ class TestCase(DParentTest):
         self.new_servers.remove(self.node_on_glusterd_to_stop)
         self.nfs_options = {"nfs.disable": "off"}
         try:
-            ret = redant.set_volume_options(self.vol_name,
-                                            self.nfs_options,
-                                            choice(self.new_servers), False)
+            redant.set_volume_options(self.vol_name,
+                                      self.nfs_options,
+                                      choice(self.new_servers), False)
         except Exception as error:
             redant.logger.info(f"Volume set failed as expected : {error}")
 
         # Start glusterd on the node where it is stopped
-        ret = redant.start_glusterd(self.node_on_glusterd_to_stop)
+        redant.start_glusterd(self.node_on_glusterd_to_stop)
 
         # checking whether peers are connected or not
         count = 0
         while count < 5:
-            sleep(5)
+            sleep(2)
             ret = redant.validate_peers_are_connected(self.server_list,
                                                       self.server_list[0])
             if ret:
@@ -106,6 +106,6 @@ class TestCase(DParentTest):
             count += 1
 
         # Setting the volume option when quorum is met
-        ret = redant.set_volume_options(self.vol_name,
-                                        self.nfs_options,
-                                        self.server_list[0])
+        redant.set_volume_options(self.vol_name,
+                                  self.nfs_options,
+                                  self.server_list[0])
