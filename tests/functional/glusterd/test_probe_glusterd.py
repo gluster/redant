@@ -16,7 +16,7 @@ Description:
     Test Cases in this module related to peer probe invalid ip,
     non existing ip, non existing host.
 """
-# nonDisruptive;
+# disruptive;
 
 from tests.nd_parent_test import NdParentTest
 
