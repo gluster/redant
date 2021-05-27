@@ -173,7 +173,7 @@ class VolumeOps(AbstractOps):
                 will get executed with force option. If it is set to False,
                 then start volume will get executed without force option
             excep (bool): To bypass or not to bypass the exception handling.
-            
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
