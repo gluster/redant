@@ -44,6 +44,7 @@ class TestCase(NdParentTest):
                              self.server_list, self.brick_roots, True)
         redant.volume_start(volume_name1, self.server_list[0])
         redant.volume_stop(self.vol_name, self.server_list[0], force=True)
+        sleep(2)
         out = redant.get_volume_status(node=self.server_list[0])
         if out is None:
             raise Exception("Failed to get volume status on "
