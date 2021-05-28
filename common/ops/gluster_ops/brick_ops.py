@@ -465,3 +465,94 @@ class BrickOps:
             return all_bricks
         self.logger.error(f"Bricks not found in the volume {volname}")
         return None
+
+    def get_online_bricks_list(self, volname: str, node: str) -> list:
+        """
+        Get list of bricks which are online.
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node on which commands will be executed.
+
+        Returns:
+            list : List of bricks in the volume which are online.
+            NoneType: None on failure in getting volume status
+        """
+        online_bricks_list = []
+        try:
+            volume_status = self.get_volume_status(volname, node)
+        except Exception as error:
+            self.logger.info(f"Volume status failed: {error}")
+            return None
+
+        if not volume_status:
+            self.logger.error(f"Unable to get online bricks_list "
+                              f"for the volume {volname}")
+            return None
+        all_bricks = self.get_all_bricks(volname, node)
+
+        volume_status = volume_status[volname]
+        if 'node' in volume_status:
+            for brick in volume_status['node']:
+                if 'status' in brick:
+                    if int(brick['status']) == 1:
+                        cmp_brick_path = (f"{brick['hostname']}:"
+                                          f"{brick['path']}")
+                        if cmp_brick_path in all_bricks:
+                            online_bricks_list.append(cmp_brick_path)
+                else:
+                    self.logger.error(f"Key 'status' not in brick: {brick}")
+                    return None
+
+            return online_bricks_list
+        self.logger.error(f"Key 'node' not in volume status of {volname}")
+        return None
+
+    def get_offline_bricks_list(self, volname: str, node: str) -> list:
+        """
+        Get list of bricks which are offline.
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node on which commands will be executed.
+
+        Returns:
+            list : List of bricks in the volume which are offline.
+            NoneType: None on failure in getting volume status
+        """
+        offline_bricks_list = []
+        all_bricks = self.get_all_bricks(volname, node)
+        try:
+            volume_status = self.get_volume_status(volname, node)
+        except Exception as error:
+            self.logger.info(f"Volume status failed: {error}")
+            return all_bricks
+
+        if not volume_status:
+            self.logger.error(f"Unable to get offline bricks_list "
+                              f"for the volume {volname}")
+            return None
+
+        volume_status = volume_status[volname]
+        if 'node' in volume_status:
+            for brick in volume_status['node']:
+                if 'status' in brick:
+                    cmp_brick_path = (f"{brick['hostname']}:"
+                                      f"{brick['path']}")
+                    if int(brick['status']) != 1:
+                        if cmp_brick_path in all_bricks:
+                            offline_bricks_list.append(cmp_brick_path)
+                    elif int(brick['status']) == 1:
+                        if cmp_brick_path in all_bricks:
+                            all_bricks.remove(cmp_brick_path)
+                else:
+                    self.logger.error(f"Key 'status' not in brick: {brick}")
+                    return None
+
+            for brick in all_bricks:
+                if brick not in offline_bricks_list:
+                    offline_bricks_list.append(brick)
+
+            return offline_bricks_list
+        self.logger.error(f"Key 'node' not in volume status of {volname}")
+        return None
