@@ -466,7 +466,7 @@ class BrickOps:
         self.logger.error(f"Bricks not found in the volume {volname}")
         return None
 
-    def get_online_bricks_list(self, volname: str, node: str):
+    def get_online_bricks_list(self, volname: str, node: str) -> list:
         """
         Get list of bricks which are online.
 
@@ -498,11 +498,12 @@ class BrickOps:
                 else:
                     self.logger.error(f"Key 'status' not in brick: {brick}")
                     return None
+
             return online_bricks_list
         self.logger.error(f"Key 'node' not in volume status of {volname}")
         return None
 
-    def get_offline_bricks_list(self, volname: str, node: str):
+    def get_offline_bricks_list(self, volname: str, node: str) -> list:
         """
         Get list of bricks which are offline.
 
@@ -526,14 +527,22 @@ class BrickOps:
         if 'node' in volume_status:
             for brick in volume_status['node']:
                 if 'status' in brick:
+                    cmp_brick_path = (f"{brick['hostname']}:"
+                                      f"{brick['path']}")
                     if int(brick['status']) != 1:
-                        cmp_brick_path = (f"{brick['hostname']}:"
-                                          f"{brick['path']}")
                         if cmp_brick_path in all_bricks:
                             offline_bricks_list.append(cmp_brick_path)
+                    elif int(brick['status']) == 1:
+                        if cmp_brick_path in all_bricks:
+                            all_bricks.remove(cmp_brick_path)
                 else:
                     self.logger.error(f"Key 'status' not in brick: {brick}")
                     return None
+
+            for brick in all_bricks:
+                if brick not in offline_bricks_list:
+                    offline_bricks_list.append(brick)
+
             return offline_bricks_list
         self.logger.error(f"Key 'node' not in volume status of {volname}")
         return None
