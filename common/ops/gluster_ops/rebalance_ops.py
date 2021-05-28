@@ -16,7 +16,8 @@ class RebalanceOps(AbstractOps):
     """
 
     def rebalance_start(self, volname: str, node: str,
-                        fix_layout: bool = False, force: bool = False):
+                        fix_layout: bool = False,
+                        force: bool = False) -> dict:
         """
         Starts rebalance on the given volume.
         Args:
@@ -59,7 +60,7 @@ class RebalanceOps(AbstractOps):
 
         return ret
 
-    def rebalance_stop(self, volname: str, node: str):
+    def rebalance_stop(self, volname: str, node: str) -> dict:
         """
         Stops rebalance on the given volume.
         Example:
@@ -83,7 +84,7 @@ class RebalanceOps(AbstractOps):
 
         return ret
 
-    def get_rebalance_status(self, volname: str, node: str):
+    def get_rebalance_status(self, volname: str, node: str) -> dict:
         """
         Parse the output of 'gluster vol rebalance status' command
         for the given volume
@@ -100,7 +101,7 @@ class RebalanceOps(AbstractOps):
         return ret['msg']['volRebalance']
 
     def wait_for_fix_layout_to_complete(self, node: str, volname: str,
-                                        timeout=300):
+                                        timeout=300) -> bool:
         """
         Waits for the fix-layout to complete
         Args:
@@ -111,8 +112,6 @@ class RebalanceOps(AbstractOps):
                 to complete
         Returns:
             True on success, False otherwise
-        Examples:
-            >>> wait_for_fix_layout_to_complete("abc.com", "testvol")
         """
 
         count = 0
@@ -128,13 +127,13 @@ class RebalanceOps(AbstractOps):
                                   "Check rebalance status for more details")
                 return False
 
-            time.sleep(10)
+            time.sleep(1)
             count = count + 10
         self.logger.error("Fix layout has not completed. Wait timeout.")
         return False
 
     def wait_for_rebalance_to_complete(self, volname: str,
-                                       node: str, timeout=300):
+                                       node: str, timeout=300) -> bool:
         """
         Waits for the rebalance to complete
         Args:
@@ -145,8 +144,6 @@ class RebalanceOps(AbstractOps):
                 to complete
         Returns:
             True on success, False otherwise
-        Examples:
-            >>> wait_for_rebalance_to_complete("abc.com", "testvol")
         """
 
         count = 0
@@ -158,12 +155,12 @@ class RebalanceOps(AbstractOps):
                 self.logger.info("Rebalance is successfully completed")
                 return True
             if status == 'failed':
-                self.logger.error(" Rebalance failed on one or more nodes."
+                self.logger.error("Rebalance failed on one or more nodes."
                                   "Check rebalance status for more details")
                 return False
 
-            time.sleep(10)
+            time.sleep(1)
             count = count + 10
-        self.logger.error(
-            "Rebalance operation has not completed. Wait timeout.")
+        self.logger.error("Rebalance operation has not completed."
+                          "Wait timeout.")
         return False
