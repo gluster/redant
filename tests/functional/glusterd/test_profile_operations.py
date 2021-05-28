@@ -85,6 +85,7 @@ class TestCase(DParentTest):
 
         # Getting and checking output of profile info.
         ret = redant.profile_info(self.vol_name, self.server_list[0])
+        output = " ".join(ret['msg'])
 
         # Checking if all bricks are present in profile info.
         brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
@@ -92,7 +93,7 @@ class TestCase(DParentTest):
             raise Exception("Failed to get brick list from volume")
         else:
             for brick in brick_list:
-                if brick not in ret['msg']:
+                if brick not in output:
                     raise Exception(f"Brick {brick} not a part of profile"
                                     f" info output.")
 
@@ -104,10 +105,11 @@ class TestCase(DParentTest):
             # Getting and checking output of profile info.
             redant.profile_info(self.vol_name, self.server_list[0],
                                 option)
+            output = " ".join(ret['msg'])
 
             # Checking if all bricks are present in profile info peek.
             for brick in brick_list:
-                if brick not in ret['msg']:
+                if brick not in output:
                     raise Exception(f"Brick {brick} not a part of profile"
                                     f" info output.")
 
@@ -143,7 +145,7 @@ class TestCase(DParentTest):
 
         # Check profile info on volume without starting profile
         ret = redant.profile_info(self.volume_name1, self.server_list[0],
-                                  None, False)
+                                  '', False)
         if ret['error_code'] == 0:
             raise Exception(f"Unexpected:Successfully ran profile info"
                             f" on volume: {self.volume_name1}")

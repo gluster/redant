@@ -44,7 +44,7 @@ class ProfileOps(AbstractOps):
         return ret
 
     def profile_info(self, volname: str, node: str = None,
-                     options: str = None, excep: bool = True) -> dict:
+                     options: str = '', excep: bool = True) -> dict:
         """
         Run profile info on the specified volume.
         Args:
@@ -70,7 +70,7 @@ class ProfileOps(AbstractOps):
         Example:
             profile_info(node, "testvol")
         """
-        if options is not None and not self.check_profile_options(options):
+        if options != '' and not self.check_profile_options(options):
             return None
         cmd = f"gluster volume profile {volname} info {options}"
 
