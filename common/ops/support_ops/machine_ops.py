@@ -68,7 +68,7 @@ class MachineOps(AbstractOps):
         if status[node]:
             self.logger.info(f"{node} online.")
             return True
-        iter_v= 0
+        iter_v = 0
         while iter_v < timeout:
             status = self.check_node_power_status(node)
             if status[node]:
