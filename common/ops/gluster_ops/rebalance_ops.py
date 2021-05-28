@@ -128,7 +128,7 @@ class RebalanceOps(AbstractOps):
                 return False
 
             time.sleep(5)
-            count = count + 10
+            count += 5
         self.logger.error("Fix layout has not completed. Wait timeout.")
         return False
 
@@ -160,7 +160,7 @@ class RebalanceOps(AbstractOps):
                 return False
 
             time.sleep(5)
-            count = count + 10
+            count += 5
         self.logger.error("Rebalance operation has not completed."
                           "Wait timeout.")
         return False
