@@ -1,18 +1,11 @@
 """
-This part deals with the ops related to the bricks
-
-class - BrickOps
+Brick ops module deals with the functions related to brick related operations.
 """
 
 
 class BrickOps:
     """
-    It provides the following functionalities:
-
-    add_brick
-    remove_brick
-    replace_brick
-    reset_brick
+    Class which is responsible for methods for brick related operations.
     """
 
     def add_brick(self, volname: str, node: str,
@@ -556,3 +549,11 @@ class BrickOps:
             return offline_bricks_list
         self.logger.error(f"Key 'node' not in volume status of {volname}")
         return None
+
+    def bring_bricks_offline(self, volname: str, brick_list: list) -> list:
+        """
+        Function to bring the given set of bricks offline.
+
+        Args:
+            
+        """
