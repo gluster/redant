@@ -177,32 +177,35 @@ class GlusterOps(AbstractOps):
 
         return ret
 
-    def is_glusterd_running(self, node: str) -> bool:
+    def is_glusterd_running(self, servers: list) -> bool:
         """
         Checks the status of the glusterd service on the
-        specified node.
+        specified servers.
         Args:
-            node (str): The node on which the glusterd service
-                        is to be stopped.
+            servers (str|list): A server|list of server on which the glusterd
+                                service status has to be checked.
         Returns:
             1  : if glusterd active
             0  : if glusterd not active
            -1  : if glusterd not active and PID is alive
         """
-        is_active = 1
+        if not isinstance(servers, list):
+            servers = [servers]
+
         cmd1 = "systemctl status glusterd"
         cmd2 = "pidof glusterd"
 
-        self.logger.info(f"Running {cmd1} on {node}")
+        ret1 = self.execute_command_multinode(cmd1, servers)
 
-        ret = self.execute_command(cmd1, node)
-
-        if int(ret['error_code']) != 0:
-            is_active = 0
-            self.logger.info(f"Running {cmd2} on {node}")
-            ret1 = self.execute_command(cmd2, node)
-            if ret1['error_code'] == 0:
-                is_active = -1
+        is_active = 1
+        for ret_value in ret1:
+            if int(ret_value['error_code']) != 0:
+                is_active = 0
+                self.logger.error(f"Glusterd is not running on "
+                                  f"{ret_value['node']}")
+                ret2 = self.execute_command(cmd2, ret_value['node'])
+                if ret2['error_code'] == 0:
+                    is_active = -1
 
         return is_active
 
