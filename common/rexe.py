@@ -292,3 +292,15 @@ class Rexe:
         sftp = self.node_dict[dest_node].open_sftp()
         sftp.put(source_path, dest_path)
         sftp.close()
+
+    def reboot_node(self, node):
+        """
+        Reboot of a node is a special case and the normal execute_command
+        will throw an error.
+        Arg:
+            node (str)
+        """
+        cmd = f'ssh -t root@{node} "reboot" > /dev/null 2>&1'
+        self.logger.info(f"Executing the command : {cmd}")
+        ret = os.system(cmd)
+        self.logger.info(f"Return value for the command {cmd} is {ret}")

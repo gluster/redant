@@ -89,8 +89,18 @@ class DParentTest(metaclass=abc.ABCMeta):
         """
         Closes connection for now.
         """
-        # Perform cleanups. Stage 1 being stopping the volume if its still
-        # running.
+        # Check if all nodes are up and running.
+        for machine in self.server_list + self.client_list:
+            ret = self.redant.wait_node_power_up(machine)
+            if not ret:
+                self.redant.logger.error(f"{machine} is offline.")
+
+        # Validate that glusterd is up and running in the servers.
+        self.redant.start_glusterd(self.server_list)
+
+        # Validate all peers are in connected state.
+        self.redant.wait_till_all_peers_connected(self.server_list)
+
         try:
             self.redant.reset_volume_option('all', 'all', self.server_list[0])
             volnames = self.redant.es.get_volnames()

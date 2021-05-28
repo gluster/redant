@@ -285,7 +285,7 @@ class PeerOps(AbstractOps):
         return False
 
     def validate_peers_are_connected(self, server_list: list,
-                                     node: str) -> bool:
+                                     node: str = None) -> bool:
         """
         Validate whether each server in the cluster is connected to
         all other servers in cluster.
@@ -300,6 +300,9 @@ class PeerOps(AbstractOps):
         """
         # if the setup has single node cluster
         # then by-pass this validation
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+
         if len(server_list) == 1:
             return True
 
@@ -319,5 +322,26 @@ class PeerOps(AbstractOps):
 
         self.logger.info("Successfully validated. All the servers"
                          " in the cluster are connected")
+        if node is None:
+            node = random.choice(server_list)
         self.get_peer_status(node)
         return True
+
+    def wait_till_all_peers_connected(self, server_list: list,
+                                      timeout=100) -> bool:
+        """
+        Wait till all said peers are connected.
+
+        Args:
+            server_list (str)
+        Returns:
+            bool: True if everything is perfect. Else False
+        """
+        iter_v = 0
+        while iter_v < timeout:
+            ret = self.validate_peers_are_connected(server_list)
+            if ret:
+                return True
+            sleep(1)
+            iter_v += 1
+        return self.validate_peers_are_connected(server_list)
