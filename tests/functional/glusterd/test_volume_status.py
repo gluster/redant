@@ -20,11 +20,30 @@
 """
 
 # nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
+import traceback
 import random
 from tests.nd_parent_test import NdParentTest
 
 
 class TestCase(NdParentTest):
+
+    def terminate(self):
+        """
+        In case the test fails midway and one of the nodes has
+        glusterd stopped then the glusterd is started on that node
+        and then the terminate function in the DParentTest is called
+        """
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         '''
@@ -39,15 +58,24 @@ class TestCase(NdParentTest):
         '''
 
         # Get mountpoint list
-        mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Check if the volume is mounted
-        redant.get_mounts_stat(mnt_list)
+        redant.get_mounts_stat(self.mnt_list)
 
         # run IO on mountpoint
-        redant.logger.info("Starting IO on all mounts...")
-        list_of_procs = redant.run_linux_untar(self.client_list[0],
-                                               self.mountpoint)
+        self.list_of_procs = []
+        self.counter = 1
+        for mount_obj in self.mnt_list:
+            redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                               f"{mount_obj['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      self.counter,
+                                                      2, 5, 5, 10,
+                                                      mount_obj['client'])
+
+            self.list_of_procs.append(proc)
+            self.counter += 10
 
         # performing  "gluster volume status volname inode" command on
         # all cluster servers randomly while io is in progress,
@@ -76,12 +104,11 @@ class TestCase(NdParentTest):
             count += 1
 
         # Validate IO
-        ret = redant.validate_io_procs(list_of_procs, mnt_list)
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
         if not ret:
             raise Exception("IO validation failed")
 
         # List all files and dirs created
-        redant.logger.info("List all files and directories:")
-        ret = redant.list_all_files_and_dirs_mounts(mnt_list)
+        ret = redant.list_all_files_and_dirs_mounts(self.mnt_list)
         if not ret:
             raise Exception("Failed to list all files and dirs")
