@@ -1,93 +1,53 @@
-#  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-    Test Description:
-    Tests to check basic profile operations.
+ Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along`
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Test Description:
+    Tests to check basic profile operations and profile info
+    without having profile started
 """
 
-from glusto.core import Glusto as g
+import traceback
+from tests.d_parent_test import DParentTest
 
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.profile_ops import (profile_start, profile_info,
-                                            profile_stop)
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import validate_io_procs
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.lib_utils import is_core_file_created
-from glustolibs.gluster.gluster_init import is_glusterd_running
-from glustolibs.gluster.volume_ops import (volume_stop, volume_start,
-                                           get_volume_list)
-from glustolibs.gluster.volume_libs import (cleanup_volume, setup_volume)
+# disruptive;dist,rep,dist-rep,disp,dist-disp
 
 
-@runs_on([['distributed', 'replicated', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'], ['glusterfs']])
-class TestProfileOpeartions(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Uploading file_dir script in all client direcotries
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-        # Creating Volume and mounting volume.
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed: %s"
-                                 % self.volname)
-        g.log.info("Volme created and mounted successfully : %s",
-                   self.volname)
-
-    def tearDown(self):
-
-        # Unmounting and cleaning volume.
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Unable to delete volume % s" % self.volname)
-        g.log.info("Volume deleted successfully : %s", self.volname)
-
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if not vol_list:
-            raise ExecutionError("Failed to get the volume list")
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
+    def terminate(self):
+        """
+        In case the test fails midway, then the IO must be completed and
+        the volumes created in the TC should be cleaned up and then the
+        terminate function in the DParentTest is called
+        """
+        try:
+            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
             if not ret:
-                raise ExecutionError("Unable to delete volume % s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
+                raise Exception("IO failed on some of the clients")
 
-        self.get_super_method(self, 'tearDown')()
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def test_profile_operations(self):
-
-        # pylint: disable=too-many-statements
+    def test_profile_operations(self, redant):
         """
         Test Case:
         1) Create a volume and start it.
@@ -101,121 +61,111 @@ class TestProfileOpeartions(GlusterBaseClass):
         """
 
         # Timestamp of current test case of start time
-        ret, test_timestamp, _ = g.run_local('date +%s')
-        test_timestamp = test_timestamp.strip()
+        ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
+        test_timestamp = ret['msg'][0].rstrip('\n')
 
-        # Start IO on mount points.
-        g.log.info("Starting IO on all mounts...")
-        self.all_mounts_procs = []
+        # Get mountpoint list
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
+        # run IO on mountpoint
+        self.list_of_procs = []
         counter = 1
-        for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dir-depth 4 "
-                   "--dir-length 6 "
-                   "--dirname-start-num %d "
-                   "--max-num-of-dirs 3 "
-                   "--num-of-files 5 %s" % (
-                       self.script_upload_path,
-                       counter, mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            self.all_mounts_procs.append(proc)
-            counter += 1
+        for mount_obj in self.mnt_list:
+            redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                               f"{mount_obj['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      counter, 2, 5, 3, 5,
+                                                      mount_obj['client'])
+
+            self.list_of_procs.append(proc)
+            counter += 10
 
         # Start profile on volume.
-        ret, _, _ = profile_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start profile on volume: %s"
-                         % self.volname)
-        g.log.info("Successfully started profile on volume: %s",
-                   self.volname)
+        redant.profile_start(self.vol_name, self.server_list[0])
 
         # Getting and checking output of profile info.
-        ret, out, _ = profile_info(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to run profile info on volume: %s"
-                         % self.volname)
-        g.log.info("Successfully executed profile info on volume: %s",
-                   self.volname)
+        ret = redant.profile_info(self.vol_name, self.server_list[0])
 
         # Checking if all bricks are present in profile info.
-        brick_list = get_all_bricks(self.mnode, self.volname)
-        for brick in brick_list:
-            self.assertTrue(brick in out,
-                            "Brick %s not a part of profile info output."
-                            % brick)
-            g.log.info("Brick %s showing in profile info output.",
-                       brick)
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if brick_list is None:
+            raise Exception("Failed to get brick list from volume")
+        else:
+            for brick in brick_list:
+                if brick not in ret['msg']:
+                    raise Exception(f"Brick {brick} not a part of profile"
+                                    f" info output.")
 
         # Running profile info with different profile options.
         profile_options = ['peek', 'incremental', 'clear',
                            'incremental peek', 'cumulative']
-        for option in profile_options:
 
+        for option in profile_options:
             # Getting and checking output of profile info.
-            ret, out, _ = profile_info(self.mnode, self.volname,
-                                       options=option)
-            self.assertEqual(ret, 0,
-                             "Failed to run profile info %s on volume: %s"
-                             % (option, self.volname))
-            g.log.info("Successfully executed profile info %s on volume: %s",
-                       option, self.volname)
+            redant.profile_info(self.vol_name, self.server_list[0],
+                                option)
 
             # Checking if all bricks are present in profile info peek.
             for brick in brick_list:
-                self.assertTrue(brick in out,
-                                "Brick %s not a part of profile"
-                                " info %s output."
-                                % (brick, option))
-                g.log.info("Brick %s showing in profile info %s output.",
-                           brick, option)
+                if brick not in ret['msg']:
+                    raise Exception(f"Brick {brick} not a part of profile"
+                                    f" info output.")
 
         # Stop profile on volume.
-        ret, _, _ = profile_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to stop profile on volume: %s"
-                         % self.volname)
-        g.log.info("Successfully stopped profile on volume: %s", self.volname)
+        redant.profile_stop(self.vol_name, self.server_list[0])
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
-        g.log.info("IO validation complete.")
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
 
         # Create and start a volume
-        self.volume['name'] = "volume_2"
-        self.volname = "volume_2"
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start volume")
-        g.log.info("Successfully created and started volume_2")
+        volume_type1 = 'dist'
+        self.volume_name1 = f"{self.test_name}-{volume_type1}-1"
+        redant.setup_volume(self.volume_name1, self.server_list[0],
+                            self.vol_type_inf[self.conv_dict[volume_type1]],
+                            self.server_list, self.brick_roots)
 
         # Stop volume
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to stop the volume %s"
-                         % self.volname)
-        g.log.info("Volume %s stopped successfully", self.volname)
+        redant.volume_stop(self.volume_name1, self.server_list[0])
 
         # Start profile on volume.
-        ret, _, _ = profile_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start profile on volume: %s"
-                         % self.volname)
-        g.log.info("Successfully started profile on volume: %s",
-                   self.volname)
+        redant.profile_start(self.volume_name1, self.server_list[0])
 
         # Start volume
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start the volume %s"
-                         % self.volname)
-        g.log.info("Volume %s started successfully", self.volname)
+        redant.volume_start(self.volume_name1, self.server_list[0])
 
-        # Chekcing for core files.
-        ret = is_core_file_created(self.servers, test_timestamp)
-        self.assertTrue(ret, "glusterd service should not crash")
-        g.log.info("No core file found, glusterd service running "
-                   "successfully")
+        # Merged the TC
+        # test_profile_info_without_having_profile_started
+
+        # Stopping profile for new TC
+        redant.profile_stop(self.volume_name1, self.server_list[0])
+
+        # Check profile info on volume without starting profile
+        ret = redant.profile_info(self.volume_name1, self.server_list[0],
+                                  None, False)
+        if ret['error_code'] == 0:
+            raise Exception(f"Unexpected:Successfully ran profile info"
+                            f" on volume: {self.volume_name1}")
+
+        # Running profile info with different profile options.
+        profile_options = ['peek', 'incremental', 'clear',
+                           'incremental peek', 'cumulative']
+
+        for option in profile_options:
+            # Getting and checking output of profile info.
+            redant.profile_info(self.vol_name, self.server_list[0],
+                                option, False)
+            if ret['error_code'] == 0:
+                raise Exception(f"Unexpected:Successfully ran profile info"
+                                f" {option} on volume: {self.volume_name1}")
+
+        # Checking for core files.
+        ret = redant.check_core_file_exists(self.server_list, test_timestamp)
+        if ret:
+            raise Exception("glusterd service should not have crashed")
 
         # Checking whether glusterd is running or not
-        ret = is_glusterd_running(self.servers)
-        self.assertEqual(ret, 0, "Glusterd has crashed on nodes.")
-        g.log.info("No glusterd crashes observed.")
+        ret = redant.is_glusterd_running(self.server_list)
+        if ret != 1:
+            raise Exception("Glusterd not running on servers")

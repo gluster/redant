@@ -14,12 +14,17 @@ class ProfileOps(AbstractOps):
     check_profile_options etc.
     """
 
-    def profile_start(self, volname: str, node: str = None) -> dict:
+    def profile_start(self, volname: str, node: str = None,
+                      excep: bool = True) -> dict:
         """
         Start profile on the specified volume.
         Args:
             volname (str): Volume on which profile has to be started.
             node (str): Node on which command has to be executed.
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -34,21 +39,25 @@ class ProfileOps(AbstractOps):
         """
         cmd = f"gluster volume profile {volname} start"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
-    def profile_info(self, volname: str, options: str = '',
-                     node: str = None) -> dict:
+    def profile_info(self, volname: str, node: str = None,
+                     options: str = None, excep: bool = True) -> dict:
         """
         Run profile info on the specified volume.
         Args:
             volname (str): Volume for which profile info has to be retrived.
+            node (str): Node on which command has to be executed.
             options (str): Options can be
                            [peek|incremental [peek]|cumulative|clear].If not
                            given the function returns the output of gluster
                            volume profile <volname> info.
-            node (str): Node on which command has to be executed.
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -61,19 +70,24 @@ class ProfileOps(AbstractOps):
         Example:
             profile_info(node, "testvol")
         """
-        if not self.check_profile_options(options):
+        if options is not None and not self.check_profile_options(options):
             return None
         cmd = f"gluster volume profile {volname} info {options}"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
-    def profile_stop(self, volname: str, node: str = None) -> dict:
+    def profile_stop(self, volname: str, node: str = None,
+                     excep: bool = True) -> dict:
         """Stop profile on the specified volume.
         Args:
             volname (str): Volume on which profile has to be stopped.
             node (str): Node on which command has to be executed.
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -87,7 +101,7 @@ class ProfileOps(AbstractOps):
         """
         cmd = f"gluster volume profile {volname} stop"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
@@ -103,7 +117,7 @@ class ProfileOps(AbstractOps):
         """
 
         list_of_options = ['peek', 'incremental', 'incremental peek',
-                           'cumulative', 'clear', '']
+                           'cumulative', 'clear']
         if options not in list_of_options:
             self.logger.error("Invalid profile info option given.")
             return False

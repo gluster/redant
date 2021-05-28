@@ -64,7 +64,7 @@ class VolumeOps(AbstractOps):
         return ret
 
     def volume_mount(self, server: str, volname: str,
-                     path: str, node: str = None):
+                     path: str, node: str = None, excep: bool = True):
         """
         Mounts the gluster volume to the client's filesystem.
         Args:
@@ -73,6 +73,10 @@ class VolumeOps(AbstractOps):
             server (str): Hostname or IP address
             volname (str): Name of volume to be mounted
             path (str): The path of the mount directory(mount point)
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
 
         Returns:
             ret: A dictionary consisting
@@ -87,7 +91,7 @@ class VolumeOps(AbstractOps):
 
         cmd = f"mount -t glusterfs {server}:/{volname} {path}"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.add_new_mountpath(volname, node, path)
         return ret
 
@@ -122,18 +126,22 @@ class VolumeOps(AbstractOps):
 
     def volume_create(self, volname: str, node: str, conf_hash: dict,
                       server_list: list, brick_root: list,
-                      force: bool = False):
+                      force: bool = False, excep: bool = True):
         """
         Create the gluster volume with specified configuration
         Args:
             volname(str): volume name that has to be created
             node(str): server on which command has to be executed
             conf_hash (dict): Config hash providing parameters for volume
-            creation.
+                              creation.
             server_list (list): List of servers
             brick_root (list): List of root path of bricks
             force (bool): If this option is set to True, then create volume
-            will get executed with force option.
+                          will get executed with force option.
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
 
         Returns:
             ret: A dictionary consisting
@@ -193,18 +201,22 @@ class VolumeOps(AbstractOps):
         if force:
             cmd = (f"{cmd} force")
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.set_new_volume(volname, brick_dict)
 
         return ret
 
     def volume_start(self, volname: str, node: str = None,
-                     force: bool = False):
+                     force: bool = False, excep: bool = True):
         """
         Starts the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to start
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
 
         Kwargs:
             force (bool): If this option is set to True, then start volume
@@ -226,17 +238,22 @@ class VolumeOps(AbstractOps):
         else:
             cmd = f"gluster volume start {volname} --mode=script --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.set_volume_start_status(volname, True)
 
         return ret
 
-    def volume_stop(self, volname: str, node: str = None, force: bool = False):
+    def volume_stop(self, volname: str, node: str = None, force: bool = False,
+                    excep: bool = True):
         """
         Stops the gluster volume
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to stop
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Kwargs:
             force (bool): If this option is set to True, then start volume
                 will get executed with force option. If it is set to False,
@@ -257,18 +274,23 @@ class VolumeOps(AbstractOps):
         else:
             cmd = f"gluster volume stop {volname} --mode=script --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.set_volume_start_status(volname, False)
 
         return ret
 
-    def volume_delete(self, volname: str, node: str = None):
+    def volume_delete(self, volname: str, node: str = None,
+                      excep: bool = True):
         """
         Deletes the gluster volume if given volume exists in
         gluster.
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to delete
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -282,7 +304,7 @@ class VolumeOps(AbstractOps):
 
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.add_data_to_cleands(self.es.get_brickdata(volname))
         self.es.remove_volume_data(volname)
         return ret
