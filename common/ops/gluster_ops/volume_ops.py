@@ -17,7 +17,8 @@ class VolumeOps(AbstractOps):
 
     def setup_volume(self, volname: str, node: str, conf_hash: dict,
                      server_list: list, brick_root: list,
-                     force: bool = False, create_only: bool = False):
+                     force: bool = False, create_only: bool = False,
+                     excep: bool = True):
         """
         Setup the gluster volume with specified configuration
         Args:
@@ -33,7 +34,10 @@ class VolumeOps(AbstractOps):
                                 False, will do volume create, start, set
                                 operation if any provided in the volume_config
                                 By default, value is set to False.
-
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -52,7 +56,7 @@ class VolumeOps(AbstractOps):
 
         # Create volume
         ret = self.volume_create(volname, node, conf_hash, server_list,
-                                 brick_root, force)
+                                 brick_root, force, excep)
         if create_only:
             return ret
 
@@ -60,7 +64,7 @@ class VolumeOps(AbstractOps):
         sleep(2)
 
         # Start volume
-        ret = self.volume_start(volname, node)
+        ret = self.volume_start(volname, node, excep)
         return ret
 
     def volume_mount(self, server: str, volname: str,
