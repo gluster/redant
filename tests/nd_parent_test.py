@@ -73,17 +73,27 @@ class NdParentTest(metaclass=abc.ABCMeta):
         """
         Closes connection and checks the env
         """
-        # Check if the post_test env state is same as that of the
-        # pre_test env state.
+        # Check if all nodes are up and running.
+        for machine in self.server_list + self.client_list:
+            ret = self.redant.wait_node_power_up(machine)
+            if not ret:
+                self.redant.logger.error(f"{machine} is offline.")
+
+        # Validate that glusterd is up and running in the servers.
+        self.redant.start_glusterd(self.server_list)
+
+        # Validate all peers are in connected state.
+        self.redant.wait_till_all_peers_connected(self.server_list)
+
         if self.volume_type != "Generic":
             try:
-                # Condition 1. Volume started state.
+                # Volume started state.
                 vol_param = self.vol_type_inf[self.conv_dict[self.volume_type]]
                 self.redant.sanitize_volume(self.vol_name, self.server_list,
                                             self.client_list, self.brick_roots,
                                             vol_param)
 
-                # Condition 2. Volume options if set to be reset.
+                # Volume options reset.
                 self.redant.reset_volume_option(self.vol_name, 'all',
                                                 self.server_list[0])
             except Exception as e:

@@ -36,7 +36,6 @@
             cmd (str): The command to be run in the remote server.
             node (str): This is an optional parameter. If provided, the cmd will be executed in the said server or in a random server.
         Returns:
-             ``` javascript
              {
                "cmd" : "<command_which_was_run>",
                "node" : "Node wherein it was run",
@@ -45,14 +44,11 @@
                "error_msg" : "<stderr response>",
                "error_code" : BASH error code
              }
-             ```
         Example:
-           ```
                 cmd = "<some ops command>
                 ret = self.execute_command(cmd)
                 # or
                 ret = self.execute_command(cmd, node)
-            ```
 
 5) **execute_command_multinode**<br>
         Function to execute a remote command in multiple nodes.
@@ -61,7 +57,6 @@
             cmd (str): Command which is to be run in the remote nodes.
             nodes (list): This is an optional parameter. If provided it will run in the given list of nodes or run the command on all nodes for a given rexe object.
         Returns:
-            ``` javascript
             [ 
                 {
                     "cmd" : "<command_which_was_run>",
@@ -81,14 +76,11 @@
                     "error_code" : BASH error code
                 }
             ]
-            ```
         Example:
-            ```
             cmd = "<some ops command>
             ret = self.execute_command(cmd)
             # or
             ret = self.execute_command(cmd, node_list)
-            ```
 
 6) **execute_command_async**<br>
         Function to execute command in a node asynchronously. The async_obj returned by the function can be used to track the asynchronous operation's status and get the results.
@@ -97,21 +89,17 @@
             cmd (str): Command which is to be run
             node (str): Optional parameter. If provided, the command will be run in the said node or else in a random node.
         Returns:
-            ```javascript
             {
                 "cmd" : "<command to be run>",
                 "node" : "<node wherien the command is run>",
                 "stdout" : "<The stdout handle>",
                 "stderr" : "<The stderr handle>"
             }
-            ```
         Example:
-            ```
             cmd = "<some ops command>
             aync_obj = self.execute_command_async(cmd)
             # or
             async_obj = self.execute_command_async(cmd, node)
-            ```
 
 7) **check_async_command_status**<br>
         Function to check the status of the asynchronous command which was run using the execute_command_async function.
@@ -121,7 +109,6 @@
         Returns:
             Bool value: True if the command execution has ended or False.
         Example:
-            ```
             cmd = "<some ops command>
             aync_obj = self.execute_command_async(cmd)
             # or
@@ -129,7 +116,6 @@
 
             # After some other operations.....
             command_finished = self.check_async_command_status(async_obj)
-            ```
 
 8) **collect_async_result**<br>
         This function is used to collect the results of an asynchornous command execution which has completed.
@@ -137,7 +123,6 @@
         Args:
             async_obj (dict): This dictionary was the return value of the execute_command_async function which was used to run the command whose status we are checking here.
         Returns:
-            ``` javascript
             {
                 "cmd" : "<command_which_was_run>",
                 "node" : "Node wherein it was run",
@@ -146,9 +131,7 @@
                 "error_msg" : "<stderr response>",
                 "error_code" : BASH error code
             }
-            ```
         Example:
-            ```
             cmd = "<some ops command>
             aync_obj = self.execute_command_async(cmd)
             # or
@@ -159,7 +142,6 @@
                 sleep(1)
 
             ret = self.collect_async_result(async_obj)
-            ```
 
 9) **wait_till_async_command_ends**<br>
         This function is used to wait till the asynchronous remote command execution finished and then returns the results.
@@ -167,7 +149,6 @@
         Args:
             async_obj (dict): This dictionary was the return value of the execute_command_async function which was used to run the command whose status we are checking here.
         Returns:
-            ``` javascript
             {
                 "cmd" : "<command_which_was_run>",
                 "node" : "Node wherein it was run",
@@ -176,9 +157,7 @@
                 "error_msg" : "<stderr response>",
                 "error_code" : BASH error code
             }
-            ```
         Example:
-            ```
             cmd = "<some ops command>
             aync_obj = self.execute_command_async(cmd)
             # or
@@ -186,7 +165,7 @@
 
             # After some other operations.....
             ret = self.wait_till_async_command_ends(async_obj)
-            ```
+
 10) **transfer_file_from_local**<br>
         This function transfers the file from the local system to the specified node.
 
@@ -211,7 +190,6 @@
             node (str): The node wherein the command is to be run. The default value is None. None is to be given when the expectation is to run the command in a random node.
             excep (bool): An optional parameter whose default value is True. When set to False, the exception handling is not taken up and the return value is directly returned and the default behavior being when set to True, wherein the exception is handled.
         Returns:
-             ``` javascript
              {
                 "cmd" : "<command_which_was_run>",
                 "node" : "Node wherein it was run",
@@ -220,14 +198,11 @@
                 "error_msg" : "<stderr response>",
                 "error_code" : BASH error code
              }
-             ```
         Example:
-            ```
             cmd = "<some ops command>
             ret = self.execute_abstract_op_node(cmd)
             # or
             ret = self.execute_abstract_op_node(cmd, node)
-            ```
 
 2) **execute_abstract_op_multinode**<br>
         This function encapsulates the call to `execute_command_multinode` and handles the exceptions on the result as well as the logging.
@@ -236,7 +211,6 @@
             cmd (str): The command which is to be run in the remote nodes.
             node_list (list): List of nodes wherein this command is to be run. If kept null then the command is executed in all the servers.
         Returns:
-            ``` javascript
             [ 
                 {
                     "cmd" : "<command_which_was_run>",
@@ -256,11 +230,8 @@
                     "error_code" : BASH error code
                 }
             ]
-            ```
         Example:
-            ```
             cmd = "<some ops command>
             ret = self.execute_abstract_op_multinode(cmd)
             # or
             ret = self.execute_abstract_op_multinode(cmd, node_list)
-            ```
