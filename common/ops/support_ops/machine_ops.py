@@ -28,7 +28,6 @@ class MachineOps(AbstractOps):
         for node in nodes:
             self.reboot_node(node)
             self.wait_node_power_down(node)
-        return True
 
     def check_node_power_status(self, nodes: list) -> dict:
         """
