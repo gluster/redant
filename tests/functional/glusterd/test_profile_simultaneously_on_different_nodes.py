@@ -29,9 +29,9 @@ class TestCase(DParentTest):
 
     def terminate(self):
         """
-        In case the test fails midway and one of the nodes has
-        glusterd stopped then the glusterd is started on that node
-        and then the terminate function in the DParentTest is called
+        In case the test fails midway, then the IO must be completed and
+        the volumes created in the TC should be cleaned up and then the
+        terminate function in the DParentTest is called
         """
         try:
             self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
@@ -73,7 +73,7 @@ class TestCase(DParentTest):
             redant.logger.info(f"Starting IO on {mount_obj['client']}:"
                                f"{mount_obj['mountpath']}")
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
-                                                      counter, 4, 6, 3, 5,
+                                                      counter, 2, 5, 3, 5,
                                                       mount_obj['client'])
 
             self.list_of_procs.append(proc)
@@ -99,7 +99,7 @@ class TestCase(DParentTest):
 
         # Run volume status on one of the node in loop
         cmd = "for i in `seq 1 100`;do gluster v status;done"
-        proc1 = self.execute_command_async(cmd, self.server_list[1])
+        proc1 = redant.execute_command_async(cmd, self.server_list[1])
 
         # Check profile on one of the other node
         cmd = f"gluster v profile {self.volume_name1} info"
@@ -108,14 +108,14 @@ class TestCase(DParentTest):
         # Run volume profile info on one of the other node in loop
         cmd = (f"for i in `seq 1 100`;do gluster v profile "
                f"{self.volume_name1} info;done")
-        proc2 = self.execute_command_async(cmd, self.server_list[2])
+        proc2 = redant.execute_command_async(cmd, self.server_list[2])
 
-        ret = self.wait_till_async_command_ends(proc1)
+        ret = redant.wait_till_async_command_ends(proc1)
         if ret['error_code'] != 0:
             raise Exception(f"Failed to run volume status in a loop"
                             f" on node {self.server_list[1]}")
 
-        ret = self.wait_till_async_command_ends(proc2)
+        ret = redant.wait_till_async_command_ends(proc2)
         if ret['error_code'] != 0:
             raise Exception(f"Failed to run profile info in a loop"
                             f" on node {self.server_list[2]}")
