@@ -47,7 +47,7 @@ class TestCase(DParentTest):
             self.redant.logger.error(tb)
         super().terminate()
 
-    def test_profile_operations(self, redant):
+    def run_test(self, redant):
         """
         Test Case:
         1) Create a volume and start it.
