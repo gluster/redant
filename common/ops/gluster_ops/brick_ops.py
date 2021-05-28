@@ -479,7 +479,12 @@ class BrickOps:
             NoneType: None on failure in getting volume status
         """
         online_bricks_list = []
-        volume_status = self.get_volume_status(volname, node)
+        try:
+            volume_status = self.get_volume_status(volname, node)
+        except Exception as error:
+            self.logger.info(f"Volume status failed: {error}")
+            return None
+
         if not volume_status:
             self.logger.error(f"Unable to get online bricks_list "
                               f"for the volume {volname}")
@@ -516,12 +521,17 @@ class BrickOps:
             NoneType: None on failure in getting volume status
         """
         offline_bricks_list = []
-        volume_status = self.get_volume_status(volname, node)
+        all_bricks = self.get_all_bricks(volname, node)
+        try:
+            volume_status = self.get_volume_status(volname, node)
+        except Exception as error:
+            self.logger.info(f"Volume status failed: {error}")
+            return all_bricks
+
         if not volume_status:
             self.logger.error(f"Unable to get offline bricks_list "
                               f"for the volume {volname}")
             return None
-        all_bricks = self.get_all_bricks(volname, node)
 
         volume_status = volume_status[volname]
         if 'node' in volume_status:
