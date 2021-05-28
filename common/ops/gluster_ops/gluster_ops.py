@@ -84,7 +84,6 @@ class GlusterOps(AbstractOps):
         cmd = "systemctl restart glusterd"
 
         self.logger.info(f"Running {cmd} on {node}")
-        self.logger.info(f"Running {cmd} on {node}")
 
         ret = self.execute_command_multinode(cmd, node)
 
