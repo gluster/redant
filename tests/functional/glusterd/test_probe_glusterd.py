@@ -46,22 +46,19 @@ class TestCase(NdParentTest):
 
         # Peer probe checks for non existing host
         try:
-            ret = redant.peer_probe(non_exist_host, self.server_list[0])
-        except Exception as error:
+            redant.peer_probe(non_exist_host, self.server_list[0])
+        except Exception:
             redant.logger.info("Peer probe failed for non-existing server")
-            redant.logger.info(f"Error: {error}")
 
         try:
-            ret = redant.peer_probe(invalid_ip, self.server_list[0])
-        except Exception as error:
+            redant.peer_probe(invalid_ip, self.server_list[0])
+        except Exception:
             redant.logger.info("Peer probe failed for invalid IP")
-            redant.logger.info(f"Error: {error}")
 
         try:
-            ret = redant.peer_probe(non_exist_ip, self.server_list[0])
-        except Exception as error:
+            redant.peer_probe(non_exist_ip, self.server_list[0])
+        except Exception:
             redant.logger.info("Peer probe failed for non-existing IP")
-            redant.logger.info(f"Error: {error}")
 
         # Checks Glusterd services running or not after peer probe
         # to invalid host and non existing host

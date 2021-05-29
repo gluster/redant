@@ -82,8 +82,8 @@ class NdParentTest(metaclass=abc.ABCMeta):
         # Validate that glusterd is up and running in the servers.
         self.redant.start_glusterd(self.server_list)
 
-        # Validate all peers are in connected state.
-        self.redant.wait_till_all_peers_connected(self.server_list)
+        # Peer probe and validate all peers are in connected state.
+        self.redant.peer_probe_servers(self.server_list, self.server_list[0])
 
         if self.volume_type != "Generic":
             try:

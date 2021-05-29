@@ -33,10 +33,10 @@ class TestCase(DParentTest):
         re-probe it and delete the volumes created in the TC
         """
         try:
-            # ret = self.redant.peer_probe_servers(self.server_list[0],
-            #                                     self.server_list)
-            # if not ret:
-            #    raise Exception("Peer probing failed on some of the servers")
+            ret = self.redant.peer_probe_servers(self.server_list,
+                                                 self.server_list[0])
+            if not ret:
+                raise Exception("Peer probing failed on some of the servers")
             self.redant.cleanup_volume(self.volume_name, self.server_list[0])
 
         except Exception as error:
@@ -60,7 +60,7 @@ class TestCase(DParentTest):
                    " state then use either replace-brick or remove-brick"
                    " command with force to remove all bricks from the peer"
                    " and attempt the peer detach again.")
-        if err_msg not in " ".join(ret['err_msg']):
+        if err_msg not in " ".join(ret['error_msg']):
             raise Exception("Peer detach didn't fail with proper error msg")
 
     def run_test(self, redant):
@@ -97,7 +97,7 @@ class TestCase(DParentTest):
                             f"{self.server_list[1]}")
         err_msg = (f"peer detach: failed: {self.server_list[1]} is not part"
                    "cluster\n")
-        if err_msg not in ret['err_msg'][0]:
+        if err_msg not in " ".join(ret['error_msg'][0]):
             raise Exception("Peer detach didn't fail as expected")
 
         # Probing detached server

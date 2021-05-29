@@ -58,7 +58,7 @@ class TestCase(NdParentTest):
         redant.logger.info("Glusterd is running on all the servers")
 
         # Checking if all the peers are in connected state or not.
-        ret = redant.is_peer_connected(self.server_list[0], self.server_list)
+        ret = redant.is_peer_connected(self.server_list, self.server_list[0])
         if not ret:
             raise Exception("All peers are not in connected state.")
 
@@ -84,7 +84,7 @@ class TestCase(NdParentTest):
         redant.logger.info("Glusterd is running on all the servers")
 
         # Checking if all the peers are in connected state or not.
-        ret = redant.is_peer_connected(self.server_list[0], self.server_list)
+        ret = redant.is_peer_connected(self.server_list, self.server_list[0])
         if not ret:
             raise Exception("All peers are not in connected state.")
 

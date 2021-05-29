@@ -85,13 +85,7 @@ class TestCase(DParentTest):
 
         # Perform peer probe from N1 to N2
         try:
-            ret = redant.peer_probe(self.server_list[1], self.server_list[0])
-            raise Exception("peer probe is success from "
-                            f"{self.server_list[0]} to "
-                            f"{self.server_list[1]} even if "
-                            f"{self.server_list[1]} "
-                            " is a part of another cluster or having "
-                            "volumes  configured")
+            redant.peer_probe(self.server_list[1], self.server_list[0])
         except Exception:
             redant.logger.info("Expected: peer probe failed from "
                                f"{self.server_list[0]} "
@@ -105,13 +99,13 @@ class TestCase(DParentTest):
             redant.cleanup_volume(volname, volume_nodes[0])
 
         # Perform peer probe from N1 to N2 should success
-        ret = redant.peer_probe(self.server_list[1], self.server_list[0])
+        redant.peer_probe(self.server_list[1], self.server_list[0])
 
         # Checking if peer is connected
         counter = 0
         while counter < 30:
-            ret = redant.is_peer_connected(self.server_list[0],
-                                           self.server_list[1])
+            ret = redant.is_peer_connected(self.server_list[1],
+                                           self.server_list[0])
             counter += 1
             if ret:
                 break
@@ -121,12 +115,7 @@ class TestCase(DParentTest):
 
         # Perform peer probe from N3 to N2 should fail
         try:
-            ret = redant.peer_probe(self.server_list[2], self.server_list[1])
-            raise Exception("peer probe is success from "
-                            f"{self.server_list[2]} "
-                            f"to {self.server_list[1]} even if "
-                            f"{self.server_list[1]} is a part of another "
-                            "cluster or having volumes configured")
+            redant.peer_probe(self.server_list[2], self.server_list[1])
         except Exception:
             redant.logger.info("Expected: peer probe failed from "
                                f"{self.server_list[2]} to "
@@ -143,25 +132,20 @@ class TestCase(DParentTest):
 
         # Perform peer probe from N3 to N1 should fail
         try:
-            ret = redant.peer_probe(self.server_list[0], self.server_list[2])
-            raise Exception("peer probe is success from "
-                            f"{self.server_list[2]} "
-                            f"to {self.server_list[0]} even if "
-                            f"{self.server_list[0]} is a part of another "
-                            "cluster or having volumes configured")
+            redant.peer_probe(self.server_list[0], self.server_list[2])
         except Exception:
             redant.logger.info("Expected: peer probe failed from "
                                f"{self.server_list[2]} to "
                                f"{self.server_list[0]} as expected")
 
         # Perform peer probe from N1 to N3 should succed
-        ret = redant.peer_probe(self.server_list[2], self.server_list[0])
+        redant.peer_probe(self.server_list[2], self.server_list[0])
 
         # Checking if peer is connected
         counter = 0
         while counter < 30:
-            ret = redant.is_peer_connected(self.server_list[0],
-                                           self.server_list[:3])
+            ret = redant.is_peer_connected(self.server_list[:3],
+                                           self.server_list[0])
             counter += 1
             if ret:
                 break

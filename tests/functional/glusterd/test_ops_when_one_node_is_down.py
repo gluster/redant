@@ -72,8 +72,8 @@ class TestCase(DParentTest):
         redant.logger.info("Glusterd start on the nodes succeeded")
 
         # Checking if peer is connected.
-        ret = redant.wait_for_peers_to_connect(self.server_list[0],
-                                               self.server_list)
+        ret = redant.wait_for_peers_to_connect(self.server_list,
+                                               self.server_list[0])
         if not ret:
             raise Exception("Failed : All the peer are not connected")
         redant.logger.info("Peers is in connected state.")

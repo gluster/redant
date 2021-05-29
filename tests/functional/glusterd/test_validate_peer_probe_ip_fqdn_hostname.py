@@ -99,7 +99,7 @@ class TestPeerProbeScenarios(DParentTest):
             redant.peer_probe(host_node[self.by_type], self.server_list[0])
 
             # Verify Peer pool list and check whether the node exists or not
-            redant.is_peer_connected(host_node['ip'], self.server_list[0])
+            redant.is_peer_connected(self.server_list[0], host_node['ip'])
 
             # Verify command history for successful peer probe status
             self._verify_cmd_history(redant, host_node[self.by_type])
