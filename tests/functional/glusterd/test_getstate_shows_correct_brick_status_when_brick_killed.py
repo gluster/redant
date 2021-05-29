@@ -26,6 +26,25 @@ from tests.nd_parent_test import NdParentTest
 
 class TestCase(NdParentTest):
 
+    def _find_vol_id_from_state_using_volname(self, volname: str,
+                                              vol_state_dict: dict) -> str:
+        """
+        Function to identify the corresponding ID of a volume from the state
+        result using the volume name.
+
+        Args:
+            volname (str): Name of the volume
+            state_dict (dict) : The value of Volume key in state dictionary
+
+        Returns:
+            the volume id to be used for futher data analysis. On failure to
+            get the required volume's corresponding ID, an exception is thrown.
+        """
+        for item in vol_state_dict.items():
+            if item[1] == volname:
+                return item[0].split('.')[0]
+        raise Exception(f"Failed to get volume id for volume {volname}")
+
     def run_test(self, redant):
         """
         Steps:
@@ -45,7 +64,9 @@ class TestCase(NdParentTest):
                             f" {self.server_list[0]}")
 
         ret = redant.get_state(self.server_list[0])
-        if ret['Volumes']['volume1.brick1.status'].strip() != "Stopped":
+        volid = self._find_vol_id_from_state_using_volname(self.vol_name,
+                                                           ret['Volumes'])
+        if ret['Volumes'][f'{volid}.brick1.status'].strip() != "Stopped":
             raise Exception("Brick not in stopped mode after volume stop.")
 
         redant.volume_start(self.vol_name, self.server_list[0])
@@ -55,7 +76,9 @@ class TestCase(NdParentTest):
                             f" {self.server_list[0]}")
 
         ret = redant.get_state(self.server_list[0])
-        if ret['Volumes']['volume1.brick1.status'].strip() != "Started":
+        volid = self._find_vol_id_from_state_using_volname(self.vol_name,
+                                                           ret['Volumes'])
+        if ret['Volumes'][f'{volid}.brick1.status'].strip() != "Started":
             raise Exception("Brick not in started mode after volume start")
 
         vol_bricks = redant.get_online_bricks_list(self.vol_name,
@@ -69,11 +92,15 @@ class TestCase(NdParentTest):
                             f" of volume {self.vol_name}")
 
         ret = redant.get_state(self.server_list[0])
-        if ret['Volumes']['volume1.brick1.status'].strip() != "Stopped":
+        volid = self._find_vol_id_from_state_using_volname(self.vol_name,
+                                                           ret['Volumes'])
+        if ret['Volumes'][f'{volid}.brick1.status'].strip() != "Stopped":
             raise Exception("Brick not in stopped mode after volume stop.")
 
         ret = redant.get_state(self.server_list[1])
-        if ret['Volumes']['volume1.brick2.status'].strip() != "Started":
+        volid = self._find_vol_id_from_state_using_volname(self.vol_name,
+                                                           ret['Volumes'])
+        if ret['Volumes'][f'{volid}.brick2.status'].strip() != "Started":
             raise Exception("Brick not in started mode after volume start")
 
         offline_brick = redant.get_offline_bricks_list(self.vol_name,
