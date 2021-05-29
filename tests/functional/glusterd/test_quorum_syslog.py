@@ -17,6 +17,8 @@
 
  Description:
    TC to check quorum syslog
+
+TODO: This TC doesn't work on Fedora OS, OPs for OS check needs to be added.
 """
 
 import traceback
@@ -43,7 +45,7 @@ class TestCase(DParentTest):
             # volume deletions are failing with quorum not met,
             # that's the reason verifying peers are connected or not before
             # deleting volumes
-            ret = self.reant.wait_till_all_peers_connected(self.server_list)
+            ret = self.redant.wait_till_all_peers_connected(self.server_list)
             if not ret:
                 raise Exception("Servers are not in peer probed state")
 
@@ -74,12 +76,6 @@ class TestCase(DParentTest):
 
         self.log_messages = "/var/log/messages"
         self.log_glusterd = "/var/log/glusterfs/glusterd.log"
-
-        # Clear the messages and glusterd log file at the beginning
-        redant.execute_abstract_op_node(f"> {self.log_messages}",
-                                        self.server_list[0])
-        redant.execute_abstract_op_node(f"> {self.log_glusterd}",
-                                        self.server_list[0])
 
         # Create and start another volume
         volume_type1 = 'dist'
