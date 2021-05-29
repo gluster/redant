@@ -6,7 +6,6 @@ get_all_bricks_offline
 
 # disruptive;dist-rep
 
-from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -33,7 +32,6 @@ class TestCase(DParentTest):
         ret = redant.bring_bricks_offline(self.vol_name, brick_list)
         if not ret:
             raise Exception(f"{brick_list} still online.")
-
 
         ret = redant.get_online_bricks_list(self.vol_name,
                                             self.server_list[0])
