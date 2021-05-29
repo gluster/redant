@@ -114,6 +114,12 @@ class TestCase(DParentTest):
             raise Exception("Failed to start glusterd on node"
                             f"{self.random_server}")
 
+        # Check volume state
+        ret = redant.wait_for_vol_to_come_online(self.vol_name,
+                                                 self.random_server)
+        if not ret:
+            raise Exception("Volume is not started, after starting glusterd")
+
         # Confirm if all the bricks are online or not
         count = 0
         while count < 10:
