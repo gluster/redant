@@ -94,7 +94,7 @@ class MountOps(AbstractOps):
             self.logger.error("Missing arguments for mount.")
             return False
 
-        cmd = f"mount | egrep {volname} | {mpath} | grep \\{mserver}\""
+        cmd = f"mount | egrep '{volname} | {mpath}' | grep \'{mserver}\'"
         ret = self.execute_abstract_op_node(cmd, mclient, False)
         if ret['error_code'] == 0:
             self.logger.debug(f"Volume {volname} is mounted at"
