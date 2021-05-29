@@ -1,124 +1,87 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description: This test case aims to verify the gluster get-state command.
+"""
 
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.volume_ops import (volume_stop,
-                                           volume_start,
-                                           get_gluster_state)
-from glustolibs.gluster.brick_libs import (get_offline_bricks_list,
-                                           bring_bricks_online,
-                                           get_online_bricks_list,
-                                           bring_bricks_offline)
+from tests.nd_parent_test import NdParentTest
+
+# nonDisruptive;dist-disp,rep,arb,dist-rep,dist,disp,dist-arb
 
 
-@runs_on([['distributed-dispersed', 'replicated', 'arbiter',
-           'distributed-replicated', 'distributed', 'dispersed',
-           'distributed-arbiter'],
-          ['glusterfs']])
-class TestGetStateBrickStatus(GlusterBaseClass):
+class TestCase(NdParentTest):
 
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def test_validate_get_state(self):
+    def run_test(self, redant):
         """
-        TestCase:
-        1. Execute "gluster get-state" say on N1(Node1)
-        2. Start one by one volume and check brick status in get-state output
-        3. Make sure there are multiple glusterfsd on one node say N1
-            Kill one glusterfsd (kill -9 <piod>) and check
-        4. Execute "gluster get-state" on N1
+        Steps:
+        1. Stop the volume.
+        2. Execute "gluster get-state" and verify that a brick is offline.
+        3. Start the volume and verify that a brick is online.
+        4. Kill a brick in a node and verify with get-state that it is
+           offline.
+        5. With get-state check that the brick in some other node is online.
+        6. Get the offline brick online.
         """
-        # Stop Volume
-        ret, _, _ = volume_stop(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, ("Failed to stop the volume "
-                                  "%s", self.volname))
+        redant.volume_stop(self.vol_name, self.server_list[0], True)
 
-        # Execute 'gluster get-state' on mnode
-        get_state_data = get_gluster_state(self.mnode)
-        self.assertIsNotNone(get_state_data, "Getting gluster state failed.")
+        if not redant.wait_for_vol_to_go_offline(self.vol_name,
+                                                 self.server_list[0]):
+            raise Exception(f"Failed to stop volume {self.vol_name} on node"
+                            f" {self.server_list[0]}")
 
-        # Getting Brick 1 Status - It should be in Stopped State
-        brick_status = (get_state_data['Volumes']
-                        ['volume1.brick1.status'].strip())
-        self.assertEqual(brick_status, "Stopped",
-                         "The brick is not in Stopped State")
+        ret = redant.get_state(self.server_list[0])
+        if ret['Volumes']['volume1.brick1.status'].strip() != "Stopped":
+            raise Exception("Brick not in stopped mode after volume stop.")
 
-        # Start the volume and check the status of brick again
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertFalse(ret, 'Failed to start volume %s with "force" option'
-                         % self.volname)
+        redant.volume_start(self.vol_name, self.server_list[0])
+        if not redant.wait_for_vol_to_come_online(self.vol_name,
+                                                  self.server_list[0]):
+            raise Exception(f"Failed to start volume {self.vol_name} on node"
+                            f" {self.server_list[0]}")
 
-        # Execute 'gluster get-state' on mnode
-        get_state_data = get_gluster_state(self.mnode)
-        self.assertIsNotNone(get_state_data, "Getting gluster state failed.")
-        # Getting Brick 1 Status - It should be in Started State
-        brick_status = (get_state_data['Volumes']
-                        ['volume1.brick1.status'].strip())
-        self.assertEqual(brick_status, "Started",
-                         "The brick is not in Started State")
+        ret = redant.get_state(self.server_list[0])
+        if ret['Volumes']['volume1.brick1.status'].strip() != "Started":
+            raise Exception("Brick not in started mode after volume start")
 
-        # Bringing the brick offline
-        vol_bricks = get_online_bricks_list(self.mnode, self.volname)
-        ret = bring_bricks_offline(self.volname, vol_bricks[0])
-        self.assertTrue(ret, 'Failed to bring brick %s offline' %
-                        vol_bricks[0])
+        vol_bricks = redant.get_online_bricks_list(self.vol_name,
+                                                   self.server_list[0])
+        if vol_bricks is None:
+            raise Exception("Failed to get online brick list for the volume"
+                            f" {self.vol_name} on node {self.server_list[0]}")
 
-        # Execute 'gluster get-state' on mnode
-        get_state_data = get_gluster_state(self.mnode)
-        self.assertIsNotNone(get_state_data, "Getting gluster state failed.")
-        # Getting Brick 1 Status - It should be in Stopped State
-        brick_status = (get_state_data['Volumes']
-                        ['volume1.brick1.status'].strip())
-        self.assertEqual(brick_status, "Stopped",
-                         "The brick is not in Stopped State")
-        g.log.info("Brick 1 is in Stopped state as expected.")
+        if not redant.bring_bricks_offline(self.vol_name, vol_bricks[0]):
+            raise Exception(f"Failed to bring brick {vol_bricks[0]} offline"
+                            f" of volume {self.vol_name}")
 
-        # Checking the server 2 for the status of Brick.
-        # It should be 'Started' state
-        node2 = self.servers[1]
-        get_state_data = get_gluster_state(node2)
-        self.assertIsNotNone(get_state_data, "Getting gluster state failed.")
-        # Getting Brick 2 Status - It should be in Started State
-        brick_status = (get_state_data['Volumes']
-                        ['volume1.brick2.status'].strip())
-        self.assertEqual(brick_status, "Started",
-                         "The brick is not in Started State")
-        g.log.info("Brick2 is in started state.")
+        ret = redant.get_state(self.server_list[0])
+        if ret['Volumes']['volume1.brick1.status'].strip() != "Stopped":
+            raise Exception("Brick not in stopped mode after volume stop.")
 
-        # Bringing back the offline brick
-        offline_brick = get_offline_bricks_list(self.mnode, self.volname)
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  offline_brick)
-        self.assertTrue(ret, 'Failed to bring brick %s online' %
-                        offline_brick)
+        ret = redant.get_state(self.server_list[1])
+        if ret['Volumes']['volume1.brick2.status'].strip() != "Started":
+            raise Exception("Brick not in started mode after volume start")
 
-    def tearDown(self):
-        # stopping the volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume & Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # calling GlusterBaseClass tearDownClass
-        self.get_super_method(self, 'tearDown')()
+        offline_brick = redant.get_offline_bricks_list(self.vol_name,
+                                                       self.server_list[0])
+        if offline_brick is None:
+            raise Exception("Failed to get offline brick list for the volume"
+                            f" {self.vol_name} on node {self.server_list[0]}")
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
+                                          offline_brick):
+            raise Exception(f"Failed to get offline bricks {offline_brick} to"
+                            f" online state")
