@@ -431,6 +431,69 @@ class VolumeOps(AbstractOps):
 
         return ret_dict
 
+    def is_volume_started(self, volname: str, node: str) -> bool:
+        """
+        Function provides the state of the volume as whether started or stopped
+        in boolean.
+
+        Args:
+            volname (str): Name of the volume
+            node: (str): Node wherein the command is to be executed.
+
+        Returns:
+            boolean value. True if started, else False.
+        """
+        vol_status = self.get_volume_info(node, volname)[volname]['statusStr']
+        if vol_status == 'Started':
+            return True
+        return False
+
+    def wait_for_vol_to_go_offline(self, volname: str, node: str,
+                                   timeout: int = 120) -> bool:
+        """
+        Function to wait till the said volume goes offline.
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node wherein the status will be checked.
+            timeout (int): Optional parameter with default value of 120. We
+                           will wait for at max 120 seconds before exiting the
+                           function.
+
+        Returns:
+            True if offline else False.
+        """
+        itr = 0
+        while itr < timeout:
+            if not self.is_volume_started(volname, node):
+                return True
+            itr += 5
+            sleep(5)
+        return False
+
+    def wait_for_vol_to_come_online(self, volname: str, node: str,
+                                    timeout: int = 120) -> bool:
+        """
+        Function to wait till the said volume comes online.
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node wherein the status will be checked.
+            timeout (int): Optional parameter with default value of 120. We
+                           will wait for at max 120 seconds before exiting the
+                           function.
+
+        Returns:
+            True if online else False.
+        """
+        itr = 0
+        while itr < timeout:
+            if self.is_volume_started(volname, node):
+                return True
+            itr += 5
+            sleep(5)
+        return False
+
     def get_volume_list(self, node: str = None) -> list:
         """
         Fetches the volume names in the gluster.

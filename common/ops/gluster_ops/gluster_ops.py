@@ -4,6 +4,7 @@ operations on the glusterd service on the server
 or the client.
 """
 from time import sleep
+import configparser
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -268,3 +269,25 @@ class GlusterOps(AbstractOps):
         ret = self.execute_abstract_op_multinode(cmd, node)
 
         return ret['msg'].split(' ')[1]
+
+    def get_state(self, node: str) -> dict:
+        """
+        Function to get the gluster state data.
+
+        Args:
+            node (str): Node wherein the command is to be run.
+        Returns:
+            State dictionary.
+        """
+        cmd = ("gluster get-state")
+
+        ret = self.execute_abstract_op_node(cmd, node)
+        file_path = ret['msg'][0][ret['msg'][0].find('/'):-1]
+
+        cmd = (f"cat {file_path}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        state_string_val = "".join(ret['msg'])
+        config = configparser.ConfigParser()
+        config.read_string(state_string_val)
+        return {section: dict(config.items(section)) for section in
+                config.sections()}

@@ -663,7 +663,7 @@ class BrickOps:
         return self.wait_for_bricks_to_go_offline(volname, brick_list, timeout)
 
     # TODO Brick mux logic inclusion.
-    def bring_bricks_online(self, volname: str, server_list: str,
+    def bring_bricks_online(self, volname: str, server_list: list,
                             brick_list: list, disrup_method: bool = False,
                             timeout: int = 100) -> bool:
         """
@@ -673,7 +673,7 @@ class BrickOps:
         Args:
             volname (str): Name of the volume whose bricks have to be brought
                            online.
-            node_list (list): Nodes of the cluster.
+            server_list (list): Nodes of the cluster.
             brick_list (list): The bricks which are offline.
             disrup_method (bool): Whether to use a disruptive way of starting
                                   the bricks using glusterd start or a non
