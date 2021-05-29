@@ -36,3 +36,27 @@ class TestCase(NdParentTest):
                                                    False)
         if ret_dict['error_code'] != 0:
             raise Exception(f"Failure : {ret_dict['error_msg']}")
+
+        # Get stat of mountpoint
+        ret = redant.get_file_stat(self.client_list[0], self.mountpoint)
+        if ret['error_code'] != 0:
+            raise Exception(f"Stat failed for {self.mountpoint} on"
+                            f" {self.client_list[0]}")
+
+        # Get stat of non existant path
+        ret = redant.get_file_stat(self.client_list[0], "/mmmnt")
+        if ret['error_code'] == 0:
+            raise Exception(f"Stat should have failed for /mmmnt on "
+                            f" {self.client_list[0]}")
+
+        # Get file permission of mountpoint
+        ret = redant.get_file_permission(self.client_list[0], self.mountpoint)
+        if ret['error_code'] != 0:
+            raise Exception("Failed to get file permission on genuine file "
+                            f" {self.mountpoint} on {self.client_list[0]}")
+
+        # Get file permission on non existant path
+        ret = redant.get_file_permission(self.client_list[0], "/mmnntt")
+        if ret['error_code'] == 0:
+            raise Exception("Permission obtained for non existant file "
+                            f" /mmnntt on {self.client_list[0]}")

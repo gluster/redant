@@ -15,7 +15,7 @@ class IoOps(AbstractOps):
     the other the io_ops which execute on mountpoints.
     """
 
-    def create_file(self, path: str, filename: str, node: str):
+    def create_file(self, path: str, filename: str, node: str) -> bool:
         """
         Creates a file in the specified specified path
         Args:
@@ -24,12 +24,18 @@ class IoOps(AbstractOps):
             filename (str): Name of the file
             node (str): The node on which command
                         has to run.
+        Returns:
+            True if file is successfully created or already present and false
+            if file creation failed.
         """
         cmd = f"touch {path}/{filename}"
-        self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            return False
+        return True
 
     def create_dir(self, path: str, dirname: str, node: str,
-                   excep: bool = True):
+                   excep: bool = True) -> dict:
         """
         Creates a directory in the specified path
         Args:
@@ -40,6 +46,8 @@ class IoOps(AbstractOps):
                         has to run.
             excep (bool): Whether to bypass the exception handling in
                           abstract ops.
+        Returns:
+            ret_dict returned by the abstract ops.
         """
         cmd = f"mkdir -p {path}/{dirname}"
         return self.execute_abstract_op_node(cmd, node, excep)
@@ -102,6 +110,52 @@ class IoOps(AbstractOps):
 
         return True
 
+    def get_file_stat(self, node: str, path: str) -> str:
+        """
+        Function to get file stat.
+        Args:
+            node (str)
+            path (str)
+        Returns:
+            Dictionary of the form,
+            {
+              "error_code" : 0/something else,
+              "msg" : DICT or string of error
+            }
+        """
+        ret_val = {'error_code': 0, 'msg': ''}
+        cmd = (f"python3 /tmp/file_dir_ops.py stat {path}")
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            ret_val['error_code'] = ret['error_code']
+            ret_val['msg'] = ret['error_msg']
+            return ret_val
+        tmp_msg = ret['msg'][2:-3]
+        tmp_msg = tmp_msg[0][tmp_msg[0].find('{'):-1]
+        stat_res = {}
+        for list_val in tmp_msg.split(','):
+            tmp_val = list_val.split(':')
+            if len(tmp_val) == 1:
+                tmp_val = list_val.split('=')
+            if tmp_val[0].find('{') >= 0:
+                tmp_val[0] = tmp_val[0][1:]
+            if tmp_val[1].find('}') >= 0:
+                tmp_val[1] = tmp_val[1][:-1]
+            if tmp_val[1].find(')') >= 0:
+                tmp_val[1] = tmp_val[1][:-1]
+            tmp_val[0] = tmp_val[0].strip().replace("'", "")
+            tmp_val[1] = tmp_val[1].strip().replace("'", "")
+            if tmp_val[0] == 'stat':
+                tmp_val[0] = tmp_val[1][15:].split('=')[0]
+                tmp_val[1] = tmp_val[1][15:].split('=')[1]
+            if tmp_val[1].isdigit():
+                tmp_val[1] = float(tmp_val[1])
+                if tmp_val[1].is_integer():
+                    tmp_val[1] = int(tmp_val[1])
+            stat_res[tmp_val[0]] = tmp_val[1]
+        ret_val['msg'] = stat_res
+        return ret_val
+
     def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
                                     dir_depth: int, dir_length: int,
                                     max_no_dirs: int, no_files: int,
@@ -127,6 +181,29 @@ class IoOps(AbstractOps):
                f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
                f"--num-of-files {no_files} {path}")
         return self.execute_command_async(cmd, node)
+
+    def get_file_permission(self, node: str, path: str) -> dict:
+        """
+        Function to get file permissions.
+
+        Args:
+            node (str)
+            path (str)
+        Returns:
+            Dictionary has the following key-value pairs
+            1. error_code (int): 0 being success.
+            2. file_perm (int): valid file permission or 0 for error.
+        """
+        ret_val = {}
+        cmd = f'stat -c "%a" {path}'
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            ret_val['error_code'] = ret['error_code']
+            ret_val['file_perm'] = 0
+            return ret_val
+        ret_val['error_code'] = ret['error_code']
+        ret_val['file_perm'] = int(ret['msg'][0][:-1])
+        return ret_val
 
     def check_core_file_exists(self, nodes: list, testrun_timestamp,
                                paths=['/', '/var/log/core',
