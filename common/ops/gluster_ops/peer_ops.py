@@ -39,7 +39,8 @@ class PeerOps(AbstractOps):
 
         return ret
 
-    def peer_detach(self, server: str, node: str, force: bool = False) -> dict:
+    def peer_detach(self, server: str, node: str, force: bool = False,
+                    excep: bool = True) -> dict:
         """
         Detach the specified server.
         Args:
@@ -47,6 +48,10 @@ class PeerOps(AbstractOps):
             node (str): Node on which command has to be executed.
             force (bool): if set to true will exceute the peer
                           detach command with force option.
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
 
         Kwargs:
             force (bool): option to detach peer. Defaults to False.
@@ -67,7 +72,7 @@ class PeerOps(AbstractOps):
         else:
             cmd = f"gluster --xml peer detach {server} --mode=script"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
