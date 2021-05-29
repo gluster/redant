@@ -1,18 +1,14 @@
 """
-This part deals with the ops related to the bricks
-
-class - BrickOps
+Brick ops module deals with the functions related to brick related operations.
 """
+
+from time import sleep
+import random
 
 
 class BrickOps:
     """
-    It provides the following functionalities:
-
-    add_brick
-    remove_brick
-    replace_brick
-    reset_brick
+    Class which is responsible for methods for brick related operations.
     """
 
     def add_brick(self, volname: str, node: str,
@@ -556,3 +552,159 @@ class BrickOps:
             return offline_bricks_list
         self.logger.error(f"Key 'node' not in volume status of {volname}")
         return None
+
+    def wait_for_bricks_to_go_offline(self, volname: str, brick_list: list,
+                                      timeout: int = 100) -> bool:
+        """
+        Function to wait till the given set of bricks in brick list go offline.
+
+        Args:
+            volname (str): Name of the volume whose bricks are to be noticed.
+            brick_list (list): List of bricks which are to be brought down.
+            timeout (int): Optional parameter with defailt value 100. The
+            function waits for these many secondsat max till bricks go offline.
+
+        Returns:
+            True if the bricks go offline or False.
+        """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
+        nd_list = []
+        for brickd in brick_list:
+            if brickd.split(':')[0] not in nd_list:
+                nd_list.append(brickd.split(':')[0])
+        itr = 0
+        while itr < timeout:
+            random_node = random.choice(nd_list)
+            offline_brick_list = self.get_offline_bricks_list(volname,
+                                                              random_node)
+            if set(brick_list).issubset(set(offline_brick_list)):
+                return True
+            itr += 5
+            sleep(5)
+        self.logger.error(f"Current offline brick list : {offline_brick_list}"
+                          " Compared to expected offline brick list :"
+                          f" {brick_list}")
+        return False
+
+    def wait_for_bricks_to_come_online(self, volname: str, server_list: list,
+                                       brick_list: list,
+                                       timeout: int = 100) -> bool:
+        """
+        Function to wait till the given set of bricks in brick list come
+        online.
+
+        Args:
+            volname (str): Name of the volume whose bricks are to be brought
+                           online.
+            server_list (list): A list of servers which are hosting the volume.
+            brick_list (list): List of bricks which are to be brought up.
+            timeout (int): Optional parameter with defailt value 100. The
+                           function waits for these many seconds at max till
+                           bricks come online.
+
+        Returns:
+            True if the bricks come online or False.
+        """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
+        itr = 0
+        while itr < timeout:
+            random_node = random.choice(server_list)
+            online_brick_list = self.get_online_bricks_list(volname,
+                                                            random_node)
+            if set(brick_list).issubset(set(online_brick_list)):
+                return True
+            itr += 5
+            sleep(5)
+
+        self.logger.error(f"Current online brick list : {online_brick_list}"
+                          " Compared to expected online brick list :"
+                          f" {brick_list}")
+        return False
+
+    # TODO Brick mux logic inclusion.
+    def bring_bricks_offline(self, volname: str, brick_list: list,
+                             timeout: int = 100) -> bool:
+        """
+        Function to bring the given set of bricks offline.
+
+        Args:
+            volname (str): Name of the volume whose bricks are to be brought
+                           down.
+            brick_list (list): List of bricks which are to be brought down.
+            timeout (int): Optional parameter with defailt value 100. The
+            function waits for these many secondsat max till bricks go offline.
+
+        Returns:
+            True if the bricks are brought offline or False.
+        """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
+        self.logger.info(f"Getting {brick_list} offline.")
+        nd_list = []
+        for brick in brick_list:
+            nd, path = brick.split(":")
+            if nd not in nd_list:
+                nd_list.append(nd)
+            path = path.replace("/", "-")
+            cmd = (f"pid=`ps -ef | grep -ve 'grep' | grep -e '{nd}{path}.pid' "
+                   " | awk '{print $2}'` && kill -15 $pid || kill -9 $pid")
+            ret = self.execute_abstract_op_node(cmd, nd, False)
+            if ret['error_code'] != 0:
+                self.logger.error(f"Failed to bring {brick_list} offline."
+                                  f" As {cmd} failed on {nd}")
+                return False
+
+        # Wait till the said bricks come offline.
+        return self.wait_for_bricks_to_go_offline(volname, brick_list, timeout)
+
+    # TODO Brick mux logic inclusion.
+    def bring_bricks_online(self, volname: str, server_list: str,
+                            brick_list: list, disrup_method: bool = False,
+                            timeout: int = 100) -> bool:
+        """
+        Function to bring the bricks belonging to a volume online. One can
+        either use a disruptive mode to achive this or a non-disruptive way.
+
+        Args:
+            volname (str): Name of the volume whose bricks have to be brought
+                           online.
+            node_list (list): Nodes of the cluster.
+            brick_list (list): The bricks which are offline.
+            disrup_method (bool): Whether to use a disruptive way of starting
+                                  the bricks using glusterd start or a non
+                                  disruptive way of starting the bricks using
+                                  volume start with force option.
+            timeout (int): The timout till which we will check whether the
+                           bricks have come online.
+
+        Returns:
+            True if the bricks are online or False.
+        """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
+        if not disrup_method:
+            self.logger.info(f"Getting bricks {brick_list} online by forced"
+                             f" volume start of {volname}")
+            self.volume_start(volname, random.choice(server_list), True)
+        else:
+            self.logger.info(f"Getting bricks {brick_list} online by "
+                             " glusterd restart in respective nodes.")
+            node_list = []
+            for bdata in brick_list:
+                if bdata.split(':')[0] not in node_list:
+                    node_list.append(bdata.split(':')[0])
+            for nd in node_list:
+                self.restart_glusterd(nd)
+                self.wait_for_glusterd_to_start(nd)
+
+        self.wait_till_all_peers_connected(server_list)
+
+        # Wait till all said bricks are online.
+        return self.wait_for_bricks_to_come_online(volname, server_list,
+                                                   brick_list, timeout)

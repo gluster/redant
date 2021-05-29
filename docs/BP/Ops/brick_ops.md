@@ -1,151 +1,218 @@
-# Brick Ops :bricks:
+# Brick Ops:
 
 In this document, we will discuss about the set of functionalities in the brick ops. From the name itself, you can understand most of the functions but an explanation would never hurt.
-Let's go through it brick by brick :smiley:
+The code can be found at [brick_ops.py](../../../common/ops/gluster_ops/brick_ops.py)
 
-## add_brick():
-This method is used to add a brick or a set of bricks as per the volume type. The arguments that it takes:
+1) **add_brick**<br>
+		This method is used to add a brick or a set of bricks as per the volume type.
 
-```m
-volname (str): The volume in which the brick has to be added.
-node (str): The node on which the command is to be run.
-conf_hash (dict): Config hash providing parameters for adding
-bricks.
-server_list (list): List of servers provided.
-brick_root (list): List of brick root paths
-force (bool): If set to True will add force in the command
-being executed.
-```
+		Args:
+			1. volname (str): The volume in which the brick has to be added.
+			2. node (str): The node on which the command is to be run.
+			3. conf_hash (dict): Config hash providing parameters for adding bricks.
+			4. server_list (list): List of servers provided.
+			5. brick_root (list): List of brick root paths
+			6. force (bool): If set to True will add force in the command being executed.
+		Returns:
+			A dictionary consisting                                        
+            1. Flag : Flag to check if connection failed                 
+            2. msg : message                                             
+            3. error_msg: error message                                  
+            4. error_code: error code returned                           
+            5. cmd : command that got executed                           
+            6. node : node on which the command got executed
+		Example:
+			self.add_brick(self.vol_name, self.server_list[0], conf_hash, self.server_server, self.brick_root)
 
-### How does it work?
-
-There is a counter or multiplication factor `mul_fac` which stores the count of the number of bricks for a certain volume type. `num_bricks` takes care of the number of bricks to add over the existing set of bricks.
-
-The brick list `server_brick` is created by appending the new bricks' path and then the brick command string `brick_cmd` which is nothing but ` server:brick path ` is created. The ` brick_cmd ` is then passed to the final command `cmd` which is the complete command to be executed on the `node` to add the bricks. 
-
-```js
-brick_cmd = f"{server_val}:{brick_path_val}"
-
-bricks_list.append(brick_cmd)
-```        
-
-After a successful execution of the command the brick_root path in the volume data structure `volds` need to be modified with the new set of bricks added.
-```js
-   ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-
-    self.es.add_bricks_to_brickdata(volname, server_brick)
-```
-
-
-## remove_brick():
+2) **remove_brick**<br>
 Remove brick does the opposite of add_brick operation and that is it removes existing brick or bricks from the volume. It has almost the same set of arguments apart from `option` which stores the remove brick options like start, commit, stop etc:
 
-```m
-node (str): Node on which the command has to be executed.
-volname (str): The volume from which brick or a set of bricks have to be removed.
-conf_hash (dict):Config hash providing parameters for
-                deleting bricks
-brick_root (list): The list of brick root paths
-option (str): Remove brick options:
-            <start|stop|status|commit|force>
-```
+		Args:
+			1. node (str): Node on which the command has to be executed.
+			2. volname (str): The volume from which brick or a set of bricks have to be removed.
+			3. conf_hash (dict):Config hash providing parameters for deleting bricks
+			4. server_list (list): List of servers provided.
+			5. brick_root (list): The list of brick root paths
+			6. option (str): Remove brick options: <start|stop|status|commit|force>
+		Returns:
+			A dictionary consisting                                        
+            1. Flag : Flag to check if connection failed                 
+            2. msg : message                                             
+            3. error_msg: error message                                  
+            4. error_code: error code returned                           
+            5. cmd : command that got executed                           
+            6. node : node on which the command got executed
+		Example:
+			self.remove_brick(self.server_list[0], self.vol_name, conf_hash, self.server_server, self.brick_root, option)
 
-### How does it work?
+3) **replace_brick**<br>
+		This function replaces one brick with another brick or in other words, source brick with destination brick. For now, the arguments it takes include:
 
-It counts the number of bricks `num_brick`, creates the brick list `server_brick`, forms the brick command string `brick_cmd` and executes the final command `cmd`. After a successful operation it calls the `remove_bricks_from_brick_data` function to remove the deleted bricks from the volume data structure `volds`.
-```js
-ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-self.es.remove_bricks_from_brickdata(volname, server_brick)
-```
+		Args:
+			1. node (str): The node on which the command has to be executed
+			2. volname (str): The volume on which the bricks have to be replaced.
+			3. src_brick (str) : The source brick name
+			4. dest_brick (str) : The destination brick name
+		Returns:
+			A dictionary consisting                                        
+            1. Flag : Flag to check if connection failed                 
+            2. msg : message                                             
+            3. error_msg: error message                                  
+            4. error_code: error code returned                           
+            5. cmd : command that got executed                           
+            6. node : node on which the command got executed
+		Example:
+			self.replace_brick(self.server_list[0], self.vol_name, src_brick, dest_brick)
 
-## replace_brick():
+4) **reset-brick**<br>
+		This function resets a brick in the volume. Reset-brick is useful in case a disk goes bad etc. It provides support to reformat the disk that the brick represents in the volume
 
-This function replaces one brick with another brick or in other words, source brick with destination brick. For now, the arguments it takes include:
+		Args:
+			1. node (str) : Node on which the command has to be executed
+			2. volname (str) : Name of the volume on which the brick has to be reset
+			3. src_brick (str) : Name of the source brick
+			4. dst_brick (str) : Name of the destination brick
+			5. option (str) : Options for reset brick : start | commit | force
+		Returns:
+			A dictionary consisting                                        
+            1. Flag : Flag to check if connection failed                 
+            2. msg : message                                             
+            3. error_msg: error message                                  
+            4. error_code: error code returned                           
+            5. cmd : command that got executed                           
+            6. node : node on which the command got executed
+		Example:
+			self.reset_brick(self.server_list[0], self.vol_name, src_brick, option, dest_brick)
 
-```m
-node (str): The node on which the command has to be executed
-volname (str): The volume on which the bricks have to be replaced.
-src_brick (str) : The source brick name
-dest_brick (str) : The destination brick name
-```
+5) **form_brick_cmd**<br>
+		This function helps in creating the brick command from the brick paths. It requires the following arguments:
 
-### How does it work?
+		Args:
+			1. server_list (list): List of servers
+			2. brick_root (list) : List of brick roots
+			3. volname (str) : Name of the volume
+			4. mul_fac (int) : Stores the number of bricks needed to form the brick command
+		Returns:
+			A tuple containing
+				1. brick_dict (dict) : Dictionary of server and their corresponding brick roots.
+				2. brick_cmd (str) : Command which contains the brick paths.
+		Example:
+			self.form_brick_cmd(self.server_list, self.brick_root, self.vol_name, mul_factor)
 
-Its operation is quite simple. It just calls the command for replace-brick and passes the source brick path and destination brick path.
-For now, you need to pass hardcoded brick path values for source and destination brick but later we will try to bring certain modifications to make this function also automated like add and remove-brick.
+6) **cleanup_brick_dirs**<br>
+		Function for clearing out all the directory paths present in the cleands data structure.
 
-## reset-brick
+		Args:
+			None
+		Returns:
+			None
+		Example:
+			self.cleanup_brick_dirs()
 
-This function resets a brick in the volume. But why do we need to reset a brick :confused:? Reset-brick is useful in case a disk goes bad etc. It provides support to reformat the disk that the brick represents in the volume. Hence, this is an important function as well to test. Let's see how we are doing it here. First, the arguments that this function need:
+7) **are_bricks_offline**<br>
+		This function checks if the given list of bricks are offline.
 
-```m
-node (str) : Node on which the command has to be executed
-volname (str) : Name of the volume on which the brick
-                has to be reset
-src_brick (str) : Name of the source brick
-dst_brick (str) : Name of the destination brick
-option (str) : Options for reset brick : start | commit | force
-```
-It is almost same as replace-brick :nerd_face:. The arg `option` stores the option string that includes start, commit and force.
+		Args:
+		    1. volname (str) : Volume name
+    		2. bricks_list (list) : list of bricks to check
+    		3. node (str) : the node on which comparison has to be done
+    		4. strict (bool) : To check strictly if all bricks are offline or atleast one brick is offline.
+		Returns:
+    		boolean value: True, if bricks are offline else False
+		Example:
+			redant.are_bricks_offline(self.vol_name, bricks_list, self.server_list[0])
 
-### How does it work?
+8) **check_if_bricks_list_changed**<br>
+		Function checks if the bricks list changed. Basically, compares the bricks list with the bricks attained from volume info.
 
-It checks the value of option by comparing it with the various set of options possible and then form the command for reset-brick. If `force` value is **True** then force is appended to the command `cmd` else not. After this the command is executed to perform the reset-brick operation and the `ret` value is returned.
+ 		Args:
+    		1. bricks_list (list): list of bricks
+    		2. volname (str): Name of volume
+    		3. node (str): Node on which to execute vol info
 
-## form_brick_cmd()
+		Returns:
+			bool: True if list is changed else False
+		Example:
+			redant.check_if_bricks_list_changed(bricks_list, self.vol_name, self.server_list[0])
 
-This function helps in creating the brick command from the brick paths.
-It requires the following arguments:
+9) **get_all_bricks**<br>
+		Function to get the list of all the bricks of the specified volume.
 
-```m
-server_list (list): List of servers
-brick_root (list) : List of brick roots
-volname (str) : Name of the volume
-mul_fac (int) : Stores the number of bricks
-                needed to form the brick command
-```
+		Args:
+			1. volname (str): Name of the volume
+			2. node (str): The node wherein the command is executed.
+		Returns:
+			List of all bricks else None on failure.
+		Example:
+			self.get_all_bricks(self.vol_name, self.server_list[0])
 
-### How does it work?
+10) **get_online_bricks_list**<br>
+		Function to get the list of all bricks which are online.
 
-A loop runs from 0 to `mul_fac-1` and creates the brick command using the `server_val` and `brick_path_val`. The paths are appended in the brick_dict for the following servers and then are returned with the brick command `brick_cmd`.
+		Args:
+			1. volname (str): Name of the volume
+			2. node (str): Noe wherein the command is to be exexuted.
+		Returns:
+			List of bricks which are online in the format of server:brick_path on failure, if returns None
+		Example:
+			online_list = self.get_online_bricks_list(self.vol_name, self.server_list[2])
 
-## are_bricks_offline()
+11) **get_offline_bricks_list**<br>
+		Function to get the list of all bricks which are offline.
 
-This function checks if the given list of bricks are offline.
+		Args:
+			1. volname (str): Name of the volume
+			2. node (str): Noe wherein the command is to be exexuted.
+		Returns:
+			List of bricks which are offline in the format of server:brick_path on failure, if returns None
+		Example:
+			offline_list = self.get_offline_bricks_list(self.vol_name, self.server_list[2])
 
-```m
-Args:
-    volname (str) : Volume name
-    bricks_list (list) : list of bricks to check
-    node (str) : the node on which comparison has to be done
-    strict (bool) : To check strictly if all bricks are offline
-Returns:
-    boolean value: True, if bricks are offline
-                    False if online
-```
+11) **bring_bricks_offline**<br>
+		Function to bring the given seet of bricks offline.
 
-```js
-ex 1: redant.are_bricks_offline(self.vol_name, bricks_list, self.server_list[0])
+		Args:
+			1. volname (str): Name of the volume to which these bricks belong to.
+			2. brick_list (list): The list of bricks which are to be brought offline.
+			3. timeout (int): optional parameter with default value as 100. The function waits for these many seconds for the bricks to go offline at max.
+		Returns:
+			True if bricks have been successfully brough offline else False.
+		Example:
+			self.bring_bricks_offline(self.volname, self.brick_list[2:4])
 
-ex 2: redant.are_bricks_offline(self.vol_name, bricks_list, self.server_list[0], False)
-```
+12) **bring_bricks_online**<br>
+		Function to bring the given seet of bricks online.
 
-## check_if_bricks_list_changed()
+		Args:
+			1. volname (str): Name of the volume to which these bricks belong to.
+			2. brick_list (list): The list of bricks which are to be brought online.
+			3. timeout (int): optional parameter with default value as 100. The function waits for these many seconds for the bricks to come online at max.
+		Returns:
+			True if bricks have been successfully brough online else False.
+		Example:
+			self.bring_bricks_offline(self.volname, self.brick_list[2:4])
 
-It checks if the bricks list changed. Basically, compares the bricks list with the bricks attained from volume info.
+13) **wait_for_bricks_to_go_offline**<br>
+		Function to wait till a given set of bricks go offline
 
-```m
- Args:
-    bricks_list: list of bricks
-    volname: Name of volume
-    node: Node on which to execute vol info
+		Args:
+			1. volname (str): Name of the volume whose bricks are to be noticed.
+			2. brick_list (list): The list of bricks which are expected to go offline.
+			3. timeout (int): optional parameter with default value as 100. The function waits for these many seconds for the bricks to go offline at max.
+		Returns:
+			True if bricks have been successfully gone offline else False.
+		Example:
+			self.wait_for_bricks_to_go_offline(self.vol_name, self.brick_list, timeout)
 
-Returns:
-bool: True is list changed
-        else False
-```
+14) **wait_for_bricks_to_come_online**<br>
+		Function to wait till a given set of bricks come online
 
-```js
-Ex:
-redant.check_if_bricks_list_changed(bricks_list, self.vol_name, self.server_list[0])
-```
+		Args:
+			1. volname (str): Name of the volume whose bricks are to be noticed.
+			2. server_list (str): The list of nodes wherein the volume is hosted.
+			2. brick_list (list): The list of bricks which are expected to come online.
+			3. timeout (int): optional parameter with default value as 100. The function waits for these many seconds for the bricks to come online at max.
+		Returns:
+			True if bricks have been successfully come online else False.
+		Example:
+			self.wait_for_bricks_to_come_online(self.volname, self.server_list, self.brick_list, timeout)
