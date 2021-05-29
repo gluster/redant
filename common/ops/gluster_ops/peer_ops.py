@@ -344,4 +344,5 @@ class PeerOps(AbstractOps):
                 return True
             sleep(1)
             iter_v += 1
-        return self.validate_peers_are_connected(server_list)
+
+        return False
