@@ -89,7 +89,7 @@ class TestCase(DParentTest):
                                f"{mount_obj['mountpath']}")
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
                                                       self.counter,
-                                                      4, 6, 3, 5,
+                                                      2, 6, 3, 5,
                                                       mount_obj['client'])
 
             self.list_of_procs.append(proc)
