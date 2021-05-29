@@ -553,6 +553,81 @@ class BrickOps:
         self.logger.error(f"Key 'node' not in volume status of {volname}")
         return None
 
+    def wait_for_bricks_to_go_offline(self, volname: str, brick_list: list,
+                                      timeout: int = 100) -> bool:
+        """
+        Function to wait till the given set of bricks in brick list go offline.
+
+        Args:
+            volname (str): Name of the volume whose bricks are to be noticed.
+            brick_list (list): List of bricks which are to be brought down.
+            timeout (int): Optional parameter with defailt value 100. The
+            function waits for these many secondsat max till bricks go offline.
+
+        Returns:
+            True if the bricks go offline or False.
+        """
+        nd_list = []
+        for brickd in brick_list:
+            node, _ = brickd.split(':')
+            if node not in nd_list:
+                nd_list.append(node)
+        itr = 0
+        while itr < timeout:
+            random_node = random.choice(nd_list)
+            offline_brick_list = self.get_offline_bricks_list(volname,
+                                                              random_node)
+            if set(brick_list).issubset(set(offline_brick_list)):
+                return True
+            itr += 5
+            sleep(5)
+
+        offline_brick_list = self.get_offline_bricks_list(volname, nd_list[0])
+        if set(brick_list).issubset(set(offline_brick_list)):
+            return True
+        self.logger.error(f"Current offline brick list : {offline_brick_list}"
+                          " Compared to expected offline brick list :"
+                          f" {brick_list}")
+        return False
+
+    def wait_for_bricks_to_come_online(self, volname: str, server_list: list,
+                                       brick_list: list,
+                                       timeout: int = 100) -> bool:
+        """
+        Function to wait till the given set of bricks in brick list come
+        online.
+
+        Args:
+            volname (str): Name of the volume whose bricks are to be brought
+                           online.
+            server_list (list): A list of servers which are hosting the volume.
+            brick_list (list): List of bricks which are to be brought up.
+            timeout (int): Optional parameter with defailt value 100. The
+                           function waits for these many seconds at max till
+                           bricks come online.
+
+        Returns:
+            True if the bricks come online or False.
+        """
+        itr = 0
+        while itr < timeout:
+            random_node = random.choice(server_list)
+            online_brick_list = self.get_online_bricks_list(volname,
+                                                            random_node)
+            if set(brick_list).issubset(set(online_brick_list)):
+                return True
+            itr += 5
+            sleep(5)
+
+        online_brick_list = self.get_online_bricks_list(volname,
+                                                        server_list[0])
+        if set(brick_list).issubset(set(online_brick_list)):
+            return True
+        self.logger.error(f"Current online brick list : {online_brick_list}"
+                          " Compared to expected online brick list :"
+                          f" {brick_list}")
+        return False
+
     # TODO Brick mux logic inclusion.
     def bring_bricks_offline(self, volname: str, brick_list: list,
                              timeout: int = 100) -> bool:
@@ -563,6 +638,8 @@ class BrickOps:
             volname (str): Name of the volume whose bricks are to be brought
                            down.
             brick_list (list): List of bricks which are to be brought down.
+            timeout (int): Optional parameter with defailt value 100. The
+            function waits for these many secondsat max till bricks go offline.
 
         Returns:
             True if the bricks are brought offline or False.
@@ -583,23 +660,7 @@ class BrickOps:
                 return False
 
         # Wait till the said bricks come offline.
-        itr = 0
-        while itr < timeout:
-            random_node = random.choice(nd_list)
-            offline_brick_list = self.get_offline_bricks_list(volname,
-                                                              random_node)
-            if set(brick_list).issubset(set(offline_brick_list)):
-                return True
-            itr += 5
-            sleep(5)
-
-        offline_brick_list = self.get_offline_bricks_list(volname, nd_list[0])
-        if set(brick_list).issubset(set(offline_brick_list)):
-            return True
-        self.logger.error(f"Current offline brick list : {offline_brick_list}"
-                          " Compared to expected offline brick list :"
-                          f" {brick_list}")
-        return False
+        return self.wait_for_bricks_to_go_offline(volname, brick_list, timeout)
 
     # TODO Brick mux logic inclusion.
     def bring_bricks_online(self, volname: str, server_list: str,
@@ -642,21 +703,5 @@ class BrickOps:
         self.wait_till_all_peers_connected(server_list)
 
         # Wait till all said bricks are online.
-        itr = 0
-        while itr < timeout:
-            random_node = random.choice(server_list)
-            online_brick_list = self.get_online_bricks_list(volname,
-                                                            random_node)
-            if set(brick_list).issubset(set(online_brick_list)):
-                return True
-            itr += 5
-            sleep(5)
-
-        online_brick_list = self.get_online_bricks_list(volname,
-                                                        server_list[0])
-        if set(brick_list).issubset(set(online_brick_list)):
-            return True
-        self.logger.error(f"Current online brick list : {online_brick_list}"
-                          " Compared to expected online brick list :"
-                          f" {brick_list}")
-        return False
+        return self.wait_for_bricks_to_come_online(volname, server_list,
+                                                   brick_list, timeout)
