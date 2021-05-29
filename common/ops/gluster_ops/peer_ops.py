@@ -76,10 +76,9 @@ class PeerOps(AbstractOps):
 
         for server in servers:
             if server not in nodes_in_pool_list:
-                ret = self.peer_probe(server, node)
+                ret = self.peer_probe(server, node, False)
                 if (ret['error_code'] != 0
-                        or re.search(r'^peer\sprobe\:\ssuccess(.*)',
-                                     ret['msg'][0].rstrip('\n')) is None):
+                        or ret['msg']['output'] != 'success'):
                     self.logger.error("Failed to peer probe the node"
                                       f" {server}")
                     return False
