@@ -367,7 +367,7 @@
             
 
 16) **volume_sync**<br>
-    Sync the volume to the specified host
+	    Sync the volume to the specified host
     
         Args:
             hostname (str): host name to which volume has to be sync'ed
@@ -387,3 +387,38 @@
                 - node : node on which the command got executed
          Example:
             volume_sync(hostname,self.server_list[0])
+
+17) **is_volume_started**<br>
+		Function to check whether a said volume is in started state.
+
+		Args:
+			1. volname (str): The name of the volume
+			2. node (str): node wherein the command is to be run
+		Returns:
+			True if in Started state else False
+		Example:
+			self.is_volume_started(self.vol_name, self.server_list[0])
+
+18) **wait_for_vol_to_go_offline**<br>
+		Function to wait till the said volume goes offline.
+
+		Args:
+			1. volname (str): Name of the volume.
+			2. node (str): Node wherein the command is to be checked.
+			3. timeout (int): Optional argument with default value of 120. Function will wait for at max the timeout value for the volume to go offline.
+		Returns:
+			True if it goes offline, else False
+		Example:
+			self.wait_for_vol_to_go_offline(self.vol_name, self.server_list[0])
+
+18) **wait_for_vol_to_come_online**<br>
+		Function to wait till the said volume comes online.
+
+		Args:
+			1. volname (str): Name of the volume.
+			2. node (str): Node wherein the command is to be checked.
+			3. timeout (int): Optional argument with default value of 120. Function will wait for at max the timeout value for the volume to comes online.
+		Returns:
+			True if it comes online, else False
+		Example:
+			self.wait_for_vol_to_come_online(self.vol_name, self.server_list[0])

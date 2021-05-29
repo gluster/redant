@@ -277,7 +277,7 @@ class GlusterOps(AbstractOps):
         Args:
             node (str): Node wherein the command is to be run.
         Returns:
-            State dictionary or None if there's any failure.
+            State dictionary.
         """
         cmd = ("gluster get-state")
 
