@@ -4,7 +4,6 @@ holds APIS related to peers which will be called
 from the test case.
 """
 
-import re
 import random
 from time import sleep
 import socket
@@ -164,10 +163,9 @@ class PeerOps(AbstractOps):
             servers.remove(node)
 
         for server in servers:
-            ret = self.peer_detach(server, node, force)
+            ret = self.peer_detach(server, node, force, False)
             if (ret['error_code'] != 0
-                    or re.search(r'^peer\sdetach\:\ssuccess(.*)',
-                                 ret['msg'][0].rstrip('\n')) is None):
+                    or ret['msg']['output'] != 'success'):
                 self.logger.error(f"Failed to detach the node {server}")
                 return False
 
