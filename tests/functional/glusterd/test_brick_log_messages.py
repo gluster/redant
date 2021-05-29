@@ -1,5 +1,5 @@
 """
- Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
+ Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,16 +16,17 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    Check volume status inode and fd while IO is in progress
+    No Errors should generate in brick logs after deleting files
+    from mountpoint
 """
 
-# nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 import traceback
-import random
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
+
+# disruptive;dist-rep
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
 
     def terminate(self):
         """
@@ -46,14 +47,11 @@ class TestCase(NdParentTest):
 
     def run_test(self, redant):
         '''
-        Create any type of volume then mount the volume, once
-        volume mounted successfully on client, start running IOs on
-        mount point then run the "gluster volume status volname inode"
-        command on all clusters randomly.
-            "gluster volume status volname inode" command should not get
-        hang while IOs in progress.
-        Then check that IOs completed successfully or not on mount point.
-        Check that files in mount point listing properly or not.
+        -> Create volume
+        -> Mount volume
+        -> write files on mount point
+        -> delete files from mount point
+        -> check for any errors filled in all brick logs
         '''
 
         # Get mountpoint list
@@ -74,44 +72,57 @@ class TestCase(NdParentTest):
                                f"{mount_obj['mountpath']}")
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
                                                       self.counter,
-                                                      2, 5, 5, 10,
+                                                      2, 5, 3, 10,
                                                       mount_obj['client'])
 
             self.list_of_procs.append(proc)
             self.counter += 10
-
-        # performing  "gluster volume status volname inode" command on
-        # all cluster servers randomly while io is in progress,
-        # this command should not get hang while io is in progress
-        # pylint: disable=unused-variable
-        for i in range(20):
-            cmd = (f"gluster --timeout=12000 volume status {self.vol_name}"
-                   f" inode")
-            server = random.choice(self.server_list)
-            redant.execute_abstract_op_node(cmd, server)
-            redant.logger.info(f"Successful in logging volume status"
-                               f"inode of volume {self.vol_name}")
-
-        # Merged the TC test_volume_status_fd into this one
-
-        # performing  "gluster volume status volname fd" command on
-        # all cluster servers randomly while io is in progress,
-        # this command should not get hang while io is in progress
-        count = 0
-        while count < 300:
-            cmd = f"gluster volume status {self.vol_name} fd"
-            server = random.choice(self.server_list)
-            redant.execute_abstract_op_node(cmd, server)
-            redant.logger.info(f"Successful in logging volume status"
-                               f"fd of volume {self.vol_name}")
-            count += 1
 
         # Validate IO
         ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
         if not ret:
             raise Exception("IO validation failed")
 
-        # List all files and dirs created
-        ret = redant.list_all_files_and_dirs_mounts(self.mnt_list)
-        if not ret:
-            raise Exception("Failed to list all files and dirs")
+        # Getting timestamp
+        ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
+        timestamp = ret['msg'][0].rstrip('\n')
+
+        # Getting all bricks
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if brick_list is None:
+            raise Exception("Failed to get brick list")
+
+        # Creating dictionary for each node brick path,
+        # here nodes are keys and brick paths are values
+        brick_path_dict = {}
+        for brick in brick_list:
+            node, brick_path = brick.split(r':')
+            brick_path_list = brick_path.split(r'/')
+            del brick_path_list[0]
+            brick_log_path = '-'.join(brick_path_list)
+            brick_path_dict[node] = brick_log_path
+
+        brick_log_dir = "/var/log/glusterfs/bricks"
+        for node in brick_path_dict:
+            #  Copying brick logs into other file for backup purpose
+            cmd = (f"cp {brick_log_dir}/{brick_path_dict[node]}.log "
+                   f"{brick_log_dir}/{brick_path_dict[node]}_{timestamp}.log")
+            redant.execute_abstract_op_node(cmd, node)
+
+            # Clearing the existing brick log file
+            cmd = f"> {brick_log_dir}/{brick_path_dict[node]}.log"
+            ret = redant.execute_abstract_op_node(cmd, node)
+
+        # Deleting files from mount point
+        cmd = f"rm -rf {self.mnt_list[0]['mountpath']}/*"
+        ret = redant.execute_abstract_op_node(cmd, self.mnt_list[0]['client'])
+
+        # Searching for error messages in brick logs after deleting
+        # files from mountpoint
+        for node in brick_path_dict:
+            cmd = (f"grep ' E ' {brick_log_dir}/{brick_path_dict[node]}.log"
+                   " | wc -l")
+            ret = redant.execute_abstract_op_node(cmd, node)
+            if int(ret['msg'][0].rstrip('\n')) != 0:
+                raise Exception("Found error messages in brick logs on"
+                                f" {node}")

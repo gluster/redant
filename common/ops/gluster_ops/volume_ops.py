@@ -67,67 +67,6 @@ class VolumeOps(AbstractOps):
         ret = self.volume_start(volname, node, excep)
         return ret
 
-    def volume_mount(self, server: str, volname: str,
-                     path: str, node: str = None, excep: bool = True):
-        """
-        Mounts the gluster volume to the client's filesystem.
-        Args:
-            node (str): The client node in the cluster where volume
-                        mount is to be run
-            server (str): Hostname or IP address
-            volname (str): Name of volume to be mounted
-            path (str): The path of the mount directory(mount point)
-            excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
-                          the exception is bypassed and value from remote
-                          executioner is returned. Defaults to True
-
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-
-        """
-
-        cmd = f"mount -t glusterfs {server}:/{volname} {path}"
-
-        ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.add_new_mountpath(volname, node, path)
-        return ret
-
-    def volume_unmount(self, volname: str, path: str, node: str = None,
-                       excep: bool = True):
-        """
-        Unmounts the gluster volume .
-        Args:
-            volname (str): The volume whose mt pt. is to be unmounted.
-            node (str): The client node in the cluster where volume
-                        unmount is to be run
-            server (str): Hostname or IP address
-            path (str): The path of the mount directory(mount point)
-            excep (bool): To bypass or not to bypass the exception handling.
-
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-
-        """
-
-        cmd = f"umount {path}"
-
-        ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.remove_mountpath(volname, node, path)
-        return ret
-
     def volume_create(self, volname: str, node: str, conf_hash: dict,
                       server_list: list, brick_root: list,
                       force: bool = False, excep: bool = True):

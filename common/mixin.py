@@ -13,10 +13,11 @@ from .ops.gluster_ops.gluster_ops import GlusterOps
 from .ops.gluster_ops.brick_ops import BrickOps
 from .ops.gluster_ops.profile_ops import ProfileOps
 from .ops.gluster_ops.rebalance_ops import RebalanceOps
+from .ops.gluster_ops.mount_ops import MountOps
 
 
 class RedantMixin(GlusterOps, VolumeOps, BrickOps, PeerOps,
-                  IoOps, MachineOps, ProfileOps, RebalanceOps,
+                  IoOps, MachineOps, MountOps, ProfileOps, RebalanceOps,
                   Rexe, Logger):
     """
     A mixin class for redant project to encompass all ops, support
