@@ -5,6 +5,7 @@ Brick ops module deals with the functions related to brick related operations.
 from time import sleep
 import random
 
+
 class BrickOps:
     """
     Class which is responsible for methods for brick related operations.
@@ -554,7 +555,7 @@ class BrickOps:
 
     # TODO Brick mux logic inclusion.
     def bring_bricks_offline(self, volname: str, brick_list: list,
-                             timeout: int=100) -> bool:
+                             timeout: int = 100) -> bool:
         """
         Function to bring the given set of bricks offline.
 
@@ -602,8 +603,8 @@ class BrickOps:
 
     # TODO Brick mux logic inclusion.
     def bring_bricks_online(self, volname: str, server_list: str,
-                            brick_list: list, disrup_method: bool=False,
-                            timeout: int=100) -> bool:
+                            brick_list: list, disrup_method: bool = False,
+                            timeout: int = 100) -> bool:
         """
         Function to bring the bricks belonging to a volume online. One can
         either use a disruptive mode to achive this or a non-disruptive way.
@@ -626,7 +627,7 @@ class BrickOps:
         if not disrup_method:
             self.logger.info(f"Getting bricks {brick_list} online by forced"
                              f" volume start of {volname}")
-            ret = self.volume_start(volname, random.choice(server_list), True)
+            self.volume_start(volname, random.choice(server_list), True)
         else:
             self.logger.info(f"Getting bricks {brick_list} online by "
                              " glusterd restart in respective nodes.")
@@ -651,7 +652,8 @@ class BrickOps:
             itr += 5
             sleep(5)
 
-        online_brick_list = self.get_online_bricks_list(volname, node)
+        online_brick_list = self.get_online_bricks_list(volname,
+                                                        server_list[0])
         if set(brick_list).issubset(set(online_brick_list)):
             return True
         self.logger.error(f"Current online brick list : {online_brick_list}"

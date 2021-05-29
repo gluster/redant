@@ -1,62 +1,49 @@
-# Brick Ops :bricks:
+# Brick Ops:
 
 In this document, we will discuss about the set of functionalities in the brick ops. From the name itself, you can understand most of the functions but an explanation would never hurt.
-Let's go through it brick by brick :smiley:
+The code can be found at [brick_ops.py](../../../common/ops/gluster_ops/brick_ops.py)
 
-## add_brick():
-This method is used to add a brick or a set of bricks as per the volume type. The arguments that it takes:
+1) **add_brick**<br>
+		This method is used to add a brick or a set of bricks as per the volume type.
 
-```m
-volname (str): The volume in which the brick has to be added.
-node (str): The node on which the command is to be run.
-conf_hash (dict): Config hash providing parameters for adding
-bricks.
-server_list (list): List of servers provided.
-brick_root (list): List of brick root paths
-force (bool): If set to True will add force in the command
-being executed.
-```
+		Args:
+			1. volname (str): The volume in which the brick has to be added.
+			2. node (str): The node on which the command is to be run.
+			3. conf_hash (dict): Config hash providing parameters for adding bricks.
+			4. server_list (list): List of servers provided.
+			5. brick_root (list): List of brick root paths
+			6. force (bool): If set to True will add force in the command being executed.
+		Returns:
+			A dictionary consisting                                        
+            1. Flag : Flag to check if connection failed                 
+            2. msg : message                                             
+            3. error_msg: error message                                  
+            4. error_code: error code returned                           
+            5. cmd : command that got executed                           
+            6. node : node on which the command got executed
+		Example:
+			self.add_brick(self.vol_name, self.server_list[0], conf_hash, self.server_server, self.brick_root)
 
-### How does it work?
-
-There is a counter or multiplication factor `mul_fac` which stores the count of the number of bricks for a certain volume type. `num_bricks` takes care of the number of bricks to add over the existing set of bricks.
-
-The brick list `server_brick` is created by appending the new bricks' path and then the brick command string `brick_cmd` which is nothing but ` server:brick path ` is created. The ` brick_cmd ` is then passed to the final command `cmd` which is the complete command to be executed on the `node` to add the bricks. 
-
-```js
-brick_cmd = f"{server_val}:{brick_path_val}"
-
-bricks_list.append(brick_cmd)
-```        
-
-After a successful execution of the command the brick_root path in the volume data structure `volds` need to be modified with the new set of bricks added.
-```js
-   ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-
-    self.es.add_bricks_to_brickdata(volname, server_brick)
-```
-
-
-## remove_brick():
+2) **remove_brick**<br>
 Remove brick does the opposite of add_brick operation and that is it removes existing brick or bricks from the volume. It has almost the same set of arguments apart from `option` which stores the remove brick options like start, commit, stop etc:
 
-```m
-node (str): Node on which the command has to be executed.
-volname (str): The volume from which brick or a set of bricks have to be removed.
-conf_hash (dict):Config hash providing parameters for
-                deleting bricks
-brick_root (list): The list of brick root paths
-option (str): Remove brick options:
-            <start|stop|status|commit|force>
-```
-
-### How does it work?
-
-It counts the number of bricks `num_brick`, creates the brick list `server_brick`, forms the brick command string `brick_cmd` and executes the final command `cmd`. After a successful operation it calls the `remove_bricks_from_brick_data` function to remove the deleted bricks from the volume data structure `volds`.
-```js
-ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-self.es.remove_bricks_from_brickdata(volname, server_brick)
-```
+		Args:
+			1. node (str): Node on which the command has to be executed.
+			2. volname (str): The volume from which brick or a set of bricks have to be removed.
+			3. conf_hash (dict):Config hash providing parameters for deleting bricks
+			4. server_list (list): List of servers provided.
+			5. brick_root (list): The list of brick root paths
+			6. option (str): Remove brick options: <start|stop|status|commit|force>
+		Returns:
+			A dictionary consisting                                        
+            1. Flag : Flag to check if connection failed                 
+            2. msg : message                                             
+            3. error_msg: error message                                  
+            4. error_code: error code returned                           
+            5. cmd : command that got executed                           
+            6. node : node on which the command got executed
+		Example:
+			self.remove_brick(self.server_list[0], self.vol_name, conf_hash, self.server_server, self.brick_root, option)
 
 ## replace_brick():
 
