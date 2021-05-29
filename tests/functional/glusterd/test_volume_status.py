@@ -29,9 +29,8 @@ class TestCase(NdParentTest):
 
     def terminate(self):
         """
-        In case the test fails midway and one of the nodes has
-        glusterd stopped then the glusterd is started on that node
-        and then the terminate function in the DParentTest is called
+        In case the test fails midway then wait for IO to comlete before
+        calling the terminate function of DParentTest
         """
         try:
             ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
@@ -61,7 +60,11 @@ class TestCase(NdParentTest):
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Check if the volume is mounted
-        redant.get_mounts_stat(self.mnt_list)
+        for mount_obj in self.mnt_list:
+            ret = redant.is_mounted(self.vol_name, mount_obj['mountpath'],
+                                    mount_obj['client'], self.server_list[0])
+            if not ret:
+                raise Exception(f"Volume {self.vol_name} is not mounted")
 
         # run IO on mountpoint
         self.list_of_procs = []

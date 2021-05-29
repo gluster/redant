@@ -1,84 +1,51 @@
-#  Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
 
-""" Description:
-        No Errors should generate in brick logs after deleting files
-        from mountpoint
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    No Errors should generate in brick logs after deleting files
+    from mountpoint
 """
 
-from glusto.core import Glusto as g
+import traceback
+from tests.d_parent_test import DParentTest
 
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import validate_io_procs
-from glustolibs.gluster.mount_ops import is_mounted
+# disruptive;dist-rep
 
 
-@runs_on([['distributed-replicated'], ['glusterfs']])
-class TestAddBrickFunctionality(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.counter = 1
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Uploading file_dir script in all client direcotries
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
+    def terminate(self):
         """
-        setUp method for every test
+        In case the test fails midway then wait for IO to comlete before
+        calling the terminate function of DParentTest
         """
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
 
-        # Creating Volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed for %s"
-                                 % self.volname)
-        g.log.info("Volme created and mounted successfully : %s",
-                   self.volname)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def tearDown(self):
-        """
-        tearDown for every test
-        """
-
-        # stopping the volume and Cleaning up the volume
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed Cleanup the Volume %s" % self.volname)
-        g.log.info("Volume deleted successfully : %s", self.volname)
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_brick_log_messages(self):
+    def run_test(self, redant):
         '''
         -> Create volume
         -> Mount volume
@@ -87,48 +54,43 @@ class TestAddBrickFunctionality(GlusterBaseClass):
         -> check for any errors filled in all brick logs
         '''
 
-        # checking volume mounted or not
-        for mount_obj in self.mounts:
-            ret = is_mounted(self.volname, mount_obj.mountpoint, self.mnode,
-                             mount_obj.client_system, self.mount_type)
-            self.assertTrue(ret, "Not mounted on %s"
-                            % mount_obj.client_system)
-            g.log.info("Mounted on %s", mount_obj.client_system)
+        # Get mountpoint list
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-        # run IOs
-        g.log.info("Starting IO on all mounts...")
-        self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 5 "
-                   "--max-num-of-dirs 3 "
-                   "--num-of-files 10 %s" % (self.script_upload_path,
-                                             self.counter,
-                                             mount_obj.mountpoint))
+        # Check if the volume is mounted
+        for mount_obj in self.mnt_list:
+            ret = redant.is_mounted(self.vol_name, mount_obj['mountpath'],
+                                    mount_obj['client'], self.server_list[0])
+            if not ret:
+                raise Exception(f"Volume {self.vol_name} is not mounted")
 
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            self.all_mounts_procs.append(proc)
-            self.counter = self.counter + 10
+        # run IO on mountpoint
+        self.list_of_procs = []
+        self.counter = 1
+        for mount_obj in self.mnt_list:
+            redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                               f"{mount_obj['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      self.counter,
+                                                      2, 5, 3, 10,
+                                                      mount_obj['client'])
+
+            self.list_of_procs.append(proc)
+            self.counter += 10
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
 
         # Getting timestamp
-        _, timestamp, _ = g.run_local('date +%s')
-        timestamp = timestamp.strip()
+        ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
+        timestamp = ret['msg'][0].rstrip('\n')
 
         # Getting all bricks
-        brick_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(brick_list, "Failed to get brick list")
-        g.log.info("Successful in getting brick list %s", brick_list)
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if brick_list is None:
+            raise Exception("Failed to get brick list")
 
         # Creating dictionary for each node brick path,
         # here nodes are keys and brick paths are values
@@ -140,39 +102,27 @@ class TestAddBrickFunctionality(GlusterBaseClass):
             brick_log_path = '-'.join(brick_path_list)
             brick_path_dict[node] = brick_log_path
 
+        brick_log_dir = "/var/log/glusterfs/bricks"
         for node in brick_path_dict:
             #  Copying brick logs into other file for backup purpose
-            ret, _, _ = g.run(node, 'cp /var/log/glusterfs/bricks/%s.log '
-                                    '/var/log/glusterfs/bricks/%s_%s.log'
-                              % (brick_path_dict[node], brick_path_dict[node],
-                                 timestamp))
-            if ret:
-                raise ExecutionError("Failed to copy brick logs of %s" % node)
-            g.log.info("Brick logs copied successfully on node %s", node)
+            cmd = (f"cp {brick_log_dir}/{brick_path_dict[node]}.log "
+                   f"{brick_log_dir}/{brick_path_dict[node]}_{timestamp}.log")
+            redant.execute_abstract_op_node(cmd, node)
 
             # Clearing the existing brick log file
-            ret, _, _ = g.run(node, 'echo > /var/log/glusterfs/bricks/%s.log'
-                              % brick_path_dict[node])
-            if ret:
-                raise ExecutionError("Failed to clear brick log file on %s"
-                                     % node)
-            g.log.info("Successfully cleared the brick log files on node %s",
-                       node)
+            cmd = f"> {brick_log_dir}/{brick_path_dict[node]}.log"
+            ret = redant.execute_abstract_op_node(cmd, node)
 
         # Deleting files from mount point
-        ret, _, _ = g.run(self.mounts[0].client_system, 'rm -rf %s/*'
-                          % self.mounts[0].mountpoint)
-        self.assertEqual(ret, 0, "Failed to delete files from mountpoint %s"
-                         % self.mounts[0].mountpoint)
-        g.log.info("Files deleted successfully from mountpoint %s",
-                   self.mounts[0].mountpoint)
+        cmd = f"rm -rf {self.mnt_list[0]['mountpath']}/*"
+        ret = redant.execute_abstract_op_node(cmd, self.mnt_list[0]['client'])
 
         # Searching for error messages in brick logs after deleting
         # files from mountpoint
         for node in brick_path_dict:
-            ret, out, _ = g.run(
-                node, "grep ' E ' /var/log/glusterfs/bricks/%s.log | wc -l" %
-                brick_path_dict[node])
-            self.assertEqual(int(out), 0, "Found Error messages in brick "
-                                          "log %s" % node)
-            g.log.info("No error messages found in brick log %s", node)
+            cmd = (f"grep ' E ' {brick_log_dir}/{brick_path_dict[node]}.log"
+                   " | wc -l")
+            ret = redant.execute_abstract_op_node(cmd, node)
+            if int(ret['msg'][0].rstrip('\n')) != 0:
+                raise Exception("Found error messages in brick logs on"
+                                f" {node}")
