@@ -43,8 +43,8 @@ class TestCase(DParentTest):
             raise Exception(f"{brick_list} still offline.")
 
         redant.stop_glusterd(self.server_list[1])
-        redant.wait_for_glusterd_to_stop(self.server_list[1])
-        if redant.is_glusterd_running(self.server_list[1]):
+        if not redant.wait_for_glusterd_to_stop(self.server_list[1]):
+            # if redant.is_glusterd_running(self.server_list[1]):
             raise Exception(f"Glusterd not stopped on {self.server_list[1]}")
 
         redant.logger.info(f"Stopped glusterd on {self.server_list[1]}")
@@ -59,8 +59,8 @@ class TestCase(DParentTest):
 
         redant.start_glusterd(self.server_list[1])
 
-        redant.wait_for_glusterd_to_start(self.server_list[1])
-        if not redant.is_glusterd_running(self.server_list[1]):
+        if not redant.wait_for_glusterd_to_start(self.server_list[1]):
+            # if not redant.is_glusterd_running(self.server_list[1]):
             raise Exception(f"Glusterd not started on {self.server_list[1]}")
 
         redant.logger.info(f"Started glusterd on {self.server_list[1]}")

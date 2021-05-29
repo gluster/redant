@@ -567,11 +567,13 @@ class BrickOps:
         Returns:
             True if the bricks go offline or False.
         """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
         nd_list = []
         for brickd in brick_list:
-            node, _ = brickd.split(':')
-            if node not in nd_list:
-                nd_list.append(node)
+            if brickd.split(':')[0] not in nd_list:
+                nd_list.append(brickd.split(':')[0])
         itr = 0
         while itr < timeout:
             random_node = random.choice(nd_list)
@@ -581,10 +583,6 @@ class BrickOps:
                 return True
             itr += 5
             sleep(5)
-
-        offline_brick_list = self.get_offline_bricks_list(volname, nd_list[0])
-        if set(brick_list).issubset(set(offline_brick_list)):
-            return True
         self.logger.error(f"Current offline brick list : {offline_brick_list}"
                           " Compared to expected offline brick list :"
                           f" {brick_list}")
@@ -609,6 +607,9 @@ class BrickOps:
         Returns:
             True if the bricks come online or False.
         """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
         itr = 0
         while itr < timeout:
             random_node = random.choice(server_list)
@@ -619,10 +620,6 @@ class BrickOps:
             itr += 5
             sleep(5)
 
-        online_brick_list = self.get_online_bricks_list(volname,
-                                                        server_list[0])
-        if set(brick_list).issubset(set(online_brick_list)):
-            return True
         self.logger.error(f"Current online brick list : {online_brick_list}"
                           " Compared to expected online brick list :"
                           f" {brick_list}")
@@ -644,6 +641,9 @@ class BrickOps:
         Returns:
             True if the bricks are brought offline or False.
         """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
         self.logger.info(f"Getting {brick_list} offline.")
         nd_list = []
         for brick in brick_list:
@@ -655,7 +655,7 @@ class BrickOps:
                    " | awk '{print $2}'` && kill -15 $pid || kill -9 $pid")
             ret = self.execute_abstract_op_node(cmd, nd, False)
             if ret['error_code'] != 0:
-                self.logger.error(f"Failed to get {brick_list} offline."
+                self.logger.error(f"Failed to bring {brick_list} offline."
                                   f" As {cmd} failed on {nd}")
                 return False
 
@@ -685,6 +685,9 @@ class BrickOps:
         Returns:
             True if the bricks are online or False.
         """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
         if not disrup_method:
             self.logger.info(f"Getting bricks {brick_list} online by forced"
                              f" volume start of {volname}")
@@ -695,7 +698,7 @@ class BrickOps:
             node_list = []
             for bdata in brick_list:
                 if bdata.split(':')[0] not in node_list:
-                    node_list.append(bdata.split(':'))
+                    node_list.append(bdata.split(':')[0])
             for nd in node_list:
                 self.restart_glusterd(nd)
                 self.wait_for_glusterd_to_start(nd)
