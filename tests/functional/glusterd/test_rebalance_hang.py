@@ -1,90 +1,51 @@
-#  Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (volume_create, volume_start,
-                                           get_volume_list, get_volume_status)
-from glustolibs.gluster.brick_libs import (
-    get_all_bricks, wait_for_bricks_to_be_online)
-from glustolibs.gluster.volume_libs import (cleanup_volume)
-from glustolibs.gluster.peer_ops import (peer_probe, peer_detach,
-                                         peer_probe_servers,
-                                         peer_detach_servers,
-                                         nodes_from_pool_list)
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              wait_for_rebalance_to_complete)
-from glustolibs.gluster.mount_ops import mount_volume, umount_volume
-from glustolibs.io.utils import validate_io_procs
-from glustolibs.gluster.gluster_init import (start_glusterd, stop_glusterd,
-                                             is_glusterd_running,
-                                             wait_for_glusterd_to_start)
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestRebalanceHang(GlusterBaseClass):
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
 
-    def setUp(self):
+import traceback
+from tests.d_parent_test import DParentTest
 
-        # Performing peer detach
-        ret = peer_detach_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to detach servers %s"
-                                 % self.servers)
-        g.log.info("Peer detach SUCCESSFUL.")
-        self.get_super_method(self, 'setUp')()
+# disruptive;
 
-    def tearDown(self):
+class TestCase(DParentTest):
 
-        # UnMount Volume
-        g.log.info("Starting to Unmount Volume %s", self.volname)
-        ret = umount_volume(self.mounts[0].client_system,
-                            self.mounts[0].mountpoint, mtype=self.mount_type)
-        self.assertTrue(ret, ("Failed to Unmount Volume %s" % self.volname))
-        g.log.info("Successfully Unmounted Volume %s", self.volname)
+    def terminate(self):
+        """
+        In case the test fails midway, then node might need to be started,
+        IO to be completed and then parent terminate to be invoked.
+        """
+        try:
+            self.redant.start_glusterd(self.server_list[1])
+            if not self.redant.wait_for_glusterd_to_start(self.server_list[1]):
+                raise Exception("Failed to start glusterd on node "
+                                f" {self.server_list[1]}")
+            self.redant.cleanup_volume(self.vol_name, self.server_list[0])
+            if self.list_of_procs != []:
+                if not self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                           self.mnt_list):
+                    raise Exception("IO failed on some of the clients")
 
-        # Clean up all volumes and peer probe to form cluster
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is not None:
-            for volume in vol_list:
-                # check all bricks are online
-                ret = wait_for_bricks_to_be_online(self.mnode, volume)
-                if not ret:
-                    raise ExecutionError("Failed to bring bricks online"
-                                         "for volume %s" % volume)
-                ret = cleanup_volume(self.mnode, volume)
-                if not ret:
-                    raise ExecutionError("Failed to cleanup volume")
-                g.log.info("Volume deleted successfully : %s", volume)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Peer probe detached servers
-        pool = nodes_from_pool_list(self.mnode)
-        for node in pool:
-            peer_detach(self.mnode, node)
-        ret = peer_probe_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to probe peer "
-                                 "servers %s" % self.servers)
-        g.log.info("Peer probe success for detached "
-                   "servers %s", self.servers)
-        self.get_super_method(self, 'tearDown')()
-
-    def test_rebalance_hang(self):
+    def run_test(self, redant):
         """
         In this test case:
         1. Trusted storage Pool of 2 nodes
@@ -96,102 +57,56 @@ class TestRebalanceHang(GlusterBaseClass):
         7. kill glusterd on 2nd node
         8. Issue volume related command
         """
+        self.list_of_procs = []
 
-        # pylint: disable=too-many-statements
-        my_server_info = {
-            self.servers[0]: self.all_servers_info[self.servers[0]]
-        }
-        my_servers = self.servers[0:2]
-        index = 1
-        ret, _, _ = peer_probe(self.servers[0], self.servers[index])
-        self.assertEqual(ret, 0, ("peer probe from %s to %s is failed",
-                                  self.servers[0], self.servers[index]))
-        g.log.info("peer probe is success from %s to "
-                   "%s", self.servers[0], self.servers[index])
-        key = self.servers[index]
-        my_server_info[key] = self.all_servers_info[key]
+        redant.create_cluster(self.server_list[:2])
+        redant.wait_till_all_peers_connected(self.server_list[:2])
 
-        self.volname = "testvol"
-        bricks_list = form_bricks_list(self.mnode, self.volname, 2,
-                                       my_servers,
-                                       my_server_info)
-        g.log.info("Creating a volume %s ", self.volname)
-        ret, _, _ = volume_create(self.mnode, self.volname,
-                                  bricks_list, force=False)
-        self.assertEqual(ret, 0, ("Unable"
-                                  "to create volume %s" % self.volname))
-        g.log.info("Volume created successfully %s", self.volname)
+        self.vol_type_inf[self.conv_dict['dist']]['dist-count'] = 2
+        vol_params_dict = self.vol_type_inf[self.conv_dict['dist']]
+        ret = redant.volume_create(self.vol_name, self.server_list[0],
+                                   vol_params_dict, self.server_list[:2],
+                                   self.brick_roots, True)
 
-        ret, _, _ = volume_start(self.mnode, self.volname, False)
-        self.assertEqual(ret, 0, ("Failed to start the "
-                                  "volume %s", self.volname))
-        g.log.info("Get all the bricks of the volume")
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, "Failed to get the brick list")
-        g.log.info("Successfully got the list of bricks of volume")
+        redant.volume_start(self.vol_name, self.server_list[0], True)
+        if not redant.wait_for_vol_to_come_online(self.vol_name,
+                                                  self.server_list[0]):
+            raise Exception(f"Volume start for {self.vol_name} failed.")
 
-        # Mounting a volume
-        ret, _, _ = mount_volume(self.volname, mtype=self.mount_type,
-                                 mpoint=self.mounts[0].mountpoint,
-                                 mserver=self.mnode,
-                                 mclient=self.mounts[0].client_system)
-        self.assertEqual(ret, 0, ("Volume %s is not mounted") % self.volname)
-        g.log.info("Volume mounted successfully : %s", self.volname)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
-        self.all_mounts_procs = []
-        # Creating files
-        command = ("cd %s/ ; "
-                   "for i in `seq 1 10` ; "
-                   "do mkdir l1_dir.$i ; "
-                   "for j in `seq 1 5` ; "
-                   "do mkdir l1_dir.$i/l2_dir.$j ; "
-                   "for k in `seq 1 10` ; "
-                   "do dd if=/dev/urandom of=l1_dir.$i/l2_dir.$j/test.$k "
-                   "bs=128k count=$k ; done ; done ; done ; "
-                   % (self.mounts[0].mountpoint))
+        self.list_of_procs = []
+        proc = redant.create_deep_dirs_with_files(self.mountpoint, 1, 2, 3, 3,
+                                                  5, self.client_list[0])
+        self.list_of_procs.append(proc)
 
-        proc = g.run_async(self.mounts[0].client_system, command,
-                           user=self.mounts[0].user)
-        self.all_mounts_procs.append(proc)
-        self.io_validation_complete = False
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        if not redant.validate_io_procs(self.list_of_procs, self.mnt_list):
+            raise Exception("IO Validation failed")
+        self.list_of_procs = []
 
-        # Validate IO
-        ret = validate_io_procs(self.all_mounts_procs, self.mounts)
-        self.io_validation_complete = True
-        self.assertTrue(ret, "IO failed on some of the clients")
+        ret = redant.rebalance_start(self.vol_name, self.server_list[0], False,
+                                     True)
 
-        g.log.info("Starting rebalance with force on the volume")
-        ret, _, _ = rebalance_start(self.mnode, self.volname, False, True)
-        self.assertEqual(ret, 0, ("Failed to start rebalance for volume %s",
-                                  self.volname))
-        g.log.info("Successfully rebalance on the volume %s",
-                   self.volname)
+        redant.stop_glusterd(self.server_list[1])
+        if not redant.wait_for_glusterd_to_stop(self.server_list[1]):
+            raise Exception("Failed to stop glusterd on "
+                            f"{self.server_list[1]}.")
 
-        ret = stop_glusterd(self.servers[1])
-        self.assertTrue(ret, "Failed to stop glusterd on one of the node")
-        ret = is_glusterd_running(self.servers[1])
-        self.assertNotEqual(ret, 0, ("Glusterd is not stopped on servers %s",
-                                     self.servers[1]))
-        g.log.info("Glusterd stop on the nodes : %s succeeded",
-                   self.servers[1])
+        if not redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                     self.server_list[0]):
+            raise Exception(f"Rebalance not yet complete for {self.vol_name}"
+                            f" on {self.server_list[0]}")
 
-        # Wait for fix-layout to complete
-        g.log.info("Waiting for rebalance to complete")
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname)
-        self.assertTrue(ret, ("Rebalance is not yet complete on the volume "
-                              "%s", self.volname))
-        g.log.info("Rebalance is successfully complete on the volume %s",
-                   self.volname)
+        if redant.get_volume_status(self.vol_name, 
+                                    self.server_list[0]) is None:
+            raise Exception(f"Failed to get volume status for {self.vol_name}")
 
-        vol_status = get_volume_status(self.mnode, self.volname)
-        self.assertIsNotNone(vol_status, "Failed to get volume "
-                             "status for %s" % self.volname)
-
-        # Start glusterd on the node where it is stopped
-        ret = start_glusterd(self.servers[1])
-        self.assertTrue(ret, "glusterd start on the node failed")
-        ret = wait_for_glusterd_to_start(self.servers[1])
-        self.assertTrue(ret, "glusterd is not running on %s"
-                        % self.servers[1])
-        g.log.info("Glusterd start on the nodes : %s "
-                   "succeeded", self.servers[1])
+        redant.start_glusterd(self.server_list[1])
+        if not redant.wait_for_glusterd_to_start(self.server_list[1]):
+            raise Exception("Failed to start glusterd on node "
+                            f" {self.server_list[1]}")
