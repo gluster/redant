@@ -76,6 +76,8 @@ class PeerOps(AbstractOps):
         for server in servers:
             if server not in nodes_in_pool_list:
                 ret = self.peer_probe(server, node, False)
+                if 'output' not in ret['msg']:
+                    return False
                 if (ret['error_code'] != 0
                         or ret['msg']['output'] != 'success'):
                     self.logger.error("Failed to peer probe the node"
@@ -239,12 +241,12 @@ class PeerOps(AbstractOps):
         try:
             if 'hostname' in pool_list_data.keys():
                 nodes.append(pool_list_data['hostname'])
-                return nodes
+                return self.convert_hosts_to_ip(nodes, node)
         except Exception:
             pass
         for item in pool_list_data:
             nodes.append(item['hostname'])
-        return nodes
+        return self.convert_hosts_to_ip(nodes, node)
 
     def get_pool_list(self, node: str) -> list:
         """
