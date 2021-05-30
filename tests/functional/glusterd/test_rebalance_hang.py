@@ -21,6 +21,7 @@ from tests.d_parent_test import DParentTest
 
 # disruptive;
 
+
 class TestCase(DParentTest):
 
     def terminate(self):
@@ -64,9 +65,9 @@ class TestCase(DParentTest):
 
         self.vol_type_inf[self.conv_dict['dist']]['dist-count'] = 2
         vol_params_dict = self.vol_type_inf[self.conv_dict['dist']]
-        ret = redant.volume_create(self.vol_name, self.server_list[0],
-                                   vol_params_dict, self.server_list[:2],
-                                   self.brick_roots, True)
+        redant.volume_create(self.vol_name, self.server_list[0],
+                             vol_params_dict, self.server_list[:2],
+                             self.brick_roots, True)
 
         redant.volume_start(self.vol_name, self.server_list[0], True)
         if not redant.wait_for_vol_to_come_online(self.vol_name,
@@ -89,8 +90,8 @@ class TestCase(DParentTest):
             raise Exception("IO Validation failed")
         self.list_of_procs = []
 
-        ret = redant.rebalance_start(self.vol_name, self.server_list[0], False,
-                                     True)
+        redant.rebalance_start(self.vol_name, self.server_list[0], False,
+                               True)
 
         redant.stop_glusterd(self.server_list[1])
         if not redant.wait_for_glusterd_to_stop(self.server_list[1]):
@@ -102,7 +103,7 @@ class TestCase(DParentTest):
             raise Exception(f"Rebalance not yet complete for {self.vol_name}"
                             f" on {self.server_list[0]}")
 
-        if redant.get_volume_status(self.vol_name, 
+        if redant.get_volume_status(self.vol_name,
                                     self.server_list[0]) is None:
             raise Exception(f"Failed to get volume status for {self.vol_name}")
 
