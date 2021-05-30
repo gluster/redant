@@ -86,8 +86,8 @@ class TestCase(DParentTest):
         redant.start_glusterd(self.server_list[1])
         redant.wait_for_glusterd_to_start(self.server_list[1])
 
-        ret = redant.wait_for_peers_to_connect(self.server_list[0],
-                                               self.server_list[1])
+        ret = redant.wait_for_peers_to_connect(self.server_list[1],
+                                               self.server_list[0])
         if not ret:
             raise Exception("glusterd is not connected "
                             f"{self.server_list[0]} with peer "

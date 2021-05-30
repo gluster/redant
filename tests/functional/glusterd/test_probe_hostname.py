@@ -88,16 +88,17 @@ class TestCase(DParentTest):
             ret = redant.execute_abstract_op_node("hostname -s", server)
             hostname = ret['msg'][0].rstrip('\n')
 
-            ret = redant.peer_probe(hostname, self.server_list[0])
+            redant.peer_probe(hostname, self.server_list[0], False)
 
-            if not ret:
+            if ret['error_code'] != 0:
                 ret = redant.execute_abstract_op_node("hostname",
                                                       server)
                 hostname = ret['msg'][0].rstrip('\n')
                 hostname = hostname.split(".")[0]+"."+hostname.split(".")[1]
-                ret = redant.peer_probe(hostname, self.server_list[0])
+                ret = redant.peer_probe(hostname, self.server_list[0],
+                                        False)
 
-                if not ret:
+                if ret['error_code'] != 0:
                     raise Exception(f"Unable to peer probe to"
                                     f" the server {hostname}")
 
