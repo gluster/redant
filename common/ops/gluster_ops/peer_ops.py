@@ -215,13 +215,16 @@ class PeerOps(AbstractOps):
 
         Returns:
             list: List of nodes in pool on Success, Empty list on failure.
+            None on failure
         """
         pool_list_data = self.get_pool_list(node)
 
         if pool_list_data is None:
-            self.logger.info("Unable to get Nodes")
+            self.logger.error("Unable to get Nodes")
+            return None
 
         nodes = []
+
         # WHY?
         # The pool_list_data is a simple dict of the form
         # {'uuid' : 'val', 'hostname' : 'val',...} when the node isn't

@@ -816,3 +816,67 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         return ret
+
+    def is_distribute_volume(self, volname: str) -> bool:
+        """
+        Check if volume is a plain distributed volume
+
+        Args:
+            volname (str): Name of the volume.
+
+        Returns:
+            bool : True if the volume is distributed volume. False otherwise
+            NoneType: None if volume does not exist.
+        """
+        volume_dict = self.es.get_volume_dict(volname)
+        is_only_distribute = True
+        for vol_type, count in volume_dict['voltype'].items():
+            if ((vol_type != "dist_count" and count > 0)
+               or (vol_type == "dist_count" and count == 0)):
+                is_only_distribute = False
+                break
+
+        return is_only_distribute
+
+    def wait_for_volume_process_to_be_online(self, volname: str, node: str,
+                                             brick_list: list,
+                                             timeout: int = 300) -> bool:
+        """
+        Waits for the volume's processes to be online until timeout
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node on which commands will be executed.
+            brick_list (list): List of bricks of the respective volume
+
+        Kwargs:
+            timeout (int): timeout value in seconds to wait for all volume
+                           processes to be online.
+
+        Returns:
+            bool: True if the volume's processes are online within timeout,
+                  False otherwise
+        """
+
+        # Wait for bricks to be online
+        bricks_online_status = (self.wait_for_bricks_to_come_online(volname,
+                                self.server_list,
+                                brick_list))
+        if not bricks_online_status:
+            self.logger.error(f"Failed to wait for the volume {volname} "
+                              "processes to be online")
+            return False
+
+        # Wait for self-heal-daemons to be online
+        self_heal_daemon_online_status = (
+            self.wait_for_self_heal_daemons_to_be_online(volname, node,
+                                                         timeout))
+        if not self_heal_daemon_online_status:
+            self.logger.error(f"Failed to wait for the volume {volname}"
+                              " processes to be online")
+            return False
+
+        # TODO: Add any new process checks here
+
+        self.logger.info(f"Volume {volname} processes are all online")
+        return True
