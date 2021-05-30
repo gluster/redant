@@ -30,12 +30,12 @@ class TestCase(DParentTest):
         """ Function to validate default vol options """
         if not for_all:
             ret = self.redant.get_volume_options(self.vol_name, option_name,
-                                                 self.server_list)
+                                                 self.server_list[0])
         else:
             ret = self.redant.get_volume_options('all', option_name,
-                                                 self.server_list)
+                                                 self.server_list[0])
 
-        value = ret[option_name]
+        value = ret[option_name].split()[0]
         if value != option_value:
             raise Exception(f"Volume option {option_name} is not equal to "
                             f"{option_value}")
