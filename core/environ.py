@@ -140,7 +140,7 @@ class FrameworkEnv:
         """
         self.volds[volname] = {"started": False, "options": {},
                                "mountpath": {}, "brickdata": brickdata,
-                               "voltype": {"dict_count": 0,
+                               "voltype": {"dist_count": 0,
                                            "replica_count": 0,
                                            "disperse_count": 0,
                                            "arbiter_count": 0,

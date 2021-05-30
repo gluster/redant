@@ -41,7 +41,7 @@ class TestCase(DParentTest):
 
         # Wait for all volume processes to be online
         ret = (self.redant.wait_for_volume_process_to_be_online(self.vol_name,
-               self.server_list[0], timeout=600))
+               self.server_list[0], self.server_list, timeout=600))
         if not ret:
             raise Exception("All volume processes not up.")
 
@@ -59,13 +59,19 @@ class TestCase(DParentTest):
             killed_process_count = []
             # Kill gluster processes in all servers
             for server in self.server_list:
+                fuse_proc_count = redant.get_fuse_process_count(server)
                 cmd = ('pkill --signal 9 -c -e "(glusterd|glusterfsd|'
                        'glusterfs)"|tail -1')
                 ret = redant.execute_abstract_op_node(cmd, server, False)
                 if ret['error_code'] != 0:
                     raise Exception(ret['error_msg'])
 
-                killed_process_count.append(int(ret['msg'][0].rstrip('\n')))
+                total_proc_count = int(ret['msg'][0].rstrip('\n'))
+                if fuse_proc_count:
+                    gluster_proc_count = total_proc_count - fuse_proc_count
+                    killed_process_count.append(gluster_proc_count)
+                else:
+                    killed_process_count.append(total_proc_count)
 
             # Start glusterd on all servers.
             redant.start_glusterd(self.server_list)

@@ -720,11 +720,10 @@ class BrickOps:
             int: Number of brick processes running on the node.
             None: If the command fails to execute.
         """
-        ret = self.execute_abstract_op_node("pgrep -x glusterfsd", node,
+        ret = self.execute_abstract_op_node("pgrep -c glusterfsd", node,
                                             False)
         if ret['error_code'] == 0:
-            list_of_pids = ret['msg']
-            list_of_pids = [pid.rstrip('\n') for pid in list_of_pids]
-            return len(list_of_pids)
+            count_of_proc = int(ret['msg'][0].rstrip('\n'))
+            return count_of_proc
         else:
             return None

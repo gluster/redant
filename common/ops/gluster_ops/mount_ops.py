@@ -104,3 +104,22 @@ class MountOps(AbstractOps):
             self.logger.debug(f"Volume {volname} is not mounted at"
                               f" {mclient}:{mpath}")
             return False
+
+    def get_fuse_process_count(self, node: str) -> int:
+        """
+        Get the fuse process count for a given node.
+
+        Args:
+            node (str): Node on which fuse process has to be counted.
+
+        Returns:
+            int: Number of fuse processes running on the node.
+            None: If the command fails to execute.
+        """
+        ret = self.execute_abstract_op_node("pgrep -cf 'glusterfs.*fuse'",
+                                            node, False)
+        if ret['error_code'] == 0:
+            count_of_proc = int(ret['msg'][0].rstrip('\n'))
+            return count_of_proc
+        else:
+            return None

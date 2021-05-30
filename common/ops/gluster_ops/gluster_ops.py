@@ -291,3 +291,41 @@ class GlusterOps(AbstractOps):
         config.read_string(state_string_val)
         return {section: dict(config.items(section)) for section in
                 config.sections()}
+
+    def get_glusterd_process_count(self, node: str) -> int:
+        """
+        Get the gluster process count for a given node.
+
+        Args:
+            node (str): Node on which glusterd process has to be counted.
+
+        Returns:
+            int: Number of glusterd processes running on the node.
+            None: If the command fails to execute.
+        """
+        ret = self.execute_abstract_op_node("pgrep -c glusterd", node,
+                                            False)
+        if ret['error_code'] == 0:
+            count_of_proc = int(ret['msg'][0].rstrip('\n'))
+            return count_of_proc
+        else:
+            return None
+
+    def get_all_gluster_process_count(self, node: str) -> int:
+        """
+        Get all gluster related process count for a given node.
+
+        Args:
+            node (str): Node on which gluster process has to be counted.
+
+        Returns:
+            int: Number of gluster processes running on the node.
+            None: If the command fails to execute.
+        """
+        cmd = "pgrep -c '(glusterd|glusterfsd|glusterfs)'"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] == 0:
+            count_of_proc = int(ret['msg'][0].rstrip('\n'))
+            return count_of_proc
+        else:
+            return None
