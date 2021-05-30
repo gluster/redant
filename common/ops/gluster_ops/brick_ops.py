@@ -708,3 +708,23 @@ class BrickOps:
         # Wait till all said bricks are online.
         return self.wait_for_bricks_to_come_online(volname, server_list,
                                                    brick_list, timeout)
+
+    def get_brick_processes_count(self, node: str) -> int:
+        """
+        Get the brick process count for a given node.
+
+        Args:
+            node (str): Node on which brick process has to be counted.
+
+        Returns:
+            int: Number of brick processes running on the node.
+            None: If the command fails to execute.
+        """
+        ret = self.execute_abstract_op_node("pgrep -x glusterfsd", node,
+                                            False)
+        if ret['error_code'] == 0:
+            list_of_pids = ret['msg']
+            list_of_pids = [pid.rstrip('\n') for pid in list_of_pids]
+            return len(list_of_pids)
+        else:
+            return None

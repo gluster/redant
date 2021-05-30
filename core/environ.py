@@ -183,7 +183,7 @@ class FrameworkEnv:
             volds dictionary specific to given volume.
         """
         self._validate_volname(volname)
-        return list(self.volds[volname])
+        return self.volds[volname]
 
     def get_volds(self) -> dict:
         """
