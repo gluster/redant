@@ -19,7 +19,7 @@ class HealOps:
             volname (str): Name of the volume.
             node (str): Node on which commands will be executed.
 
-        Kwargs:
+        Optional:
             timeout (int): timeout value in seconds to wait for
                            self-heal-daemons to be online.
 
@@ -64,7 +64,7 @@ class HealOps:
 
         Args:
             volname (str): volume name
-            mnode (str): Node on which cmd has to be executed.
+            node (str): Node on which cmd has to be executed.
 
         Returns:
             bool : True if all the self-heal-daemons are online for the volume.
@@ -98,6 +98,7 @@ class HealOps:
                 if brick['hostname'] == "Self-heal Daemon":
                     if brick['status'] != '1':
                         online_status = False
+                        break
 
         if online_status:
             self.logger.info("All self-heal Daemons are online")

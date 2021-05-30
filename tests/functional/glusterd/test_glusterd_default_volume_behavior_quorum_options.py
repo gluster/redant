@@ -73,7 +73,7 @@ class TestCase(DParentTest):
         servers_list = [self.server_list[1], self.server_list[2]]
         redant.stop_glusterd(servers_list)
 
-        ret = redant.is_glusterd_running(servers_list)
+        ret = redant.wait_for_glusterd_to_stop(servers_list)
         if ret == 1:
             raise Exception("Glusterd is not stopped on the servers where it"
                             " was desired to be stopped.")

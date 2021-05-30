@@ -847,7 +847,7 @@ class VolumeOps(AbstractOps):
             volname (str): Name of the volume.
             node (str): Node on which commands will be executed.
 
-        Kwargs:
+        Optional:
             timeout (int): timeout value in seconds to wait for all volume
                            processes to be online.
 
