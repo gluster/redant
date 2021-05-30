@@ -21,8 +21,8 @@ class RebalanceOps(AbstractOps):
         """
         Starts rebalance on the given volume.
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            node (str): Node on which cmd has to be executed.
             fix_layout (bool) : If this option is set to True, then rebalance
                                 start will get execute with fix-layout option.
                                 If set to False, then rebalance start will get
@@ -92,8 +92,8 @@ class RebalanceOps(AbstractOps):
         Parse the output of 'gluster vol rebalance status' command
         for the given volume
         Args:
-            node (str): Node on which command has to be executed.
             volname (str): volume name
+            node (str): Node on which command has to be executed.
         Returns:
             dict: rebalance status will be in dict format
         """
