@@ -17,13 +17,12 @@ class RebalanceOps(AbstractOps):
 
     def rebalance_start(self, volname: str, node: str,
                         fix_layout: bool = False,
-                        force: bool = False) -> dict:
+                        force: bool = False, excep: bool = True) -> dict:
         """
         Starts rebalance on the given volume.
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
-        Kwargs:
             fix_layout (bool) : If this option is set to True, then rebalance
                                 start will get execute with fix-layout option.
                                 If set to False, then rebalance start will get
@@ -32,6 +31,10 @@ class RebalanceOps(AbstractOps):
                           will get execute with force option. If it is set to
                           False, then rebalance start will get executed
                           without force option
+            excep (bool): Optional parameter with default value as True. When
+                          set True, the exception handling is done at abstract
+                          ops. If this handling is not required, set it to
+                          False.
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -56,7 +59,7 @@ class RebalanceOps(AbstractOps):
             frce = ''
 
         cmd = f"gluster volume rebalance {volname} {flayout} start {frce}"
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
