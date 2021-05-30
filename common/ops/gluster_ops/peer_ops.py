@@ -238,7 +238,7 @@ class PeerOps(AbstractOps):
         try:
             if 'hostname' in pool_list_data.keys():
                 nodes.append(pool_list_data['hostname'])
-                return self.convert_hosts_to_ip(nodes, node) 
+                return self.convert_hosts_to_ip(nodes, node)
         except Exception:
             pass
         for item in pool_list_data:
