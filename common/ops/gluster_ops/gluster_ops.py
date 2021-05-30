@@ -240,7 +240,7 @@ class GlusterOps(AbstractOps):
             timeout (int) : We cannot wait till eternity right :p
 
         Returns:
-            bool: True if glusterd is running on the node or else False.
+            bool: True if glusterd is not running on the node or else False.
         """
         count = 0
         while count <= timeout:
