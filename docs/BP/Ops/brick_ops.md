@@ -30,10 +30,9 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Args:
 			1. node (str): Node on which the command has to be executed.
 			2. volname (str): The volume from which brick or a set of bricks have to be removed.
-			3. conf_hash (dict):Config hash providing parameters for deleting bricks
-			4. server_list (list): List of servers provided.
-			5. brick_root (list): The list of brick root paths
-			6. option (str): Remove brick options: <start|stop|status|commit|force>
+			3. brick_list (list): The list of bricks to be removed.
+			4. option (str): Remove brick options: <start|stop|status|commit|force>
+			5. replica_count (int): Optional argument with default value of None. This represent the desired replica count after the removal of the said bricks.
 		Returns:
 			A dictionary consisting                                        
             1. Flag : Flag to check if connection failed                 
@@ -43,7 +42,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
             5. cmd : command that got executed                           
             6. node : node on which the command got executed
 		Example:
-			self.remove_brick(self.server_list[0], self.vol_name, conf_hash, self.server_server, self.brick_root, option)
+			self.remove_brick(self.server_list[0], self.vol_name, self.brick_list, option)
 
 3) **replace_brick**<br>
 		This function replaces one brick with another brick or in other words, source brick with destination brick. For now, the arguments it takes include:

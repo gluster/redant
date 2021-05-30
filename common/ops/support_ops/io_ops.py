@@ -707,3 +707,52 @@ class IoOps(AbstractOps):
                 list_of_procs.append(async_obj)
 
         return list_of_procs
+
+    def get_fattr(self, fpath: str, fattr: str, node: str,
+                  encode: str = "hex") -> list:
+        """
+        Function to get the fattr on a said file on a remote folder.
+
+        Args:
+            1. fpath (str): The file path wherein the fattr is to be checked.
+            2. fattr (str): The fattr name to be checked.
+            3. node (str): The node wherein the fattr is to be checked.
+            4. encode (str): Optional parameter with default value of 'hex'.
+                             The encoding in which the return value s required.
+        Returns:
+            getfattr result on success. Exception thrown on failure.
+        """
+        cmd = (f"getfattr --absolute-names -e '{encode}' -n '{fattr}' {fpath}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        return ret['msg']
+
+    def set_fattr(self, fpath: str, fattr: str, node: str, value: str) -> list:
+        """
+        Function to set fattr on a path.
+
+        Args:
+            1. fpath (str): The file path wherein the fattr is to be set.
+            2. fattr (str): The fattr name to be set.
+            3. node (str): Node wherein the fattr is to be checked.
+            4. value (str): value to be set.
+        Returns:
+            setfattr result or exception will be raised on failure.
+        """
+        cmd = (f"setfattr -n {fattr} -v {value} {fpath}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        return ret['msg']
+
+    def delete_fattr(self, fpath: str, fattr: str, node: str) -> list:
+        """
+        Function to delete fattr set on a path.
+
+        Args:
+            1. fpath (str): The file path wherein the fattr is to be set.
+            2. fattr (str): The fattr to be delete
+            3. node (str): Node wherein the fattr is to be set.
+        Returns:
+            The setfattr result or exception will be raised on failure.
+        """
+        cmd = (f"setfattr -x {fattr} {fpath}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        return ret['msg']
