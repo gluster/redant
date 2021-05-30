@@ -839,7 +839,6 @@ class VolumeOps(AbstractOps):
         return is_only_distribute
 
     def wait_for_volume_process_to_be_online(self, volname: str, node: str,
-                                             brick_list: list,
                                              timeout: int = 300) -> bool:
         """
         Waits for the volume's processes to be online until timeout
@@ -847,7 +846,6 @@ class VolumeOps(AbstractOps):
         Args:
             volname (str): Name of the volume.
             node (str): Node on which commands will be executed.
-            brick_list (list): List of bricks of the respective volume
 
         Kwargs:
             timeout (int): timeout value in seconds to wait for all volume
@@ -857,6 +855,12 @@ class VolumeOps(AbstractOps):
             bool: True if the volume's processes are online within timeout,
                   False otherwise
         """
+
+        # Fetch the brick list of the volume
+        brick_list = self.get_all_bricks(volname, node)
+        if brick_list is None:
+            self.logger.error(f"Failed to get brick list of volume {volname}")
+            return False
 
         # Wait for bricks to be online
         bricks_online_status = (self.wait_for_bricks_to_come_online(volname,
