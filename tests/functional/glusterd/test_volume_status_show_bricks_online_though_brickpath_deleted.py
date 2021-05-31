@@ -96,7 +96,7 @@ class TestCase(DParentTest):
             raise Exception("Unexpected: Bricks are online")
 
         # Bringing back the offline brick online
-        if not redant.bring_bricks_online(self.vol_name, self.server_list[0],
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
                                           remove_bricks_list):
             raise Exception("Failed to bring bricks online")
 

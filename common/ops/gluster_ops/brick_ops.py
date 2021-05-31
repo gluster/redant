@@ -357,7 +357,7 @@ class BrickOps:
 
         vol_status_brick_list = []
         for brick in vol_status[volname]['node']:
-            if brick['status'] == 1:
+            if int(brick['status']) == 1:
                 brick_path = f"{brick['hostname']}:{brick['path']}"
                 vol_status_brick_list.append(brick_path)
 
@@ -374,8 +374,8 @@ class BrickOps:
                 return False
 
         if not ret:
-            self.logger.error(f"Some of the bricks are not "
-                              f"offline: {offline_brick_list}")
+            self.logger.error(f"Some of the bricks are "
+                              f"not online: {offline_brick_list}")
             return ret
 
         self.logger.info(f"All bricks are online: {bricks_list}")
