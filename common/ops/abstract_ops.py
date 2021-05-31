@@ -62,6 +62,11 @@ class AbstractOps:
             node (list): the list of nodes on which the command as to be
                          executed. If the node is None then the rexe chooses
                          the node randomly and executes the command on it.
+
+            excep (bool): exception flag to bypass the exception if the
+                          cmd fails. If set to False the exception is
+                          bypassed and value from remote executioner is
+                          returned. Defaults to True
         """
         self.logger.info(f"Running {cmd} on {node}")
 
