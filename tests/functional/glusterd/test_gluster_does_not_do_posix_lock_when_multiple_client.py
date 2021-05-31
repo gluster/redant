@@ -22,7 +22,7 @@ when multiple clients are present.
 
 from tests.nd_parent_test import NdParentTest
 
-# nonDisruptive;dist,rep,dist-rep,disp,dist,disp,arb,dist-arb
+# nonDisruptive;dist,rep,dist-rep,disp,dist-disp,arb,dist-arb
 
 
 class TestCase(NdParentTest):
