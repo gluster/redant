@@ -650,6 +650,19 @@ class VolumeOps(AbstractOps):
                             else:
                                 node_info[n_key] = n_val
                         ret_dict[volname]['node'].append(node_info)
+                elif key == 'tasks':
+                    nodename = 'task_status'
+                    if not isinstance(val, list):
+                        tasks = [val]
+                    for task in tasks:
+                        if 'task' in list(task.keys()):
+                            if nodename not in list(ret_dict[volname].keys()):
+                                ret_dict[volname][nodename] = [task['task']]
+                            else:
+                                ret_dict[volname][nodename].append(
+                                    task['task'])
+                        else:
+                            ret_dict[volname][nodename] = [task]
                 else:
                     ret_dict[volname][key] = val
 
@@ -834,7 +847,7 @@ class VolumeOps(AbstractOps):
         for vol_type, count in volume_dict['voltype'].items():
             if vol_type != "transport":
                 if ((vol_type != "dist_count" and count > 0)
-                   or (vol_type == "dist_count" and count == 0)):
+                        or (vol_type == "dist_count" and count == 0)):
                     is_only_distribute = False
                     break
 
@@ -867,9 +880,9 @@ class VolumeOps(AbstractOps):
             return False
 
         # Wait for bricks to be online
-        bricks_online_status = (self.wait_for_bricks_to_come_online(volname,
-                                server_list,
-                                brick_list))
+        bricks_online_status = (
+            self.wait_for_bricks_to_come_online(volname, server_list,
+                                                brick_list))
         if not bricks_online_status:
             self.logger.error(f"Failed to wait for the volume {volname} "
                               "processes to be online")
