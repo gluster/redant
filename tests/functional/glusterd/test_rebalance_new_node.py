@@ -30,6 +30,10 @@ class TestCase(DParentTest):
 
     def terminate(self):
         try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
             self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
         except Exception as e:
             tb = traceback.format_exc()
@@ -61,19 +65,19 @@ class TestCase(DParentTest):
 
         # run IOs
         redant.logger.info("Starting IO on all mounts...")
-        all_mounts_procs = []
+        self.all_mounts_procs = []
         counter = 1
-        mounts = redant.es.get_mnt_pts_dict_in_list(self.volume_name1)
-        for mount in mounts:
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.volume_name1)
+        for mount in self.mounts:
             redant.logger.info(f"Starting IO on {mount['client']}:"
                                f"{mount['mountpath']}")
             proc = redant.create_deep_dirs_with_files(mount['mountpath'],
                                                       counter, 2, 3, 4, 10,
                                                       mount['client'])
-            all_mounts_procs.append(proc)
+            self.all_mounts_procs.append(proc)
             counter = counter + 10
 
-        if not redant.validate_io_procs(all_mounts_procs, mounts):
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
             raise Exception("IO operations failed on some"
                             " or all of the clients")
 
@@ -87,4 +91,7 @@ class TestCase(DParentTest):
         # peer probe a new node from existing cluster
         redant.peer_probe(self.server_list[2], self.server_list[0])
 
-        redant.get_rebalance_status(self.volume_name1, self.server_list[0])
+        ret = redant.get_rebalance_status(self.volume_name1,
+                                          self.server_list[0])
+        if ret is None:
+            raise Exception("Rebalance status command has returned None")
