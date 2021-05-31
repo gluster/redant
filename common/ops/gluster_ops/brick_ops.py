@@ -257,7 +257,7 @@ class BrickOps(AbstractOps):
 
         vol_status_brick_list = []
         for n in vol_status[volname]['node']:
-            if n['status'] == 1:
+            if int(n['status']) == 1:
                 brick = f"{n['hostname']}:{n['path']}"
                 vol_status_brick_list.append(brick)
 

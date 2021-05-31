@@ -89,7 +89,7 @@ class TestCase(DParentTest):
                                              True)
         redant.add_brick(self.volume_name1, brick_cmd[1:],
                          self.server_list[0])
-        self.vol_type_inf[self.conv_dict[self.volume_type1]]['dist_count'] += 1
+        redant.es.set_vol_type_param(self.volume_name1, 'dist_count', 1)
 
         redant.rebalance_start(self.volume_name1, self.server_list[0])
 

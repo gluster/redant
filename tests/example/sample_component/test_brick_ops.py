@@ -4,7 +4,7 @@ get_all_bricks_online
 get_all_bricks_offline
 """
 
-# disruptive;dist-rep,rep,dist
+# disruptive;dist-rep,dist,rep
 
 from tests.d_parent_test import DParentTest
 
@@ -83,6 +83,11 @@ class TestCase(DParentTest):
                                              self.server_list[0])
         redant.logger.info(f"Offline bricks:{ret}")
 
+        redant.volume_start(self.vol_name, self.server_list[0])
+        if not redant.wait_for_vol_to_come_online(self.vol_name,
+                                                  self.server_list[0]):
+            raise Exception(f"Volume {self.vol_name} couldn't be started.")
+
         # Brick additions
         if self.volume_type != 'dist':
             mul_factor = 3
@@ -98,12 +103,7 @@ class TestCase(DParentTest):
                                               self.vol_name, mul_factor, True)
             redant.add_brick(self.vol_name, br_cmd[1:],
                              self.server_list[0])
-        if self.volume_type != 'rep':
-            self.vol_type_inf[self.conv_dict[self.volume_type]
-                              ]['dist_count'] += 1
-        else:
-            self.vol_type_inf[self.conv_dict[self.volume_type]
-                              ]['dist_count'] = 1
+        redant.es.set_vol_type_param(self.vol_name, 'dist_count', 1)
 
         # Remove brick operation.
         self.brick_list = redant.get_all_bricks(self.vol_name,
@@ -115,4 +115,10 @@ class TestCase(DParentTest):
         else:
             ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                       self.brick_list[-1:], 'force')
-        self.vol_type_inf[self.conv_dict[self.volume_type]]['dist_count'] -= 1
+        redant.es.set_vol_type_param(self.vol_name, 'dist_count', -1)
+
+        self.brick_list = redant.get_all_bricks(self.vol_name,
+                                                self.server_list[0])
+        if redant.are_bricks_offline(self.vol_name, self.brick_list,
+                                     self.server_list[0]):
+            raise Exception(f"{self.brick_list} are offline")
