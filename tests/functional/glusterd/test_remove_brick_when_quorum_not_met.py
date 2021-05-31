@@ -86,6 +86,7 @@ class TestCase(DParentTest):
                 raise Exception(f"Error: glusterd is still running on "
                                 f"{self.server_list[node]}")
 
+        # TODO: Change me to something sensible
         # Verifying node count in volume status after glusterd stopped
         # on half of the servers, Its not possible to check the brick status
         # immediately in volume status after glusterd stop
@@ -111,13 +112,12 @@ class TestCase(DParentTest):
             raise Exception("Unexpected: Server quorum is met, "
                             "Few bricks are up")
 
-        vol_dict = self.conv_dict[self.volume_type]
-
+        self.brick_list = redant.get_all_bricks(self.vol_name,
+                                                self.server_list[0])
         # try removing brick operation which should fail
         try:
             redant.remove_brick(self.server_list[0], self.vol_name,
-                                self.vol_type_inf[vol_dict],
-                                self.server_list, self.brick_roots, 'force')
+                                self.brick_list[1:2], 'start')
         except Exception as error:
             redant.logger.info(f"Remove brick failed as expected: {error}")
 

@@ -124,21 +124,19 @@ class BrickOps:
         self.es.add_bricks_to_brickdata(volname, server_brick)
         return ret
 
-    def remove_brick(self, node: str, volname: str, conf_hash: dict,
-                     server_list: list, brick_root: list, option: str):
+    def remove_brick(self, node: str, volname: str, brick_list: list,
+                     option: str, replica_count: int = None) -> dict:
         """
-        This function removes a brick or set of bricks
-        from the volume volname
+        This function removes the given list of bricks from the volume.
 
         Args:
 
             node (str): Node on which the command has to be executed.
             volname (str): The volume from which brick(s) have to be removed.
-            conf_hash (dict):Config hash providing parameters for
-                deleting bricks
-            brick_root (list): The list of brick root paths
+            brick_list (list): The list of bricks to be removed
             option (str): Remove brick options:
                           <start|stop|status|commit|force>
+            replica_count (int): Optional parameter with default value as None.
 
         Returns:
             ret: A dictionary consisting
@@ -148,88 +146,27 @@ class BrickOps:
                     - error_code: error code returned
                     - cmd : command that got executed
                     - node : node on which the command got executed
-
+        NOTE: For now the option change is to be handled by the user. The count
+        values have to be modified after remove brick is a success.
         """
-        option = option + ' --mode=script'
+        replica = ''
+        if replica_count is not None:
+            replica = (f"replica {replica_count}")
 
-        brick_cmd = ""
-        server_iter = 0
-        mul_fac = 0
-        cmd = ""
-        server_val = ""
-        server_iter = 0
-        bricks_list = []
+        brick_cmd = "".join(brick_list)
 
-        if "replica_count" in conf_hash:
-            mul_fac = conf_hash['replica_count']
+        cmd = (f"gluster vol remove-brick {volname} {replica} {brick_cmd}"
+               f" {option} --mode=script --xml")
 
-            if "arbiter_count" in conf_hash:
-                mul_fac += conf_hash['arbiter_count']
-
-            if "dist_count" in conf_hash:
-                mul_fac *= conf_hash['dist_count']
-
-        elif "dist_count" in conf_hash:
-            mul_fac = conf_hash['dist_count']
-
-        if len(server_list) > mul_fac:
-            server_iter = mul_fac - 1
-
-        else:
-            server_iter = (mul_fac % len(server_list)) - 1
-
-        num_bricks = 1
-
-        if "arbiter_count" in conf_hash:
-            num_bricks = num_bricks + 2
-
-        if "dist_count" in conf_hash and "replica_count" in conf_hash:
-            num_bricks = num_bricks + 2
-
-        server_brick = {}
-        for i in range(num_bricks):
-
-            server_val = server_list[server_iter]
-
-            brick_path_val = (f"{brick_root[server_val]}"
-                              f"/{volname}-{mul_fac-i-1}")
-
-            if server_val not in server_brick:
-                server_brick[server_val] = []
-
-            server_brick[server_val].append(brick_path_val)
-
-            brick_cmd = f"{server_val}:{brick_path_val}"
-
-            bricks_list.append(brick_cmd)
-            server_iter = (server_iter - 1) % len(server_list)
-
-        if "replica_count" in conf_hash:
-            replica = conf_hash['replica_count'] - 1
-
-            if "arbiter_count" in conf_hash:
-                conf_hash['replica_count'] = replica
-                cmd = (f"gluster vol remove-brick "
-                       f"{volname} replica 3 "
-                       f"{' '.join(bricks_list)} {option} --xml")
-            elif "dist_count" in conf_hash:
-                conf_hash['dist_count'] -= 1
-                cmd = (f"gluster vol remove-brick "
-                       f"{volname} replica {conf_hash['replica_count']} "
-                       f"{' '.join(bricks_list)} {option} --xml")
-            else:
-                conf_hash['replica_count'] = replica
-                cmd = (f"gluster vol remove-brick "
-                       f"{volname} replica {replica} "
-                       f"{' '.join(bricks_list)} {option} --xml")
-
-        elif "dist_count" in conf_hash:
-            conf_hash['dist_count'] -= 1
-            cmd = (f"gluster vol remove-brick "
-                   f"{volname} {' '.join(bricks_list)} {option} --xml")
-
-        ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-        self.es.remove_bricks_from_brickdata(volname, server_brick)
+        ret = self.execute_abstract_op_node(cmd, node)
+        if option in ['commit', 'force']:
+            server_brick = {}
+            for brickd in brick_list:
+                node, bpath = brickd.split(':')
+                if node not in server_brick:
+                    server_brick[node] = []
+                server_brick[node].append(bpath)
+            self.es.remove_bricks_from_brickdata(volname, server_brick)
 
         return ret
 

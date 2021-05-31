@@ -79,3 +79,42 @@
 			Dictionary of the form,
 				1. error_code: 0 for success, rest are standard failure error codes.
 				2. file_perm : The file permission in integer form or 0 for failure.
+
+7) **get_fattr**<br>
+		Function to get fattr set on a path in the given node.
+
+		Args:
+			1. fpath (str): The path of the file whose fattr is to be checked.
+			2. fattr (str): The fattr value which has to be checked.
+			3. node (str): The node wherein this check has to be done.
+			4. encode (str): Optional parameter with default value of hex.
+		Returns:
+			A list containing the getfattr result on success and exception is thrown on failure.
+		Examples:
+			self.get_fattr('/mnt/vol1/path1', 'sample.xattr', self.server_list[0])
+
+
+7) **set_fattr**<br>
+		Function to set the fattr set on a path in the given node.
+
+		Args:
+			1. fpath (str): The path of the file whose fattr is to be checked.
+			2. fattr (str): The fattr value which has to be checked.
+			3. node (str): The node wherein this check has to be done.
+			4. value (str): The value of the fattr to be set.
+		Returns:
+			A list containing the setfattr result on success and exception is thrown on failure.
+		Examples:
+			self.set_fattr('/mnt/vol1/path1', 'sample.xattr', self.server_list[0], '12')
+
+7) **delete_fattr**<br>
+		Function to delete the fattr set on a path in the given node.
+
+		Args:
+			1. fpath (str): The path of the file whose fattr is to be checked.
+			2. fattr (str): The fattr value which has to be checked.
+			3. node (str): The node wherein this check has to be done.
+		Returns:
+			A list containing the setfattr result on success and exception is thrown on failure.
+		Examples:
+			self.delete_fattr('/mnt/vol1/path1', 'sample.xattr', self.server_list[0])
