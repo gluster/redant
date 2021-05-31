@@ -669,7 +669,7 @@ class VolumeOps(AbstractOps):
         return ret_dict
 
     def get_volume_options(self, volname: str = 'all', option: str = 'all',
-                           node: str = None) -> dict:
+                           node: str = None, excep: bool = True) -> dict:
         """
         Gets the option values for a given volume.
         Args:
@@ -679,6 +679,10 @@ class VolumeOps(AbstractOps):
             option (str): volume option to get status.
                         If not given, the function returns all the options for
                         the given volume
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             dict: value for the given volume option in dict format, on success
             NoneType: on failure
@@ -697,10 +701,11 @@ class VolumeOps(AbstractOps):
             }
         """
 
-        cmd = f"gluster volume get {volname} {option} --mode=script --xml"
+        cmd = f"gluster volume get {volname} {option} --xml --mode=script"
 
-        ret = self.execute_abstract_op_node(cmd, node)
-
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        if ret['error_code'] != 0:
+            return ret
         volume_options = ret['msg']['volGetopts']
 
         ret_dict = {}

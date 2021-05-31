@@ -71,7 +71,7 @@ class TestCase(NdParentTest):
                             f"for non existing volume with io-cache "
                             f"option :{self.non_exist_volume}")
         err = ret['error_msg']
-        msg = ('Volume ' + self.non_exist_volume + ' does not exist')
+        msg = f'Volume {self.non_exist_volume} does not exist'
 
         if msg not in err:
             raise Exception(f"No proper error message for non existing "
@@ -124,16 +124,6 @@ class TestCase(NdParentTest):
         ret = redant.execute_abstract_op_node(cmd,
                                               self.server_list[0],
                                               False)
-        if ret['error_code'] == 0:
-            raise Exception("gluster volume get command should fail "
-                            "for non existing volume")
-        err = ret['error_msg']
-
-        if msg not in err:
-            raise Exception("No proper error message for gluster "
-                            "volume get command")
-        redant.logger.info("gluster volume get command failed successfully")
-
         # performing gluster volume get io-cache command
         # without any volume name given
         cmd = "gluster volume get io-cache"
@@ -158,6 +148,7 @@ class TestCase(NdParentTest):
             raise Exception(f"gluster volume get command should fail "
                             f"for existing volume {self.vol_name} "
                             f"with non-existing option")
+
         msg = 'Did you mean auth.allow or ...reject?'
         err = ret['error_msg']
         if msg not in err:
@@ -170,7 +161,6 @@ class TestCase(NdParentTest):
         redant.logger.info(f"gluster volume get command failed "
                            f"successfully for existing volume "
                            f"{self.vol_name} with non existing option")
-
         # performing gluster volume get volname all
         ret = redant.get_volume_options(self.vol_name, "all",
                                         self.server_list[0])
@@ -188,7 +178,10 @@ class TestCase(NdParentTest):
 
         if float(ver) >= 6.0:
 
-            if ret['performance.io-cache'] not in ['on', 'off']:
+            if ret['performance.io-cache'] != 'off':
+                raise Exception("io-cache value is not correct")
+        else:
+            if ret['performance.io-cache'] != 'on':
                 raise Exception("io-cache value is not correct")
         redant.logger.info("io-cache value is correct")
 
@@ -219,10 +212,5 @@ class TestCase(NdParentTest):
                             f"all failed")
 
         # Checking core file created or not in "/" directory
-        ret = redant.check_core_file_exists(self.server_list, test_timestamp)
-        if not ret:
-            redant.logger.info("No core file found, glusterd service "
-                               "running successfully")
-        else:
-            raise Exception("core file found in directory, it "
-                            "indicates the glusterd service crash")
+        if redant.check_core_file_exists(self.server_list, test_timestamp):
+            raise Exception("glusterd service should not have crashed")
