@@ -281,6 +281,50 @@ class BrickOps(AbstractOps):
         self.logger.info(f"All bricks are offline: {bricks_list}")
         return ret
 
+    def are_bricks_online(self, volname: str,
+                          bricks_list: list, node: str,
+                          strict: bool = True) -> bool:
+        """
+        This function checks if the given list of
+        bricks are online.
+
+        Args:
+            volname (str) : Volume name
+            bricks_list (list) : list of bricks to check
+            node (str) : the node on which comparison has to be done
+            strict (bool) : To check strictly if all bricks are offline
+        Returns:
+            boolean value: True, if bricks are offline
+                           False if online
+        """
+        vol_status = self.get_volume_status(volname, node)
+
+        vol_status_brick_list = []
+        for brick in vol_status[volname]['node']:
+            if int(brick['status']) == 1:
+                brick_path = f"{brick['hostname']}:{brick['path']}"
+                vol_status_brick_list.append(brick_path)
+
+        offline_brick_list = []
+        ret = True
+
+        for brick in bricks_list:
+            if strict and brick not in vol_status_brick_list:
+                offline_brick_list.append(brick)
+                self.logger.error(f"Brick: {brick} is not online")
+                ret = False
+            elif brick not in vol_status_brick_list:
+                self.logger.error(f"Brick: {brick} is not online")
+                return False
+
+        if not ret:
+            self.logger.error(f"Some of the bricks are "
+                              f"not online: {offline_brick_list}")
+            return ret
+
+        self.logger.info(f"All bricks are online: {bricks_list}")
+        return ret
+
     def check_if_bricks_list_changed(self,
                                      bricks_list: list,
                                      volname: str,
