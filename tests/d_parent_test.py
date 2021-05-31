@@ -83,7 +83,6 @@ class DParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-            print("Failed!!")
             self.TEST_RES = False
 
     def terminate(self):
