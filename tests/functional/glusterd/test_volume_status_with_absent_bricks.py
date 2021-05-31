@@ -59,7 +59,7 @@ class TestCase(DParentTest):
         # Checking volume status
         ret = redant.get_volume_status(self.vol_name, self.server_list[0],
                                        excep=False)
-        if ret['error_code'] != 0 and ret['msg']['opErrstr'] != \
-        f'Volume {self.vol_name} is not started':
+        if ret['error_code'] != 0 and ret['msg']['opErrstr'] !=\
+           f'Volume {self.vol_name} is not started':
             raise Exception("Incorrect error message for gluster vol "
                             "status")
