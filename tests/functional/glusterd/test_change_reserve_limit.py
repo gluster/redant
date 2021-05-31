@@ -79,11 +79,11 @@ class TestChangeReservcelimit(NdParentTest):
         if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
             raise Exception("IO failed on some of the clients")
 
+        brick_list = redant.get_all_bricks(vol_name, self.server_list[0])
+
         # Remove brick
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
         ret = redant.remove_brick(self.server_list[0], vol_name,
-                                  conf_dict, self.server_list,
-                                  self.brick_roots, 'start')
+                                  brick_list[-3:], 'start', 3)
 
         if ret['error_code'] != 0:
             raise Exception("Failed to start remove brick operation.")
@@ -94,8 +94,7 @@ class TestChangeReservcelimit(NdParentTest):
                                   self.server_list[0])
 
         ret = redant.remove_brick(self.server_list[0], vol_name,
-                                  conf_dict, self.server_list,
-                                  self.brick_roots, 'stop')
+                                  brick_list[-3:], 'stop', 3)
 
         if ret['error_code'] != 0:
             raise Exception("Failed to start remove brick operation.")
@@ -114,7 +113,7 @@ class TestChangeReservcelimit(NdParentTest):
         self.set_storage_reserve_value(redant, self.vol_name, "33")
         # volume creation for setting reserve limit to higher value.
         self.volume_type1 = 'dist-rep'
-        self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
+        self.volume_name1 = f"{self.test_name}-1"
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, self.server_list,
@@ -128,5 +127,4 @@ class TestChangeReservcelimit(NdParentTest):
         # change_reserve_limit_to_higher_value
         self.set_storage_reserve_value(redant, self.volume_name1, "99")
 
-        redant.volume_stop(self.volume_name1, self.server_list[0])
-        redant.volume_delete(self.volume_name1, self.server_list[0])
+        redant.cleanup_volume(self.volume_name1, self.server_list[0])

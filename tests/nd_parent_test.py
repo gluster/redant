@@ -97,7 +97,6 @@ class NdParentTest(metaclass=abc.ABCMeta):
                 self.redant.reset_volume_option(self.vol_name, 'all',
                                                 self.server_list[0])
             except Exception as e:
-                self.TEST_RES = False
                 tb = traceback.format_exc()
                 self.redant.logger.error(e)
                 self.redant.logger.error(tb)
