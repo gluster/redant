@@ -83,7 +83,8 @@ class BrickOps(AbstractOps):
                     - node : node on which the command got executed
         NOTE: For now the option change is to be handled by the user. The count
         values have to be modified after remove brick is a success. Also,
-        a TODO is to check the force option.
+        a TODO is to check the commit force option and its incorporation in this
+        function.
         """
         replica = ''
         if replica_count is not None:
