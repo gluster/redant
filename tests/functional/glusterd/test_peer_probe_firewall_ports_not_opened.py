@@ -32,7 +32,7 @@ class TestCase(DParentTest):
             for option in ("", " --permanent"):
                 cmd = (f"firewall-cmd --zone=public --remove-service="
                        f"{service}{option}")
-                redant.execute_abstract_op_node(cmd, self.node)
+                redant.execute_abstract_op_node(cmd, self.server_list[0])
                 redant.logger.info("Successfully removed glusterfs and"
                                    "rpc-bind services")
 
@@ -42,7 +42,7 @@ class TestCase(DParentTest):
             for option in ("", " --permanent"):
                 cmd = (f"firewall-cmd --zone=public --add-service="
                        f"{service}{option}")
-                redant.execute_abstract_op_node(cmd, self.node)
+                redant.execute_abstract_op_node(cmd, self.server_list[0])
         redant.logger.info("Successfully removed glusterfs and"
                            "rpc-bind services")
 
@@ -53,7 +53,11 @@ class TestCase(DParentTest):
         2. Perform peer probe to Node2 from Node 1
         3. Check for core files created
         """
-        # Remove firewall service on the node to probe to
+        # Timestamp of current test case of start time
+        ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
+        test_timestamp = ret['msg'][0].rstrip('\n')
+
+        # Remove firewall service on the node to probe
         self.node = choice(self.server_list[1:])
         for server in self.server_list[1:]:
             redant.peer_detach(server, self.server_list[0])
@@ -62,7 +66,7 @@ class TestCase(DParentTest):
             redant.execute_abstract_op_node(cmd, server)
         self._remove_firewall_service(redant)
 
-        # Try peer probe from mnode to node
+        # Try peer probe from one node to another
         try:
             redant.peer_probe(self.node, self.server_list[0])
         except:
@@ -71,8 +75,8 @@ class TestCase(DParentTest):
             redant.logger.info(msg)
 
         # Verify no core files are created
-        # ret = is_core_file_created(self.servers, test_timestamp)
-        # self.assertTrue(ret, "Unexpected crash found.")
-        # redant.logger.info("No core file found as expected")
+        ret = redant.check_core_file_exists(self.server_list, test_timestamp)
+        if ret:
+            raise Exception("Core file is found")
 
         self._add_firewall_service(redant)
