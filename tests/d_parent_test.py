@@ -83,6 +83,7 @@ class DParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
+            print("Failed!!")
             self.TEST_RES = False
 
     def terminate(self):
@@ -119,6 +120,5 @@ class DParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-            self.TEST_RES = False
         self.redant.cleanup_brick_dirs()
         self.redant.deconstruct_connection()

@@ -1,18 +1,17 @@
 # Brick Ops:
 
-In this document, we will discuss about the set of functionalities in the brick ops. From the name itself, you can understand most of the functions but an explanation would never hurt.
 The code can be found at [brick_ops.py](../../../common/ops/gluster_ops/brick_ops.py)
 
 1) **add_brick**<br>
-		This method is used to add a brick or a set of bricks as per the volume type.
+		This method is used to add a brick or a set of bricks to the volume.
 
 		Args:
 			1. volname (str): The volume in which the brick has to be added.
-			2. node (str): The node on which the command is to be run.
-			3. conf_hash (dict): Config hash providing parameters for adding bricks.
-			4. server_list (list): List of servers provided.
-			5. brick_root (list): List of brick root paths
-			6. force (bool): If set to True will add force in the command being executed.
+			2. brick_str (list): String of brick cmd created by form_brick_cmd function.
+			3. node (str): The node on which the command is to be run.
+			4. force (bool): If set to True will add force in the command being executed.
+			5. replica count (int): Optional parameter with default value of None.
+			6. arbiter_count (int): Optional parameter with default value of None.
 		Returns:
 			A dictionary consisting                                        
             1. Flag : Flag to check if connection failed                 
@@ -22,7 +21,8 @@ The code can be found at [brick_ops.py](../../../common/ops/gluster_ops/brick_op
             5. cmd : command that got executed                           
             6. node : node on which the command got executed
 		Example:
-			self.add_brick(self.vol_name, self.server_list[0], conf_hash, self.server_server, self.brick_root)
+			self.add_brick(self.vol_name, brick_cmd, self.server_list[0],
+                           replica_count=3)
 
 2) **remove_brick**<br>
 Remove brick does the opposite of add_brick operation and that is it removes existing brick or bricks from the volume. It has almost the same set of arguments apart from `option` which stores the remove brick options like start, commit, stop etc:
@@ -91,12 +91,13 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 			2. brick_root (list) : List of brick roots
 			3. volname (str) : Name of the volume
 			4. mul_fac (int) : Stores the number of bricks needed to form the brick command
+			5. add_flag (bool): Optional parameter with default value of False. When set, the brick cmd creation will happen with respect to brick addition.
 		Returns:
 			A tuple containing
 				1. brick_dict (dict) : Dictionary of server and their corresponding brick roots.
 				2. brick_cmd (str) : Command which contains the brick paths.
 		Example:
-			self.form_brick_cmd(self.server_list, self.brick_root, self.vol_name, mul_factor)
+			self.form_brick_cmd(self.server_list, self.brick_root, self.vol_name, mul_factor, True)
 
 6) **cleanup_brick_dirs**<br>
 		Function for clearing out all the directory paths present in the cleands data structure.

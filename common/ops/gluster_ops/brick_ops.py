@@ -6,21 +6,22 @@ from time import sleep
 import random
 from common.ops.abstract_ops import AbstractOps
 
+
 class BrickOps(AbstractOps):
     """
     Class which is responsible for methods for brick related operations.
     """
 
-    def add_brick(self, volname: str, brick_list: list, node: str,
-                  force: bool = False, replica_count: int=None,
-                  arbiter_count: int=None) -> dict:
+    def add_brick(self, volname: str, brick_str: str, node: str,
+                  force: bool = False, replica_count: int = None,
+                  arbiter_count: int = None) -> dict:
         """
         This function adds bricks to the volume volname.
 
         Args:
 
             volname (str): The volume in which the brick has to be added.
-            brick_list (list): List of bricks to be added.
+            brick_str (str): string of brick command.
             node (str): The node on which the command is to be run.
             force (bool): If set to True will add force in the command
                           being executed.
@@ -42,16 +43,14 @@ class BrickOps(AbstractOps):
             if arbiter_count is not None:
                 arbiter = (f"arbiter {arbiter_count}")
 
-        brick_cmd = "".join(brick_list)
-
         cmd = (f"gluster vol add-brick {volname} {replica} {arbiter}"
-               f" {brick_cmd} --mode=script --xml")
+               f" {brick_str} --mode=script --xml")
         if force:
             cmd = (f"{cmd} force")
         ret = self.execute_abstract_op_node(cmd, node)
 
         server_brick = {}
-        for brickd in brick_cmd.split(' '):
+        for brickd in brick_str.split(' '):
             node, bpath = brickd.split(':')
             if node not in server_brick:
                 server_brick[node] = []
@@ -83,14 +82,14 @@ class BrickOps(AbstractOps):
                     - cmd : command that got executed
                     - node : node on which the command got executed
         NOTE: For now the option change is to be handled by the user. The count
-        values have to be modified after remove brick is a success.
+        values have to be modified after remove brick is a success. Also,
+        a TODO is to check the force option.
         """
         replica = ''
         if replica_count is not None:
             replica = (f"replica {replica_count}")
 
-        brick_cmd = "".join(brick_list)
-
+        brick_cmd = " ".join(brick_list)
         cmd = (f"gluster vol remove-brick {volname} {replica} {brick_cmd}"
                f" {option} --mode=script --xml")
 
@@ -180,7 +179,7 @@ class BrickOps(AbstractOps):
         return ret
 
     def form_brick_cmd(self, server_list: list, brick_root: list,
-                       volname: str, mul_fac: int, add_flag: bool=False):
+                       volname: str, mul_fac: int, add_flag: bool = False):
         """
         This function helps in forming
         the brick command
