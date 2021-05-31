@@ -114,12 +114,13 @@ class TestCase(DParentTest):
         if not ret:
             raise Exception("Unexpected: Server quorum is met, "
                             "Few bricks are up")
-
-        vol_dict = self.conv_dict[self.volume_type]
         try:
-            redant.add_brick(self.vol_name, self.server_list[0],
-                             self.vol_type_inf[vol_dict],
-                             self.server_list, self.brick_roots, True)
+            mul_factor = 1
+            _, br_cmd = redant.form_brick_cmd(self.server_list,
+                                              self.brick_roots, self.vol_name,
+                                              mul_factor, True)
+            redant.add_brick(self.vol_name, br_cmd[1:],
+                             self.server_list)
         except Exception as error:
             redant.logger.info(f"Add brick failed as expected: {error}")
 

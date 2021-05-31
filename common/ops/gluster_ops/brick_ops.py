@@ -4,30 +4,29 @@ Brick ops module deals with the functions related to brick related operations.
 
 from time import sleep
 import random
+from common.ops.abstract_ops import AbstractOps
 
 
-class BrickOps:
+class BrickOps(AbstractOps):
     """
     Class which is responsible for methods for brick related operations.
     """
 
-    def add_brick(self, volname: str, node: str,
-                  conf_hash: dict, server_list: list,
-                  brick_root: list, force: bool = False):
+    def add_brick(self, volname: str, brick_str: str, node: str,
+                  force: bool = False, replica_count: int = None,
+                  arbiter_count: int = None) -> dict:
         """
         This function adds bricks to the volume volname.
 
         Args:
 
             volname (str): The volume in which the brick has to be added.
+            brick_str (str): string of brick command.
             node (str): The node on which the command is to be run.
-            conf_hash (dict): Config hash providing parameters for adding
-            bricks.
-            server_list (list): List of servers provided.
-            brick_root (list): List of brick root paths
             force (bool): If set to True will add force in the command
                           being executed.
-
+            replica_count (int): Updated replica count
+            arbiter_count (int): Updated arbiter count
 
         Returns:
             ret: A dictionary consisting
@@ -38,90 +37,26 @@ class BrickOps:
                     - cmd : command that got executed
                     - node : node on which the command got executed
         """
+        replica = arbiter = ''
+        if replica_count is not None:
+            replica = (f"replica {replica_count}")
+            if arbiter_count is not None:
+                arbiter = (f"arbiter {arbiter_count}")
 
-        brick_cmd = ""
-        server_iter = 0
-        mul_fac = 0
-        cmd = ""
-        server_val = ""
-        server_iter = 0
-        bricks_list = []
-
-        if "replica_count" in conf_hash:
-            mul_fac = conf_hash['replica_count']
-
-            if "arbiter_count" in conf_hash:
-                mul_fac += conf_hash['arbiter_count']
-
-            if "dist_count" in conf_hash:
-                mul_fac *= conf_hash['dist_count']
-
-        elif "dist_count" in conf_hash:
-            mul_fac = conf_hash['dist_count']
-
-        if len(server_list) > mul_fac:
-            server_iter = mul_fac
-
-        else:
-            server_iter = (mul_fac % len(server_list))
-
-        num_bricks = 1
-
-        if "arbiter_count" in conf_hash:
-            num_bricks = num_bricks + 2
-
-        if "dist_count" in conf_hash and "replica_count" in conf_hash:
-            num_bricks = num_bricks + 2
+        cmd = (f"gluster vol add-brick {volname} {replica} {arbiter}"
+               f" {brick_str} --mode=script --xml")
+        if force:
+            cmd = (f"{cmd} force")
+        ret = self.execute_abstract_op_node(cmd, node)
 
         server_brick = {}
-
-        for i in range(num_bricks):
-
-            server_val = server_list[server_iter]
-
-            brick_path_val = f"{brick_root[server_val]}/{volname}-{mul_fac+i}"
-            if server_val not in server_brick:
-                server_brick[server_val] = []
-            server_brick[server_val].append(brick_path_val)
-
-            brick_cmd = f"{server_val}:{brick_path_val}"
-
-            bricks_list.append(brick_cmd)
-            server_iter = (server_iter + 1) % len(server_list)
-
-        if "replica_count" in conf_hash:
-            replica = conf_hash['replica_count'] + 1
-
-            if "arbiter_count" in conf_hash:
-                replica += 1
-                arbiter = conf_hash['arbiter_count'] + 1
-
-                conf_hash['arbiter_count'] = arbiter
-                conf_hash['replica_count'] = replica
-                cmd = (f"gluster vol add-brick "
-                       f"{volname} replica 3 arbiter 1 "
-                       f"{' '.join(bricks_list)} --xml")
-            elif "dist_count" in conf_hash:
-                conf_hash['dist_count'] += 1
-                cmd = (f"gluster vol add-brick "
-                       f"{volname} replica 3 "
-                       f"{' '.join(bricks_list)} --xml")
-            else:
-                conf_hash['replica_count'] = replica
-                cmd = (f"gluster vol add-brick "
-                       f"{volname} replica {replica} "
-                       f"{' '.join(bricks_list)} --xml")
-
-        elif "dist_count" in conf_hash:
-            conf_hash['dist_count'] += 1
-            cmd = (f"gluster vol add-brick "
-                   f"{volname} {' '.join(bricks_list)} --xml")
-        if force:
-            cmd = f"{cmd} force"
-
-        ret = self.execute_abstract_op_node(node=node, cmd=cmd)
-
+        for brickd in brick_str.split(' '):
+            node, bpath = brickd.split(':')
+            if node not in server_brick:
+                server_brick[node] = []
+            server_brick[node].append(bpath)
         self.es.add_bricks_to_brickdata(volname, server_brick)
+
         return ret
 
     def remove_brick(self, node: str, volname: str, brick_list: list,
@@ -147,14 +82,15 @@ class BrickOps:
                     - cmd : command that got executed
                     - node : node on which the command got executed
         NOTE: For now the option change is to be handled by the user. The count
-        values have to be modified after remove brick is a success.
+        values have to be modified after remove brick is a success. Also,
+        a TODO is to check the commit force option and its incorporation in
+        this function.
         """
         replica = ''
         if replica_count is not None:
             replica = (f"replica {replica_count}")
 
-        brick_cmd = "".join(brick_list)
-
+        brick_cmd = " ".join(brick_list)
         cmd = (f"gluster vol remove-brick {volname} {replica} {brick_cmd}"
                f" {option} --mode=script --xml")
 
@@ -244,7 +180,7 @@ class BrickOps:
         return ret
 
     def form_brick_cmd(self, server_list: list, brick_root: list,
-                       volname: str, mul_fac: int):
+                       volname: str, mul_fac: int, add_flag: bool = False):
         """
         This function helps in forming
         the brick command
@@ -255,6 +191,9 @@ class BrickOps:
             volname (str) : Name of the volume
             mul_fac (int) : Stores the number of bricks
                             needed to form the brick command
+            add_flag (bool): Indicates whether the command creation is for
+                             add brick scenario or volume creation. Optional
+                             parameter which by default is False.
 
         Returns:
 
@@ -268,14 +207,19 @@ class BrickOps:
         brick_cmd = ""
         server_iter = 0
 
+        iter_add = 0
+        if add_flag:
+            iter_add = len(self.get_all_bricks(volname, server_list[0]))
+
         for iteration in range(mul_fac):
             if server_iter == len(server_list):
                 server_iter = 0
             server_val = server_list[server_iter]
             if server_val not in brick_dict.keys():
                 brick_dict[server_val] = []
-            brick_path_val = \
-                f"{brick_root[server_list[server_iter]]}/{volname}-{iteration}"
+            brick_path_val = (
+                f"{brick_root[server_list[server_iter]]}/{volname}-"
+                f"{iteration+iter_add}")
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1
@@ -313,7 +257,7 @@ class BrickOps:
 
         vol_status_brick_list = []
         for n in vol_status[volname]['node']:
-            if n['status'] == 1:
+            if int(n['status']) == 1:
                 brick = f"{n['hostname']}:{n['path']}"
                 vol_status_brick_list.append(brick)
 

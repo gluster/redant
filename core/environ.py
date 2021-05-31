@@ -204,6 +204,38 @@ class FrameworkEnv:
         for (volt_key, volt_val) in list(voltype_dict.items()):
             self.volds[volname]['voltype'][volt_key] = volt_val
 
+    def set_vol_type_param(self, volname: str, voltype_key: str,
+                           delta_value: int):
+        """
+        Method to modify the voltype dictionary in volds.
+
+        Args:
+            volname (str)
+            voltype_key (str)
+            delta_value (int): Change value. Can be positive or negative.
+        Returns:
+            None
+        """
+        self._validate_volname(volname)
+        if voltype_key not in self.volds[volname]['voltype']:
+            self.volds[volname]['voltype'][voltype_key] = 0
+        self.volds[volname]['voltype'][voltype_key] += delta_value
+
+    def get_vol_type_param(self, volname: str, voltype_key: str):
+        """
+        Method to obtain a specific voltype param in volds.
+
+        Args:
+            volname (str)
+            voltype_key (key)
+        Returns:
+            The corresponding value and None if the key doesn't exist.
+        """
+        self._validate_volname(volname)
+        if voltype_key not in self.volds[volname]['voltype']:
+            return None
+        return self.volds[volname]['voltype'][voltype_key]
+
     def get_vol_type_changes(self, volname: str, pre_voltype: dict) -> dict:
         """
         Method to identify the difference between a pre-test voltype dictionary

@@ -82,9 +82,14 @@ class TestCase(DParentTest):
                             " or all of the clients")
 
         # add a brick to the volume and start rebalance
-        redant.add_brick(self.volume_name1, self.server_list[0],
-                         self.vol_type_inf[self.conv_dict['dist']],
-                         self.server_list, self.brick_roots, True)
+        mul_factor = 1
+        _, brick_cmd = redant.form_brick_cmd(self.server_list,
+                                             self.brick_roots,
+                                             self.volume_name1, mul_factor,
+                                             True)
+        redant.add_brick(self.volume_name1, brick_cmd[1:],
+                         self.server_list[0])
+        redant.es.set_vol_type_param(self.volume_name1, 'dist_count', 1)
 
         redant.rebalance_start(self.volume_name1, self.server_list[0])
 
