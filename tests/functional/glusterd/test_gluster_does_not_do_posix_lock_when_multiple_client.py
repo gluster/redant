@@ -61,7 +61,7 @@ class TestCase(NdParentTest):
                 done
                 """
         mount_point = redant.es.get_mnt_pts_list(self.vol_name,
-                                                 self.server_list[0])[0]
+                                                 self.client_list[0])[0]
         cmd = f"echo {script} >{mount_point}/test.sh; sh {mount_point}/test.sh"
         ret = redant.execute_abstract_op_multinode(cmd, self.client_list[:2])
         # Check if 300 is present in the output
