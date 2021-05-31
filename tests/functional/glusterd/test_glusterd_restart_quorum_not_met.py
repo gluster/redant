@@ -46,8 +46,14 @@ class TestCase(DParentTest):
         brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
 
         # Stop glusterd processes.
-        for server in self.server_list[1:]:
-            redant.stop_glusterd(server)
+        redant.stop_glusterd(self.server_list[1:])
+
+        # assure glusterd has stopped on the servers
+        ret = redant.wait_for_glusterd_to_stop(self.server_list[1:])
+
+        if not ret:
+            raise Exception(f"Glusterd did not stop on "
+                            f"all the servers: {self.server_list[0]}")
 
         # Get the brick status in a node where glusterd is up.
         ret = redant.are_bricks_offline(self.vol_name, brick_list[0:1],
@@ -70,14 +76,14 @@ class TestCase(DParentTest):
             raise Exception("Bricks are online")
 
         # Start glusterd on all servers.
-        for server in self.server_list:
-            redant.start_glusterd(server)
+        redant.start_glusterd(self.server_list)
 
         # Wait for glusterd to start.
-        for server in self.server_list:
-            ret = redant.wait_for_glusterd_to_start(server)
-            if not ret:
-                raise Exception(f"Glusterd not started on {server}")
+        # for server in self.server_list:
+        ret = redant.wait_for_glusterd_to_start(self.server_list)
+        if not ret:
+            raise Exception(f"Glusterd not started on all the "
+                            f"servers: {self.server_list}")
 
         # Wait for all volume processes to be online
         ret = redant.wait_for_volume_process_to_be_online(self.vol_name,
