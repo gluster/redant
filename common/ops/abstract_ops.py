@@ -50,7 +50,9 @@ class AbstractOps:
 
         return ret
 
-    def execute_abstract_op_multinode(self, cmd: str, node: list = None):
+    def execute_abstract_op_multinode(self, cmd: str,
+                                      node: list = None,
+                                      excep: bool = True):
         """
         Calls the function in the remote executioner to execute
         commands on the nodes. Logging is also performed along
@@ -60,10 +62,18 @@ class AbstractOps:
             node (list): the list of nodes on which the command as to be
                          executed. If the node is None then the rexe chooses
                          the node randomly and executes the command on it.
+
+            excep (bool): exception flag to bypass the exception if the
+                          cmd fails. If set to False the exception is
+                          bypassed and value from remote executioner is
+                          returned. Defaults to True
         """
         self.logger.info(f"Running {cmd} on {node}")
 
         ret = self.execute_command_multinode(cmd, node)
+
+        if not excep:
+            return ret
 
         for each_ret in ret:
             if each_ret['error_code'] != 0:
