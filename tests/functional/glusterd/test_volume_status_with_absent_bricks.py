@@ -33,28 +33,33 @@ class TestCase(DParentTest):
         3) Start Volume and compare the failure message
         4) Check the gluster volume status and compare the status message
         """
-        # Fetching the brick list
+        # Stopping the volume
         redant.volume_stop(self.vol_name, self.server_list[0])
-        brick_list = redant.es.get_brickdata(self.vol_name)
+
+        # Fetching the brick list
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if brick_list is None:
+            raise Exception("Failed to get the bricks in"
+                            " the volume")
 
         # Removing any one brick directory
-        brick_list = list(brick_list.items())
         random_brick = random.choice(brick_list)
-        random_brick_path = random.choice(random_brick[1])
-        cmd = f'rm -rf {random_brick_path}'
-        redant.execute_abstract_op_node(cmd, random_brick[0])
+        node, brick_path = random_brick.split(':')
+        cmd = 'rm -rf ' + brick_path
+        redant.execute_abstract_op_node(cmd, node)
 
         # Starting volume
         err_msg = 'Failed to find brick directory'
         ret = redant.volume_start(self.vol_name, self.server_list[0],
                                   excep=False)
-        if err_msg not in ret['msg']['opErrstr']:
+        if ret['error_code'] != 0 and err_msg not in ret['msg']['opErrstr']:
             raise Exception("Unexpected:Volume started successfully"
                             " even though brick is deleted.")
 
         # Checking volume status
         ret = redant.get_volume_status(self.vol_name, self.server_list[0],
                                        excep=False)
-        if ret['msg']['opErrstr'] != f'Volume {self.vol_name} is not started':
+        if ret['error_code'] != 0 and ret['msg']['opErrstr'] != \
+        f'Volume {self.vol_name} is not started':
             raise Exception("Incorrect error message for gluster vol "
                             "status")
