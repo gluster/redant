@@ -146,6 +146,7 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.set_new_volume(volname, brick_dict)
+        self.es.set_vol_type(volname, conf_hash)
 
         return ret
 
@@ -831,14 +832,16 @@ class VolumeOps(AbstractOps):
         volume_dict = self.es.get_volume_dict(volname)
         is_only_distribute = True
         for vol_type, count in volume_dict['voltype'].items():
-            if ((vol_type != "dist_count" and count > 0)
-               or (vol_type == "dist_count" and count == 0)):
-                is_only_distribute = False
-                break
+            if vol_type != "transport":
+                if ((vol_type != "dist_count" and count > 0)
+                   or (vol_type == "dist_count" and count == 0)):
+                    is_only_distribute = False
+                    break
 
         return is_only_distribute
 
     def wait_for_volume_process_to_be_online(self, volname: str, node: str,
+                                             server_list: list,
                                              timeout: int = 300) -> bool:
         """
         Waits for the volume's processes to be online until timeout
@@ -846,6 +849,7 @@ class VolumeOps(AbstractOps):
         Args:
             volname (str): Name of the volume.
             node (str): Node on which commands will be executed.
+            server_list (list): List of servers
 
         Optional:
             timeout (int): timeout value in seconds to wait for all volume
@@ -864,7 +868,7 @@ class VolumeOps(AbstractOps):
 
         # Wait for bricks to be online
         bricks_online_status = (self.wait_for_bricks_to_come_online(volname,
-                                self.server_list,
+                                server_list,
                                 brick_list))
         if not bricks_online_status:
             self.logger.error(f"Failed to wait for the volume {volname} "
