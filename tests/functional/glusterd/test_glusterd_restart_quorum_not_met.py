@@ -82,6 +82,7 @@ class TestCase(DParentTest):
         # Wait for all volume processes to be online
         ret = redant.wait_for_volume_process_to_be_online(self.vol_name,
                                                           self.server_list[0],
+                                                          self.server_list,
                                                           timeout=600)
         if not ret:
             raise Exception("Not all volume processes are online")
