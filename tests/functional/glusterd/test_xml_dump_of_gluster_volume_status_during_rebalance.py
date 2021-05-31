@@ -101,6 +101,9 @@ class TestCase(DParentTest):
 
         # Stop glusterd
         redant.stop_glusterd(self.server_list[2])
+        if not redant.wait_for_glusterd_to_stop(self.server_list[2]):
+            raise Exception("glusterd has not stopped on "
+                            f"{self.server_list[2]}")
 
         cmd = ("gluster v status  | grep -A 4 'Rebalance' | awk 'NR==3{print "
                "$3,$4}'")
