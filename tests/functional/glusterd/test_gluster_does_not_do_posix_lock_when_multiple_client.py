@@ -37,6 +37,9 @@ class TestCase(NdParentTest):
         4. Wait till 300 iteration on both the node
         """
         # NOTE: This test case should be run with 2 clients
+        if len(self.client_list) < 2:
+            raise Exception("Insufficient client systems")
+
         # Shell Script to be run on mount point
         script = """
                 #!/bin/bash
