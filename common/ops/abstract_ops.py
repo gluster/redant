@@ -50,7 +50,9 @@ class AbstractOps:
 
         return ret
 
-    def execute_abstract_op_multinode(self, cmd: str, node: list = None):
+    def execute_abstract_op_multinode(self, cmd: str,
+                                      node: list = None,
+                                      excep: bool = True):
         """
         Calls the function in the remote executioner to execute
         commands on the nodes. Logging is also performed along
@@ -64,6 +66,9 @@ class AbstractOps:
         self.logger.info(f"Running {cmd} on {node}")
 
         ret = self.execute_command_multinode(cmd, node)
+
+        if not excep:
+            return ret
 
         for each_ret in ret:
             if each_ret['error_code'] != 0:

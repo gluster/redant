@@ -63,9 +63,13 @@ class TestCase(NdParentTest):
         mount_point = redant.es.get_mnt_pts_list(self.vol_name,
                                                  self.client_list[0])[0]
         cmd = f"echo {script} >{mount_point}/test.sh; sh {mount_point}/test.sh"
-        ret = redant.execute_abstract_op_multinode(cmd, self.client_list[:2])
+        ret = redant.execute_abstract_op_multinode(cmd, self.client_list[:2], False)
         # Check if 300 is present in the output
         for item in ret:
-            out = item['msg']
-            if "300\n" not in out:
-                raise Exception(f"Failed to run the command on {item['node']}")
+            if item['error_code'] == 0:
+                out = item['msg']
+                if "300\n" not in out:
+                    raise Exception(f"Failed to run the command on {item['node']}")
+            else:
+                raise Exception(f"Failed to execute the script: "
+                                f"{item['error_msg']}")
