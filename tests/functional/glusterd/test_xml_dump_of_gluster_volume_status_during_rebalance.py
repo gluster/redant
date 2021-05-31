@@ -27,10 +27,6 @@ from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
-    """
-    xml Dump of gluster volume status during rebalance, when one gluster
-    node is down
-    """
 
     def terminate(self):
         """
@@ -84,14 +80,16 @@ class TestCase(DParentTest):
         if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
             raise Exception("IO failed on some of the clients")
 
-        ret = redant.volume_stop(self.volume_name1, self.server_list[0])
+        redant.volume_stop(self.volume_name1, self.server_list[0])
 
         # Start Rebalance
-        ret = redant.rebalance_start(self.vol_name, self.server_list[0])
+        redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Get rebalance status
         status_info = redant.get_rebalance_status(self.vol_name,
                                                   self.server_list[0])
+        if status_info is None:
+            raise Exception("Rebalance status returned None")
         status = status_info['aggregate']['statusStr']
 
         if 'in progress' not in status:
@@ -110,6 +108,8 @@ class TestCase(DParentTest):
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
         ret1 = redant.get_volume_status(self.vol_name, self.server_list[0],
                                         options="tasks")
+        if ret1 is None:
+            raise Exception("Volume status returned None")
         rebalance_status = ret1[self.vol_name]['task_status'][0]['statusStr']
         if rebalance_status not in " ".join(ret['msg']).replace("\n", ""):
             raise Exception("rebalance status is not in volume status")
