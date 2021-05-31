@@ -1,52 +1,33 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+This test checks if gluster does not do posix lock
+when multiple clients are present.
+"""
+
+from tests.nd_parent_test import NdParentTest
+
+# nonDisruptive;dist,rep,dist-rep,disp,dist,disp,arb,dist-arb
 
 
-@runs_on([['distributed', 'replicated', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed',
-           'arbiter', 'distributed-arbiter'], ['glusterfs']])
-class TestFlock(GlusterBaseClass):
-    def setUp(self):
-        """
-        setUp method for every test
-        """
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+class TestCase(NdParentTest):
 
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Volume creation failed: %s" % self.volname)
-
-    def tearDown(self):
-        """
-        TearDown for every test
-        """
-        # Stopping the volume and Cleaning up the volume
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError(
-                "Failed Cleanup the Volume %s" % self.volname)
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_gluster_does_not_do_posix_lock_when_multiple_client(self):
+    def run_test(self, redant):
         """
         Steps:
         1. Create all types of volumes.
@@ -79,13 +60,12 @@ class TestFlock(GlusterBaseClass):
                     fi
                 done
                 """
-        mount_point = self.mounts[0].mountpoint
-        cmd = "echo '{}' >'{}'/test.sh; sh '{}'/test.sh ".format(
-            script, mount_point, mount_point)
-        ret = g.run_parallel(self.clients[:2], cmd)
-
+        mount_point = redant.es.get_mnt_pts_list(self.vol_name,
+                                                 self.server_list[0])[0]
+        cmd = f"echo {script} >{mount_point}/test.sh; sh {mount_point}/test.sh"
+        ret = redant.execute_abstract_op_multinode(cmd, self.client_list[:2])
         # Check if 300 is present in the output
-        for client_ip, _ in ret.items():
-            self.assertTrue("300" in ret[client_ip][1].split("\n"),
-                            "300 iteration is not completed")
-            self.assertFalse(ret[client_ip][0], "Failed to run the cmd ")
+        for item in ret:
+            out = item['msg']
+            if "300\n" not in out:
+                raise Exception(f"Failed to run the command on {item['node']}")
