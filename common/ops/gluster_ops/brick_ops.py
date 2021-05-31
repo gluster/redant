@@ -4,9 +4,9 @@ Brick ops module deals with the functions related to brick related operations.
 
 from time import sleep
 import random
+from common.ops.abstract_ops import AbstractOps
 
-
-class BrickOps:
+class BrickOps(AbstractOps):
     """
     Class which is responsible for methods for brick related operations.
     """

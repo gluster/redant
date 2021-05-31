@@ -103,11 +103,11 @@ class TestCase(DParentTest):
         # Remove brick operation.
         self.brick_list = redant.get_all_bricks(self.vol_name,
                                                 self.server_list[0])
-        """if self.volume_type != 'dist':
+        if self.volume_type != 'dist':
             ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                       self.brick_list[-3:], 'force')
         else:
             ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                       self.brick_list[-1:], 'force')
         self.vol_type_inf[self.conv_dict[self.volume_type]]['dist_count'] -= 1
-        print(ret)"""
+        print(ret)
