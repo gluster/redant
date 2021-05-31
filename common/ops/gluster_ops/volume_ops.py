@@ -650,6 +650,18 @@ class VolumeOps(AbstractOps):
                             else:
                                 node_info[n_key] = n_val
                         ret_dict[volname]['node'].append(node_info)
+                elif key=='tasks':
+                    nodename = 'task_status'
+                    if not isinstance(val,list):
+                        tasks = [val]
+                    for task in tasks:
+                        if 'task' in list(task.keys()):
+                            if nodename not in list(ret_dict[volname].keys()):
+                                ret_dict[volname][nodename] = [task['task']]
+                            else:
+                                ret_dict[volname][nodename].append(task['task'])
+                        else:
+                            ret_dict[volname][nodename] = [task]
                 else:
                     ret_dict[volname][key] = val
 
