@@ -5,7 +5,6 @@ get_all_bricks_offline
 """
 
 # disruptive;dist-rep,rep,dist
-# disruptive;dist-rep,rep,dist
 
 from tests.d_parent_test import DParentTest
 
