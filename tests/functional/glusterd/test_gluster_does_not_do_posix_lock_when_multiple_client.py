@@ -36,7 +36,7 @@ class TestCase(NdParentTest):
          while running this script it should not hang
         4. Wait till 300 iteration on both the node
         """
-
+        # NOTE: This test case should be run with 2 clients
         # Shell Script to be run on mount point
         script = """
                 #!/bin/bash
