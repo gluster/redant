@@ -97,7 +97,7 @@ class TestChangeReservcelimit(NdParentTest):
                                   brick_list[-3:], 'stop', 3)
 
         if ret['error_code'] != 0:
-            raise Exception("Failed to start remove brick operation.")
+            raise Exception("Failed to stop remove brick operation.")
 
     def run_test(self, redant):
         """
@@ -107,7 +107,6 @@ class TestChangeReservcelimit(NdParentTest):
            reserve limit to a higher value.
         3) Change the reserve limit to a higher value on the newly created
            volume
-        4) Delete the volume created in the test case.
         """
         # change_reserve_limit_to_lower_value
         self.set_storage_reserve_value(redant, self.vol_name, "33")
@@ -124,7 +123,6 @@ class TestChangeReservcelimit(NdParentTest):
         redant.volume_mount(self.server_list[0], self.volume_name1,
                             mountpoint, self.client_list[0])
 
-        # change_reserve_limit_to_higher_value
+        # change_reserve_limit_to_higher_value is a seperate test case
+        # which is being merged into a single test case
         self.set_storage_reserve_value(redant, self.volume_name1, "99")
-
-        redant.cleanup_volume(self.volume_name1, self.server_list[0])
