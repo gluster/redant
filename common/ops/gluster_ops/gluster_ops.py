@@ -266,9 +266,9 @@ class GlusterOps(AbstractOps):
         """
         cmd = "gluster --version"
 
-        ret = self.execute_abstract_op_multinode(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node)
 
-        return ret['msg'].split(' ')[1]
+        return ret['msg'][0].rstrip('\n').split(' ')[1]
 
     def get_state(self, node: str) -> dict:
         """
