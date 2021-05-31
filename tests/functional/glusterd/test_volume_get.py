@@ -186,9 +186,9 @@ class TestCase(NdParentTest):
                             f"io-cache command failed")
         ver = redant.get_gluster_version(self.server_list[0])
 
-        if  float(ver) >= 6.0:
-            if ("off" not in ret['performance.io-cache']) and\
-               ("on" not in ret['performance.io-cache']):
+        if float(ver) >= 6.0:
+           if ("off" not in ret['performance.io-cache']) and\
+              ("on" not in ret['performance.io-cache']):
                 raise Exception("io-cache value is not correct")
         redant.logger.info("io-cache value is correct")
 
