@@ -93,8 +93,7 @@ class TestPeerStatus(DParentTest):
         _, br_cmd = redant.form_brick_cmd([self.server_list[2]],
                                           self.brick_roots, self.vol_name,
                                           mul_factor, True)
-        redant.add_brick(self.vol_name, br_cmd[1:],
-                         self.server_list[0], True)
+        redant.add_brick(self.vol_name, br_cmd, self.server_list[0], True)
 
         # get volume info, it should have correct brick information
         ret = redant.get_volume_info(self.server_list[0], self.vol_name)
