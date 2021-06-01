@@ -118,7 +118,7 @@ class DParentTest(metaclass=abc.ABCMeta):
             self.redant.logger.error(tb)
 
         try:
-            for (opt, _) in self.redant.es.get_vol_options_all():
+            for (opt, _) in self.redant.es.get_vol_options_all().items():
                 self.redant.reset_volume_option('all', opt,
                                                 self.server_list[0])
             volnames = self.redant.es.get_volnames()
