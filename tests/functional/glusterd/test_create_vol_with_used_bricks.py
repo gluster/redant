@@ -21,7 +21,7 @@ Description:
 import traceback
 from tests.nd_parent_test import NdParentTest
 
-# nonDisruptive;dist-rep
+# nonDisruptive;
 
 
 class TestCase(NdParentTest):
