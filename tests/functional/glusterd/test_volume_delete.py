@@ -19,7 +19,6 @@
    TC to check volume delete with one brick down
 """
 
-import traceback
 import re
 import random
 from tests.d_parent_test import DParentTest
@@ -28,27 +27,6 @@ from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
-
-    def terminate(self):
-        """Start volume, and glusterd n the random node if something goes
-           wrong in betwwen the TC
-        """
-        try:
-            # start glusterd on all servers
-            self.redant.start_glusterd(self.server_list)
-
-            if not self.redant.wait_for_glusterd_to_start(self.server_list):
-                raise Exception("Failed to start glusterd on all servers")
-
-            # Start volume if stopped
-            if not self.vol_started:
-                self.redant.volume_start(self.vol_name, self.server_list[0])
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
 
     def run_test(self, redant):
         """
