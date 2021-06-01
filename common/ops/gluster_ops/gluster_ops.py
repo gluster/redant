@@ -215,7 +215,7 @@ class GlusterOps(AbstractOps):
         it till the timeout is reached.
 
         Args:
-            node (str): Node on which this is to be executed.
+            node (str|list): Node on which this is to be executed.
             timeout (int) : We cannot wait till eternity right :p
 
         Returns:
