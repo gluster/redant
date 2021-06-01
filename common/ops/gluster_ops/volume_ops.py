@@ -874,15 +874,10 @@ class VolumeOps(AbstractOps):
             NoneType: None if volume does not exist.
         """
         volume_dict = self.es.get_volume_dict(volname)
-        is_only_distribute = True
-        for vol_type, count in volume_dict['voltype'].items():
-            if vol_type != "transport":
-                if ((vol_type != "dist_count" and count > 0)
-                        or (vol_type == "dist_count" and count == 0)):
-                    is_only_distribute = False
-                    break
-
-        return is_only_distribute
+        if volume_dict['voltype']['dist_count'] > 0 and\
+                volume_dict['voltype']['replica_count'] == 1:
+            return True
+        return False
 
     def wait_for_volume_process_to_be_online(self, volname: str, node: str,
                                              server_list: list,
