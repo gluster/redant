@@ -14,53 +14,9 @@
 #  with this program; if not, write to the Free Software Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_ops import (get_volume_list, get_volume_info)
-from glustolibs.gluster.volume_libs import (cleanup_volume, setup_volume)
-from glustolibs.gluster.brick_ops import remove_brick
-from glustolibs.gluster.brick_libs import get_all_bricks
-
 
 @runs_on([['distributed-replicated'], ['glusterfs']])
 class TestVolumeReduceReplicaCount(GlusterBaseClass):
-
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Override Volumes
-        cls.volume['voltype'] = {
-            'type': 'distributed-replicated',
-            'dist_count': 2,
-            'replica_count': 3,
-            'transport': 'tcp'}
-
-    def tearDown(self):
-
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
-
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Unable to delete volume % s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
-
-        # Removing brick directories
-        for brick in self.brick_list:
-            node, brick_path = brick.split(r':')
-            cmd = "rm -rf " + brick_path
-            ret, _, _ = g.run(node, cmd)
-            if ret:
-                raise ExecutionError("Failed to delete the brick "
-                                     "dir's of deleted volume")
-
-        self.get_super_method(self, 'tearDown')()
 
     def test_volume_reduce_replica_count(self):
         """
