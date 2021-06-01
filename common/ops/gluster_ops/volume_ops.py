@@ -251,7 +251,7 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
         # Delete volume fro volds only if the command succeded
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == 0:
             self.es.add_data_to_cleands(self.es.get_brickdata(volname))
             self.es.remove_volume_data(volname)
 

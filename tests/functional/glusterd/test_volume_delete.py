@@ -20,7 +20,7 @@
 """
 
 import traceback
-#import re
+import re
 import random
 from tests.d_parent_test import DParentTest
 
@@ -81,15 +81,15 @@ class TestCase(DParentTest):
         self.vol_started = False
 
         # try to delete the volume, it should fail
-        ret = redant.volume_delete(self.vol_name, self.server_lis[0],
+        ret = redant.volume_delete(self.vol_name, self.server_list[0],
                                    False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == 0:
             raise Exception("Volume delete succeeded when one of the"
                             " brick node is down")
-        # if re.search(r'Some of the peers are down', ret['error_msg']) is None:
-        #     raise Exception("Volume delete failed with unexpected error"
-        #                     " message")
-        redant.logger.info("Error msg: %s, %s", ret['error_msg'], ret['msg'])
+        if (re.search(r'Some of the peers are down', ret['msg']['opErrstr'])
+           is None):
+            raise Exception("Volume delete failed with unexpected error"
+                            " message")
 
         redant.volume_start(self.vol_name, self.server_list[0])
         self.vol_started = True
