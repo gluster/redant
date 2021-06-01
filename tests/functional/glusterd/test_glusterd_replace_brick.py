@@ -1,53 +1,33 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+   TC to check replace-brick functionality
+"""
 
 import random
-import time
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import (setup_volume,
-                                            replace_brick_from_volume)
-from glustolibs.gluster.brick_libs import get_online_bricks_list
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.brick_ops import replace_brick
-from glustolibs.gluster.brick_libs import are_bricks_online
+from tests.d_parent_test import DParentTest
+
+# disruptive;rep,dist-rep,disp,dist-disp
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed'], ['glusterfs']])
-class TestReplaceBrick(GlusterBaseClass):
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-        self.test_method_complete = False
-        # Creating a volume and starting it
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        if not ret:
-            raise ExecutionError("Failed to create volume")
-        g.log.info("Volume created successfully")
+class TestCase(DParentTest):
 
-    def tearDown(self):
-        self.get_super_method(self, 'tearDown')()
-        self.test_method_complete = False
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to cleanup volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-    def test_glusterd_replace_brick(self):
+    def test_glusterd_replace_brick(self, redant):
         """
         Create a volume and start it.
         - Get list of all the bricks which are online
@@ -56,58 +36,43 @@ class TestReplaceBrick(GlusterBaseClass):
         - Perform replace brick and it should fail
         - Form a new brick which valid brick path replace brick should succeed
         """
-        # pylint: disable=too-many-function-args
         # Getting all the bricks which are online
-        bricks_online = get_online_bricks_list(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_online, "Unable to get the online bricks")
-        g.log.info("got the brick list from the volume")
+        bricks_online = redant.get_online_bricks_list(self.vol_name,
+                                                      self.server_list[0])
+        if bricks_online is None:
+            raise Exception("Unable to get online brick list")
 
         # Getting one random brick from the online bricks to be replaced
         brick_to_replace = random.choice(bricks_online)
-        g.log.info("Brick to replace %s", brick_to_replace)
-        node_for_brick_replace = brick_to_replace.split(':')[0]
-        new_brick_to_replace = form_bricks_list(
-            self.mnode, self.volname, 1,
-            node_for_brick_replace, self.all_servers_info)
+        node_of_brick_replace = brick_to_replace.split(':')[0]
+        _, new_brick_to_replace = redant.form_brick_cmd(node_of_brick_replace,
+                                                        self.brick_roots,
+                                                        self.vol_name, 1)
 
         # performing replace brick with non-existing brick path
         path = ":/brick/non_existing_path"
-        non_existing_path = node_for_brick_replace + path
+        non_existing_path = node_of_brick_replace + path
 
         # Replace brick for non-existing path
-        ret, _, _ = replace_brick(self.mnode, self.volname,
-                                  brick_to_replace, non_existing_path)
-        self.assertNotEqual(ret, 0, ("Replace brick with commit force"
-                                     " on a non-existing brick passed"))
-        g.log.info("Replace brick with non-existing brick with commit"
-                   "force failed as expected")
+        ret = redant.replace_brick(self.vol_name, brick_to_replace,
+                                   non_existing_path, False)
+        if ret['error_code'] == 0:
+            raise Exception("Replace brick with commit force"
+                            " on a non-existing brick passed")
 
         # calling replace brick by passing brick_to_replace and
         # new_brick_to_replace with valid brick path
-        ret = replace_brick_from_volume(self.mnode, self.volname,
-                                        self.servers, self.all_servers_info,
-                                        brick_to_replace,
-                                        new_brick_to_replace[0],
-                                        delete_brick=True)
-        self.assertTrue(ret, ("Replace brick with commit force failed"))
+        ret = redant.replace_brick_from_volume(self.vol_name,
+                                               self.server_list[0],
+                                               self.server_list,
+                                               brick_to_replace,
+                                               new_brick_to_replace)
+        if not ret:
+            raise Exception(f"Failed to replace brick: {brick_to_replace}")
 
         # Validating whether the brick replaced is online
-        halt = 20
-        counter = 0
-        _rc = False
-        g.log.info("Wait for some seconds for the replaced brick "
-                   "to get online")
-        while counter < halt:
-            ret = are_bricks_online(self.mnode, self.volname,
-                                    new_brick_to_replace)
-            if not ret:
-                g.log.info("The replaced brick isn't online, "
-                           "Retry after 2 seconds .......")
-                time.sleep(2)
-                counter = counter + 2
-            else:
-                _rc = True
-                g.log.info("The replaced brick is online after being replaced")
-                break
-        if not _rc:
-            raise ExecutionError("The replaced brick isn't online")
+        if not redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                     self.server_list,
+                                                     new_brick_to_replace,
+                                                     20):
+            raise Exception("Replaced bricks is not yet online.")

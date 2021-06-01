@@ -3,6 +3,7 @@ This file contains one class - VolumeOps which
 holds volume related APIs which will be called
 from the test case.
 """
+
 from time import sleep
 from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
@@ -147,8 +148,11 @@ class VolumeOps(AbstractOps):
             cmd = (f"{cmd} force")
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.set_new_volume(volname, brick_dict)
-        self.es.set_vol_type(volname, conf_hash)
+
+        # Don't add data in case volume creation fails
+        if ret['msg']['error_code'] == 0:
+            self.es.set_new_volume(volname, brick_dict)
+            self.es.set_vol_type(volname, conf_hash)
 
         return ret
 
@@ -185,7 +189,9 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster volume start {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.set_volume_start_status(volname, True)
+
+        if ret['msg']['opRet'] == 0:
+            self.es.set_volume_start_status(volname, True)
 
         return ret
 
@@ -221,7 +227,9 @@ class VolumeOps(AbstractOps):
             cmd = f"gluster volume stop {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.set_volume_start_status(volname, False)
+
+        if ret['msg']['opRet'] == 0:
+            self.es.set_volume_start_status(volname, False)
 
         return ret
 
@@ -923,3 +931,41 @@ class VolumeOps(AbstractOps):
 
         self.logger.info(f"Volume {volname} processes are all online")
         return True
+
+    # def get_subvols(self, volname: str, node: str) -> list:
+    #     """
+    #     Get the subvolumes in the given volume
+
+    #     Args:
+    #         volname(str): Volname to get the subvolume for
+    #         node(str): Node on which command has to be executed
+
+    #     Returns:
+    #         dict: with empty list values for all keys, if volume doesn't
+    #                exist
+    #         dict: Dictionary of subvols, value of each key is list of lists
+    #               containing subvols
+    #     """
+    #     subvols = {'volume_subvols': []}
+
+    #     volinfo = self.get_volume_info(node, volname)
+    #     if volinfo is not None:
+    #         voltype = volinfo[volname]['typeStr']
+    #         tmp = volinfo[volname]["bricks"]["brick"]
+    #         bricks = [x["name"] for x in tmp if "name" in x]
+    #         if voltype == 'Replicate' or voltype == 'Distributed-Replicate':
+    #             rep_count = int(volinfo[volname]['replicaCount'])
+    #             subvol_list = [bricks[i:i + rep_count]for i in range(0,
+    #                                                                  len(bricks),
+    #                                                                  rep_count)]
+    #             subvols['volume_subvols'] = subvol_list
+    #         elif voltype == 'Distribute':
+    #             for brick in bricks:
+    #                 subvols['volume_subvols'].append([brick])
+
+    #         elif voltype == 'Disperse' or voltype == 'Distributed-Disperse':
+    #             disp_count = int(volinfo[volname]['disperseCount'])
+    #             subvol_list = ([bricks[i:i + disp_count]
+    #                             for i in range(0, len(bricks), disp_count)])
+    #             subvols['volume_subvols'] = subvol_list
+    #     return subvols
