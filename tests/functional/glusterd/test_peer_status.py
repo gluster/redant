@@ -1,166 +1,107 @@
-#  Copyright (C) 2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2018  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+  Checks the probing operation, adding bricks to the probed node
+  and checking if the brick is correctly added.
+"""
 
 import socket
-from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import runs_on, GlusterBaseClass
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import setup_volume, cleanup_volume
-from glustolibs.gluster.volume_ops import get_volume_info, get_volume_list
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.peer_ops import (peer_probe, peer_status, peer_detach,
-                                         peer_probe_servers,
-                                         peer_detach_servers,
-                                         is_peer_connected,
-                                         nodes_from_pool_list)
+from tests.d_parent_test import DParentTest
+
+# disruptive;
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestPeerStatus(GlusterBaseClass):
+class TestPeerStatus(DParentTest):
 
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
+    def run_test(self, redant):
+        """
+        Steps:
+        1) Destroy cluster
+        2) Peer Probe 1 server
+        3) Get peer status
+        4) Create a distributed volume on two node cluster
+        5) Peer Probe a third node
+        6) Add a brick on third node
+        7) Get volume info
+        8) Check if the brick is correctly added
+        """
 
-        # Performing peer detach
-        ret = peer_detach_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to detach servers %s"
-                                 % self.servers)
-        g.log.info("Peer detach SUCCESSFUL.")
+        redant.delete_cluster(self.server_list)
 
-    def tearDown(self):
-
-        # Clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is not None:
-            for volume in vol_list:
-                ret = cleanup_volume(self.mnode, volume)
-                if not ret:
-                    raise ExecutionError("Failed to cleanup volume")
-                g.log.info("Volume deleted successfully : %s", volume)
-
-        # detached servers from cluster
-        pool = nodes_from_pool_list(self.mnode)
-        for node in pool:
-            peer_detach(self.mnode, node)
-
-        # form a cluster
-        ret = peer_probe_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to probe peer "
-                                 "servers %s" % self.servers)
-        g.log.info("Peer probe success for detached "
-                   "servers %s", self.servers)
-        self.get_super_method(self, 'tearDown')()
-
-    def test_peer_probe_status(self):
-
-        # get FQDN of node1 and node2
-        node1 = socket.getfqdn(self.mnode)
-        node2 = socket.getfqdn(self.servers[1])
+        # get FQDN of node1
+        node1 = socket.getfqdn(self.server_list[1])
 
         # peer probe to a new node, N2 from N1
-        ret, _, err = peer_probe(node1, node2)
-        self.assertEqual(ret, 0, ("Peer probe failed to %s from %s with "
-                                  "error message %s" % (self.servers[1],
-                                                        self.mnode, err)))
-        g.log.info("Peer probe from %s to %s is success", self.mnode,
-                   self.servers[1])
+        ret = redant.peer_probe(node1, self.server_list[0])
 
-        # check peer status in both the nodes, it should have FQDN
+        # checking if node1 is connected
+        ret = redant.wait_for_peers_to_connect(node1,
+                                               self.server_list[0])
+        if not ret:
+            raise Exception("Some peers are not in connected state")
+
+        # check peer status in both the nodes, it should have IP
         # from node1
-        ret, out, err = peer_status(self.mnode)
-        self.assertEqual(ret, 0, ("Failed to get peer status from %s with "
-                                  "error message %s" % (self.mnode, err)))
-        g.log.info("Successfully got peer status from %s", self.mnode)
+        ret = redant.get_peer_status(self.server_list[0])
+        if ret is None:
+            raise Exception("Peer status returned None")
+        if self.server_list[1] != socket.gethostbyname(ret['hostname']):
+            raise Exception(f"{self.server_list[1]} is not present "
+                            "in the output of peer status from "
+                            f"{self.server_list[0]}")
 
-        self.assertIn(node2, out, ("FQDN of %s is not present in the "
-                                   "output of peer status from %s"
-                                   % (self.servers[1], self.mnode)))
-        g.log.info("FQDN of %s is present in peer status of %s",
-                   self.servers[1], self.mnode)
-
-        # from node2
-        ret, out, err = peer_status(self.servers[1])
-        self.assertEqual(ret, 0, ("Failed to get peer status from %s with "
-                                  "error message %s" % (self.servers[1], err)))
-        g.log.info("Successfully got peer status from %s", self.servers[1])
-
-        self.assertIn(node1, out, ("FQDN of %s is not present in the "
-                                   "output of peer status from %s"
-                                   % (self.mnode, self.servers[1])))
-        g.log.info("FQDN of %s is present in peer status of %s",
-                   self.mnode, self.servers[1])
+        # from node1
+        ret = redant.get_peer_status(self.server_list[1])
+        if self.server_list[0] != socket.gethostbyname(ret['hostname']):
+            raise Exception(f"{self.server_list[0]} is not present "
+                            "in the output of peer status from "
+                            f"{self.server_list[1]}")
 
         # create a distributed volume with 2 bricks
-        servers_info_from_two_node_cluster = {}
-        for server in self.servers[0:2]:
-            servers_info_from_two_node_cluster[
-                server] = self.all_servers_info[server]
-
-        self.volume['servers'] = self.servers[0:2]
-        self.volume['voltype']['dist_count'] = 2
-        ret = setup_volume(self.mnode, servers_info_from_two_node_cluster,
-                           self.volume)
-        self.assertTrue(ret, ("Failed to create "
-                              "and start volume %s" % self.volname))
-        g.log.info("Successfully created and started the volume %s",
-                   self.volname)
+        self.vol_type_inf[self.conv_dict['dist']]['dist_count'] = 2
+        redant.setup_volume(self.vol_name, self.server_list[0],
+                            self.vol_type_inf[self.conv_dict['dist']],
+                            self.server_list[0:2], self.brick_roots,
+                            True)
 
         # peer probe to a new node, N3
-        ret, _, err = peer_probe(self.mnode, self.servers[2])
-        self.assertEqual(ret, 0, ("Peer probe failed to %s from %s with "
-                                  "error message %s" % (self.servers[2],
-                                                        self.mnode, err)))
-        g.log.info("Peer probe from %s to %s is success", self.mnode,
-                   self.servers[2])
+        redant.peer_probe(self.server_list[2], self.server_list[0])
 
-        # Validate firts three peers are in connected state
-        # In jenkins The next step which is add-brick from thried node
+        # Validate first three peers are in connected state
+        # In jenkins The next step which is add-brick from third node
         # is failing with peer is not in cluster
-        count = 0
-        while count < 30:
-            ret = is_peer_connected(self.mnode, self.servers[0:3])
-            if ret:
-                g.log.info("Peers are in connected state")
-                break
-            sleep(3)
-            count = count + 1
-        self.assertTrue(ret, "Some peers are not in connected state")
+        ret = redant.wait_for_peers_to_connect(self.server_list,
+                                               self.server_list[0])
+        if not ret:
+            raise Exception("Some peers are not in connected state")
 
         # add a brick from N3 to the volume
-        num_bricks_to_add = 1
-        server_info = {}
-        server_info[self.servers[2]] = self.all_servers_info[self.servers[2]]
-        brick = form_bricks_list(self.mnode, self.volname, num_bricks_to_add,
-                                 self.servers[2], server_info)
-        ret, _, _ = add_brick(self.mnode, self.volname, brick)
-        self.assertEqual(ret, 0, ("Failed to add brick to volume %s"
-                                  % self.volname))
-        g.log.info("add brick to the volume %s is success", self.volname)
+        mul_factor = 1
+        _, br_cmd = redant.form_brick_cmd([self.server_list[2]],
+                                          self.brick_roots, self.vol_name,
+                                          mul_factor, True)
+        redant.add_brick(self.vol_name, br_cmd[1:],
+                         self.server_list[0], True)
 
         # get volume info, it should have correct brick information
-        ret = get_volume_info(self.mnode, self.volname)
-        self.assertIsNotNone(ret, ("Failed to get volume info from %s"
-                                   % self.mnode))
-        g.log.info("volume info from %s is success", self.mnode)
-
-        brick3 = ret[self.volname]['bricks']['brick'][2]['name']
-        self.assertEqual(brick3, str(brick[0]), ("Volume info has incorrect "
-                                                 "information"))
-        g.log.info("Volume info has correct information")
+        ret = redant.get_volume_info(self.server_list[0], self.vol_name)
+        all_bricks = redant.es.get_all_bricks_list(self.vol_name)
+        brick3 = ret[self.vol_name]['bricks'][2]['name']
+        if brick3 != str(all_bricks[2]):
+            raise Exception("Volume info has incorrect "
+                            "information")
