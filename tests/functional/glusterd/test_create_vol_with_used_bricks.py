@@ -18,12 +18,30 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Create volume using bricks of deleted volume
 """
+import traceback
 from tests.nd_parent_test import NdParentTest
 
 # nonDisruptive;dist-rep
 
 
 class TestCase(NdParentTest):
+
+    def terminate(self):
+        """
+        The voume created in the test case is destroyed.
+        """
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+            self.redant.cleanup_volume(self.volname, self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         '''
