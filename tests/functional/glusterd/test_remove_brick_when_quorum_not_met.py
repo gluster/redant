@@ -17,6 +17,7 @@
 """
 
 from time import sleep
+import traceback
 from tests.d_parent_test import DParentTest
 
 # disruptive;dist
@@ -25,25 +26,18 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def terminate(self):
-        # check if all the servers are having glusterd running
-        for server in self.server_list:
-            ret = self.redant.is_glusterd_running(server)
-            if ret != 1:
-                self.redant.start_glusterd(server)
-                self.redant.wait_for_glusterd_to_start(server)
 
-        # checking for peer status from every node
-        for _ in range(80):
-            ret = (self.redant.
-                   validate_peers_are_connected(self.server_list,
-                                                self.server_list[0]))
-            if ret:
-                break
-            sleep(2)
+        try:
+            self.redant.start_glusterd(self.server_list)
+            if not self.redant.wait_for_glusterd_to_start(self.server_list):
+                raise Exception("Glusterd hasn't started")
 
-        if not ret:
-            raise Exception("Peers are not in connected state")
-
+            self.redant.peer_probe_servers(self.server_list,
+                                           self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
         super().terminate()
 
     def run_test(self, redant):

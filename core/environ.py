@@ -54,6 +54,12 @@ class environ:
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
 
+    def get_framework_logger(self):
+        """
+        To return the framework logger object
+        """
+        return self.redant.logger
+
     def _check_and_copy_io_script(self):
         """
         Check if the I/O script exists in the client

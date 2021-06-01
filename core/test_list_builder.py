@@ -185,6 +185,18 @@ class TestListBuilder:
         return cls.nd_category[vol_type]
 
     @classmethod
+    def get_nd_tests_count(cls) -> int:
+        """
+        Method to obtain a count of nd tests.
+        Returns integer value.
+        """
+        global valid_vol_types
+        count = 0
+        for vol_type in valid_vol_types:
+            count += len(cls.nd_category[vol_type])
+        return count
+
+    @classmethod
     def _get_test_module_info(cls, tc_path: str) -> dict:
         """
         This method gets the volume types for which the TC is to be run
