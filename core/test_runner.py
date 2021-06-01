@@ -16,7 +16,7 @@ class TestRunner:
     """
 
     @classmethod
-    def init(cls, TestListBuilder, param_obj, base_log_path: str,
+    def init(cls, TestListBuilder, param_obj, fmwk_obj, base_log_path: str,
              log_level: str, multiprocess_count: int, spec_test: bool):
         """
         Test runner intialization.
@@ -37,6 +37,9 @@ class TestRunner:
         cls.get_ndtest_fn = TestListBuilder.get_ndtest_list
         cls.get_snd_test_fn = TestListBuilder.get_special_tests_dict
         cls.get_spec_vol_types_fn = TestListBuilder.get_spec_vol_types
+        cls.nd_tests_count = TestListBuilder.get_nd_tests_count()
+        cls.logger = fmwk_obj.get_framework_logger()
+        cls.logger.info("Creating thread queues for the tests")
         cls._prepare_thread_queues(spec_test)
 
     @classmethod
@@ -104,9 +107,11 @@ class TestRunner:
         """
         while not vol_queue.empty():
             job_vol = vol_queue.get()
+            cls.logger.info(f"Worker picked up job_volume {job_vol}")
             job_queue = queue_map[job_vol]
             while not job_queue.empty():
                 job_data = job_queue.get()
+                cls.logger.info(f"Worker picked up job {job_data}")
                 job_data['volType'] = job_vol
                 cls._run_test(job_data)
 
@@ -118,6 +123,7 @@ class TestRunner:
         """
         while not test_queue.empty():
             job_data = test_queue.get()
+            cls.logger.info(f"Generic worker picked up job {job_data}")
             job_data["volType"] = "Generic"
             cls._run_test(job_data)
 
@@ -134,7 +140,8 @@ class TestRunner:
         cls.env_obj = env_obj
         # Stage 1
         jobs = []
-        if bool(cls.concur_count):
+        if bool(cls.nd_tests_count):
+            cls.logger.info("Starting Non generic concurrent test cases.")
             for _ in range(cls.concur_count):
                 proc = Process(target=cls._nd_worker_process,
                                args=(cls.nd_vol_queue, cls.queue_map,))
@@ -150,6 +157,7 @@ class TestRunner:
                 proc.join()
 
             # Stage 2 for Generic concurrent tests.
+            cls.logger.info("Starting Generic concurrent test cases.")
             jobs = []
             if cls.gen_nd_jobq.qsize() != 0:
                 for _ in range(cls.concur_count):
@@ -166,6 +174,7 @@ class TestRunner:
                     proc.join()
 
         # Stage 3
+        cls.logger.info("Starting Disruptive test case runs")
         for test in cls.get_dtest_fn():
             cls._run_test(test)
 
@@ -173,9 +182,15 @@ class TestRunner:
         # it was found that sometimes the Queue which was empty had been given
         # some value, it still showed itself as empty.
         # TODO: Handle it without sleep.
-        while cls.job_result_queue.empty():
-            time.sleep(1)
+        itr = 0
+        while itr < 5:
+            if cls.job_result_queue.empty():
+                time.sleep(1)
+            else:
+                break
+            itr += 1
 
+        cls.logger.info("Finished test executions.")
         return cls.job_result_queue
 
     @classmethod
@@ -196,8 +211,8 @@ class TestRunner:
         start = time.time()
 
         runner_thread_obj = RunnerThread(tc_class, cls.param_obj, volume_type,
-                                         mname, cls.env_obj, tc_log_path,
-                                         cls.log_level)
+                                         mname, cls.logger, cls.env_obj,
+                                         tc_log_path, cls.log_level)
 
         test_stats = runner_thread_obj.run_thread()
 

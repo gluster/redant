@@ -28,28 +28,6 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def terminate(self):
-
-        # check if all the servers are having glusterd running
-        for server in self.server_list:
-            ret = self.redant.is_glusterd_running(server)
-            if ret != 1:
-                self.redant.start_glusterd(server)
-                self.redant.wait_for_glusterd_to_start(server)
-
-        # checking for peer status from every node
-        for _ in range(80):
-            ret = self.redant.validate_peers_are_connected(self.server_list,
-                                                           self.server_list[0])
-            if ret:
-                break
-            sleep(2)
-
-        if not ret:
-            raise Exception("Servers are not in connected state")
-
-        super().terminate()
-
     def run_test(self, redant):
         """
         1. Create and start a volume.
