@@ -17,28 +17,12 @@
 """
 
 from time import sleep
-import traceback
 from tests.d_parent_test import DParentTest
 
 # disruptive;dist
 
 
 class TestCase(DParentTest):
-
-    def terminate(self):
-
-        try:
-            self.redant.start_glusterd(self.server_list)
-            if not self.redant.wait_for_glusterd_to_start(self.server_list):
-                raise Exception("Glusterd hasn't started")
-
-            self.redant.peer_probe_servers(self.server_list,
-                                           self.server_list[0])
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
 
     def run_test(self, redant):
         """
