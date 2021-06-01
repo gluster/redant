@@ -64,20 +64,20 @@ class TestCase(NdParentTest):
         self.all_mounts_procs = []
         self.mounts = (redant.es.
                        get_mnt_pts_dict_in_list(self.volume_name1))
-        # counter = 1
+        counter = 1
 
-        # for mount in self.mounts:
-        #     redant.logger.info(f"Starting IO on {mount['client']}:"
-        #                        f"{mount['mountpath']}")
-        #     proc = redant.create_deep_dirs_with_files(mount['mountpath'],
-        #                                               counter, 2, 3, 4, 10,
-        #                                               mount['client'])
-        #     self.all_mounts_procs.append(proc)
-        #     counter = counter + 10
+        for mount in self.mounts:
+            redant.logger.info(f"Starting IO on {mount['client']}:"
+                               f"{mount['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                      counter, 2, 3, 4, 10,
+                                                      mount['client'])
+            self.all_mounts_procs.append(proc)
+            counter = counter + 10
 
-        # # Validate IO
-        # if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
-        #     raise Exception("IO failed on some of the clients")
+        # Validate IO
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed on some of the clients")
 
         # Unmount the volume
         redant.volume_unmount(self.volume_name1,
@@ -95,7 +95,6 @@ class TestCase(NdParentTest):
         self.volname = "test_create_vol_used_bricks"
 
         brick_cmd = " ".join(bricks_list[0:6])
-        print(f"\n\nBrick cmd: \n{brick_cmd}\n")
 
         cmd = (f"gluster volume create {self.volname}"
                f" replica 3 {brick_cmd} --mode=script")
@@ -103,9 +102,8 @@ class TestCase(NdParentTest):
         ret = redant.execute_abstract_op_node(cmd,
                                               self.server_list[0],
                                               False)
-        print(f"Ret:\n{ret}\n")
         if ret['error_code'] == 0:
-            print("Volume creation should fail with"
+            raise Exception("Volume creation should fail with"
                             " used bricks.")
         redant.logger.info("Volume creation failed as expected")
 
@@ -114,9 +112,8 @@ class TestCase(NdParentTest):
         msg = ' '.join(['volume create: test_create_vol_used_bricks: failed:',
                         bricks_list[0].split(':')[1],
                         'is already part of a volume'])
-        print(f"Msg: \n{msg}")
         if msg not in err:
-            print("Incorrect error message for volume creation "
-                  "with used bricks")
+            raise Exception("Incorrect error message for volume creation "
+                            "with used bricks")
         redant.logger.info("Correct error message "
                            "for volume creation")
