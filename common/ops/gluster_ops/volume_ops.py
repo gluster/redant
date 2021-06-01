@@ -141,6 +141,8 @@ class VolumeOps(AbstractOps):
         else:
             cmd = (f"gluster volume create {volname}{brick_cmd} "
                    "--mode=script")
+        # TODO: Needs to be changed once CI is mature enough
+        force = True
         if force:
             cmd = (f"{cmd} force")
 
