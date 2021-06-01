@@ -55,4 +55,3 @@ excluded_tests:
     - tests/functional/glusterd/test_peer_hostname.py
     - tests/functional/glusterd/test_quorum_syslog.py
     - tests/functional/glusterd/test_volume_set_when_glusterd_stopped_on_one_node.py
-    - tests/functional/glusterd/test_remove_brick_when_quorum_not_met.py

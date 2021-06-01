@@ -249,8 +249,12 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume delete {volname} --mode=script --xml"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.add_data_to_cleands(self.es.get_brickdata(volname))
-        self.es.remove_volume_data(volname)
+
+        # Delete volume for volds only if the command succeded
+        if ret['msg']['opRet'] == '0':
+            self.es.add_data_to_cleands(self.es.get_brickdata(volname))
+            self.es.remove_volume_data(volname)
+
         return ret
 
     def sanitize_volume(self, volname: str, server_list: list,
