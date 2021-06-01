@@ -112,7 +112,8 @@ class DParentTest(metaclass=abc.ABCMeta):
 
         try:
             if self.reset_option:
-                self.redant.reset_volume_option('all', 'all', self.server_list[0])
+                self.redant.reset_volume_option('all', 'all',
+                                                self.server_list[0])
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
                 volume_nodes = self.redant.es.get_volume_nodes(volname)
