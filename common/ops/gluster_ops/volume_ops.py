@@ -126,21 +126,21 @@ class VolumeOps(AbstractOps):
             if "arbiter_count" in conf_hash:
                 cmd = (f"gluster volume create {volname} "
                        f"replica {conf_hash['replica_count']} "
-                       f"arbiter {conf_hash['arbiter_count']}{brick_cmd} "
+                       f"arbiter {conf_hash['arbiter_count']} {brick_cmd} "
                        "--mode=script")
             # replicated vol
             else:
                 cmd = (f"gluster volume create {volname} "
                        f"replica {conf_hash['replica_count']}"
-                       f"{brick_cmd} --mode=script")
+                       f" {brick_cmd} --mode=script")
         # dispersed vol and distributed-dispersed vol
         elif "disperse_count" in conf_hash:
             cmd = (f"gluster volume create {volname} disperse {mul_fac} "
-                   f"redundancy {conf_hash['redundancy_count']}{brick_cmd} "
+                   f"redundancy {conf_hash['redundancy_count']} {brick_cmd} "
                    f"--mode=script")
         # distributed vol
         else:
-            cmd = (f"gluster volume create {volname}{brick_cmd} "
+            cmd = (f"gluster volume create {volname} {brick_cmd} "
                    "--mode=script")
         # TODO: Needs to be changed once CI is mature enough
         force = True
@@ -150,7 +150,7 @@ class VolumeOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
         # Don't add data in case volume creation fails
-        if ret['msg']['error_code'] == 0:
+        if ret['error_code'] == 0:
             self.es.set_new_volume(volname, brick_dict)
             self.es.set_vol_type(volname, conf_hash)
 
@@ -190,7 +190,7 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        if ret['msg']['opRet'] == 0:
+        if ret['msg']['opRet'] == '0':
             self.es.set_volume_start_status(volname, True)
 
         return ret
@@ -228,7 +228,7 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        if ret['msg']['opRet'] == 0:
+        if ret['msg']['opRet'] == '0':
             self.es.set_volume_start_status(volname, False)
 
         return ret

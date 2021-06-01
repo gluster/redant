@@ -47,16 +47,18 @@ class TestCase(DParentTest):
         node_of_brick_replace = brick_to_replace.split(':')[0]
         _, new_brick_to_replace = redant.form_brick_cmd(node_of_brick_replace,
                                                         self.brick_roots,
-                                                        self.vol_name, 1)
+                                                        self.vol_name, 1,
+                                                        True)
 
         # performing replace brick with non-existing brick path
         path = ":/brick/non_existing_path"
         non_existing_path = node_of_brick_replace + path
 
         # Replace brick for non-existing path
-        ret = redant.replace_brick(self.vol_name, brick_to_replace,
-                                   non_existing_path, False)
-        if ret['error_code'] == 0:
+        ret = redant.replace_brick(self.server_list[0], self.vol_name,
+                                   brick_to_replace, non_existing_path,
+                                   False)
+        if ret['msg']['opRet'] == '0':
             raise Exception("Replace brick with commit force"
                             " on a non-existing brick passed")
 

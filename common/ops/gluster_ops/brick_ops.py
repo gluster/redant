@@ -170,7 +170,7 @@ class BrickOps(AbstractOps):
             servers = [servers]
 
         # Check if volume exists
-        if not self.does_volume_exists(volname):
+        if not self.es.does_volume_exists(volname):
             self.logger.error(f"Volume {volname} does not exist")
             return False
 
@@ -205,7 +205,7 @@ class BrickOps(AbstractOps):
             return False
 
         # Perform replace brick
-        ret = self.replace_brick(volname, src_brick, dst_brick, False)
+        ret = self.replace_brick(node, volname, src_brick, dst_brick, False)
         if ret['msg']['opRet'] != 0:
             self.logger.error(f"Failed to replace brick: {src_brick}")
 
@@ -272,8 +272,8 @@ class BrickOps(AbstractOps):
             mul_fac (int) : Stores the number of bricks
                             needed to form the brick command
             add_flag (bool): Indicates whether the command creation is for
-                             add brick scenario or volume creation. Optional
-                             parameter which by default is False.
+                             add/replace brick scenario or volume creation.
+                             Optional parameter which by default is False.
 
         Returns:
 
@@ -306,6 +306,8 @@ class BrickOps(AbstractOps):
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1
+
+        brick_cmd = brick_cmd.lstrip(" ")
 
         return (brick_dict, brick_cmd)
 
