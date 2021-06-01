@@ -55,7 +55,6 @@ class VolumeOps(AbstractOps):
             return True
 
         # Create volume
-        force = True
         ret = self.volume_create(volname, node, conf_hash, server_list,
                                  brick_root, force, excep)
         if create_only:
@@ -142,6 +141,8 @@ class VolumeOps(AbstractOps):
         else:
             cmd = (f"gluster volume create {volname}{brick_cmd} "
                    "--mode=script")
+        # TODO: Needs to be changed once CI is mature enough
+        force = True
         if force:
             cmd = (f"{cmd} force")
 
