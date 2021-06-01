@@ -64,7 +64,6 @@ class TestCase(NdParentTest):
         self.all_mounts_procs = []
         self.mounts = (redant.es.
                        get_mnt_pts_dict_in_list(self.volume_name1))
-        print(self.mounts)
         # counter = 1
 
         # for mount in self.mounts:
@@ -79,11 +78,45 @@ class TestCase(NdParentTest):
         # # Validate IO
         # if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
         #     raise Exception("IO failed on some of the clients")
+
+        # Unmount the volume
         redant.volume_unmount(self.volume_name1,
                               mountpoint,
                               self.client_list[0])
+        # get the list of all bricks
         bricks_list = redant.get_all_bricks(self.volume_name1,
                                             self.server_list[0])
-        print(bricks_list)
+        # Stop the volume
         redant.volume_stop(self.volume_name1, self.server_list[0])
-        
+
+        # Delete the volume
+        redant.volume_delete(self.volume_name1, self.server_list[0])
+
+        self.volname = "test_create_vol_used_bricks"
+
+        brick_cmd = " ".join(bricks_list[0:6])
+        print(f"\n\nBrick cmd: \n{brick_cmd}\n")
+
+        cmd = (f"gluster volume create {self.volname}"
+               f" replica 3 {brick_cmd} --mode=script")
+
+        ret = redant.execute_abstract_op_node(cmd,
+                                              self.server_list[0],
+                                              False)
+        print(f"Ret:\n{ret}\n")
+        if ret['error_code'] == 0:
+            print("Volume creation should fail with"
+                            " used bricks.")
+        redant.logger.info("Volume creation failed as expected")
+
+        # Checking failed message of volume creation
+        err = ret['error_msg']
+        msg = ' '.join(['volume create: test_create_vol_used_bricks: failed:',
+                        bricks_list[0].split(':')[1],
+                        'is already part of a volume'])
+        print(f"Msg: \n{msg}")
+        if msg not in err:
+            print("Incorrect error message for volume creation "
+                  "with used bricks")
+        redant.logger.info("Correct error message "
+                           "for volume creation")
