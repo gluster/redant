@@ -36,8 +36,6 @@ class TestCase(DParentTest):
         3. Stop glusterd on the node of the random brick
         4. Try to delete the volume, it should fail
         """
-        self.vol_started = True
-
         # Get the bricks list
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
@@ -56,7 +54,6 @@ class TestCase(DParentTest):
 
         # stop the volume, it should succeed
         redant.volume_stop(self.vol_name, self.server_list[0])
-        self.vol_started = False
 
         # try to delete the volume, it should fail
         ret = redant.volume_delete(self.vol_name, self.server_list[0],
@@ -68,6 +65,3 @@ class TestCase(DParentTest):
            is None):
             raise Exception("Volume delete failed with unexpected error"
                             " message")
-
-        redant.volume_start(self.vol_name, self.server_list[0])
-        self.vol_started = True
