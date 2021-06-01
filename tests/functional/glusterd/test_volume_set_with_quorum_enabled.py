@@ -40,7 +40,7 @@ class TestCase(DParentTest):
             node = self.node_on_glusterd_to_stop
             self.redant.wait_for_glusterd_to_start(node)
         except Exception as error:
-            tb = traceback.format_exec()
+            tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
         super().terminate()
