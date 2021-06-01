@@ -53,7 +53,6 @@ class DParentTest(metaclass=abc.ABCMeta):
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
 
-    @abc.abstractmethod
     def setup_test(self):
         pass
 
