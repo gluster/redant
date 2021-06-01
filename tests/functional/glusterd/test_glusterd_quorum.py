@@ -146,7 +146,7 @@ class TestCase(DParentTest):
         # Deleting a volume should fail. Deleting the second volume.
         ret = redant.volume_delete(self.volume_name1, self.server_list[0],
                                    False)
-        if ret['msg']['opRet'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Volume delete was "
                             "successful even when quourm is not met")
 
