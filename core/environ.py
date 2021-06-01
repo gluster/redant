@@ -124,6 +124,7 @@ class FrameworkEnv:
         """
         self.volds = {}
         self.cleands = {}
+        self.clusteropt = {}
 
     def _validate_volname(self, volname: str):
         """
@@ -466,14 +467,23 @@ class FrameworkEnv:
         for (opt, opt_val) in list(options_dict.items()):
             self.volds[volname]['options'][opt] = opt_val
 
-    def set_vol_options_all(self, option_list: list):
+    def set_vol_options_all(self, option_dict: dict):
         """
-        Method to set a said list of volume options for all volumes.
+        Method to set a said cluster options.
         Arg:
+            option_dict (dict)
+        """
+        for (key, value) in option_dict.items():
+            self.clusteropt[key] = value
+
+    def reset_vol_options_all(self, option_list: list):
+        """
+        Method to remove a cluster option.
+        Args:
             option_list (list)
         """
-        for vol in list(self.volds):
-            self.set_vol_option(vol, option_list)
+        for opt in option_list:
+            del self.clusteropt[opt]
 
     def get_vol_option(self, volname: str) -> dict:
         """
@@ -485,6 +495,14 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         return copy.deepcopy(self.volds[volname]['options'])
+
+    def get_vol_options_all(self) -> dict:
+        """
+        Method to return the cluster options dict.
+        Returns:
+            dict
+        """
+        return self.clusteropt
 
     def is_volume_options_populated(self, volname: str) -> bool:
         """
@@ -514,12 +532,11 @@ class FrameworkEnv:
         populated inside the volds.
         """
         if volname == "all" and option == "all":
+            self.clusteropt = {}
             for vol_name in list(self.volds):
                 self._reset_all_options_in_a_vol(vol_name)
         elif volname == "all":
-            for vol_name in list(self.volds):
-                if self.volds[vol_name]['options'] != {}:
-                    del self.volds[vol_name]['options'][option]
+            self.clusteropt = {}
         elif option == "all":
             if self.volds[volname]['options'] != {}:
                 for opt in list(self.volds[volname]['options']):
