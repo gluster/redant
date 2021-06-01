@@ -38,13 +38,14 @@ class TestCase(NdParentTest):
         -> Execute IO command
         -> Mount the volume
         '''
-
+        if len(self.server_list) < 3:
+            raise Exception("This test case requires at least 3 servers")
         self.volume_type1 = 'dist-rep'
         self.volume_name1 = "test_create_vol_with_fresh_bricks"
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, self.server_list,
-                            self.brick_roots, True)
+                            self.brick_roots)
         mul_factor = 6
         _, br_cmd = redant.form_brick_cmd(self.server_list,
                                           self.brick_roots,
@@ -52,7 +53,7 @@ class TestCase(NdParentTest):
                                           mul_factor, True)
         redant.add_brick(self.volume_name1,
                          br_cmd[1:], self.server_list[0],
-                         True, replica_count=3)
+                         replica_count=3)
 
         mountpoint = f"/mnt/{self.volume_name1}"
         redant.execute_abstract_op_node(f"mkdir -p {mountpoint}",
@@ -86,6 +87,9 @@ class TestCase(NdParentTest):
         # get the list of all bricks
         bricks_list = redant.get_all_bricks(self.volume_name1,
                                             self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Failed to get the list of all the bricks")
+
         # Stop the volume
         redant.volume_stop(self.volume_name1, self.server_list[0])
 
@@ -99,13 +103,13 @@ class TestCase(NdParentTest):
         cmd = (f"gluster volume create {self.volname}"
                f" replica 3 {brick_cmd} --mode=script")
 
+        # creating volume with used bricks should fail
         ret = redant.execute_abstract_op_node(cmd,
                                               self.server_list[0],
                                               False)
         if ret['error_code'] == 0:
             raise Exception("Volume creation should fail with"
                             " used bricks.")
-        redant.logger.info("Volume creation failed as expected")
 
         # Checking failed message of volume creation
         err = ret['error_msg']
@@ -115,5 +119,3 @@ class TestCase(NdParentTest):
         if msg not in err:
             raise Exception("Incorrect error message for volume creation "
                             "with used bricks")
-        redant.logger.info("Correct error message "
-                           "for volume creation")
