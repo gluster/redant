@@ -1,64 +1,42 @@
-#  Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-    Description:
-    A testcase to enable cluster.brick-multiplex and create three 1x3
-    volumes and stop the volumes.
+Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along`
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+A testcase to enable cluster.brick-multiplex and create three 1x3
+volumes and stop the volumes.
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import (cleanup_volume, setup_volume)
-from glustolibs.gluster.volume_ops import (volume_stop, volume_start,
-                                           set_volume_options)
-from glustolibs.gluster.lib_utils import is_core_file_created
-from glustolibs.gluster.brickmux_ops import get_brick_processes_count
-from glustolibs.gluster.brick_libs import get_all_bricks
+# disruptive;rep,dist-rep,dist,disp
+
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'distributed',
-           'dispersed'], ['glusterfs']])
-class TestEnableBrickMuxCreateAndStopThreevolumes(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def tearDown(self):
-
+    def terminate(self):
+        """
+        This function will delete the volumes
+        created in the test case
+        """
         for number in range(1, 4):
+            self.volname = f"test_volume_{number}"
+            self.redant.cleanup_volume(self.volname, self.server_list[0])
+        super().terminate()
 
-            # Starting volumes.
-            self.volume['name'] = ("test_volume_%s" % number)
-            self.volname = ("test_volume_%s" % number)
-            ret, _, _ = volume_start(self.mnode, self.volname)
-            g.log.info("Volume %s started was successfully", self.volname)
-
-            # Cleaning up volumes.
-            ret = cleanup_volume(self.mnode, self.volname)
-            if not ret:
-                raise ExecutionError("Failed to cleanup %s" % self.volname)
-            g.log.info("Successfully cleaned volume: %s", self.volname)
-
-        # Setting cluster.brick-multiplex to disable.
-        ret = set_volume_options(self.mnode, 'all',
-                                 {'cluster.brick-multiplex': 'disable'})
-        if not ret:
-            raise ExecutionError("Failed to disable cluster.brick-multiplex")
-        g.log.info("Successfully set cluster.brick-multiplex to disable.")
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_enable_brickmux_create_and_stop_three_volumes(self):
+    def run_test(self, redant):
 
         """
         Test Case:
@@ -69,47 +47,41 @@ class TestEnableBrickMuxCreateAndStopThreevolumes(GlusterBaseClass):
         """
 
         # Timestamp of current test case of start time
-        ret, test_timestamp, _ = g.run_local('date +%s')
-        test_timestamp = test_timestamp.strip()
+        ret = redant.execute_abstract_op_node('date +%s',
+                                              self.server_list[0])
+        test_timestamp = ret['msg'][0].rstrip("\n")
 
         # Setting cluster.brick-multiplex to enable
-        ret = set_volume_options(self.mnode, 'all',
-                                 {'cluster.brick-multiplex': 'enable'})
-        self.assertTrue(ret, "Failed to set brick-multiplex to enable.")
-        g.log.info("Successfully set brick-multiplex to enable.")
-
+        option = {'cluster.brick-multiplex': 'enable'}
+        redant.set_volume_options('all',
+                                  option,
+                                  self.server_list[0])
         # Create and start 3 volume
         for number in range(1, 4):
-            self.volume['name'] = ("test_volume_%s" % number)
-            self.volname = ("test_volume_%s" % number)
-            ret = setup_volume(self.mnode, self.all_servers_info,
-                               self.volume)
-            self.assertTrue(ret, "Failed to create and start %s" %
-                            self.volname)
-            g.log.info("Successfully created and started volume %s.",
-                       self.volname)
+            self.volname = f"test_volume_{number}"
+            conf_dict = self.vol_type_inf[self.conv_dict["rep"]]
+            redant.setup_volume(self.volname,
+                                self.server_list[0],
+                                conf_dict, self.server_list,
+                                self.brick_roots)
 
         # Checking brick process count.
-        for brick in get_all_bricks(self.mnode, self.volname):
+        brick_list = self.redant.get_all_bricks(self.vol_name,
+                                                self.server_list[0])
+        for brick in brick_list:
             server = brick.split(":")[0]
-            count = get_brick_processes_count(server)
-            self.assertEqual(count, 1,
-                             "ERROR: More than one brick process on %s."
-                             % server)
-            g.log.info("Only one brick process present on %s",
-                       server)
+            print(f"Brick: {brick}\nServer: {server}")
+            count = redant.get_brick_processes_count(server)
+            print(f"Count: {count}")
+            if count != 1:
+                raise Exception(f"ERROR: More than one brick process "
+                                f" on {server}.")
 
         # Stop three volumes one by one.
         for number in range(1, 4):
-            self.volume['name'] = ("test_volume_%s" % number)
-            self.volname = ("test_volume_%s" % number)
-            ret, _, _ = volume_stop(self.mnode, self.volname)
-            self.assertEqual(ret, 0, "Failed to stop the volume %s"
-                             % self.volname)
-            g.log.info("Volume %s stopped successfully", self.volname)
+            self.volname = f"test_volume_{number}"
+            redant.volume_stop(self.volname, self.server_list[0])
 
         # Checking for core files.
-        ret = is_core_file_created(self.servers, test_timestamp)
-        self.assertTrue(ret, "Core file found.")
-        g.log.info("No core files found, glusterd service running "
-                   "successfully")
+        if redant.check_core_file_exists(self.server_list, test_timestamp):
+            raise Exception("glusterd service should not have crashed")
