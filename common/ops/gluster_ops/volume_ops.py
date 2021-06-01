@@ -528,16 +528,21 @@ class VolumeOps(AbstractOps):
         return volume_list
 
     def volume_reset(self, volname: str, node: str = None,
-                     force: bool = False):
+                     force: bool = False, excep: bool = True) -> dict:
         """
         Resets the gluster volume of all the reconfigured options.
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to reset
-        Kwargs:
+
+        Optional:
             force (bool): If this option is set to True, then reset volume
                 will get executed with force option. If it is set to False,
                 then reset volume will get executed without force option
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Example:
             volume_reset("testvol",server)
 
@@ -556,7 +561,7 @@ class VolumeOps(AbstractOps):
         else:
             cmd = f"gluster volume reset {volname} --mode=script --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 

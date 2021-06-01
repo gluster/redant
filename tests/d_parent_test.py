@@ -36,6 +36,7 @@ class DParentTest(metaclass=abc.ABCMeta):
 
         self.reset_option = False
         self.TEST_RES = True
+        self.setup_done = False
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
         self.test_name = mname
@@ -53,6 +54,9 @@ class DParentTest(metaclass=abc.ABCMeta):
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
 
+    def setup_test(self):
+        pass
+
     @abc.abstractmethod
     def run_test(self, redant):
         pass
@@ -66,7 +70,11 @@ class DParentTest(metaclass=abc.ABCMeta):
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
 
-            if self.volume_type != "Generic":
+            # Call setup in case you want to override volume creation,
+            # start, mounting in the TC
+            self.setup_test()
+
+            if not self.setup_done and self.volume_type != "Generic":
                 self.redant.volume_create(
                     self.vol_name, self.server_list[0],
                     self.vol_type_inf[self.conv_dict[self.volume_type]],
