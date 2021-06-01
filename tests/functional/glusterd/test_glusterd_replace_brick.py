@@ -27,7 +27,7 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def test_glusterd_replace_brick(self, redant):
+    def run_test(self, redant):
         """
         Create a volume and start it.
         - Get list of all the bricks which are online
