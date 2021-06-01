@@ -55,6 +55,7 @@ class VolumeOps(AbstractOps):
             return True
 
         # Create volume
+        force = True
         ret = self.volume_create(volname, node, conf_hash, server_list,
                                  brick_root, force, excep)
         if create_only:
