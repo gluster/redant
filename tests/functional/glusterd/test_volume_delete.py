@@ -1,119 +1,95 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
-import re
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+   TC to check volume delete with one brick down
+"""
+
+import traceback
+#import re
 import random
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_libs import (cleanup_volume, get_volume_list,
-                                            setup_volume)
-from glustolibs.gluster.volume_ops import (volume_stop, volume_start)
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.gluster_init import stop_glusterd, start_glusterd
-from glustolibs.gluster.peer_ops import (
-    peer_probe_servers, wait_for_peers_to_connect)
+from tests.d_parent_test import DParentTest
+
+# disruptive;dist,rep,dist-rep,disp,dist-disp
 
 
-@runs_on([['distributed', 'replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed'], ['glusterfs']])
-class TestVolumeDelete(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
+    def terminate(self):
+        """Start volume, and glusterd n the random node if something goes
+           wrong in betwwen the TC
+        """
+        try:
+            # start glusterd on all servers
+            self.redant.start_glusterd(self.server_list)
 
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+            if not self.redant.wait_for_glusterd_to_start(self.server_list):
+                raise Exception("Failed to start glusterd on all servers")
 
-        # check whether peers are in connected state
-        ret = cls.validate_peers_are_connected()
-        if not ret:
-            raise ExecutionError("Peers are not in connected state")
+            # Start volume if stopped
+            if not self.vol_started:
+                self.redant.volume_start(self.vol_name, self.server_list[0])
 
-    def tearDown(self):
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # start the volume, it should succeed
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Volume stop failed")
+    def run_test(self, redant):
+        """
+        Steps:
+        1. Create and start a volume
+        2. Get a random brick of the volume
+        3. Stop glusterd on the node of the random brick
+        4. Try to delete the volume, it should fail
+        """
+        self.vol_started = True
 
-        # start glusterd on all servers
-        ret = start_glusterd(self.servers)
-        if not ret:
-            raise ExecutionError("Failed to start glusterd on all servers")
-
-        for server in self.servers:
-            ret = wait_for_peers_to_connect(server, self.servers)
-            if not ret:
-                ret = peer_probe_servers(server, self.servers)
-                if not ret:
-                    raise ExecutionError("Failed to peer probe all "
-                                         "the servers")
-
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
-
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Unable to delete volume % s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
-
-        self.get_super_method(self, 'tearDown')()
-
-    @classmethod
-    def tearDownClass(cls):
-
-        # Calling GlusterBaseClass tearDown
-        cls.get_super_method(cls, 'tearDownClass')()
-
-    def test_vol_delete_when_one_of_nodes_is_down(self):
-
-        # create a volume and start it
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start the volume")
-        g.log.info("Successfully created and started the volume")
-
-        # get the bricks list
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, "Failed to get the bricks list")
+        # Get the bricks list
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Failed to get the brick list")
 
         # get a random node other than self.mnode
-        if len(bricks_list) >= len(self.servers):
-            random_index = random.randint(1, len(self.servers) - 1)
+        if len(bricks_list) >= len(self.server_list):
+            random_index = random.randint(1, len(self.server_list) - 1)
         else:
             random_index = random.randint(1, len(bricks_list) - 1)
 
         # stop glusterd on the random node
-
-        node_to_stop_glusterd = self.servers[random_index]
-        ret = stop_glusterd(node_to_stop_glusterd)
-        self.assertTrue(ret, "Failed to stop glusterd")
+        node_to_stop_glusterd = self.server_list[random_index]
+        redant.stop_glusterd(node_to_stop_glusterd)
 
         # stop the volume, it should succeed
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Volume stop failed")
+        redant.volume_stop(self.vol_name, self.server_list[0])
+        self.vol_started = False
 
         # try to delete the volume, it should fail
-        ret, _, err = g.run(self.mnode, "gluster volume delete %s "
-                            "--mode=script" % self.volname)
-        self.assertNotEqual(ret, 0, "Volume delete succeeded when one of the"
+        ret = redant.volume_delete(self.vol_name, self.server_lis[0],
+                                   False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume delete succeeded when one of the"
                             " brick node is down")
-        if re.search(r'Some of the peers are down', err):
-            g.log.info("Volume delete failed with expected error message")
-        else:
-            g.log.info("Volume delete failed with unexpected error message")
+        # if re.search(r'Some of the peers are down', ret['error_msg']) is None:
+        #     raise Exception("Volume delete failed with unexpected error"
+        #                     " message")
+        redant.logger.info("Error msg: %s, %s", ret['error_msg'], ret['msg'])
+
+        redant.volume_start(self.vol_name, self.server_list[0])
+        self.vol_started = True
