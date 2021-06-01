@@ -82,9 +82,7 @@ class TestPeerStatus(DParentTest):
         # peer probe to a new node, N3
         redant.peer_probe(self.server_list[2], self.server_list[0])
 
-        # Validate first three peers are in connected state
-        # In jenkins The next step which is add-brick from third node
-        # is failing with peer is not in cluster
+        # Validate if first three peers are in connected state
         ret = redant.wait_for_peers_to_connect(self.server_list,
                                                self.server_list[0])
         if not ret:
