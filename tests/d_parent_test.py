@@ -34,7 +34,6 @@ class DParentTest(metaclass=abc.ABCMeta):
         server_details = param_obj.get_server_config()
         client_details = param_obj.get_client_config()
 
-        self.reset_option = False
         self.TEST_RES = True
         self.setup_done = False
         self.volume_type = volume_type
@@ -119,8 +118,8 @@ class DParentTest(metaclass=abc.ABCMeta):
             self.redant.logger.error(tb)
 
         try:
-            if self.reset_option:
-                self.redant.reset_volume_option('all', 'all',
+            for (opt, _) in self.redant.es.get_vol_options_all():
+                self.redant.reset_volume_option('all', opt,
                                                 self.server_list[0])
             volnames = self.redant.es.get_volnames()
             for volname in volnames:
