@@ -280,6 +280,13 @@ class VolumeOps(AbstractOps):
         if not self.es.get_volume_start_status(volname):
             self.volume_start(volname, server_list[0])
 
+        # Perform volume reset.
+        self.reset_volume_option(volname, 'all', server_list[0])
+
+        # Modify the volume if its voltype param is not same as before.
+        delta = self.es.get_vol_type_changes(volname, vol_param)
+        print("D : ", delta)
+
         # Check if the volume is mounted on a client.
         if self.es.get_mnt_pts_dict_in_list(volname) == []:
             # Check if mount dir exists in the node.

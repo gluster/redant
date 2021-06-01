@@ -81,9 +81,17 @@ class NdParentTest(metaclass=abc.ABCMeta):
 
         # Validate that glusterd is up and running in the servers.
         self.redant.start_glusterd(self.server_list)
+        if not self.redant.wait_for_glusterd_to_start(self.server_list):
+            raise Exception("Glusterd start failed.")
 
-        # Peer probe and validate all peers are in connected state.
-        self.redant.peer_probe_servers(self.server_list, self.server_list[0])
+        try:
+            # Peer probe and validate all peers are in connected state.
+            self.redant.peer_probe_servers(self.server_list,
+                                           self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
 
         if self.volume_type != "Generic":
             try:
@@ -92,10 +100,6 @@ class NdParentTest(metaclass=abc.ABCMeta):
                 self.redant.sanitize_volume(self.vol_name, self.server_list,
                                             self.client_list, self.brick_roots,
                                             vol_param)
-
-                # Volume options reset.
-                self.redant.reset_volume_option(self.vol_name, 'all',
-                                                self.server_list[0])
             except Exception as e:
                 tb = traceback.format_exc()
                 self.redant.logger.error(e)
