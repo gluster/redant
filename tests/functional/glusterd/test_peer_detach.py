@@ -19,35 +19,12 @@
    Test Cases in this module related to Glusterd peer detach.
 """
 
-import traceback
 from tests.d_parent_test import DParentTest
 
 # disruptive;
 
 
 class TestCase(DParentTest):
-
-    def terminate(self):
-        """
-        In case one of the peers get detached accidentally, we need to
-        re-probe it and delete the volumes created in the TC
-        """
-        try:
-            ret = self.redant.peer_probe_servers(self.server_list,
-                                                 self.server_list[0])
-            if not ret:
-                raise Exception("Peer probing failed on some of the servers")
-
-            # Cleanup volume, if created
-            if self.is_vol_created:
-                self.redant.cleanup_volume(self.volume_name,
-                                           self.server_list[0])
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
 
     def _check_detach_error_message(self, use_force=True):
         """
@@ -79,7 +56,6 @@ class TestCase(DParentTest):
         - Peer detach one node which hosts bricks of offline volume
         - Peer detach force a node which hosts bricks of offline volume
         """
-        self.is_vol_created = False
 
         # Timestamp of current test case of start time
         ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
@@ -127,7 +103,6 @@ class TestCase(DParentTest):
         redant.setup_volume(self.volume_name, self.server_list[0],
                             self.vol_type_inf[self.conv_dict[volume_type]],
                             self.server_list, self.brick_roots)
-        self.is_vol_created = True
 
         # Peer detach one node which contains the bricks of the volume created
         self._check_detach_error_message(False)
