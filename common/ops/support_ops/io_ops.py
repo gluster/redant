@@ -111,7 +111,7 @@ class IoOps(AbstractOps):
         return True
 
     def get_dir_contents(self, path: str, node: str,
-                         recursive: bool = False,) -> list:
+                         recursive: bool = False) -> list:
         """
         Get the files and directories present in a given directory.
 
