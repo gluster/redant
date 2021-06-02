@@ -28,12 +28,17 @@ class TestCase(DParentTest):
 
     def terminate(self):
         """
-        This function will start the glusterd
+        This function will validate IO, start glusterd
         on the random server chosen and check
         if all peers are connected
         """
         # Starting glusterd on node where stopped.
         try:
+            # Validate IO
+            ret = self.redant.validate_io_procs(self.list_of_procs,
+                                                self.mnt_list)
+            if not ret:
+                raise Exception("IO validation failed")
             self.redant.start_glusterd(self.server)
             self.redant.wait_for_glusterd_to_start(self.server)
             # Checking if peer is connected
@@ -74,11 +79,6 @@ class TestCase(DParentTest):
 
             self.list_of_procs.append(proc)
             self.counter += 10
-
-        # Validate IO
-        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
-        if not ret:
-            raise Exception("IO validation failed")
 
         # Start profile on volume.
         redant.profile_start(self.vol_name, self.server_list[0])
@@ -138,3 +138,7 @@ class TestCase(DParentTest):
         # Stop profile on volume.
         redant.profile_stop(self.vol_name,
                             self.server_list[0])
+        # Validate IO
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
