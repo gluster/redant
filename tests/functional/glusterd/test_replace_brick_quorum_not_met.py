@@ -91,8 +91,8 @@ class TestCase(DParentTest):
         offline_bricks = []
         for node in vol_status[self.vol_name]['node']:
             if node['hostname'] != 'Self-heal Daemon':
-                offline_bricks.append(':'.join(node['hostname'],
-                                      node['path']))
+                offline_bricks.append(':'.join([node['hostname'],
+                                      node['path']]))
 
         # Checking bricks are offline or not with quorum ratio(95%)
         if not redant.are_bricks_offline(self.vol_name, offline_bricks,
@@ -104,10 +104,10 @@ class TestCase(DParentTest):
 
         # Performing replace brick commit force when quorum not met
         self.replace_brick_failed = False
-        self.new_brick = redant.form_brick_cmd(self.server_list,
-                                               self.brick_roots,
-                                               self.vol_name,
-                                               1, True)
+        _, self.new_brick = redant.form_brick_cmd(self.server_list,
+                                                  self.brick_roots,
+                                                  self.vol_name,
+                                                  1, True)
         ret = redant.replace_brick(self.server_list[0], self.vol_name,
                                    self.random_brick, self.new_brick, False)
         if ret['msg']['opRet'] == '0':
