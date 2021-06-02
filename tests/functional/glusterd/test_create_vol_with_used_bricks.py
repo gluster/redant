@@ -70,7 +70,7 @@ class TestCase(NdParentTest):
                                           self.volume_name1,
                                           mul_factor, True)
         redant.add_brick(self.volume_name1,
-                         br_cmd[1:], self.server_list[0],
+                         br_cmd, self.server_list[0],
                          replica_count=3)
 
         mountpoint = f"/mnt/{self.volume_name1}"

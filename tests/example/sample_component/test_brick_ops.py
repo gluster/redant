@@ -94,14 +94,14 @@ class TestCase(DParentTest):
             _, br_cmd = redant.form_brick_cmd(self.server_list,
                                               self.brick_roots,
                                               self.vol_name, mul_factor, True)
-            redant.add_brick(self.vol_name, br_cmd[1:], self.server_list[0],
+            redant.add_brick(self.vol_name, br_cmd, self.server_list[0],
                              replica_count=3)
         else:
             mul_factor = 1
             _, br_cmd = redant.form_brick_cmd(self.server_list,
                                               self.brick_roots,
                                               self.vol_name, mul_factor, True)
-            redant.add_brick(self.vol_name, br_cmd[1:],
+            redant.add_brick(self.vol_name, br_cmd,
                              self.server_list[0])
         redant.es.set_vol_type_param(self.vol_name, 'dist_count', 1)
 

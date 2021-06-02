@@ -110,7 +110,8 @@ class BrickOps(AbstractOps):
         return ret
 
     def replace_brick(self, node: str, volname: str,
-                      src_brick: str, dest_brick: str):
+                      src_brick: str, dest_brick: str,
+                      excep: bool = True) -> dict:
         """
         This function replaces one brick(source brick)
         with the another brick(destination brick) on the volume.
@@ -120,6 +121,10 @@ class BrickOps(AbstractOps):
             volname (str): The volume on which the bricks have to be replaced.
             src_brick (str) : The source brick name
             dest_brick (str) : The destination brick name
+            excep (bool): exception flag to bypass the exception if the
+                          volume status command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
 
         Returns:
             ret: A dictionary consisting
@@ -135,9 +140,84 @@ class BrickOps(AbstractOps):
                f"{volname} {src_brick} {dest_brick} "
                f"commit force --xml")
 
-        ret = self.execute_abstract_op_node(node=node, cmd=cmd)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
+
+    def replace_brick_from_volume(self, volname: str, node: str,
+                                  servers: list, src_brick: str = None,
+                                  dst_brick: str = None,
+                                  delete_brick: bool = True) -> bool:
+        """
+        Replace faulty brick from a volume
+
+        Args:
+            volname (str): Volume in which the brick has to be replaced
+            node (str): Node on which command has to be executed
+            server_list (list): List of servers in the cluster
+
+        Optional:
+            src_brick (str): Brick to be replaced
+            dst_brick (str): New brick which will replace the old one
+            delete_brick (bool): True, if the old brick should be deleted
+                                 otherwise False. (Default is True)
+
+        Returns:
+            bool: True if the replace brick operation was successful,
+                  False if the operation failed.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        # Check if volume exists
+        if not self.es.does_volume_exists(volname):
+            self.logger.error(f"Volume {volname} does not exist")
+            return False
+
+        # TODO: Update when we have get_subvols function
+        # subvols_info = self.get_subvols(volname, node)
+
+        if not dst_brick:
+            _, dst_brick = self.form_brick_cmd(servers, self.brick_roots,
+                                               self.vol_name, 1)
+
+            if not dst_brick:
+                self.logger.error("Failed to get a new brick to replace")
+
+        # TODO: Update when we have get_subvols function
+        # if not src_brick:
+        #     # Randomly select a brick to replace
+        #     subvols_list = subvols_info['volume_subvols']
+        #     src_brick = (choice(choice(subvols_list)))
+
+        # Bring src brick offline
+        if not self.bring_bricks_offline(volname, src_brick):
+            self.logger.error("Failed to bring source brick offline")
+
+        # Wait for src brick to go offline
+        if not self.wait_for_bricks_to_go_offline(volname, src_brick):
+            self.logger.error("Brick is still not offline for replace brick"
+                              " operation")
+            return False
+
+        # Check volume status before replace brick operation
+        ret = self.get_volume_status(volname, node)
+        if ret is None:
+            self.logger.error("Failed to get volume status")
+            return False
+
+        # Perform replace brick
+        ret = self.replace_brick(node, volname, src_brick, dst_brick, False)
+        if ret['msg']['opRet'] != 0:
+            self.logger.error(f"Failed to replace brick: {src_brick}")
+
+        # Delete old brick
+        if delete_brick:
+            brick_node, brick_path = src_brick.split(':')
+            brick_dict_remove = {brick_node: [brick_path]}
+            self.es.add_data_to_cleands(brick_dict_remove)
+
+        return True
 
     def reset_brick(self, node: str, volname: str, src_brick: str,
                     option: str, dst_brick=None, force=False):
@@ -195,8 +275,8 @@ class BrickOps(AbstractOps):
             mul_fac (int) : Stores the number of bricks
                             needed to form the brick command
             add_flag (bool): Indicates whether the command creation is for
-                             add brick scenario or volume creation. Optional
-                             parameter which by default is False.
+                             add/replace brick scenario or volume creation.
+                             Optional parameter which by default is False.
 
         Returns:
 
@@ -206,6 +286,9 @@ class BrickOps(AbstractOps):
             brick_cmd (str) : Command which contains the brick
                               paths.
         """
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+
         brick_dict = {}
         brick_cmd = ""
         server_iter = 0
@@ -226,6 +309,8 @@ class BrickOps(AbstractOps):
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1
+
+        brick_cmd = brick_cmd.lstrip(" ")
 
         return (brick_dict, brick_cmd)
 
