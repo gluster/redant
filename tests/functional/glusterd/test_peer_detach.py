@@ -37,7 +37,11 @@ class TestCase(DParentTest):
                                                  self.server_list[0])
             if not ret:
                 raise Exception("Peer probing failed on some of the servers")
-            self.redant.cleanup_volume(self.volume_name, self.server_list[0])
+
+            # Cleanup volume, if created
+            if self.is_vol_created:
+                self.redant.cleanup_volume(self.volume_name,
+                                           self.server_list[0])
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -52,15 +56,15 @@ class TestCase(DParentTest):
         ret = self.redant.peer_detach(self.server_list[1],
                                       self.server_list[0],
                                       use_force, False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception(f"Server detach should have failed: "
                             f"{self.server_list[1]}")
-        err_msg = (f"peer detach: failed: Peer {self.server_list[1]} hosts"
-                   " one or more bricks. If the peer is in not recoverable"
-                   " state then use either replace-brick or remove-brick"
-                   " command with force to remove all bricks from the peer"
-                   " and attempt the peer detach again.")
-        if err_msg not in " ".join(ret['error_msg']):
+        err_msg = (f"Peer {self.server_list[1]} hosts one or more bricks."
+                   " If the peer is in not recoverable state then use either"
+                   " replace-brick or remove-brick command with force to"
+                   " remove all bricks from the peer and attempt the peer"
+                   " detach again.")
+        if err_msg not in ret['msg']['opErrstr']:
             raise Exception("Peer detach didn't fail with proper error msg")
 
     def run_test(self, redant):
@@ -75,6 +79,7 @@ class TestCase(DParentTest):
         - Peer detach one node which hosts bricks of offline volume
         - Peer detach force a node which hosts bricks of offline volume
         """
+        self.is_vol_created = False
 
         # Timestamp of current test case of start time
         ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
@@ -92,12 +97,11 @@ class TestCase(DParentTest):
         # Detached server detaching again, Expected to fail detach
         ret = redant.peer_detach(self.server_list[1], self.server_list[0],
                                  False, False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception(f"Server detach should have failed: "
                             f"{self.server_list[1]}")
-        err_msg = (f"peer detach: failed: {self.server_list[1]} is not part"
-                   "cluster\n")
-        if err_msg not in " ".join(ret['error_msg'][0]):
+        err_msg = (f"{self.server_list[1]} is not part of cluster")
+        if err_msg not in ret['msg']['opErrstr']:
             raise Exception("Peer detach didn't fail as expected")
 
         # Probing detached server
@@ -106,14 +110,14 @@ class TestCase(DParentTest):
         # Detach invalid host
         ret = redant.peer_detach(self.invalid_ip, self.server_list[0],
                                  False, False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception(f"Server detach invalid host should have "
                             f"failed: {self.invalid_ip}")
 
         # Detach non exist host
         ret = redant.peer_detach(self.non_exist_host, self.server_list[0],
                                  False, False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception(f"Server detach non exist host should have "
                             f"failed: {self.non_exist_host}")
 
@@ -123,6 +127,7 @@ class TestCase(DParentTest):
         redant.setup_volume(self.volume_name, self.server_list[0],
                             self.vol_type_inf[self.conv_dict[volume_type]],
                             self.server_list, self.brick_roots)
+        self.is_vol_created = True
 
         # Peer detach one node which contains the bricks of the volume created
         self._check_detach_error_message(False)

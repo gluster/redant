@@ -98,7 +98,7 @@ class TestCase(DParentTest):
                 ret = redant.peer_probe(hostname, self.server_list[0],
                                         False)
 
-                if ret['error_code'] != 0:
+                if ret['msg']['opRet'] != '0':
                     raise Exception(f"Unable to peer probe to"
                                     f" the server {hostname}")
 
