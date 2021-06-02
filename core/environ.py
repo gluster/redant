@@ -4,6 +4,7 @@ from socket import timeout
 import copy
 import traceback
 import paramiko
+from halo import Halo
 sys.path.insert(1, ".")
 from common.mixin import RedantMixin
 
@@ -19,6 +20,7 @@ class environ:
         Redant mixin obj to be used for server setup and teardown operations
         has to be created.
         """
+        self.spinner = Halo(spinner='dots')
         self.redant = RedantMixin(param_obj.get_server_config(),
                                   param_obj.get_client_config(), es)
         self.redant.init_logger("environ", log_path, log_level)
@@ -53,6 +55,7 @@ class environ:
 
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
+        self.brick_root = param_obj.get_brick_roots()
 
     def get_framework_logger(self):
         """
@@ -78,14 +81,20 @@ class environ:
         """
         Setting up of the environment before the TC execution begins.
         """
+        # invoke the hard reset or hard terminate.
+        self.spinner.start("Setting up environment")
+        self.redant.hard_terminate(self.server_list, self.client_list,
+                                   self.brick_root)
         try:
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
             self._check_and_copy_io_script()
+            self.spinner.succeed("Environment setup successful.")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
+            self.spinner.fail("Environment setup failed.")
             sys.exit(0)
 
     def teardown_env(self):
@@ -93,6 +102,10 @@ class environ:
         The teardown of the complete environment once the test framework
         ends.
         """
+        self.spinner.start("Tearing down environment.")
+        self.redant.hard_terminate(self.server_list, self.client_list,
+                                   self.brick_root)
+        self.spinner.succeed("Tearing down successful.")
 
 
 class FrameworkEnv:

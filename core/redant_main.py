@@ -8,6 +8,7 @@ import sys
 import time
 import datetime
 import argparse
+from halo import Halo
 from environ import environ, FrameworkEnv
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
@@ -65,20 +66,28 @@ def main():
     start = time.time()
     args = pars_args()
 
+    spinner = Halo(spinner='dots')
+    spinner.start("Starting param handling")
     try:
         param_obj = ParamsHandler(args.config_file)
     except IOError:
         print("Error: can't find config file or read data.")
+        spinner.fail("IOError in param handling")
         return
+    spinner.succeed("Param Handling Success.")
 
+    spinner.start("Building test list")
     # Building the test list and obtaining the TC details.
     excluded_tests = param_obj.get_excluded_tests()
     TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
                                      args.spec_test)
+    spinner.succeed("Test List built")
 
+    spinner.start("Creating log dirs")
     # Creating log dirs.
     args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
     Logger.log_dir_creation(args.log_dir, TestListBuilder.get_test_path_list())
+    spinner.succeed("Log dir creation successful.")
 
     # Framework Environment datastructure.
     env_obj = FrameworkEnv()
@@ -98,6 +107,8 @@ def main():
     total_time = time.time() - start
     ResultHandler.handle_results(
         result_queue, args.result_path, total_time, args.excel_sheet)
+
+    env_set.teardown_env()
 
 
 if __name__ == '__main__':

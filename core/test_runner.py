@@ -4,7 +4,8 @@ to be run and invoking them.
 """
 import time
 from multiprocessing import Process, Queue
-from colorama import Fore, Style
+import random
+from halo import Halo
 from runner_thread import RunnerThread
 
 
@@ -200,6 +201,7 @@ class TestRunner:
         disruptive tests.
         """
 
+        spinner = Halo(spinner='dots')
         tc_class = test_dict["testClass"]
         volume_type = test_dict["volType"]
         mname = test_dict["moduleName"][:-3]
@@ -210,6 +212,7 @@ class TestRunner:
         # to calculate time spent to execute the test
         start = time.time()
 
+        spinner.start(f"Running test case : {mname}-{volume_type}")
         runner_thread_obj = RunnerThread(tc_class, cls.param_obj, volume_type,
                                          mname, cls.logger, cls.env_obj,
                                          tc_log_path, cls.log_level)
@@ -222,13 +225,11 @@ class TestRunner:
         if test_stats['testResult']:
             test_stats['testResult'] = "PASS"
             result_text += " PASS"
-            print(Fore.GREEN + result_text)
-            print(Style.RESET_ALL)
+            spinner.succeed(f"{mname}-{volume_type} Succeeded")
         else:
             result_text += " FAIL"
             test_stats['testResult'] = "FAIL"
-            print(Fore.RED + result_text)
-            print(Style.RESET_ALL)
+            spinner.fail(f"{mname}-{volume_type} Failed")
 
         result_value = {test_dict["moduleName"][:-3]: test_stats}
         cls.job_result_queue.put(result_value)
