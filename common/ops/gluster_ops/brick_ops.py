@@ -16,6 +16,8 @@ class BrickOps(AbstractOps):
                   force: bool = False, replica_count: int = None,
                   arbiter_count: int = None) -> dict:
         """
+        # TODO: Function has to designed for dispersed, distributed-dispersed,
+                arbiter and distributed-arbiter.
         This function adds bricks to the volume volname.
 
         Args:
@@ -265,6 +267,8 @@ class BrickOps(AbstractOps):
     def form_brick_cmd(self, server_list: list, brick_root: list,
                        volname: str, mul_fac: int, add_flag: bool = False):
         """
+        # TODO: Function has to designed for dispersed, distributed-dispersed,
+                arbiter and distributed-arbiter.
         This function helps in forming
         the brick command
 
