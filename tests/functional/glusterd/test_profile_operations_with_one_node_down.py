@@ -19,7 +19,7 @@ Test Description:
 Tests to check basic profile operations with one node down.
 """
 # disruptive;dist-rep,disp,dist-disp
-
+import traceback
 from random import randint
 from tests.d_parent_test import DParentTest
 
@@ -33,16 +33,17 @@ class TestCase(DParentTest):
         if all peers are connected
         """
         # Starting glusterd on node where stopped.
-        server = self.server_list[self.random_server]
         try:
-            self.redant.start_glusterd(server)
-            self.redant.wait_for_glusterd_to_start(server)
+            self.redant.start_glusterd(self.server)
+            self.redant.wait_for_glusterd_to_start(self.server)
             # Checking if peer is connected
             for ser in self.server_list[1:]:
                 self.redant.wait_for_peers_to_connect(self.server_list[0],
                                                       ser)
-        except Exception:
-            pass
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
         super().terminate()
 
     def run_test(self, redant):
@@ -79,15 +80,14 @@ class TestCase(DParentTest):
 
         # Fetching a random server from list.
         self.random_server = randint(1, len(self.server_list)-1)
+        self.server = self.server_list[self.random_server]
 
         # Stopping glusterd on one node.
-        redant.stop_glusterd(self.server_list[self.random_server])
-        ret = (redant.
-               wait_for_glusterd_to_stop(
-                   self.server_list[self.random_server]))
-        if not ret:
+        redant.stop_glusterd(self.server)
+
+        if not redant.wait_for_glusterd_to_stop(self.server):
             raise Exception(f"Error: Glusterd is still running on "
-                            f"{self.server_list[self.random_server]}\n")
+                            f"{self.server}\n")
         # Getting and checking output of profile info.
         ret = redant.profile_info(self.vol_name,
                                   self.server_list[0])
@@ -120,10 +120,11 @@ class TestCase(DParentTest):
                     raise Exception(f"Brick {brick} not a part of profile"
                                     f" info {option} output")
 
-        server = self.server_list[self.random_server]
         # Starting glusterd on node where stopped.
-        redant.start_glusterd(server)
-        redant.wait_for_glusterd_to_start(server)
+        redant.start_glusterd(self.server)
+        if not redant.wait_for_glusterd_to_start(self.server):
+            raise Exception(f"Error: Glusterd is not running on "
+                            f"{self.server}\n")
 
         # Checking if peer is connected
         for ser in self.server_list[1:]:
