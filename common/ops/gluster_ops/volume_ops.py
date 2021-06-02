@@ -292,7 +292,7 @@ class VolumeOps(AbstractOps):
 
         # Check if the volume is started.
         if not self.es.get_volume_start_status(volname):
-            self.volume_start(volname, server_list[0])
+            self.volume_start(volname, server_list[0], False)
 
         # Perform volume reset.
         self.reset_volume_option(volname, 'all', server_list[0])
@@ -323,7 +323,7 @@ class VolumeOps(AbstractOps):
         if self.es.does_volume_exists(volname):
             # Check if the volume is started.
             if not self.es.get_volume_start_status(volname):
-                self.volume_start(volname, node)
+                self.volume_start(volname, node, False)
 
             # Check if the volume is mounted on a client.
             if not self.es.get_mnt_pts_dict_in_list(volname) == []:
