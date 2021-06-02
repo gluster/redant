@@ -97,8 +97,7 @@ class TestCase(DParentTest):
             _, br_cmd = redant.form_brick_cmd(self.server_list,
                                               self.brick_roots, self.vol_name,
                                               mul_factor, True)
-            redant.add_brick(self.vol_name, br_cmd[1:],
-                             self.server_list)
+            redant.add_brick(self.vol_name, br_cmd, self.server_list)
         except Exception as error:
             redant.logger.info(f"Add brick failed as expected: {error}")
 

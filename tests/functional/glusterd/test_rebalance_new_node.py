@@ -87,8 +87,7 @@ class TestCase(DParentTest):
                                              self.brick_roots,
                                              self.volume_name1, mul_factor,
                                              True)
-        redant.add_brick(self.volume_name1, brick_cmd[1:],
-                         self.server_list[0])
+        redant.add_brick(self.volume_name1, brick_cmd, self.server_list[0])
         redant.es.set_vol_type_param(self.volume_name1, 'dist_count', 1)
 
         redant.rebalance_start(self.volume_name1, self.server_list[0])
