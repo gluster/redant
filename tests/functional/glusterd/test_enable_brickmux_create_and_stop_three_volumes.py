@@ -26,16 +26,6 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def terminate(self):
-        """
-        This function will delete the volumes
-        created in the test case
-        """
-        for number in range(1, 4):
-            self.volname = f"test_volume_{number}"
-            self.redant.cleanup_volume(self.volname, self.server_list[0])
-        super().terminate()
-
     def run_test(self, redant):
 
         """
@@ -70,9 +60,7 @@ class TestCase(DParentTest):
                                                 self.server_list[0])
         for brick in brick_list:
             server = brick.split(":")[0]
-            print(f"Brick: {brick}\nServer: {server}")
             count = redant.get_brick_processes_count(server)
-            print(f"Count: {count}")
             if count != 1:
                 raise Exception(f"ERROR: More than one brick process "
                                 f" on {server}.")
