@@ -14,7 +14,7 @@ class BrickOps(AbstractOps):
 
     def add_brick(self, volname: str, brick_str: str, node: str,
                   force: bool = False, replica_count: int = None,
-                  arbiter_count: int = None) -> dict:
+                  arbiter_count: int = None, excep: bool = True) -> dict:
         """
         # TODO: Function has to designed for dispersed, distributed-dispersed,
                 arbiter and distributed-arbiter.
@@ -29,7 +29,10 @@ class BrickOps(AbstractOps):
                           being executed.
             replica_count (int): Updated replica count
             arbiter_count (int): Updated arbiter count
-
+            excep (bool): exception flag to bypass the exception if the
+                          add brick command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -52,7 +55,10 @@ class BrickOps(AbstractOps):
         force = True
         if force:
             cmd = (f"{cmd} force")
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        if not excep:
+            return ret
 
         server_brick = {}
         for brickd in brick_str.split(' '):
@@ -124,7 +130,7 @@ class BrickOps(AbstractOps):
             src_brick (str) : The source brick name
             dest_brick (str) : The destination brick name
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          replace brick command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
