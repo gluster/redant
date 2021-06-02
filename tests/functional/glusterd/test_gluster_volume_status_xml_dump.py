@@ -20,13 +20,27 @@ Description:
     Test Default volume behavior and quorum options
 """
 
-
+import traceback
 from time import sleep
 from tests.nd_parent_test import NdParentTest
 
 
 # nonDisruptive;
 class TestCase(NdParentTest):
+
+    def terminate(self):
+        """
+        The vol created in the test case needs to be
+        destroyed
+        """
+        try:
+            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+            self.redant.cleanup_volume(self.volume_name, self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -37,18 +51,18 @@ class TestCase(NdParentTest):
             XML dump should be consistent
         """
         volume_type = 'dist-arb'
-        volume_name = f"{self.test_name}-{volume_type}-1"
-        redant.volume_create(volume_name, self.server_list[0],
+        self.volume_name = f"{self.test_name}-{volume_type}-1"
+        redant.volume_create(self.volume_name, self.server_list[0],
                              self.vol_type_inf[self.conv_dict[volume_type]],
                              self.server_list, self.brick_roots, True)
-        redant.volume_start(volume_name, self.server_list[0])
+        redant.volume_start(self.volume_name, self.server_list[0])
         volume_type1 = 'dist'
-        volume_name1 = f"{self.test_name}-{volume_type1}-1"
-        redant.volume_create(volume_name1, self.server_list[0],
+        self.volume_name1 = f"{self.test_name}-{volume_type1}-1"
+        redant.volume_create(self.volume_name1, self.server_list[0],
                              self.vol_type_inf[self.conv_dict[volume_type1]],
                              self.server_list, self.brick_roots, True)
-        redant.volume_start(volume_name1, self.server_list[0])
-        redant.volume_stop(volume_name, self.server_list[0], force=True)
+        redant.volume_start(self.volume_name1, self.server_list[0])
+        redant.volume_stop(self.volume_name, self.server_list[0], force=True)
         sleep(2)
         out = redant.get_volume_status(node=self.server_list[0])
         if out is None:
@@ -64,6 +78,6 @@ class TestCase(NdParentTest):
             if out1 != out:
                 raise Exception
 
-        redant.volume_stop(volume_name1, self.server_list[0])
-        redant.volume_delete(volume_name1, self.server_list[0])
-        redant.volume_delete(volume_name, self.server_list[0])
+        redant.volume_stop(self.volume_name1, self.server_list[0])
+        redant.volume_delete(self.volume_name1, self.server_list[0])
+        redant.volume_delete(self.volume_name, self.server_list[0])
