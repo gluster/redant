@@ -72,7 +72,7 @@ class TestCase(DParentTest):
                             f" {self.vol_name}")
 
         ret = redant.get_volume_status(self.vol_name, self.server_list[0])
-        if ret[self.vol_name]['tasks'] is not None:
+        if ret[self.vol_name]['task_status'] is not None:
             raise Exception("Rebalance has started!")
 
         redant.start_glusterd(self.random_server)
