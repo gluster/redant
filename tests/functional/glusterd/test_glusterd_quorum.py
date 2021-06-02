@@ -73,11 +73,12 @@ class TestCase(DParentTest):
 
         # Peer probe first 3 servers
         redant.create_cluster(self.server_list[:3])
+        redant.wait_for_peers_to_connect(self.server_list[:3], self.server_list[0])
 
         # Create a volume using the first 3 nodes
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
         redant.setup_volume(self.vol_name, self.server_list[0],
-                            conf_dict, self.server_list,
+                            conf_dict, self.server_list[:3],
                             self.brick_roots)
 
         # Creating another volume and stopping it
@@ -85,7 +86,7 @@ class TestCase(DParentTest):
         self.volume_name1 = f"{self.test_name}-1"
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
         redant.setup_volume(self.volume_name1, self.server_list[0],
-                            conf_dict, self.server_list,
+                            conf_dict, self.server_list[:3],
                             self.brick_roots)
         self.vol_exist = True
 
