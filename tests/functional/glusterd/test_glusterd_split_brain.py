@@ -43,7 +43,7 @@ class TestCase(NdParentTest):
             self.redant.logger.error(tb)
         super().terminate()
 
-    def test_glusterd_split_brain_with_quorum(self, redant):
+    def run_test(self, redant):
         """
         - On a 6 node cluster
         - Create a volume using first four nodes
