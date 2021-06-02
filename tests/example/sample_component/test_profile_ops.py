@@ -21,5 +21,5 @@ class TestCase(NdParentTest):
         profile_options = ['peek', 'incremental', 'clear',
                            'incremental peek', 'cumulative']
         for opt in profile_options:
-            redant.profile_info(self.vol_name, opt, self.server_list[0])
+            redant.profile_info(self.vol_name, self.server_list[0], opt)
         redant.profile_stop(self.vol_name, self.server_list[0])
