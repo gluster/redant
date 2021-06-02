@@ -45,6 +45,9 @@ class BrickOps(AbstractOps):
 
         cmd = (f"gluster vol add-brick {volname} {replica} {arbiter}"
                f" {brick_str} --mode=script --xml")
+
+        # Defaulting the mode to be force due to CI.
+        force = True
         if force:
             cmd = (f"{cmd} force")
         ret = self.execute_abstract_op_node(cmd, node)
