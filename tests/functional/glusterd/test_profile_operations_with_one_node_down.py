@@ -34,17 +34,17 @@ class TestCase(DParentTest):
         """
         # Starting glusterd on node where stopped.
         try:
-            # Validate IO
-            ret = self.redant.validate_io_procs(self.list_of_procs,
-                                                self.mnt_list)
-            if not ret:
-                raise Exception("IO validation failed")
             self.redant.start_glusterd(self.server)
             self.redant.wait_for_glusterd_to_start(self.server)
             # Checking if peer is connected
             for ser in self.server_list[1:]:
                 self.redant.wait_for_peers_to_connect(self.server_list[0],
                                                       ser)
+            # Validate IO
+            ret = self.redant.validate_io_procs(self.list_of_procs,
+                                                self.mnt_list)
+            if not ret:
+                raise Exception("IO validation failed")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
