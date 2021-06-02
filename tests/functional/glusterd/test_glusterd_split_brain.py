@@ -19,7 +19,7 @@
    TC to check split brain in glusterd with quorum set
 """
 
-from tests.nd_parent_test import DParentTest
+from tests.d_parent_test import DParentTest
 
 # disruptive;
 
