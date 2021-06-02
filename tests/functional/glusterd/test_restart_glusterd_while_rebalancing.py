@@ -1,185 +1,118 @@
-#  Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
 
-""" Description:
-      Test restart glusterd while rebalance is in progress
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+    Test restart glusterd while rebalance is in progress
 """
 
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_libs import form_bricks_list_to_add_brick
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              get_rebalance_status)
-from glustolibs.gluster.gluster_init import (restart_glusterd,
-                                             wait_for_glusterd_to_start,
-                                             is_glusterd_running,
-                                             start_glusterd)
-from glustolibs.gluster.peer_ops import wait_for_peers_to_connect
-from glustolibs.io.utils import validate_io_procs
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.gluster.glusterdir import get_dir_contents
-from glustolibs.gluster.lib_utils import get_servers_bricks_dict
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'replicated', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'], ['glusterfs']])
-class TestRestartGlusterdWhileRebalance(GlusterBaseClass):
-    @classmethod
-    def setUpClass(cls):
-        cls.counter = 1
-        cls.get_super_method(cls, 'setUpClass')()
+# disruptive;dist,rep,dist-rep
+# TODO: Add disp and dist-disp volume_types to run
 
-        # Uploading file_dir script in all client direcotries
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
+class TestCase(DParentTest):
 
-    def setUp(self):
+    def terminate(self):
         """
-        setUp method for every test
+        In case the test fails midway then wait for IO to comlete before
+        calling the terminate function of DParentTest
         """
-
-        bricks = get_servers_bricks_dict(self.servers,
-                                         self.all_servers_info)
-
-        # Checking brick dir and cleaning it.
-        for server in self.servers:
-            for brick in bricks[server]:
-                if get_dir_contents(server, brick):
-                    cmd = "rm -rf " + brick + "/*"
-                    ret, _, _ = g.run(server, cmd)
-                    if ret:
-                        raise ExecutionError("Failed to delete the brick "
-                                             "dirs of deleted volume.")
-
-        # Creating Volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed: %s"
-                                 % self.volname)
-        g.log.info("Volme created and mounted successfully : %s",
-                   self.volname)
-
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-    def tearDown(self):
-        """
-        tearDown for every test
-        """
-        ret = is_glusterd_running(self.servers)
-        if ret:
-            ret = start_glusterd(self.servers)
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
             if not ret:
-                raise ExecutionError("Failed to start glusterd on %s"
-                                     % self.servers)
-        g.log.info("Glusterd started successfully on %s", self.servers)
+                raise Exception("IO failed on some of the clients")
 
-        # checking for peer status from every node
-        for server in self.servers:
-            ret = wait_for_peers_to_connect(server, self.servers)
-            if not ret:
-                raise ExecutionError("Servers are not in peer probed state")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # unmounting the volume and Cleaning up the volume
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Cleanup the Volume %s"
-                                 % self.volname)
-        g.log.info("Volume deleted successfully : %s", self.volname)
+    def run_test(self, redant):
+        """
+        1) Create Volume
+        2) Fuse mount the volume
+        3) Perform I/O on fuse mount
+        4) Add bricks to the volume
+        5) Perform rebalance on the volume
+        6) While rebalance is in progress,
+        7) restart glusterd on all the nodes in the cluster
+        """
 
-    def test_glusterd_rebalance(self):
+        # run IO on mountpoint
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.list_of_procs = []
+        self.counter = 1
+        for mount_obj in self.mnt_list:
+            redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                               f"{mount_obj['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      self.counter,
+                                                      2, 5, 3, 10,
+                                                      mount_obj['client'])
 
-        '''
-        -> Create Volume
-        -> Fuse mount the volume
-        -> Perform I/O on fuse mount
-        -> Add bricks to the volume
-        -> Perform rebalance on the volume
-        -> While rebalance is in progress,
-        -> restart glusterd on all the nodes in the cluster
-        '''
-
-        # run IOs
-        g.log.info("Starting IO on all mounts...")
-        self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 4 "
-                   "--dir-length 6 "
-                   "--max-num-of-dirs 3 "
-                   "--num-of-files 25 %s" % (self.script_upload_path,
-                                             self.counter,
-                                             mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            self.all_mounts_procs.append(proc)
-            self.counter = self.counter + 10
+            self.list_of_procs.append(proc)
+            self.counter += 10
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
 
-        # Forming brick list
-        self.brick_list = form_bricks_list_to_add_brick(
-            self.mnode, self.volname, self.servers, self.all_servers_info)
+        if self.volume_type != 'dist':
+            mul_factor = 3
 
-        # Adding Bricks
-        ret, _, _ = add_brick(self.mnode, self.volname, self.brick_list)
-        self.assertEqual(ret, 0, "Failed to add brick to the volume %s"
-                         % self.volname)
-        g.log.info("Brick added successfully to the volume %s", self.volname)
+            # forming brick list
+            _, br_cmd = redant.form_brick_cmd(self.server_list,
+                                              self.brick_roots,
+                                              self.vol_name, mul_factor, True)
+            # add brick
+            redant.add_brick(self.vol_name, br_cmd, self.server_list[0],
+                             replica_count=3)
+        else:
+            mul_factor = 1
+
+            # forming brick list
+            _, br_cmd = redant.form_brick_cmd(self.server_list,
+                                              self.brick_roots,
+                                              self.vol_name, mul_factor, True)
+            # add brick
+            redant.add_brick(self.vol_name, br_cmd,
+                             self.server_list[0])
 
         # Performing rebalance
-        ret, _, _ = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, 'Failed to start rebalance on volume %s'
-                         % self.volname)
-        g.log.info("Rebalance started successfully on volume %s",
-                   self.volname)
+        ret = redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Checking Rebalance is in progress or not
-        rebalance_status = get_rebalance_status(self.mnode, self.volname)
+        rebalance_status = redant.get_rebalance_status(self.vol_name,
+                                                       self.server_list[0])
         if rebalance_status['aggregate']['statusStr'] != 'in progress':
-            raise ExecutionError("Rebalance is not in 'in progress' state, "
-                                 "either rebalance is in compeleted state or"
-                                 " failed to get rebalance status")
+            raise Exception("Rebalance is not in 'in progress' state, "
+                            "either rebalance is in compeleted state or"
+                            " failed to get rebalance status")
 
         # Restart glusterd
-        ret = restart_glusterd(self.servers)
-        self.assertTrue(ret, "Failed to restart glusterd on servers")
-        g.log.info("Glusterd restarted successfully on %s", self.servers)
+        redant.restart_glusterd(self.server_list)
 
         # Checking glusterd status
-        ret = wait_for_glusterd_to_start(self.servers)
-        self.assertTrue(ret, "Glusterd is not running on some of the "
-                        "servers")
-        g.log.info("Glusterd is running on all servers %s", self.servers)
+        ret = redant.wait_for_glusterd_to_start(self.server_list)
+        if not ret:
+            raise Exception("Glusterd is not running on some of the "
+                            "servers")
