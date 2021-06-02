@@ -58,6 +58,9 @@ class TestCase(DParentTest):
         # Checking brick process count.
         brick_list = self.redant.get_all_bricks(self.vol_name,
                                                 self.server_list[0])
+        if brick_list is None:
+            raise Exception("Failed to get all bricks: "
+                            "Brick list is empty")
         for brick in brick_list:
             server = brick.split(":")[0]
             count = redant.get_brick_processes_count(server)
