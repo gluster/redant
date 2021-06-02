@@ -20,11 +20,24 @@
     for reserve limit changes during rebalancing.
 """
 
+import traceback
 from tests.nd_parent_test import NdParentTest
 
 
 # nonDisruptive;dist-rep
 class TestCase(NdParentTest):
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_rebalance_to_complete(
+                                        self.vol_name, self.server_list[0])
+            if not ret:
+                raise Exception("Rebalance not completed. Wait timeout")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
