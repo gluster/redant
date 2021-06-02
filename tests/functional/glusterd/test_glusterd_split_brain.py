@@ -20,28 +20,12 @@
 """
 
 import traceback
-from tests.nd_parent_test import NdParentTest
+from tests.nd_parent_test import DParentTest
 
-# nonDisruptive;
+# disruptive;
 
 
-class TestCase(NdParentTest):
-
-    def tearDown(self):
-        # Cleanup the volume created in the TC
-        try:
-            # Start glusterd if test failed before starting it
-            self.redant.start_glusterd(self.server_list)
-            if not self.redant.wait_for_glusterd_to_start(self.server_list):
-                raise Exception("Glusterd is not running on all the servers")
-
-            self.redant.cleanup_volume(self.volname, self.server_list[0])
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
