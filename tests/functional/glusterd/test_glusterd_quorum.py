@@ -73,7 +73,8 @@ class TestCase(DParentTest):
 
         # Peer probe first 3 servers
         redant.create_cluster(self.server_list[:3])
-        redant.wait_for_peers_to_connect(self.server_list[:3], self.server_list[0])
+        redant.wait_for_peers_to_connect(self.server_list[:3],
+                                         self.server_list[0])
 
         # Create a volume using the first 3 nodes
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
