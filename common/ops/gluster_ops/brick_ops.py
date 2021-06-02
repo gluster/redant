@@ -174,6 +174,7 @@ class BrickOps(AbstractOps):
             self.logger.error(f"Volume {volname} does not exist")
             return False
 
+        # TODO: Update when we have get_subvols function
         # subvols_info = self.get_subvols(volname, node)
 
         if not dst_brick:
@@ -183,6 +184,7 @@ class BrickOps(AbstractOps):
             if not dst_brick:
                 self.logger.error("Failed to get a new brick to replace")
 
+        # TODO: Update when we have get_subvols function
         # if not src_brick:
         #     # Randomly select a brick to replace
         #     subvols_list = subvols_info['volume_subvols']
@@ -212,7 +214,8 @@ class BrickOps(AbstractOps):
         # Delete old brick
         if delete_brick:
             brick_node, brick_path = src_brick.split(':')
-            self.execute_abstract_op_node(f"rm -rf {brick_path}", brick_node)
+            brick_dict_remove = {brick_node: [brick_path]}
+            self.es.add_data_to_cleands(brick_dict_remove)
 
         return True
 
