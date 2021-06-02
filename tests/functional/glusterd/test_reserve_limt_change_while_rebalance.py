@@ -29,8 +29,9 @@ class TestCase(NdParentTest):
 
     def terminate(self):
         try:
-            ret = self.redant.wait_for_rebalance_to_complete(
-                                        self.vol_name, self.server_list[0])
+            ret = (self.redant.
+                   wait_for_rebalance_to_complete(self.vol_name,
+                                                  self.server_list[0]))
             if not ret:
                 raise Exception("Rebalance not completed. Wait timeout")
         except Exception as error:
@@ -41,6 +42,7 @@ class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
+        Steps:
         1) Create a distributed-replicated volume and start it.
         2) Enable storage.reserve option on the volume using below command,
            gluster volume set storage.reserve 50
@@ -53,7 +55,7 @@ class TestCase(NdParentTest):
         7. Reset the storage reserve value to 50 as in step 2
         8. trigger rebalance
         9. while rebalance in-progress change the reserve limit to a higher
-         value say (70)
+           value say (70)
         """
 
         # Setting storage.reserve 50
@@ -67,7 +69,7 @@ class TestCase(NdParentTest):
                                         self.client_list[0])
 
         # Start linux untar on dir linux_untar
-        redant.run_linux_untar(self.clients[0], self.mountpoint,
+        redant.run_linux_untar(self.client_list[0], self.mountpoint,
                                dirs=tuple(['linux_untar']))
 
         # Add bricks to the volume
