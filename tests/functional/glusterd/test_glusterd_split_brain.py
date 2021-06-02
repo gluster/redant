@@ -1,93 +1,49 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.peer_ops import is_peer_connected, peer_probe_servers
-from glustolibs.gluster.volume_libs import (cleanup_volume,
-                                            setup_volume)
-from glustolibs.gluster.volume_ops import (get_volume_list,
-                                           volume_reset,
-                                           set_volume_options)
-from glustolibs.gluster.gluster_init import (is_glusterd_running,
-                                             start_glusterd, stop_glusterd)
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+   TC to check split brain in glusterd with quorum set
+"""
+
+import traceback
+from tests.nd_parent_test import NdParentTest
+
+# nonDisruptive;
 
 
-@runs_on([['distributed-replicated'], ['glusterfs']])
-class GlusterdSplitBrainQuorumValidation(GlusterBaseClass):
-
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-
-        # Overriding the volume type to specifically test the volume type
-        if self.volume_type == "distributed-replicated":
-            self.volume['voltype'] = {
-                'type': 'distributed-replicated',
-                'replica_count': 2,
-                'dist_count': 4,
-                'transport': 'tcp'}
-
-        # Create a distributed-replicated volume with replica count 2
-        # using first four nodes
-        servers_info_from_four_nodes = {}
-        for server in self.servers[0:4]:
-            servers_info_from_four_nodes[
-                server] = self.all_servers_info[server]
-
-        self.volume['servers'] = self.servers[0:4]
-        ret = setup_volume(self.mnode, servers_info_from_four_nodes,
-                           self.volume, force=False)
-        if not ret:
-            raise ExecutionError("Volume create failed on four nodes")
-        g.log.info("Distributed replicated volume created successfully")
+class TestCase(NdParentTest):
 
     def tearDown(self):
-        # stopping the volume and Cleaning up the volume
-        self.get_super_method(self, 'tearDown')()
-        ret = is_glusterd_running(self.servers)
-        if ret:
-            ret = start_glusterd(self.servers)
-            if not ret:
-                raise ExecutionError("Failed to start glusterd on %s"
-                                     % self.servers)
-        # Takes 5 seconds to restart glusterd into peer connected state
-        sleep(5)
-        g.log.info("Glusterd started successfully on %s", self.servers)
+        # Cleanup the volume created in the TC
+        try:
+            # Start glusterd if test failed before starting it
+            self.redant.start_glusterd(self.server_list)
+            if not self.redant.wait_for_glusterd_to_start(self.server_list):
+                raise Exception("Glusterd is not running on all the servers")
 
-        # checking for peer status from every node
-        ret = is_peer_connected(self.mnode, self.servers)
-        if not ret:
-            ret = peer_probe_servers(self.mnode, self.servers)
-            if not ret:
-                raise ExecutionError("Failed to peer probe failed in "
-                                     "servers %s" % self.servers)
-        g.log.info("All peers are in connected state")
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
+            self.redant.cleanup_volume(self.volname, self.server_list[0])
 
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Failed Cleanup the Volume")
-        g.log.info("Volume deleted successfully")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def test_glusterd_split_brain_with_quorum(self):
+    def test_glusterd_split_brain_with_quorum(self, redant):
         """
         - On a 6 node cluster
         - Create a volume using first four nodes
@@ -99,8 +55,21 @@ class GlusterdSplitBrainQuorumValidation(GlusterBaseClass):
 
         """
         # Before starting the testcase, proceed only it has minimum of 6 nodes
-        self.assertGreaterEqual(len(self.servers), 6,
-                                "Not enough servers to run this test")
+        if len(self.server_list) < 6:
+            raise Exception("Minimum 6 nodes are required for this testcase")
+
+        # Create a dist-rep volume using first 4 nodes
+        conf_hash = {
+            "distributed-replicated": {
+                "dist_count": 2,
+                "replica_count": 3,
+                "transport": "tcp"
+            }
+        }
+        self.volname = f"{self.test_name}-{self.volume_type}"
+        redant.setup_volume(self.volname, self.server_list[0],
+                            conf_hash, self.server_list[-2:],
+                            self.brick_roots)
 
         # Volume options to set on the volume
         volume_options = {
@@ -112,58 +81,31 @@ class GlusterdSplitBrainQuorumValidation(GlusterBaseClass):
             'network.ping-timeout': '20',
             'nfs.port': '2049',
             'performance.nfs.write-behind': 'on',
-            }
+        }
 
         # Set the volume options
-        ret = set_volume_options(self.mnode, self.volname, volume_options)
-        self.assertTrue(ret, "Unable to set the volume options")
-        g.log.info("All the volume_options set succeeded")
+        redant.set_volume_options(self.volname, volume_options,
+                                  self.server_list[0])
 
         # Stop glusterd on two gluster nodes where bricks aren't present
-        ret = stop_glusterd(self.servers[-2:])
-        self.assertTrue(ret, "Failed to stop glusterd on one of the node")
-        g.log.info("Glusterd stop on the nodes : %s "
-                   "succeeded", self.servers[-2:])
+        redant.stop_glusterd(self.server_list[-2:])
 
         # Check glusterd is stopped
-        ret = is_glusterd_running(self.servers[-2:])
-        self.assertEqual(ret, 1, "Glusterd is running on nodes")
-        g.log.info("Expected: Glusterd stopped on nodes %s", self.servers[-2:])
+        if not redant.wait_for_glusterd_to_stop(self.server_list[-2:]):
+            raise Exception("Glusterd is still running on nodes: "
+                            f"{self.server_list[-2:]}")
 
         # Performing volume reset on the volume to remove all the volume
         # options set earlier
-        ret, _, err = volume_reset(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Volume reset failed with below error "
-                         "%s" % err)
-        g.log.info("Volume reset on the volume %s succeeded", self.volname)
+        redant.volume_reset(self.volname, self.server_list[0])
 
         # Bring back glusterd online on the nodes where it stopped earlier
-        ret = start_glusterd(self.servers[-2:])
-        self.assertTrue(ret, "Failed to start glusterd on the nodes")
-        g.log.info("Glusterd start on the nodes : %s "
-                   "succeeded", self.servers[-2:])
+        redant.start_glusterd(self.server_list[-2:])
 
         # Check peer status whether all peer are in connected state none of the
         # nodes should be in peer rejected state
-        halt = 20
-        counter = 0
-        _rc = False
-        g.log.info("Wait for some seconds, right after glusterd start it "
-                   "will create two daemon process it need few seconds "
-                   "(like 3-5) to initialize the glusterd")
-        while counter < halt:
-            ret = is_peer_connected(self.mnode, self.servers)
-            if not ret:
-                g.log.info("Peers are not connected state,"
-                           " Retry after 2 seconds .......")
-                sleep(2)
-                counter = counter + 2
-            else:
-                _rc = True
-                g.log.info("Peers are in connected state in the cluster")
-                break
-        if not _rc:
-            raise ExecutionError("Peers are not connected state after "
-                                 "bringing back glusterd online on the "
-                                 "nodes in which previously glusterd "
-                                 "had been stopped")
+        if not redant.wait_till_all_peers_connected(self.server_list):
+            raise Exception("Peers are not connected state after "
+                            "bringing back glusterd online on the "
+                            "nodes in which previously glusterd "
+                            "had been stopped")
