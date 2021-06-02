@@ -21,7 +21,6 @@ This test deals with testing peer probe
 using hostnames.
 """
 
-import traceback
 import socket
 from tests.d_parent_test import DParentTest
 
@@ -29,20 +28,6 @@ from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
-
-    def terminate(self):
-        """
-        Cleanup volume if TC failed before deleting it
-        """
-        try:
-            if not self.vol_deleted:
-                self.redant.cleanup_volume("test-vol", self.server_list[0])
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
 
     def _vol_operations(self, redant, volname: str):
         """
@@ -91,7 +76,6 @@ class TestCase(DParentTest):
             -> gluster volume status <vol>
             -> gluster volume stop <vol>
         '''
-        self.vol_deleted = True
 
         # detaching all the peers first
         for server in self.server_list[1:]:
@@ -124,7 +108,6 @@ class TestCase(DParentTest):
         redant.volume_create("test-vol", self.server_list[0],
                              self.vol_type_inf[self.conv_dict['dist']],
                              self.server_list, self.brick_roots, True)
-        self.vol_deleted = False
 
         redant.logger.info("Volume: test-vol created successfully")
 
@@ -155,7 +138,6 @@ class TestCase(DParentTest):
 
         # perform the set of volume operations
         self._vol_operations(redant, "test-vol-fqdn")
-        self.vol_deleted = True
 
         # creating the cluster back again
         ret = redant.create_cluster(self.server_list)
