@@ -17,15 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
 This test case tests various add brick scenarios
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import setup_volume, cleanup_volume
-from glustolibs.gluster.volume_ops import (get_volume_list)
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.rebalance_ops import rebalance_start
-from glustolibs.gluster.brick_libs import delete_bricks
 """
 import random
 from tests.d_parent_test import DParentTest
@@ -52,21 +43,25 @@ class TestCase(DParentTest):
         print(rep_count)
         num_of_bricks = 4 * rep_count
         print(num_of_bricks)
-        # self.bricks_list = form_bricks_list(self.mnode, self.volname,
-        #                                     num_of_bricks,
-        #                                     self.servers,
-        #                                     self.all_servers_info)
-        # self.assertIsNotNone(self.bricks_list, "Bricks list is None")
 
-        # # Try to add a single brick to volume, which should fail as it is a
-        # # replicated volume, we should pass multiple of replica count number
-        # # of bricks
-        # self.assertNotEqual(
-        #     add_brick(self.mnode, self.volname, self.bricks_list[0])[0], 0,
-        #     "Expected: It should fail to add a single brick to a replicated "
-        #     "volume. Actual: Successfully added single brick to volume")
-        # g.log.info("Failed to add a single brick to replicated volume "
-        #            "(as expected)")
+        self.bricks_list = redant.form_brick_cmd(self.server_list,
+                                                 self.brick_roots,
+                                                 self.vol_name,
+                                                 num_of_bricks)
+        self.bricks_list = self.bricks_list[1].split(' ')
+        print(self.bricks_list)
+        if self.bricks_list is None:
+            raise Exception("Bricks list is empty")
+        
+        # Try to add a single brick to volume, which should fail as it is a
+        # replicated volume, we should pass multiple of replica count number
+        # of bricks
+        try:
+            redant.add_brick(self.vol_name,
+                             self.bricks_list[0],
+                             self.server_list[0])
+        except Exception as error:
+            print("\n",error)
 
         # # add brick replica count number of bricks in which one is a
         # # non existing brick (not using the brick used in the earlier test)
