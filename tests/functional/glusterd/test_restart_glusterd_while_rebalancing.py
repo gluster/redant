@@ -103,6 +103,9 @@ class TestCase(DParentTest):
         # Checking Rebalance is in progress or not
         rebalance_status = redant.get_rebalance_status(self.vol_name,
                                                        self.server_list[0])
+        if rebalance_status is None:
+            raise Exception("Rebalance status returned None")
+
         if rebalance_status['aggregate']['statusStr'] != 'in progress':
             raise Exception("Rebalance is not in 'in progress' state, "
                             "either rebalance is in compeleted state or"
