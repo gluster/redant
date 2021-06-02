@@ -75,6 +75,11 @@ class TestCase(DParentTest):
             self.list_of_procs.append(proc)
             self.counter += 10
 
+        # Validate IO
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
+
         # Start profile on volume.
         redant.profile_start(self.vol_name, self.server_list[0])
 
@@ -133,8 +138,3 @@ class TestCase(DParentTest):
         # Stop profile on volume.
         redant.profile_stop(self.vol_name,
                             self.server_list[0])
-
-        # Validate IO
-        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
-        if not ret:
-            raise Exception("IO validation failed")
