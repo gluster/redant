@@ -110,6 +110,36 @@ class IoOps(AbstractOps):
 
         return True
 
+    def get_dir_contents(self, path: str, node: str,
+                         recursive: bool = False,) -> list:
+        """
+        Get the files and directories present in a given directory.
+
+        Args:
+            path (str): The path to the directory.
+            node (str): IP of the remote system.
+
+        Optional:
+            recursive (bool): lists all entries recursively
+
+        Returns:
+            file_dir_list (list): List of files and directories on path.
+            None: In case of error or failure.
+        """
+        if recursive:
+            cmd = f"find {path}"
+        else:
+            cmd = f"ls {path}"
+
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code']:
+            self.logger.error(f"Unable to list directory contents for {path}:"
+                              f" {ret['error_msg']}")
+            return None
+
+        out = "".join(ret['msg'])
+        return list(filter(None, out.split("\n")))
+
     def get_file_stat(self, node: str, path: str) -> str:
         """
         Function to get file stat.
