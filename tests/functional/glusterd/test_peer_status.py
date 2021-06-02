@@ -47,7 +47,7 @@ class TestPeerStatus(DParentTest):
         node1 = socket.getfqdn(self.server_list[1])
 
         # peer probe to a new node, N2 from N1
-        ret = redant.peer_probe(node1, self.server_list[0])
+        redant.peer_probe(node1, self.server_list[0])
 
         # checking if node1 is connected
         ret = redant.wait_for_peers_to_connect(node1,
