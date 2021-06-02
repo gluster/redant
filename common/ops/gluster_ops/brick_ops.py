@@ -592,7 +592,8 @@ class BrickOps(AbstractOps):
             random_node = random.choice(nd_list)
             offline_brick_list = self.get_offline_bricks_list(volname,
                                                               random_node)
-            if set(brick_list).issubset(set(offline_brick_list)):
+            if offline_brick_list is not None and\
+                    set(brick_list).issubset(set(offline_brick_list)):
                 return True
             itr += 5
             sleep(5)
@@ -628,7 +629,8 @@ class BrickOps(AbstractOps):
             random_node = random.choice(server_list)
             online_brick_list = self.get_online_bricks_list(volname,
                                                             random_node)
-            if set(brick_list).issubset(set(online_brick_list)):
+            if online_brick_list is not None and\
+                    set(brick_list).issubset(set(online_brick_list)):
                 return True
             itr += 5
             sleep(5)
