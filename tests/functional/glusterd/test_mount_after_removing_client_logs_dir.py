@@ -75,6 +75,8 @@ class TestCase(DParentTest):
 
         # Mounting the volume.
         self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
         redant.volume_mount(self.server_list[0], self.vol_name,
                             self.mountpoint, self.client_list[0])
 
