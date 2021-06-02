@@ -44,12 +44,12 @@ class TestCase(DParentTest):
         num_of_bricks = 4 * rep_count
         print(num_of_bricks)
 
-        self.bricks_list = redant.form_brick_cmd(self.server_list,
+        _, self.bricks_list = redant.form_brick_cmd(self.server_list,
                                                  self.brick_roots,
                                                  self.vol_name,
                                                  num_of_bricks)
-        self.bricks_list = self.bricks_list[1].split(' ')
-        print(self.bricks_list)
+        self.bricks_list = self.bricks_list.split(' ')
+        print("\n",self.bricks_list)
         if self.bricks_list is None:
             raise Exception("Bricks list is empty")
         
@@ -61,29 +61,31 @@ class TestCase(DParentTest):
                              self.bricks_list[0],
                              self.server_list[0])
         except Exception as error:
-            print("\n",error)
+            print("\n1. ",error)
 
-        # # add brick replica count number of bricks in which one is a
-        # # non existing brick (not using the brick used in the earlier test)
-        # kwargs = {'replica_count': replica_count_of_volume}
-        # bricks_to_add = self.bricks_list[1:replica_count_of_volume + 1]
-        # # make one of the bricks a non-existing one (randomly)
-        # random_index = random.randint(0, replica_count_of_volume - 1)
-        # bricks_to_add[random_index] += "/non_existing_brick"
+        # add brick replica count number of bricks in which one is a
+        # non existing brick (not using the brick used in the earlier test)
+        print(f"Replica count: {rep_count}\n")
+        bricks_to_add = self.bricks_list[1:rep_count + 1]
+        # make one of the bricks a non-existing one (randomly)
+        random_index = random.randint(0, rep_count - 1)
+        bricks_to_add[random_index] += "/non_existing_brick"
 
-        # self.assertNotEqual(
-        #     add_brick(self.mnode, self.volname, bricks_to_add, **kwargs)[0], 0,
-        #     "Expected: It should fail to add a non existing brick to volume. "
-        #     "Actual: Successfully added a non existing brick to volume")
-        # g.log.info("Failed to add a non existing brick to volume "
-        #            "(as expected)")
+        br_cmd = " ".join(bricks_to_add)
+        print(f"\nBrick cmd:\n{br_cmd}\n")
+        try:
+            redant.add_brick(self.vol_name,
+                            br_cmd, self.server_list[0],
+                            replica_count=rep_count)
+        except Exception as error:
+            print(f"\n2. {error}\n")
 
         # # add a brick from a node which is not a part of the cluster
         # # (not using bricks used in earlier tests)
-        # bricks_to_add = self.bricks_list[replica_count_of_volume + 1:
-        #                                  (2 * replica_count_of_volume) + 1]
+        # bricks_to_add = self.bricks_list[rep_count + 1:
+        #                                  (2 * rep_count) + 1]
         # # change one (random) brick's node name to a non existent node
-        # random_index = random.randint(0, replica_count_of_volume - 1)
+        # random_index = random.randint(0, rep_count - 1)
         # brick_to_change = bricks_to_add[random_index].split(":")
         # brick_to_change[0] = "abc.def.ghi.jkl"
         # bricks_to_add[random_index] = ":".join(brick_to_change)
@@ -97,8 +99,8 @@ class TestCase(DParentTest):
 
         # # add correct number of valid bricks, it should succeed
         # # (not using bricks used in earlier tests)
-        # bricks_to_add = self.bricks_list[(2 * replica_count_of_volume) + 1:
-        #                                  (3 * replica_count_of_volume) + 1]
+        # bricks_to_add = self.bricks_list[(2 * rep_count) + 1:
+        #                                  (3 * rep_count) + 1]
         # self.assertEqual(
         #     add_brick(self.mnode, self.volname, bricks_to_add, **kwargs)[0], 0,
         #     "Failed to add the bricks to the volume")
