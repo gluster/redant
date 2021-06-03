@@ -91,7 +91,7 @@ class TestCase(DParentTest):
             # Confirm if the 50th volume failed to start
             if i != 50:
                 raise Exception("Failed to start volumes 1"
-                                " to volume 25 in a loop")
+                                " to volume 49 in a loop")
 
             # Confirm the error message on volume start fail
             err_msg = ("Commit failed on localhost. "
@@ -124,7 +124,7 @@ class TestCase(DParentTest):
 
             # Starting the 50th volume should succeed now
             # self.volname = "volume-%d" % i
-            volname = f"{self.vol_name}-volume-25"
+            volname = f"{self.vol_name}-volume-50"
 
             redant.volume_start(volname,
                                 self.server_list[0])
