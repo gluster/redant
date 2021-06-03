@@ -1,4 +1,4 @@
-"""
+'''
 Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
 
 This program is free software; you can redistribute it and/or modify
@@ -11,11 +11,13 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along`
+You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
+Description:
+This test deals with volume creation with glusterd restarts.
+'''
 
 # disruptive;dist
 
@@ -33,18 +35,41 @@ class TestCase(DParentTest):
         self.setup_done = True
 
     def terminate(self):
-
+        """
+        To peer probe all the servers
+        """
         try:
             # wait till peers are in connected state
             if not (self.redant.
                     wait_for_peers_to_connect(self.server_list,
-                                                self.server_list[0]):
+                                              self.server_list[0],
+                                              60)):
                 raise Exception("Failed to connect peers")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
         super().terminate()
+
+    def _glusterd_restart_async(self):
+        # Restarting glusterd in a loop
+        restart_cmd = ("for i in `seq 1 5`; do "
+                       "service glusterd restart; "
+                       "systemctl reset-failed glusterd; "
+                       "sleep 3; "
+                       "done")
+        proc1 = self.redant.execute_command_async(restart_cmd,
+                                                  self.server_list[2])
+
+        # After running restart in async adding 10 sec sleep
+        sleep(10)
+        return proc1
+
+    def _check_process_ended(self, proc1):
+        # check if the process ended successfully
+        ret = self.redant.wait_till_async_command_ends(proc1)
+        if ret['error_code'] != 0:
+            raise Exception("Glusterd restart not working")
 
     def run_test(self, redant):
         """
@@ -56,80 +81,42 @@ class TestCase(DParentTest):
         5) While the volume start is happening restart N4.
         6) Check if glusterd has crashed on any node.
         """
-        if len(self.server_list) < 4:
-            # raise Exception("Minimum 4 nodes required for this TC to run")
-            print("Minimum 4 nodes required for this TC to run")
+        # if len(self.server_list) < 4:
+        #     raise Exception("Minimum 4 nodes required for this TC to run")
 
         # Fetching all the parameters for volume_create
-        list_of_three_servers = self.server_list[0:3]
+        list_of_three_servers = self.server_list[0:2]
         print(list_of_three_servers)
-        # for server in self.servers[0:3]:
-        #     list_of_three_servers.append(server)
-        #     server_info_for_three_nodes[server] = self.all_servers_info[server]
 
         # Restarting glusterd in a loop
-        # restart_cmd = ("for i in `seq 1 5`; do "
-        #                "service glusterd restart; "
-        #                "systemctl reset-failed glusterd; "
-        #                "sleep 3; "
-        #                "done")
-        # proc1 = redant.execute_command_async(restart_cmd,
-        #                                      self.server_list[3])
-
-        # # After running restart in g.async adding 10 sec sleep
-        # sleep(10)
+        proc1 = self._glusterd_restart_async()
 
         # Creating volumes using 3 servers
         self.volume_type = "dist"
         self.vol_name = (f"{self.test_name}-{self.volume_type}")
         conf_hash = self.vol_type_inf[self.conv_dict[self.volume_type]]
         redant.volume_create(self.vol_name, self.server_list[0], conf_hash,
-                                list_of_three_servers, self.brick_roots)
-        # ret, _, _ = volume_create(self.mnode, self.volname,
-        #                           bricks_list)
-        # self.assertEqual(ret, 0, "Volume creation failed")
-        # g.log.info("Volume %s created successfully", self.volname)
+                             list_of_three_servers, self.brick_roots)
+        # check if process ended
+        self._check_process_ended(proc1)
 
-        # ret, _, _ = proc1.async_communicate()
-        # self.assertEqual(ret, 0, "Glusterd restart not working.")
+        # Checking if peers are connected or not.
+        if not redant.wait_for_peers_to_connect(self.server_list,
+                                                self.server_list[0],
+                                                60):
+            raise Exception("Peers are not connected")
 
-        # # Checking if peers are connected or not.
-        # count = 0
-        # while count < 60:
-        #     ret = is_peer_connected(self.mnode, self.servers)
-        #     if ret:
-        #         break
-        #     sleep(3)
-        #     count += 1
-        # self.assertTrue(ret, "Peers are not in connected state.")
-        # g.log.info("Peers are in connected state.")
+        # Restarting glusterd in a loop
+        # proc1 = self._glusterd_restart_async()
 
-        # # Restarting glusterd in a loop
-        # restart_cmd = ("for i in `seq 1 5`; do "
-        #                "service glusterd restart; "
-        #                "systemctl reset-failed glusted; "
-        #                "sleep 3; "
-        #                "done")
-        # proc1 = g.run_async(self.servers[3], restart_cmd)
+        # Start the volume created.
+        redant.volume_start(self.vol_name, self.server_list[0])
 
-        # # After running restart in g.async adding 10 sec sleep
-        # sleep(10)
+        # check if process ended
+        # self._check_process_ended(proc1)
 
-        # # Start the volume created.
-        # ret, _, _ = volume_start(self.mnode, self.volname)
-        # self.assertEqual(ret, 0, "Volume start failed")
-        # g.log.info("Volume %s started successfully", self.volname)
-
-        # ret, _, _ = proc1.async_communicate()
-        # self.assertEqual(ret, 0, "Glusterd restart not working.")
-
-        # # Checking if peers are connected or not.
-        # count = 0
-        # while count < 60:
-        #     ret = is_peer_connected(self.mnode, self.servers)
-        #     if ret:
-        #         break
-        #     sleep(3)
-        #     count += 1
-        # self.assertTrue(ret, "Peers are not in connected state.")
-        # g.log.info("Peers are in connected state.")
+        # Checking if peers are connected or not.
+        if not redant.wait_for_peers_to_connect(self.server_list,
+                                                self.server_list[0],
+                                                60):
+            raise Exception("Peers are not connected")
