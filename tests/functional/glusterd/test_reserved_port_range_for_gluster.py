@@ -36,7 +36,7 @@ class TestCase(DParentTest):
         # Reset port range if some test fails
         if self.port_range_changed:
             cmd = ("sed -i 's/49200/60999/' "
-                   "/usr/local/etc/glusterfs/glusterd.vol")
+                   "/etc/glusterfs/glusterd.vol")
             self.redant.execute_abstract_op_node(cmd, self.server_list[0])
 
         super().terminate()
@@ -58,7 +58,7 @@ class TestCase(DParentTest):
 
             # Set max port number as 49200 in glusterd.vol file
             cmd = ("sed -i 's/60999/49200/' "
-                   "/usr/local/etc/glusterfs/glusterd.vol")
+                   "/etc/glusterfs/glusterd.vol")
             redant.execute_abstract_op_node(cmd, self.server_list[0])
 
             self.port_range_changed = True
@@ -114,7 +114,7 @@ class TestCase(DParentTest):
 
             # Set max port number back to default value in glusterd.vol file
             cmd = ("sed -i 's/49200/60999/' "
-                   "/usr/local/etc/glusterfs/glusterd.vol")
+                   "/etc/glusterfs/glusterd.vol")
             redant.execute_abstract_op_node(cmd, self.server_list[0])
 
             self.port_range_changed = False
