@@ -23,6 +23,7 @@ clients_info:
 volume_types:
     distributed:
         dist_count: 4
+        replica_count: 1
         transport: tcp
     replicated:
         dist_count: 1
