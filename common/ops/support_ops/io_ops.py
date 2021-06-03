@@ -239,7 +239,7 @@ class IoOps(AbstractOps):
         """Set permissions on a remote file.
 
         Args:
-            host (str): The hostname/ip of the remote system.
+            node (str): The node on which command has to execute
             fqpath (str): The fully-qualified path to the file.
             perms (str): A permissions string as passed to chmod.
 
