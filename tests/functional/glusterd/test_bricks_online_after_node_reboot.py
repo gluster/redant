@@ -1,178 +1,125 @@
-#  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-Test Cases in this module related to gluster bricks are online
-after node reboot or not
+  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+  Test Cases in this module related to gluster bricks are online
+  after node reboot or not
 """
 from random import choice
 from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (volume_start, volume_stop,
-                                           volume_create, set_volume_options,
-                                           get_volume_list)
-from glustolibs.gluster.gluster_init import is_glusterd_running
-from glustolibs.gluster.volume_libs import cleanup_volume
-from glustolibs.gluster.brick_libs import wait_for_bricks_to_be_online
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.misc.misc_libs import reboot_nodes_and_wait_to_come_online
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-dispersed'], ['glusterfs']])
-class BricksOnlineAfterNodeReboot(GlusterBaseClass):
-    def setUp(self):
-        """
-        setUp method for every test
-        """
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+# disruptive;dist-disp
+class TestCase(DParentTest):
 
-        # Creating Volume
-        g.log.info("Started creating volume")
-        ret = self.setup_volume()
-        if ret:
-            g.log.info("Volme created successfully : %s", self.volname)
-        else:
-            raise ExecutionError("Volume creation failed: %s" % self.volname)
-
-    def tearDown(self):
-        """
-        tearDown for every test
-        """
-        # Cleaning up the volume
-        volume_list = get_volume_list(choice(self.servers))
-        for volume in volume_list:
-            ret = cleanup_volume(self.mnode, volume)
+    def check_bricks_online(self, redant):
+        for volname in self.volume_names:
+            vol_bricks = redant.es.get_all_bricks_list(volname)
+            ret = redant.wait_for_bricks_to_come_online(volname,
+                                                        self.server_list,
+                                                        vol_bricks)
             if not ret:
-                raise ExecutionError("Failed Cleanup the Volume %s" % volume)
-        g.log.info("Successfully cleaned up all the volumes")
+                raise Exception("Unexpected: Few bricks are offline")
 
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def check_bricks_online(self, all_volumes):
-        for volume in all_volumes:
-            self.assertTrue(wait_for_bricks_to_be_online(
-                self.mnode, volume), "Unexpected: Few bricks are offline")
-            g.log.info("All bricks are online in the volume %s ", volume)
-
-    def check_node_after_reboot(self, server):
+    def check_node_after_reboot(self, redant, server):
         count = 0
-        while count < 80:
-            ret = is_glusterd_running(server)
-            if not ret:
-                ret = self.validate_peers_are_connected()
+        while count < 30:
+            ret = redant.is_glusterd_running(server)
+            if ret == 1:
+                ret = redant.validate_peers_are_connected(self.server_list)
                 if ret:
-                    g.log.info("glusterd is running and all peers are in"
-                               "connected state")
+                    redant.logger.info("glusterd is running and all peers "
+                                       "are in connected state")
                     break
             count += 1
-            sleep(10)
-        self.assertNotEqual(count, 60, "Either glusterd is not runnig or peers"
-                                       " are not in connected state")
+            sleep(2)
+        if count == 30:
+            raise Exception("Either glusterd is not running or peers"
+                            " are not in connected state")
 
-    def test_bricks_online_after_node_reboot(self):
-        '''
-        Create all types of volumes
-        Start the volume and check the bricks are online
-        Reboot a node at random
-        After the node is up check the bricks are online
-        Set brick-mux to on
-        stop and start the volume to get the brick-mux into effect
-        Check all bricks are online
-        Now perform node reboot
-        After node reboot all bricks should be online
-        '''
+    def run_test(self, redant):
+        """
+        Steps:
+        1) Create all types of volumes
+        2) Start the volume and check the bricks are online
+        3) Reboot a node at random
+        4) After the node is up check the bricks are online
+        5) Set brick-mux to on
+        6) stop and start the volume to get the brick-mux into effect
+        7) Check all bricks are online
+        8) Now perform node reboot
+        9) After node reboot all bricks should be online
+        """
 
         # Creating all types of volumes disperse, replicate, arbiter
-        all_volumes = ['disperse', 'replicate', 'arbiter']
-        for volume in all_volumes:
-            bricks_list = form_bricks_list(self.mnode, volume,
-                                           6 if volume == "disperse" else 3,
-                                           self.servers,
-                                           self.all_servers_info)
-            if volume == "disperse":
-                ret, _, _ = volume_create(self.mnode, volume, bricks_list,
-                                          disperse_count=6,
-                                          redundancy_count=2)
-            elif volume == "replicate":
-                ret, _, _ = volume_create(self.mnode, volume, bricks_list,
-                                          replica_count=3)
-            else:
-                ret, _, _ = volume_create(self.mnode, volume, bricks_list,
-                                          replica_count=3, arbiter_count=1)
-            self.assertEqual(ret, 0, "Unexpected: Volume create '%s' failed"
-                             % volume)
-            g.log.info("volume create %s succeeded", volume)
-        # All volumes start
-        for volume in all_volumes:
-            ret, _, _ = volume_start(self.mnode, volume)
-            self.assertEqual(ret, 0, "Unexpected: Volume start succeded %s"
-                             % volume)
-            g.log.info("Volume started succesfully %s", volume)
+        all_volumes = ['disp', 'rep', 'arb']
+        self.volume_names = []
+        for iteration, volume in enumerate(all_volumes):
+            volname = f"{self.test_name}-{volume}-{iteration}"
+            self.volume_names.append(volname)
+            conf_dict = self.vol_type_inf[self.conv_dict[volume]]
+            redant.setup_volume(volname, self.server_list[0],
+                                conf_dict, self.server_list,
+                                self.brick_roots, True)
 
         # Adding self.volname to the all_volumes list
-        all_volumes.append(self.volname)
+        self.volume_names.append(self.vol_name)
 
         # Validate whether all volume bricks are online or not
-        self.check_bricks_online(all_volumes)
+        self.check_bricks_online(redant)
+
         # Perform node reboot
-        random_server = choice(self.servers)
-        ret, _ = reboot_nodes_and_wait_to_come_online(random_server)
-        self.assertTrue(ret, "Reboot Failed on node %s" % random_server)
-        g.log.info("Node: %s rebooted successfully", random_server)
+        random_server = choice(self.server_list)
+        redant.reboot_nodes(random_server)
+
+        # Wait till node comes back online
+        redant.wait_node_power_up(random_server)
 
         # Wait till glusterd is started on the node rebooted
-        self.check_node_after_reboot(random_server)
+        self.check_node_after_reboot(redant, random_server)
 
         # After reboot check bricks are online
-        self.check_bricks_online(all_volumes)
+        self.check_bricks_online(redant)
 
         # Enable brick-mux on and stop and start the volumes
-        ret = set_volume_options(self.mnode, 'all',
-                                 {"cluster.brick-multiplex": "enable"})
-        self.assertTrue(ret, "Unable to set the volume option")
-        g.log.info("Brick-mux option enabled successfully")
-        self.addCleanup(set_volume_options, self.mnode, 'all',
-                        {"cluster.brick-multiplex": "disable"})
+        redant.set_volume_options('all',
+                                  {"cluster.brick-multiplex": "enable"},
+                                  self.server_list[0])
 
         # Stop all the volumes in the cluster
-        for vol in all_volumes:
-            ret, _, _ = volume_stop(self.mnode, vol)
-            self.assertEqual(ret, 0, "volume stop failed on %s" % vol)
-            g.log.info("volume: %s stopped successfully", vol)
+        for vol in self.volume_names:
+            redant.volume_stop(vol, self.server_list[0])
 
         # Starting the volume to get brick-mux into effect
-        for vol in all_volumes:
-            ret, _, _ = volume_start(self.mnode, vol)
-            self.assertEqual(ret, 0, "volume start failed on %s" % vol)
-            g.log.info("volume: %s started successfully", vol)
+        for vol in self.volume_names:
+            redant.volume_start(vol, self.server_list[0])
 
         # Checking all bricks are online or not
-        self.check_bricks_online(all_volumes)
+        self.check_bricks_online(redant)
 
         # Perform node reboot
-        ret, _ = reboot_nodes_and_wait_to_come_online(random_server)
-        self.assertTrue(ret, "Reboot Failed on node %s" % random_server)
-        g.log.info("Node: %s rebooted successfully", random_server)
+        redant.reboot_nodes(random_server)
 
         # Wait till glusterd is started on the node rebooted
-        self.check_node_after_reboot(random_server)
+        redant.wait_node_power_up(random_server)
+
+        # Wait till glusterd is started on the node rebooted
+        self.check_node_after_reboot(redant, random_server)
 
         # Validating bricks are online after node reboot
-        self.check_bricks_online(all_volumes)
+        self.check_bricks_online(redant)
