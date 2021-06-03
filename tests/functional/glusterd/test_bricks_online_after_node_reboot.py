@@ -83,7 +83,8 @@ class TestCase(DParentTest):
         redant.reboot_nodes(random_server)
 
         # Wait till node comes back online
-        redant.wait_node_power_up(random_server)
+        if not redant.wait_node_power_up(random_server):
+            raise Exception("Node failed to power up.")
 
         # Wait till glusterd is started on the node rebooted
         self.check_node_after_reboot(random_server)
@@ -115,7 +116,8 @@ class TestCase(DParentTest):
         redant.reboot_nodes(random_server)
 
         # Wait till glusterd is started on the node rebooted
-        redant.wait_node_power_up(random_server)
+        if not redant.wait_node_power_up(random_server):
+            raise Exception("Node failed to power up.")
 
         # Wait till glusterd is started on the node rebooted
         self.check_node_after_reboot(random_server)
