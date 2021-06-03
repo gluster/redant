@@ -29,6 +29,15 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    def terminate(self):
+        """
+        Performing hard terminate to solve the peer issues.
+        As the test plays around with IP and hostname, that might
+        cause issues later in subsequent cases.
+        """
+        self.redant.hard_terminate(self.server_list, self.client_list,
+                                   self.brick_roots)
+
     def _vol_operations(self, redant, volname: str):
         """
         This function performs a

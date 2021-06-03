@@ -1,6 +1,40 @@
 # redant
 
-Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1D8zUSmg-00ey711gsqvS6G9i_fGN2cE0EbG4u1TOsaQ/edit?usp=sharing)
+```
+    ____  __________  ___    _   ________
+   / __ \/ ____/ __ \/   |  / | / /_  __/
+  / /_/ / __/ / / / / /| | /  |/ / / /   
+ / _, _/ /___/ /_/ / ___ |/ /|  / / /    
+/_/ |_/_____/_____/_/  |_/_/ |_/ /_/     
+                                         
+
+usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-sp] [-l LOG_DIR]
+                      [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-rf RESULT_PATH]
+                      [-xls EXCEL_SHEET]
+
+Redant test framework main script.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIG_FILE, --config CONFIG_FILE
+                        Config file(s) to read.
+  -t TEST_DIR, --test-dir TEST_DIR
+                        The test directory where TC(s) exist
+  -sp, --specific-test-path
+                        Path of the specific test to be run from tests/
+  -l LOG_DIR, --log-dir LOG_DIR
+                        The directory wherein log will be stored.
+  -ll LOG_LEVEL, --log-level LOG_LEVEL
+                        The log level. Default log level is Info
+  -cc CONCUR_COUNT, --concurrency-count CONCUR_COUNT
+                        Number of concurrent test runs. Default is 2.
+  -rf RESULT_PATH, --result-file RESULT_PATH
+                        Result file. Default value is None
+  -xls EXCEL_SHEET, --excel-sheet EXCEL_SHEET
+                        Spreadsheet for result. Default value is NULL
+```
+
+
 
 The architects of any project won't be there forever with it 
 ( not everyone has the luxury to be a BDFL ), hence it is important to have 
@@ -79,23 +113,6 @@ lengthy commands to be typed out everytime. Check out the README.md at the link
 
 Please refer the doc : [migratingTC.md](./docs/BP/Tools/migratingTC.md)
 
-### Flags
+## For those looking for Redant inspiration
 
-* -c, --config : Stores the path of the config file(s) to read. You need to 
-provide the path else by default it is `None`. Moreover, this is a required 
-argument so you need to provide it for sure.
-* -t, --test-dir : The path of the test directory where test cases exist. 
-You can also provide the path to the specific test file. But in that case 
-remember the `-sp` flag :upside_down_face:. This is also a required argument 
-so don't forget it.
-*   -l, --log-dir : It stores the path of the log directory where you want 
-the log files to be kept. By default it stores `/tmp/redant` and it 
-is not a required argument.
-* -ll, --log-level : The log level you want for the execution.By default 
-the log level is `I` (INFO). There are other log levels also like `D`(DEBUG).
-* -cc, --concurrency-count : It stores the number of concurrent tests run. 
-By default it is 2.
-* -rf, --result-file : It stores the path of the result file. By default it 
-is `None`
-* -xls, --excel-sheet : It stores the path of the excel sheet. By default it 
-is `None`.
+Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1D8zUSmg-00ey711gsqvS6G9i_fGN2cE0EbG4u1TOsaQ/edit?usp=sharing)
