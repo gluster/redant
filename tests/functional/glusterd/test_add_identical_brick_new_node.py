@@ -19,12 +19,11 @@
     Add a new brick with identical name as the previous added
     brick on a new node and checking volume status.
 """
-import time
+
 from tests.d_parent_test import DParentTest
 
+
 # disruptive;
-
-
 class TestCase(DParentTest):
 
     def run_test(self, redant):
@@ -49,7 +48,8 @@ class TestCase(DParentTest):
 
         # Getting the bricks list to bring down a brick
         redant.logger.info("Get all the bricks of the volume")
-        bricks_list = redant.es.get_all_bricks_list(self.volume_name1)
+        bricks_list = redant.get_all_bricks(self.volume_name1,
+                                            self.server_list[0])
         if len(bricks_list) == 0:
             raise Exception(f"Failed to fetch bricks for {self.volume_name1}")
 
@@ -58,18 +58,16 @@ class TestCase(DParentTest):
         if not ret:
             raise Exception("Failed to bring down the bricks")
 
-        ret = redant.peer_probe(self.server_list[1], self.server_list[0])
-
-        # wait for some time before add-brick
-        time.sleep(2)
+        redant.peer_probe_servers(self.server_list[1], self.server_list[0],
+                                  True)
 
         _, brick_str = redant.form_brick_cmd([self.server_list[1]],
                                              self.brick_roots,
                                              self.volume_name1, 1)
 
         # adding identical brick on different node
-        ret = redant.add_brick(self.volume_name1, brick_str,
-                               self.server_list[0], True)
+        redant.add_brick(self.volume_name1, brick_str,
+                         self.server_list[0], True)
 
         redant.volume_start(self.volume_name1, self.server_list[0],
                             force=True)
