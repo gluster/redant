@@ -93,17 +93,20 @@ class TestRunner:
             cls.gen_nd_jobq.put(test)
 
     @classmethod
-    def _nd_worker_process(cls, vol_queue, queue_map):
+    def _nd_worker_process(cls, vol_queue, queue_map, gen_nd_jobq, ):
         """
         Worker process has two set of queue hierarchy to deal with.
         It picks up a volume type from the volume queue and then
         starts picking off jobs specific to that particular volume. Once, the
         jobs related to this volume ends, it picks up a new volume to work
-        with.
+        with. Once a worker find the vol queue as empty, it goes ahead and
+        starts working with Generic cases.
         Args:
             vol_queue (Queue) : Queue containing volume types of gluster.
             queue_map (Dict) : A dictionary mapping volume types to sub queues
                                for given volume type.
+            gen_nd_jobq (Queue) : Queue containing jobs for Generic
+                                  non disruptive cases.
         """
         while not vol_queue.empty():
             job_vol = vol_queue.get()
@@ -115,36 +118,31 @@ class TestRunner:
                 job_data['volType'] = job_vol
                 cls._run_test(job_data)
 
-    @classmethod
-    def _gen_worker_process(cls, test_queue):
-        """
-        Worker process for handling non disruptive test cases of
-        generic nature.
-        """
-        while not test_queue.empty():
-            job_data = test_queue.get()
-            cls.logger.info(f"Generic worker picked up job {job_data}")
-            job_data["volType"] = "Generic"
-            cls._run_test(job_data)
+        if gen_nd_jobq.qsize() != 0:
+            while not gen_nd_jobq.empty():
+                job_data = gen_nd_jobq.get()
+                cls.logger.info(f"Worker picked up job {job_data}")
+                job_data['volType'] = "Generic"
+                cls._run_test(job_data)
 
     @classmethod
     def run_tests(cls, env_obj):
         """
         The test runs are of three stages,
         1. Stage 1 is for non disruptive test cases which can run in the
-           concurrent flow and can use a pre-existing volume.
-        2. Stage 2 is for non disruptive test cases which belong to the
-           Generic type.
-        3. Stage 3 is the run of non-Disruptive test cases.
+           concurrent flow and can use a pre-existing volume or don't
+           even need a pre-existing volume ( psst. Generic cases ).
+        3. Stage 2 is the run of Disruptive test cases.
         """
         cls.env_obj = env_obj
         # Stage 1
         jobs = []
         if bool(cls.nd_tests_count):
-            cls.logger.info("Starting Non generic concurrent test cases.")
+            cls.logger.info("Starting Non Disruptive test case runs.")
             for _ in range(cls.concur_count):
                 proc = Process(target=cls._nd_worker_process,
-                               args=(cls.nd_vol_queue, cls.queue_map,))
+                               args=(cls.nd_vol_queue, cls.queue_map,
+                                     cls.gen_nd_jobq,))
                 jobs.append(proc)
                 proc.start()
 
@@ -156,25 +154,8 @@ class TestRunner:
             for _ in range(cls.concur_count):
                 proc.join()
 
-            # Stage 2 for Generic concurrent tests.
-            cls.logger.info("Starting Generic concurrent test cases.")
-            jobs = []
-            if cls.gen_nd_jobq.qsize() != 0:
-                for _ in range(cls.concur_count):
-                    proc = Process(target=cls._gen_worker_process,
-                                   args=(cls.gen_nd_jobq,))
-                    jobs.append(proc)
-                    proc.start()
-
-                while len(jobs) > 0:
-                    jobs = [job for job in jobs if job.is_alive()]
-                    time.sleep(1)
-
-                for _ in range(cls.concur_count):
-                    proc.join()
-
-        # Stage 3
-        cls.logger.info("Starting Disruptive test case runs")
+        # Stage 2
+        cls.logger.info("Starting Disruptive test case runs.")
         for test in cls.get_dtest_fn():
             cls._run_test(test)
 
