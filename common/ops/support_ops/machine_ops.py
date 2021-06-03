@@ -108,3 +108,53 @@ class MachineOps(AbstractOps):
             return True
         self.logger.error(f"{node} still online.")
         return False
+
+    def hard_terminate(self, server_list: list, client_list: list,
+                       brick_root: dict):
+        """
+        hard terminate is inconsiderate. It will clear out the env
+        completely and is to be used with caution. Don't use it inside the
+        non disruptive tests or else, you might have a string of failures.
+        Args:
+            server_list (list): List of gluster server machines
+            client_list (list): List of gluster client machines
+            brick_root (dict): Dictionary of brick roots and nodes.
+        """
+        # Wait for nodes to power up.
+        for server in server_list:
+            self.wait_node_power_up(server)
+
+        # Stop glusterd on the servers.
+        self.stop_glusterd(server_list)
+
+        # Wait for glusterd to stop.
+        if not self.wait_for_glusterd_to_stop(server_list):
+            raise Exception("Sheer panic! As hard terminate fails to stop"
+                            "glusterd!")
+
+        # Kill glusterfs and glusterfsd processes in the server machines.
+        # TODO. Add other gluster related processes later.
+        cmd = "pkill glusterfs && pkill glusterfsd"
+        for node in server_list:
+            self.execute_abstract_op_node(cmd, node, False)
+
+        # Also need to kill the fuse process in the clients
+        cmd = "pkill glusterfs"
+        for node in client_list:
+            self.execute_abstract_op_node(cmd, node, False)
+
+        # Clear out the vol and peer file on the servers.
+        cmd = ("rm -rf /var/lib/glusterd/vols/* && rm -rf /var/lib/glusterd"
+               "/peers/*")
+        for node in server_list:
+            self.execute_abstract_op_node(cmd, node, False)
+
+        # Clear out the brick dirs under the brick roots.
+        for (server, brick) in brick_root.items():
+            cmd = (f"rm -rf {brick}/*")
+            self.execute_abstract_op_node(cmd, server, False)
+
+        # Clear out the mountpoints in clients.
+        cmd = "umount /mnt/* && rm -rf /mnt/*"
+        for node in client_list:
+            self.execute_abstract_op_node(cmd, node, False)
