@@ -144,11 +144,13 @@ class MountOps(AbstractOps):
 
         """
         cmd = f"stat -c '%a' {mountpoint}"
-        for _ in range(timeout):
+        count = 0
+        while count <= timeout:
             ret = self.execute_abstract_op_node(cmd,
                                                 client_node,
                                                 False)
             if ret['error_code'] == 0:
                 return True
             sleep(1)
+            count += 1
         return False
