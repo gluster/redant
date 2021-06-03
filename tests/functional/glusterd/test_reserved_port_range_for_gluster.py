@@ -38,7 +38,6 @@ class TestCase(DParentTest):
                    "/etc/glusterfs/glusterd.vol")
             self.redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        #super().terminate()
         self.redant.hard_terminate(self.server_list, self.client_list,
                                    self.brick_roots)
 
