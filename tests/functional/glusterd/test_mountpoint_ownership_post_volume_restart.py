@@ -68,5 +68,10 @@ class TestCase(NdParentTest):
                                                      self.server_list)):
             raise Exception("All volume processes are not up")
 
+        # # adding sleep for the mountpoint to be recognized by client
+        # sleep(3)
+        if not redant.wait_for_mountpoint_to_connect(self.mountpoint,
+                                                     self.client_list[0]):
+            raise Exception("Transport endpoint connection failed")
         # validate the mountpoint permissions.
         self._validate_mount_permissions()

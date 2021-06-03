@@ -3,6 +3,7 @@ This file contains one class - MountOps which
 holds mount related APIs which will be called
 from the test case.
 """
+from time import sleep
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -122,3 +123,32 @@ class MountOps(AbstractOps):
             return count_of_proc
         else:
             return None
+
+    def wait_for_mountpoint_to_connect(self, mountpoint: str,
+                                       client_node: str,
+                                       timeout: int = 20):
+        """
+        This function waits for mountpoint to get connected.
+        A failed mountpoint connection results in exception
+        'Transport endpoint not connected'.
+
+        Args:
+            mountpoint (str) : the mountpoint to check
+            client_node (str): client node to execute the command
+            timeout (int) : Timeout by default 20s.
+                            Moreover, no one likes to wait forever :)
+
+        Returns:
+        True if mountpoint gets connected within the timeout
+        else False.
+
+        """
+        cmd = f"stat -c '%a' {mountpoint}"
+        for _ in range(timeout):
+            ret = self.execute_abstract_op_node(cmd,
+                                                client_node,
+                                                False)
+            if ret['error_code'] == 0:
+                return True
+            sleep(1)
+        return False
