@@ -4,7 +4,6 @@ to be run and invoking them.
 """
 import time
 from multiprocessing import Process, Queue
-import random
 from halo import Halo
 from runner_thread import RunnerThread
 
