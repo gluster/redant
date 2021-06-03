@@ -33,6 +33,11 @@ class TestCase(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         self.setup_done = True
+        ret = self.redant.peer_detach_servers(self.server_list[3:],
+                                              self.server_list[0],
+                                              True)
+        if not ret:
+            raise Exception("Cluster does not have 3 servers exactly")
 
     def terminate(self):
         """
@@ -59,7 +64,7 @@ class TestCase(DParentTest):
                        "sleep 3; "
                        "done")
         proc1 = self.redant.execute_command_async(restart_cmd,
-                                                  self.server_list[2])
+                                                  self.server_list[3])
 
         # After running restart in async adding 10 sec sleep
         sleep(10)
@@ -81,12 +86,11 @@ class TestCase(DParentTest):
         5) While the volume start is happening restart N4.
         6) Check if glusterd has crashed on any node.
         """
-        # if len(self.server_list) < 4:
-        #     raise Exception("Minimum 4 nodes required for this TC to run")
+        if len(self.server_list) < 4:
+            raise Exception("Minimum 4 nodes required for this TC to run")
 
         # Fetching all the parameters for volume_create
-        list_of_three_servers = self.server_list[0:2]
-        print(list_of_three_servers)
+        list_of_three_servers = self.server_list[0:3]
 
         # Restarting glusterd in a loop
         proc1 = self._glusterd_restart_async()
@@ -107,13 +111,13 @@ class TestCase(DParentTest):
             raise Exception("Peers are not connected")
 
         # Restarting glusterd in a loop
-        # proc1 = self._glusterd_restart_async()
+        proc1 = self._glusterd_restart_async()
 
         # Start the volume created.
         redant.volume_start(self.vol_name, self.server_list[0])
 
         # check if process ended
-        # self._check_process_ended(proc1)
+        self._check_process_ended(proc1)
 
         # Checking if peers are connected or not.
         if not redant.wait_for_peers_to_connect(self.server_list,
