@@ -36,6 +36,9 @@ class TestCase(DParentTest):
         """
         self.brick_list = redant.get_all_bricks(self.vol_name,
                                                 self.server_list[0])
+        if self.brick_list is None:
+            raise Exception(f"Brick list for volume {self.vol_name}"
+                            " has come out to be NULL")
 
         remove_brick_list = [self.brick_list[0], self.brick_list[3]]
         redant.remove_brick(self.server_list[0], self.vol_name,
@@ -44,6 +47,9 @@ class TestCase(DParentTest):
 
         self.brick_list = redant.get_all_bricks(self.vol_name,
                                                 self.server_list[0])
+        if self.brick_list is None:
+            raise Exception(f"Brick list for volume {self.vol_name}"
+                            " has come out to be NULL")
 
         remove_brick_list = [self.brick_list[0], self.brick_list[2]]
         redant.remove_brick(self.server_list[0], self.vol_name,
