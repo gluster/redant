@@ -110,11 +110,15 @@ class MachineOps(AbstractOps):
         return False
 
     def hard_terminate(self, server_list: list, client_list: list,
-                       brick_root: list):
+                       brick_root: dict):
         """
         hard terminate is inconsiderate. It will clear out the env
         completely and is to be used with caution. Don't use it inside the
         non disruptive tests or else, you might have a string of failures.
+        Args:
+            server_list (list): List of gluster server machines
+            client_list (list): List of gluster client machines
+            brick_root (dict): Dictionary of brick roots and nodes.
         """
         # Wait for nodes to power up.
         for server in server_list:
