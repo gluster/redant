@@ -1,6 +1,6 @@
 """
-This file contains one class - VolumeOps which
-holds volume related APIs which will be called
+This file contains one class - MountOps which
+holds mount related APIs which will be called
 from the test case.
 """
 from common.ops.abstract_ops import AbstractOps
@@ -17,11 +17,11 @@ class MountOps(AbstractOps):
         """
         Mounts the gluster volume to the client's filesystem.
         Args:
-            node (str): The client node in the cluster where volume
-                        mount is to be run
             server (str): Hostname or IP address
             volname (str): Name of volume to be mounted
             path (str): The path of the mount directory(mount point)
+            node (str): The client node in the cluster where volume
+                        mount is to be run
             excep (bool): exception flag to bypass the exception if the
                           volume status command fails. If set to False
                           the exception is bypassed and value from remote
@@ -50,10 +50,9 @@ class MountOps(AbstractOps):
         Unmounts the gluster volume .
         Args:
             volname (str): The volume whose mt pt. is to be unmounted.
+            path (str): The path of the mount directory(mount point)
             node (str): The client node in the cluster where volume
                         unmount is to be run
-            server (str): Hostname or IP address
-            path (str): The path of the mount directory(mount point)
             excep (bool): To bypass or not to bypass the exception handling.
 
         Returns:

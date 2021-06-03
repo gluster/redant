@@ -62,7 +62,8 @@ class GlusterOps(AbstractOps):
 
     def restart_glusterd(self, node: str, enable_retry: bool = True) -> dict:
         """
-        Restarts the glusterd service on the specified node or nodes.
+        Restarts the glusterd service on the specified node or list of
+        nodes.
         Args:
             node (str|list): The node(s) on which the glusterd service
                              is to be restarted.
@@ -108,7 +109,7 @@ class GlusterOps(AbstractOps):
         Stops the glusterd service on the specified node(s).
         Args:
             node (str|list): The node on which the glusterd service
-                        is to be stopped.
+                             is to be stopped.
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -147,7 +148,7 @@ class GlusterOps(AbstractOps):
 
         Args:
             node (str|list): A node or list of nodes on which glusterd
-            reset-failed has to be run.
+                             reset-failed has to be run.
 
         Returns:
             ret: A dictionary consisting
@@ -211,15 +212,15 @@ class GlusterOps(AbstractOps):
 
     def wait_for_glusterd_to_start(self, node: str, timeout: int = 80) -> bool:
         """
-        Checks if the glusterd has started already or waits for
+        Checks if glusterd has started already or waits for
         it till the timeout is reached.
 
         Args:
-            node (str|list): Node on which this is to be executed.
+            node (str|list): Node on which this has to be executed.
             timeout (int) : We cannot wait till eternity right :p
 
         Returns:
-            bool: True if glusterd is running on the node or else False.
+            bool: True if glusterd started on the node or else False.
         """
         count = 0
         while count <= timeout:
@@ -232,7 +233,7 @@ class GlusterOps(AbstractOps):
 
     def wait_for_glusterd_to_stop(self, node: str, timeout: int = 80) -> bool:
         """
-        Checks if the glusterd has stopeed already or waits for
+        Checks the glusterd has stopeed already or waits for
         it till the timeout is reached.
 
         Args:
@@ -240,7 +241,7 @@ class GlusterOps(AbstractOps):
             timeout (int) : We cannot wait till eternity right :p
 
         Returns:
-            bool: True if glusterd is not running on the node or else False.
+            bool: True if glusterd stopped on the node or else False.
         """
         count = 0
         while count <= timeout:
@@ -259,7 +260,7 @@ class GlusterOps(AbstractOps):
 
         Args:
             node (str): Node wherein the gluster version is
-            checked.
+                        checked.
 
         Returns:
             str: The gluster version value.

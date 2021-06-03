@@ -36,7 +36,7 @@ class VolumeOps(AbstractOps):
                                 operation if any provided in the volume_config
                                 By default, value is set to False.
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          setup volume command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:
@@ -83,7 +83,7 @@ class VolumeOps(AbstractOps):
             force (bool): If this option is set to True, then create volume
                           will get executed with force option.
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          volume create command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
@@ -164,7 +164,7 @@ class VolumeOps(AbstractOps):
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to start
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          volume sstart command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
@@ -204,7 +204,7 @@ class VolumeOps(AbstractOps):
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to stop
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          volume stop command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Kwargs:
@@ -243,7 +243,7 @@ class VolumeOps(AbstractOps):
             node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume to delete
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          volume delete command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:
@@ -549,7 +549,7 @@ class VolumeOps(AbstractOps):
                 will get executed with force option. If it is set to False,
                 then reset volume will get executed without force option
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          volume reset command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Example:
@@ -706,7 +706,7 @@ class VolumeOps(AbstractOps):
                         If not given, the function returns all the options for
                         the given volume
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          get volume options command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:
@@ -807,8 +807,9 @@ class VolumeOps(AbstractOps):
             option (str): volume option
         Kwargs:
             force (bool): If this option is set to True, then reset volume
-                will get executed with force option. If it is set to False,
-                then reset volume will get executed without force option
+                          will get executed with force option. If it is set
+                          to False, then reset volume will get executed
+                          without force option.
         Example:
             reset_volume_option("test-vol1", "option", server)
 
