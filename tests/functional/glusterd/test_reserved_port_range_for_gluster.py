@@ -21,7 +21,6 @@ Description:
 
 # disruptive;
 
-from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -54,80 +53,79 @@ class TestCase(DParentTest):
         8) Restart glusterd on the same node
         9) Starting the 50th volume should succeed now
         """
-        try:
+        # Set max port number as 49200 in glusterd.vol file
+        cmd = ("sed -i 's/60999/49200/' "
+               "/etc/glusterfs/glusterd.vol")
+        redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-            # Set max port number as 49200 in glusterd.vol file
-            cmd = ("sed -i 's/60999/49200/' "
-                   "/etc/glusterfs/glusterd.vol")
-            redant.execute_abstract_op_node(cmd, self.server_list[0])
+        self.port_range_changed = True
+        # Restart glusterd
+        redant.restart_glusterd(self.server_list[0])
+        if not redant.wait_for_glusterd_to_start(self.server_list[0]):
+            raise Exception(f"Glusterd did not start "
+                            f"for {self.server_list[0]}")
 
-            self.port_range_changed = True
-            # Restart glusterd
-            redant.restart_glusterd(self.server_list[0])
-            sleep(2)
+        # Check node on which glusterd was restarted is back to 'Connected'
+        # state from any other peer
+        servers = self.server_list[:]
+        redant.wait_for_peers_to_connect(servers[0], servers)
 
-            # Check node on which glusterd was restarted is back to 'Connected'
-            # state from any other peer
-            servers = self.server_list[:]
-            redant.wait_for_peers_to_connect(servers[0], servers)
+        # Create 50 volumes in a loop
+        for i in range(1, 51):
+            volname = f"{self.vol_name}-volume-{i}"
+            redant.volume_create(volname, self.server_list[0],
+                                 self.vol_type_inf[self.conv_dict['dist']],
+                                 self.server_list, self.brick_roots, True)
 
-            # Create 50 volumes in a loop
-            for i in range(1, 51):
-                volname = f"{self.vol_name}-volume-{i}"
-                redant.volume_create(volname, self.server_list[0],
-                                     self.vol_type_inf[self.conv_dict['dist']],
-                                     self.server_list, self.brick_roots, True)
+        # Try to start 50 volumes in loop
+        for i in range(1, 51):
+            volname = f"{self.vol_name}-volume-{i}"
+            try:
+                ret = redant.volume_start(volname,
+                                          self.server_list[0])
+            except Exception as error:
+                out = str(error)
+                break
 
-            # Try to start 50 volumes in loop
-            for i in range(1, 51):
-                volname = f"{self.vol_name}-volume-{i}"
-                try:
-                    ret = redant.volume_start(volname,
-                                              self.server_list[0])
-                except Exception as error:
-                    out = str(error)
-                    break
+        # Confirm if the 50th volume failed to start
+        if i != 50:
+            raise Exception("Failed to start volumes 1"
+                            " to volume 49 in a loop")
 
-            # Confirm if the 50th volume failed to start
-            if i != 50:
-                raise Exception("Failed to start volumes 1"
-                                " to volume 49 in a loop")
+        # Confirm the error message on volume start fail
+        err_msg = ("Commit failed on localhost. "
+                   "Please check log file for details.")
 
-            # Confirm the error message on volume start fail
-            err_msg = ("Commit failed on localhost. "
-                       "Please check log file for details.")
+        if out != err_msg:
+            raise Exception("Volume start didn't fail with the "
+                            "expected error message")
 
-            if out != err_msg:
-                raise Exception("Volume start didn't fail with the "
-                                "expected error message")
+        # Confirm the error message from the log file
+        cmd = ("cat /var/log/glusterfs/glusterd.log | "
+               "grep -i 'All the ports in the range are"
+               " exhausted' | wc -l")
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-            # Confirm the error message from the log file
-            cmd = ("cat /var/log/glusterfs/glusterd.log | "
-                   "grep -i 'All the ports in the range are"
-                   " exhausted' | wc -l")
-            ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
+        out = ret['msg'][0].rstrip('\n')
+        if int(out) == 0:
+            raise Exception("Volume start didn't fail with expected"
+                            " error message")
 
-            out = ret['msg'][0].rstrip('\n')
-            if int(out) == 0:
-                raise Exception("Volume start didn't fail with expected"
-                                " error message")
+        # Set max port number back to default value in glusterd.vol file
+        cmd = ("sed -i 's/49200/60999/' "
+               "/etc/glusterfs/glusterd.vol")
+        redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-            # Set max port number back to default value in glusterd.vol file
-            cmd = ("sed -i 's/49200/60999/' "
-                   "/etc/glusterfs/glusterd.vol")
-            redant.execute_abstract_op_node(cmd, self.server_list[0])
+        self.port_range_changed = False
 
-            self.port_range_changed = False
+        # Restart glusterd on the same node
+        redant.restart_glusterd(self.server_list[0])
+        if not redant.wait_for_glusterd_to_start(self.server_list[0]):
+            raise Exception(f"Glusterd did not start "
+                            f"for {self.server_list[0]}")
+        # Starting the 50th volume should succeed now
+        # self.volname = "volume-%d" % i
+        volname = f"{self.vol_name}-volume-50"
 
-            # Restart glusterd on the same node
-            redant.restart_glusterd(self.server_list[0])
-
-            # Starting the 50th volume should succeed now
-            # self.volname = "volume-%d" % i
-            volname = f"{self.vol_name}-volume-50"
-
-            redant.volume_start(volname,
-                                self.server_list[0])
-
-        except Exception as error:
-            redant.logger.error(error)
+        redant.volume_start(volname,
+                            self.server_list[0])
