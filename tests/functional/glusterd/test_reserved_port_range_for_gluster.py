@@ -38,7 +38,9 @@ class TestCase(DParentTest):
                    "/etc/glusterfs/glusterd.vol")
             self.redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        super().terminate()
+        #super().terminate()
+        self.redant.hard_terminate(self.server_list, self.client_list,
+                                   self.brick_roots)
 
     def run_test(self, redant):
         """
@@ -69,8 +71,9 @@ class TestCase(DParentTest):
 
         # Check node on which glusterd was restarted is back to 'Connected'
         # state from any other peer
-        servers = self.server_list[:]
-        redant.wait_for_peers_to_connect(servers[0], servers)
+        if not redant.wait_for_peers_to_connect(self.server_list,
+                                                self.server_list[1]):
+            raise Exception("Peers node in connected mode.")
 
         # Create 50 volumes in a loop
         for i in range(1, 51):
@@ -80,6 +83,7 @@ class TestCase(DParentTest):
                                  self.server_list, self.brick_roots, True)
 
         # Try to start 50 volumes in loop
+        out = ''
         for i in range(1, 51):
             volname = f"{self.vol_name}-volume-{i}"
             try:
