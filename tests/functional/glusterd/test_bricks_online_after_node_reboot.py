@@ -20,37 +20,32 @@
   after node reboot or not
 """
 from random import choice
-from time import sleep
 from tests.d_parent_test import DParentTest
 
 
 # disruptive;dist-disp
 class TestCase(DParentTest):
 
-    def check_bricks_online(self, redant):
+    def check_bricks_online(self):
+        # check if all the bricks are online
         for volname in self.volume_names:
-            vol_bricks = redant.es.get_all_bricks_list(volname)
-            ret = redant.wait_for_bricks_to_come_online(volname,
-                                                        self.server_list,
-                                                        vol_bricks)
-            if not ret:
+            vol_bricks = self.redant.es.get_all_bricks_list(volname)
+            if not (self.redant.
+                    wait_for_bricks_to_come_online(volname,
+                                                   self.server_list,
+                                                   vol_bricks)):
                 raise Exception("Unexpected: Few bricks are offline")
 
-    def check_node_after_reboot(self, redant, server):
-        count = 0
-        while count < 30:
-            ret = redant.is_glusterd_running(server)
-            if ret == 1:
-                ret = redant.validate_peers_are_connected(self.server_list)
-                if ret:
-                    redant.logger.info("glusterd is running and all peers "
-                                       "are in connected state")
-                    break
-            count += 1
-            sleep(2)
-        if count == 30:
-            raise Exception("Either glusterd is not running or peers"
-                            " are not in connected state")
+    def check_node_after_reboot(self, server):
+        # wait for glusterd to start
+        if not self.redant.wait_for_glusterd_to_start(server):
+            raise Exception("Glusterd is not running")
+
+        # wait for peers to connect
+        if not (self.redant.wait_for_peers_to_connect(self.server_list,
+                                                      self.server_list[0],
+                                                      wait_timeout=30)):
+            raise Exception("Peers are not in connected state")
 
     def run_test(self, redant):
         """
@@ -81,7 +76,7 @@ class TestCase(DParentTest):
         self.volume_names.append(self.vol_name)
 
         # Validate whether all volume bricks are online or not
-        self.check_bricks_online(redant)
+        self.check_bricks_online()
 
         # Perform node reboot
         random_server = choice(self.server_list)
@@ -91,10 +86,10 @@ class TestCase(DParentTest):
         redant.wait_node_power_up(random_server)
 
         # Wait till glusterd is started on the node rebooted
-        self.check_node_after_reboot(redant, random_server)
+        self.check_node_after_reboot(random_server)
 
         # After reboot check bricks are online
-        self.check_bricks_online(redant)
+        self.check_bricks_online()
 
         # Enable brick-mux on and stop and start the volumes
         redant.set_volume_options('all',
@@ -105,12 +100,16 @@ class TestCase(DParentTest):
         for vol in self.volume_names:
             redant.volume_stop(vol, self.server_list[0])
 
+        # wait till all the volumes are stopped
+        for vol in self.volume_names:
+            redant.wait_for_vol_to_go_offline(vol, self.server_list[0])
+
         # Starting the volume to get brick-mux into effect
         for vol in self.volume_names:
             redant.volume_start(vol, self.server_list[0])
 
         # Checking all bricks are online or not
-        self.check_bricks_online(redant)
+        self.check_bricks_online()
 
         # Perform node reboot
         redant.reboot_nodes(random_server)
@@ -119,7 +118,7 @@ class TestCase(DParentTest):
         redant.wait_node_power_up(random_server)
 
         # Wait till glusterd is started on the node rebooted
-        self.check_node_after_reboot(redant, random_server)
+        self.check_node_after_reboot(random_server)
 
         # Validating bricks are online after node reboot
-        self.check_bricks_online(redant)
+        self.check_bricks_online()
