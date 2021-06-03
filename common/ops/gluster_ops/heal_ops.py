@@ -59,8 +59,7 @@ class HealOps:
                                          node: str) -> bool:
         """
         Verifies whether all the self-heal-daemons are online for the
-        specified
-        volume.
+        specified volume.
 
         Args:
             volname (str): volume name
