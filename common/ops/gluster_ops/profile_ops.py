@@ -22,7 +22,7 @@ class ProfileOps(AbstractOps):
             volname (str): Volume on which profile has to be started.
             node (str): Node on which command has to be executed.
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          profile start command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:
@@ -55,7 +55,7 @@ class ProfileOps(AbstractOps):
                            given the function returns the output of gluster
                            volume profile <volname> info.
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          profile info command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:
@@ -85,7 +85,7 @@ class ProfileOps(AbstractOps):
             volname (str): Volume on which profile has to be stopped.
             node (str): Node on which command has to be executed.
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          profile stop command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:

@@ -242,7 +242,8 @@ class BrickOps(AbstractOps):
 
         Kwargs:
             force (bool) : If this option is set to True,
-                then reset brick will get executed with force option
+                           then reset brick will get executed
+                           with force option
 
         Returns:
             ret: A dictionary consisting
@@ -349,7 +350,7 @@ class BrickOps(AbstractOps):
             strict (bool) : To check strictly if all bricks are offline
         Returns:
             boolean value: True, if bricks are offline
-                           False if online
+                           False, if online
         """
         vol_status = self.get_volume_status(volname, node)
 
@@ -390,10 +391,10 @@ class BrickOps(AbstractOps):
             volname (str) : Volume name
             bricks_list (list) : list of bricks to check
             node (str) : the node on which comparison has to be done
-            strict (bool) : To check strictly if all bricks are offline
+            strict (bool) : To check strictly if all bricks are online
         Returns:
-            boolean value: True, if bricks are offline
-                           False if online
+            boolean value: True, if bricks are online
+                           False, if offline
         """
         vol_status = self.get_volume_status(volname, node)
 
@@ -428,7 +429,7 @@ class BrickOps(AbstractOps):
                                      volname: str,
                                      node: str) -> bool:
         """
-        Checks if the brick list changed.
+        Checks if the bricks list changed.
 
         Args:
             bricks_list: list of bricks
@@ -436,8 +437,8 @@ class BrickOps(AbstractOps):
             node: Node on which to execute vol info
 
         Returns:
-        bool: True is list changed
-              else False
+        bool: True if the list changed
+              False if list didn't change
         """
         vol_info = self.get_volume_info(node, volname)
 
@@ -454,7 +455,8 @@ class BrickOps(AbstractOps):
 
     def get_all_bricks(self, volname: str, node: str) -> list:
         """
-        Get list of all the bricks of the specified volume.
+        Get list of all the bricks of the specified volume
+        using the data from volume info.
 
         Args:
             volname (str): Name of the volume
@@ -529,7 +531,8 @@ class BrickOps(AbstractOps):
 
     def get_offline_bricks_list(self, volname: str, node: str) -> list:
         """
-        Get list of bricks which are offline.
+        Get list of bricks which are offline. The list is created
+        from the volume status information.
 
         Args:
             volname (str): Name of the volume.
@@ -585,10 +588,11 @@ class BrickOps(AbstractOps):
             volname (str): Name of the volume whose bricks are to be noticed.
             brick_list (list): List of bricks which are to be brought down.
             timeout (int): Optional parameter with defailt value 100. The
-            function waits for these many secondsat max till bricks go offline.
+                           function waits for these many seconds at max till
+                           bricks go offline.
 
         Returns:
-            True if the bricks go offline or False.
+            True if the bricks go offline else False.
         """
         if not isinstance(brick_list, list):
             brick_list = [brick_list]
@@ -629,7 +633,7 @@ class BrickOps(AbstractOps):
                            bricks come online.
 
         Returns:
-            True if the bricks come online or False.
+            True if the bricks come online else False.
         """
         if not isinstance(brick_list, list):
             brick_list = [brick_list]
@@ -664,7 +668,7 @@ class BrickOps(AbstractOps):
             function waits for these many secondsat max till bricks go offline.
 
         Returns:
-            True if the bricks are brought offline or False.
+            True if the bricks are brought offline else False.
         """
         if not isinstance(brick_list, list):
             brick_list = [brick_list]
@@ -708,7 +712,7 @@ class BrickOps(AbstractOps):
                            bricks have come online.
 
         Returns:
-            True if the bricks are online or False.
+            True if the bricks are online else False.
         """
         if not isinstance(brick_list, list):
             brick_list = [brick_list]

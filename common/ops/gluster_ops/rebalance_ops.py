@@ -73,12 +73,12 @@ class RebalanceOps(AbstractOps):
             volname (str): volume name
         Returns:
             ret: A dictionary consisting
-                        - Flag : Flag to check if connection failed
-                        - msg : message
-                        - error_msg: error message
-                        - error_code: error code returned
-                        - cmd : command that got executed
-                        - node : node on which the command got executed
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
 
         """
 
@@ -140,8 +140,8 @@ class RebalanceOps(AbstractOps):
         """
         Waits for the rebalance to complete
         Args:
-            node (str): Node on which command has to be executed.
             volname (str): volume name
+            node (str): Node on which command has to be executed.
         Kwargs:
             timeout (int): timeout value in seconds to wait for rebalance
                 to complete

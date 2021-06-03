@@ -13,7 +13,7 @@ from common.ops.abstract_ops import AbstractOps
 class PeerOps(AbstractOps):
     """
     PeerOps class provides APIs to perform operations
-    like adding and deleting the peers,checking the status
+    like probing and detaching the peers,checking the status
     and list of peers in the pool.
     """
 
@@ -106,10 +106,10 @@ class PeerOps(AbstractOps):
         Args:
             server (str): Server to be detached from the cluster
             node (str): Node on which command has to be executed.
-            force (bool): if set to true will exceute the peer
+            force (bool): if set to true will execute the peer
                           detach command with force option.
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          peer detach command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
@@ -346,10 +346,10 @@ class PeerOps(AbstractOps):
         Checks whether specified peers are in cluster and 'Connected' state.
         Args:
             servers (str|list): A server|List of servers to be validated.
-            node (str): Node from which peer status has to be executed.
+            node (str): Node on which peer status has to be executed.
         Returns
             bool : True on success (peer in cluster and connected), False on
-                failure.
+                   failure.
         """
         if not isinstance(servers, list):
             servers = [servers]
@@ -413,7 +413,7 @@ class PeerOps(AbstractOps):
 
         Args:
             server_list (list) : List of servers
-            node (str) : node on which peer status is to be checked
+            node (str) : node on which caommand is to be executed
 
         Returns (bool): True if all peers are in connected
                         state with other peers.
