@@ -121,7 +121,7 @@ class VolumeOps(AbstractOps):
 
         brick_dict, brick_cmd = self.form_brick_cmd(server_list, brick_root,
                                                     volname, mul_fac)
-        if "replica_count" in conf_hash:
+        if "replica_count" in conf_hash and conf_hash['replica_count'] > 1:
             # arbiter vol and distributed-arbiter vol
             if "arbiter_count" in conf_hash:
                 cmd = (f"gluster volume create {volname} "
