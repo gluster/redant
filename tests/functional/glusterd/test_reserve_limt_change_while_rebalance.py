@@ -21,11 +21,11 @@
 """
 
 import traceback
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-# nonDisruptive;dist-rep
-class TestCase(NdParentTest):
+# disruptive;dist-rep
+class TestCase(DParentTest):
 
     def terminate(self):
         try:
@@ -73,12 +73,12 @@ class TestCase(NdParentTest):
                                dirs=tuple(['linux_untar']))
 
         # Add bricks to the volume
-        mul_factor = 1
+        mul_factor = 3
         _, br_cmd = redant.form_brick_cmd(self.server_list,
                                           self.brick_roots,
                                           self.vol_name, mul_factor, True)
-        redant.add_brick(self.vol_name, br_cmd,
-                         self.server_list[0])
+        redant.add_brick(self.vol_name, br_cmd, self.server_list[0],
+                         replica_count=3)
 
         # Trigger rebalance on the volume
         redant.rebalance_start(self.vol_name, self.server_list[0])
