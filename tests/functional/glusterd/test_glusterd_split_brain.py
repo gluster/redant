@@ -43,11 +43,9 @@ class TestCase(DParentTest):
 
         # Create a dist-rep volume using first 4 nodes
         conf_hash = {
-            "distributed-replicated": {
-                "dist_count": 2,
-                "replica_count": 3,
-                "transport": "tcp"
-            }
+            "dist_count": 2,
+            "replica_count": 3,
+            "transport": "tcp"
         }
         self.volname = f"{self.test_name}-{self.volume_type}"
         redant.setup_volume(self.volname, self.server_list[0],

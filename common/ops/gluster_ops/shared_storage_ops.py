@@ -26,7 +26,7 @@ class SharedStorageOps(AbstractOps):
         option = {"cluster.enable-shared-storage": "enable"}
 
         try:
-            self.redant.set_volume_options("all", option, node)
+            self.set_volume_options("all", option, node)
 
         except Exception as error:
             self.logger.error(f"Failed to enable shared storage: {error}")
@@ -34,7 +34,7 @@ class SharedStorageOps(AbstractOps):
 
         return True
 
-    def enable_shared_storage(self, node: str) -> bool:
+    def disable_shared_storage(self, node: str) -> bool:
         """
         Disable the shared storage
 
@@ -48,7 +48,7 @@ class SharedStorageOps(AbstractOps):
         option = {"cluster.enable-shared-storage": "disable"}
 
         try:
-            self.redant.set_volume_options("all", option, node)
+            self.set_volume_options("all", option, node)
 
         except Exception as error:
             self.logger.error(f"Failed to disable shared storage: {error}")
@@ -71,14 +71,13 @@ class SharedStorageOps(AbstractOps):
         counter = 0
         path = "/run/gluster/shared_storage"
         while counter < timeout:
-            ret = self.execute_abstract_op_node(path, node, False)
-            if ret['error_code'] == 0:
-                if path in ret['msg'][0].rstrip('\n'):
-                    self.logger.info("Shared storage is mounted")
-                    return True
-            else:
-                sleep(2)
-                counter += 2
+            ret = self.execute_abstract_op_node("df -h", node, False)
+            if path in " ".join(ret['msg']):
+                self.logger.info("Shared storage is mounted")
+                return True
+
+            sleep(2)
+            counter += 2
 
         self.logger.info("Shared storage not mounted")
         return False
@@ -100,7 +99,7 @@ class SharedStorageOps(AbstractOps):
         timeout = 20
         counter = 0
         self.logger.info("Waiting for shared storage to be"
-                         "created/deleted")
+                         " created/deleted")
 
         while counter < timeout:
             vol_list = self.get_volume_list(node)

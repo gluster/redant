@@ -23,7 +23,7 @@
 from random import choice
 from tests.d_parent_test import DParentTest
 
-# disruptive;dist
+# disruptive;
 
 
 class TestSharedStorage(DParentTest):
@@ -100,11 +100,9 @@ class TestSharedStorage(DParentTest):
         # Create a volume with name gluster_shared_storage
         volume = "gluster_shared_storage"
         conf_hash = {
-            "replicated": {
-                "dist_count": 1,
-                "replica_count": 2,
-                "transport": "tcp"
-            }
+            "dist_count": 1,
+            "replica_count": 2,
+            "transport": "tcp"
         }
         self.redant.volume_create(volume, self.server_list[0],
                                   conf_hash, self.server_list,
