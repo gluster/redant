@@ -15,17 +15,8 @@ You should have received a copy of the GNU General Public License along`
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_ops import (volume_create, volume_start)
-from glustolibs.gluster.volume_libs import cleanup_volume
-from glustolibs.gluster.peer_ops import is_peer_connected
-from glustolibs.gluster.lib_utils import form_bricks_list
-
-
-@runs_on([['distributed'], ['glusterfs']])
 """
+
 # disruptive;dist
 
 import traceback
@@ -47,7 +38,7 @@ class TestCase(DParentTest):
             # wait till peers are in connected state
             if not (self.redant.
                     wait_for_peers_to_connect(self.server_list,
-                                              self.server_list[0]):
+                                                self.server_list[0]):
                 raise Exception("Failed to connect peers")
         except Exception as error:
             tb = traceback.format_exc()
@@ -93,7 +84,7 @@ class TestCase(DParentTest):
         self.vol_name = (f"{self.test_name}-{self.volume_type}")
         conf_hash = self.vol_type_inf[self.conv_dict[self.volume_type]]
         redant.volume_create(self.vol_name, self.server_list[0], conf_hash,
-                             list_of_three_servers, self.brick_roots)
+                                list_of_three_servers, self.brick_roots)
         # ret, _, _ = volume_create(self.mnode, self.volname,
         #                           bricks_list)
         # self.assertEqual(ret, 0, "Volume creation failed")
