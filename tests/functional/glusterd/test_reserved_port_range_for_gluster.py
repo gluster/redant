@@ -53,6 +53,8 @@ class TestCase(DParentTest):
         8) Restart glusterd on the same node
         9) Starting the 50th volume should succeed now
         """
+        self.port_range_changed = False
+
         # Set max port number as 49200 in glusterd.vol file
         cmd = ("sed -i 's/60999/49200/' "
                "/etc/glusterfs/glusterd.vol")
