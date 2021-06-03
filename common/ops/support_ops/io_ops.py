@@ -235,6 +235,26 @@ class IoOps(AbstractOps):
         ret_val['file_perm'] = int(ret['msg'][0][:-1])
         return ret_val
 
+    def set_file_permissions(self, node: str, fqpath: str, perms: str):
+        """Set permissions on a remote file.
+
+        Args:
+            node (str): The node on which command has to execute
+            fqpath (str): The fully-qualified path to the file.
+            perms (str): A permissions string as passed to chmod.
+
+        Returns:
+            True on success. False on fail.
+        """
+        cmd = f"chmod {perms} {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+
+        if ret['error_code'] == 0:
+            return True
+
+        self.logger.error(f"chmod failed: {ret['error_msg']}")
+        return False
+
     def check_core_file_exists(self, nodes: list, testrun_timestamp,
                                paths=['/', '/var/log/core',
                                       '/tmp', '/var/crash', '~/']):
