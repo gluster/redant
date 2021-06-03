@@ -25,6 +25,7 @@ volume_types:
         dist_count: 4
         transport: tcp
     replicated:
+        dist_count: 1
         replica_count: 3
         transport: tcp
     distributed-replicated:
@@ -52,6 +53,6 @@ volume_types:
         
 #excluded_tests - Tests which are excluded during the test run.
 excluded_tests:
-    - tests/functional/glusterd/test_peer_hostname.py
     - tests/functional/glusterd/test_quorum_syslog.py
     - tests/functional/glusterd/test_volume_set_when_glusterd_stopped_on_one_node.py
+    - tests/functional/glusterd/test_gluster_volume_status_xml_dump.py
