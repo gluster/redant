@@ -21,7 +21,6 @@ Description:
 
 # nonDisruptive;dist,rep,dist-rep,disp,dist-disp,dist-arb
 
-from time import sleep
 from tests.nd_parent_test import NdParentTest
 
 
@@ -68,8 +67,6 @@ class TestCase(NdParentTest):
                                                      self.server_list[0],
                                                      self.server_list)):
             raise Exception("All volume processes are not up")
-        # Adding sleep for the mount to be recognized by client.
-        sleep(3)
 
         # validate the mountpoint permissions.
         self._validate_mount_permissions()

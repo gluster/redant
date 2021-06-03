@@ -247,7 +247,7 @@ class IoOps(AbstractOps):
             True on success. False on fail.
         """
         cmd = f"chmod {perms} {fqpath}"
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, False)
 
         if ret['error_code'] == 0:
             return True
