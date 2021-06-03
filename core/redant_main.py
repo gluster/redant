@@ -8,6 +8,7 @@ import sys
 import time
 import datetime
 import argparse
+import pyfiglet
 from halo import Halo
 from environ import environ, FrameworkEnv
 from parsing.params_handler import ParamsHandler
@@ -112,4 +113,5 @@ def main():
 
 
 if __name__ == '__main__':
+    print(pyfiglet.figlet_format("REDANT", font="slant"))
     main()
