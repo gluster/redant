@@ -72,14 +72,14 @@ class TestCase(DParentTest):
             redant.wait_for_peers_to_connect(servers[0], servers)
 
             # Create 50 volumes in a loop
-            for i in range(1, 26):
+            for i in range(1, 51):
                 volname = f"{self.vol_name}-volume-{i}"
                 redant.volume_create(volname, self.server_list[0],
                                      self.vol_type_inf[self.conv_dict['dist']],
                                      self.server_list, self.brick_roots, True)
 
-            # Try to start 1 volumes in loop
-            for i in range(1, 26):
+            # Try to start 50 volumes in loop
+            for i in range(1, 51):
                 volname = f"{self.vol_name}-volume-{i}"
                 try:
                     ret = redant.volume_start(volname,
@@ -89,7 +89,7 @@ class TestCase(DParentTest):
                     break
 
             # Confirm if the 50th volume failed to start
-            if i != 25:
+            if i != 50:
                 raise Exception("Failed to start volumes 1"
                                 " to volume 25 in a loop")
 
