@@ -1,262 +1,257 @@
-#  Copyright (C) 2016-2017  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2016-2017  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check volume operations
+"""
 
 import random
 import re
 import os
+import copy
+from tests.d_parent_test import DParentTest
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (volume_create, volume_start,
-                                           get_volume_list, volume_stop,
-                                           volume_delete, get_volume_info)
-
-from glustolibs.gluster.brick_libs import (are_bricks_online)
-from glustolibs.gluster.volume_libs import cleanup_volume, setup_volume
-from glustolibs.gluster.peer_ops import (peer_probe, peer_detach)
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.exceptions import ExecutionError
+# disruptive;dist
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestVolumeCreate(GlusterBaseClass):
+class TestVolumeCreate(DParentTest):
 
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-        # check whether peers are in connected state
-        ret = self.validate_peers_are_connected()
-        if not ret:
-            raise ExecutionError("Peers are not in connected state")
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.setup_done = True
+        conf_hash = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, False, True)
 
-    def tearDown(self):
+    def run_test(self, redant):
 
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
-
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Unable to delete volume %s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_volume_start_force(self):
-
-        # get the brick list and create a volume
-        num_of_bricks = len(self.servers)
-        bricks_list = form_bricks_list(self.mnode, self.volname, num_of_bricks,
-                                       self.servers, self.all_servers_info)
-
-        ret, _, _ = volume_create(self.mnode, self.volname, bricks_list)
-        self.assertEqual(ret, 0, "Failed to create volume")
+        # Get brick list
+        bricks_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Failed to get the brick list")
 
         # remove brick path in one node and try to start the volume with force
         # and without force
         index_of_node = random.randint(0, len(bricks_list) - 1)
-        brick_node = bricks_list[index_of_node]
-        node = brick_node.split(":")[0]
-        brick_path = brick_node.split(":")[1]
-        cmd = "rm -rf %s" % brick_path
-        ret, _, _ = g.run(node, cmd)
-        self.assertEqual(ret, 0, "Failed to delete the brick")
-        g.log.info("Deleted the brick successfully")
+        brick_node, brick_path = bricks_list[index_of_node].split(":")
+        cmd = f"rm -rf {brick_path}"
+        redant.execute_abstract_op_node(cmd, brick_node)
 
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertNotEqual(ret, 0, "Volume start succeeded")
+        ret = redant.volume_start(self.vol_name, self.server_list[0], False,
+                                  False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Volume start without force should have failed")
 
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, "Volume start with force failed")
+        ret = redant.volume_start(self.vol_name, self.server_list[0], True,
+                                  False)
+        if ret['msg']['opRet'] != '0':
+            raise Exception("Volume start with force should have succeeded")
 
         # volume start force should not bring the brick online
-        ret = are_bricks_online(self.mnode, self.volname,
-                                [bricks_list[index_of_node]])
-        self.assertFalse(ret, "Volume start force brought the bricks online")
-        g.log.info("Volume start force didn't bring the brick online")
+        ret = redant.are_bricks_online(self.vol_name,
+                                       bricks_list[index_of_node],
+                                       self.server_list[0])
+        if ret:
+            raise Exception("Volume start shouldn't have brought the bricks"
+                            " online")
 
-    def test_volume_create_on_brick_root(self):
-        # pylint: disable=too-many-locals
+        # Merged TC test_volume_create_on_brick_root
 
-        # try to create a volume on brick root path without using force and
-        # with using force
-        self.volname = "second_volume"
-        num_of_bricks = len(self.servers)
-        bricks_list = form_bricks_list(self.mnode, self.volname, num_of_bricks,
-                                       self.servers, self.all_servers_info)
+        self.volume1 = "second_volume"
+        num_of_bricks = len(self.server_list)
+        brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
+                                                      self.brick_roots,
+                                                      self.volume1,
+                                                      num_of_bricks)
 
-        # save for using it later
-        same_bricks_list = bricks_list[:]
+        # Save bricks list to use it later
+        same_brick_cmd = copy.deepcopy(brick_cmd)
+        same_brick_dict = copy.deepcopy(brick_dict)
 
-        complete_brick = bricks_list[0].split(":")
+        brick_list = brick_cmd.split(" ")
+        complete_brick = brick_list[0].split(":")
         brick_root = os.path.dirname(complete_brick[1])
-        root_brickpath = complete_brick[0] + ":" + brick_root
-        bricks_list[0] = root_brickpath
+        root_brickpath = f"{complete_brick[0]}:{brick_root}"
+        brick_list[0] = root_brickpath
+        brick_cmd = " ".join(brick_list)
+        brick_dict[complete_brick[1]] = [brick_root]
 
-        # creation of volume on root brick path should fail
-        ret, _, _ = volume_create(self.mnode, self.volname, bricks_list)
-        self.assertNotEqual(ret, 0, "Volume create on root brick path is "
-                            "success")
+        ret = redant.volume_create_with_custom_bricks(self.volume1,
+                                                      self.server_list[0],
+                                                      None, brick_cmd,
+                                                      brick_dict, False,
+                                                      False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume creation at root brick path should have"
+                            " failed")
 
-        # volume create force should succeed
-        ret, _, _ = volume_create(self.mnode, self.volname, bricks_list, True)
-        self.assertEqual(ret, 0, "Volume create on root brick path with"
-                         " force is failed")
-        g.log.info("Volume create on root brick path with force is success")
+        # Volume creation with force should succeed
+        ret = redant.volume_create_with_custom_bricks(self.volume1,
+                                                      self.server_list[0],
+                                                      None, brick_cmd,
+                                                      brick_dict, True,
+                                                      False)
+        if ret['error_code'] != 0:
+            raise Exception("Volume creation at root brick path should have"
+                            " succeeded")
 
-        # create a sub directory under root partition and create a volume
-        self.volname = "third_volume"
+        # Create a sub-directory under root partition and create a volume
+        self.volume2 = "third_volume"
 
-        sub_dir_path = "%s/sub_dir" % brick_root
-        cmd = "mkdir %s" % sub_dir_path
-        ret, _, _ = g.run(self.servers[0], cmd)
-        sub_dir_brickpath_node = bricks_list[0].split(":")[0]
-        sub_dir_brickpath = sub_dir_brickpath_node + ":" + sub_dir_path
-        bricks_list[0] = sub_dir_brickpath
+        sub_dir_path = f"{brick_root}/sub_dir"
+        cmd = f"mkdir {sub_dir_path}"
+        self.execute_abstract_op_node(cmd, self.server_list[0])
+        sub_dir_brick_node = brick_list[0].split(":")[0]
+        sub_dir_brick = f"{sub_dir_brick_node}:{sub_dir_path}"
+        brick_list[0] = sub_dir_brick
+        brick_cmd = " ".join(brick_list)
+        brick_dict[sub_dir_brick_node] = [sub_dir_path]
 
-        # volume create with previously used bricks should fail
-        ret, _, _ = volume_create(self.mnode, self.volname, bricks_list, True)
-        self.assertNotEqual(ret, 0, "Volume create with previously used bricks"
-                            " is success")
+        # Volume create with used bricks should fail
+        ret = redant.volume_create_with_custom_bricks(self.volume1,
+                                                      self.server_list[0],
+                                                      None, brick_cmd,
+                                                      brick_dict, True,
+                                                      False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume creation with used brick path should have"
+                            " failed")
 
-        # delete the volume created on root partition and clear all attributes
-        # now, creation of volume should succeed.
-        self.volname = "second_volume"
-        ret, _, _ = g.run(self.mnode, "gluster vol delete %s  --mode=script"
-                          % self.volname)
-        for brick in bricks_list:
-            server = brick.split(":")[0]
-            brick_root = os.path.dirname(brick.split(":")[1])
-            cmd1 = "rm -rf %s/*" % brick_root
-            cmd2 = "getfattr -d -m . %s/" % brick_root
-            cmd3 = "setfattr -x trusted.glusterfs.volume-id %s/" % brick_root
-            cmd4 = "setfattr -x trusted.gfid %s/" % brick_root
-            ret, _, _ = g.run(server, cmd1)
-            self.assertEqual(ret, 0, "Failed to delete the files")
-            g.log.info("Successfully deleted the files")
-            ret, out, _ = g.run(server, cmd2)
-            if re.search("trusted.glusterfs.volume-id", out):
-                ret, _, _ = g.run(server, cmd3)
-                self.assertEqual(ret, 0, "Failed to delete the xattrs")
-                g.log.info("Deleted trusted.glusterfs.volume-id the xattrs")
-            if re.search("trusted.gfid", out):
-                ret, _, _ = g.run(server, cmd4)
-                self.assertEqual(ret, 0, "Failed to delete gfid xattrs")
-                g.log.info("Deleted trusterd.gfid xattrs")
+        # delete the volume created on root partitiion and clear all
+        # attributes. now volume creation should succeed
+        redant.volume_delete(self.volume1, self.server_list[0])
+
+        for brick in brick_list:
+            node, brick_path = brick.split(":")
+            brick_root = os.path.dirname(brick_path)
+            cmd1 = f"rm -rf {brick_root}/*"
+            cmd2 = f"getfattr -d -m . {brick_root}/"
+            cmd3 = f"setfattr -x trusted.glusterfs.volume-id {brick_root}/"
+            cmd4 = f"setfattr -x trusted.gfid {brick_root}/"
+            redant.execute_abstract_op_node(cmd1, node)
+            ret = redant.execute_abstract_op_node(cmd2, node)
+            if re.search("trusted.glusterfs.volume-id", " ".join(ret['msg'])):
+                redant.execute_abstract_op_node(cmd3, node)
+            if re.search("trusted.gfid", " ".join(ret['msg'])):
+                redant.execute_abstract_op_node(cmd4, node)
 
         # creation of volume should succeed
-        ret, _, _ = volume_create(self.mnode, self.volname, same_bricks_list)
-        self.assertEqual(ret, 0, "Failed to create volume")
+        redant.volume_create_with_custom_bricks(self.volume1,
+                                                self.server_list[0],
+                                                None, same_brick_cmd,
+                                                same_brick_dict, False,
+                                                False)
 
-    def test_volume_op(self):
+        # Merged TC test_volume_op
 
         # Starting a non existing volume should fail
-        ret, _, _ = volume_start(self.mnode, "no_vol", force=True)
-        self.assertNotEqual(ret, 0, "Expected: It should fail to Start a non"
+        ret = redant.volume_start("no_vol", self.server_list[0], True, False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to Start a non"
                             " existing volume. Actual: Successfully started "
                             "a non existing volume")
-        g.log.info("Starting a non existing volume is failed")
 
         # Stopping a non existing volume should fail
-        ret, _, _ = volume_stop(self.mnode, "no_vol", force=True)
-        self.assertNotEqual(ret, 0, "Expected: It should fail to stop "
+        ret = redant.volume_stop("no_vol", self.server_list[0], True)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to stop "
                             "non-existing volume. Actual: Successfully "
                             "stopped a non existing volume")
-        g.log.info("Stopping a non existing volume is failed")
 
         # Deleting a non existing volume should fail
-        self.assertTrue(
-            volume_delete(self.mnode, "no_vol", xfail=True),
-            "Expected: It should fail to delete a "
-            "non existing volume. Actual:Successfully deleted "
-            "a non existing volume"
-        )
+        ret = redant.volume_delete("no_vol", self.server_list[0])
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to delete a "
+                            "non existing volume. Actual:Successfully deleted"
+                            " a non existing volume")
 
         # Detach a server and try to create volume with node
         # which is not in cluster
-        ret, _, _ = peer_detach(self.mnode, self.servers[1])
-        self.assertEqual(ret, 0, ("Peer detach is failed"))
-        g.log.info("Peer detach is successful")
+        redant.peer_detach(self.server_list[1], self.server_list[0])
 
+        self.volume3 = "fourth-volume"
         num_of_bricks = len(self.servers)
-        bricks_list = form_bricks_list(self.mnode, self.volname, num_of_bricks,
-                                       self.servers, self.all_servers_info)
+        brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
+                                                      self.brick_roots,
+                                                      self.volume3,
+                                                      num_of_bricks)
 
-        ret, _, _ = volume_create(self.mnode, self.volname, bricks_list)
-        self.assertNotEqual(ret, 0, "Successfully created volume with brick "
+        ret = redant.volume_create_with_custom_bricks(self.volume3,
+                                                      self.server_list[0],
+                                                      None, brick_cmd,
+                                                      brick_dict, False,
+                                                      False)
+        if ret['error_code'] == 0:
+            raise Exception("Successfully created volume with brick "
                             "from which is not a part of node")
-        g.log.info("Creating a volume with brick from node which is not part "
-                   "of cluster is failed")
 
         # Peer probe the detached server
-        ret, _, _ = peer_probe(self.mnode, self.servers[1])
-        self.assertEqual(ret, 0, ("Peer probe is failed"))
-        g.log.info("Peer probe is successful")
+        redant.peer_probe(self.server_list[1], self.server_list[0])
 
         # Create and start a volume
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume,
-                           force=True)
-        self.assertTrue(ret, "Failed to create the volume")
-        g.log.info("Successfully created and started the volume")
+        redant.volume_create_with_custom_bricks(self.volume3,
+                                                self.server_list[0],
+                                                None, brick_cmd,
+                                                brick_dict, False,
+                                                False)
+
+        redant.volume_start(self.volume3, self.server_list[0])
 
         # Starting already started volume should fail
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertNotEqual(ret, 0, "Expected: It should fail to start a "
+        ret = redant.volume_start(self.volume3, self.server_list[0])
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to start a "
                             "already started volume. Actual:Successfully"
                             " started a already started volume ")
-        g.log.info("Starting a already started volume is Failed.")
 
         # Deleting a volume without stopping should fail
-        self.assertTrue(
-            volume_delete(self.mnode, self.volname, xfail=True),
-            "Expected: It should fail to delete a volume"
-            " without stopping. Actual: Successfully "
-            "deleted a volume without stopping it"
-        )
-        g.log.info("Expected: volume delete should fail without "
-                   "stopping volume: %s", self.volname)
+        ret = redant.volume_delete(self.volume3, self.server_list[0],
+                                   False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to delete a volume"
+                            " without stopping. Actual: Successfully "
+                            "deleted a volume without stopping it")
 
         # Stopping a volume should succeed
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("volume stop is failed"))
-        g.log.info("Volume stop is success")
+        redant.volume_stop(self.volume3, self.server_list[0])
 
         # Stopping a already stopped volume should fail
-        ret, _, _ = volume_stop(self.mnode, self.volname)
-        self.assertNotEqual(ret, 0, "Expected: It should fail to stop a "
+        ret = redant.volume_stop(self.volume3, self.server_list[0], False,
+                                 False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to stop a "
                             "already stopped volume . Actual: Successfully"
                             "stopped a already stopped volume")
-        g.log.info("Volume stop is failed on already stopped volume")
 
         # Deleting a volume should succeed
-        self.assertTrue(
-            volume_delete(self.mnode, self.volname),
-            "Volume delete is failed"
-        )
+        redant.volume_delete(self.volume3, self.server_list[0])
 
         # Deleting an already deleted volume should fail
-        self.assertTrue(
-            volume_delete(self.mnode, self.volname, xfail=True),
-            "Expected: It should fail to delete an "
-            "already deleted volume. Actual:Successfully "
-            "deleted an already deleted volume"
-        )
+        ret = redant.volume_delete(self.volume3, self.server_list[0],
+                                   False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Expected: It should fail to delete an already"
+                            " deleted volume. Actual: Successfully "
+                            "deleted a volume which is already deleted")
 
         # Volume info command should succeed
-        ret = get_volume_info(self.mnode)
-        self.assertIsNotNone(ret, "volume info command failed")
-        g.log.info("Volume info command is success")
+        ret = redant.get_volume_info(self.server_list[0])
+        if ret is None:
+            raise Exception("Volume info command failed")
