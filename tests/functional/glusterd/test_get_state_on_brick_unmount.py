@@ -69,9 +69,7 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(cmd, self.umount_host)
 
         # Run 'gluster get-state' and verify absence of any error
-        ret = redant.get_gluster_state(self.server_list[0])
-        if ret is None:
-            raise Exception("Failed to get gluster state")
+        redant.get_state(self.server_list[0])
         # Create another volume
         self.volume_name1 = 'second_volume'
         self.volume_type1 = 'dist-rep'
@@ -82,6 +80,4 @@ class TestCase(DParentTest):
                             self.brick_roots, True)
         # Run 'gluster get-state' and verify absence of any error after
         # creation of second-volume
-        ret = redant.get_gluster_state(self.server_list[0])
-        if ret is None:
-            raise Exception("Failed to get gluster state")
+        redant.get_state(self.server_list[0])
