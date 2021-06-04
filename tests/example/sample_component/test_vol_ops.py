@@ -18,3 +18,5 @@ class TestCase(NdParentTest):
         """
         In the testcase:
         """
+        ret = redant.get_subvols(self.vol_name, self.server_list[0])
+        redant.logger.info(f"{self.volume_type} : {ret}")
