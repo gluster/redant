@@ -3,6 +3,7 @@ This file contains one class - VolumeOps which
 holds volume related APIs which will be called
 from the test case.
 """
+# pylint: disable=too-many-lines
 
 from time import sleep
 from collections import OrderedDict
@@ -142,6 +143,75 @@ class VolumeOps(AbstractOps):
         else:
             cmd = (f"gluster volume create {volname} {brick_cmd} "
                    "--mode=script")
+        # TODO: Needs to be changed once CI is mature enough
+        force = True
+        if force:
+            cmd = (f"{cmd} force")
+
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        # Don't add data in case volume creation fails
+        if ret['error_code'] == 0:
+            self.es.set_new_volume(volname, brick_dict)
+            self.es.set_vol_type(volname, conf_hash)
+
+        return ret
+
+    def volume_create_with_custom_bricks(self, volname: str, node: str,
+                                         conf_hash: dict, brick_cmd: str,
+                                         brick_dict: dict,
+                                         force: bool = False,
+                                         excep: bool = True):
+        """
+        Create the gluster volume with custom bricks configuration
+        Args:
+            volname(str): volume name that has to be created
+            node(str): server on which command has to be executed
+            conf_hash (dict): Config hash providing parameters for volume
+                              creation.
+            brick_cmd (str): Brick string to use for volume creation
+            brick_dict (dict): Brick dict containing details of bricks used
+                               to create volume
+            force (bool): If this option is set to True, then create volume
+                          will get executed with force option.
+            excep (bool): exception flag to bypass the exception if the
+                          volume create command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
+        """
+        if "replica_count" in conf_hash and conf_hash['replica_count'] > 1:
+            # arbiter vol and distributed-arbiter vol
+            if "arbiter_count" in conf_hash:
+                cmd = (f"gluster volume create {volname} "
+                       f"replica {conf_hash['replica_count']} "
+                       f"arbiter {conf_hash['arbiter_count']} {brick_cmd}"
+                       " --mode=script")
+            # replicated vol
+            else:
+                cmd = (f"gluster volume create {volname} "
+                       f"replica {conf_hash['replica_count']}"
+                       f" {brick_cmd} --mode=script")
+        # dispersed vol and distributed-dispersed vol
+        elif "disperse_count" in conf_hash:
+            cmd = (f"gluster volume create {volname} "
+                   f"{conf_hash['disperse_count']} redundancy "
+                   f"{conf_hash['redundancy_count']} {brick_cmd}"
+                   " --mode=script")
+        # distributed vol
+        else:
+            cmd = (f"gluster volume create {volname} {brick_cmd} "
+                   "--mode=script")
+
         # TODO: Needs to be changed once CI is mature enough
         force = True
         if force:
@@ -418,6 +488,8 @@ class VolumeOps(AbstractOps):
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
+        if volume_info['count'] == '0':
+            return ret_dict
         volume_list = volume_info['volume']
         if not isinstance(volume_list, list):
             volume_list = [volume_list]

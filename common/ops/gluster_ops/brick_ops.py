@@ -97,6 +97,9 @@ class BrickOps(AbstractOps):
         a TODO is to check the commit force option and its incorporation in
         this function.
         """
+        if not isinstance(brick_list, list):
+            brick_list = [brick_list]
+
         replica = ''
         if replica_count is not None:
             replica = (f"replica {replica_count}")
@@ -352,6 +355,9 @@ class BrickOps(AbstractOps):
             boolean value: True, if bricks are offline
                            False, if online
         """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
         vol_status = self.get_volume_status(volname, node)
 
         vol_status_brick_list = []
@@ -396,6 +402,9 @@ class BrickOps(AbstractOps):
             boolean value: True, if bricks are online
                            False, if offline
         """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
         vol_status = self.get_volume_status(volname, node)
 
         vol_status_brick_list = []
@@ -440,6 +449,9 @@ class BrickOps(AbstractOps):
         bool: True if the list changed
               False if list didn't change
         """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
         vol_info = self.get_volume_info(node, volname)
 
         vol_info_brick_list = []
