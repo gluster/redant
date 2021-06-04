@@ -916,13 +916,11 @@ class VolumeOps(AbstractOps):
         if ret['error_code'] != 0:
             return None
         out = ret['msg'][0].rstrip("\n")
-        print(f"\nDump: {out}\n")
         # get-state should dump properly.
         # Checking whether a path is returned or not and then
         # extracting path from the out data
 
         path = re.search(r"/.*?/.\S*", out).group()
-        print(f"Path: {path}\n")
         if not path:
             self.logger.error("Failed to get the gluster "
                               "state dump file path.")

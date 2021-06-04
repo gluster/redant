@@ -42,16 +42,14 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    # def tearDown(self):
+    def terminate(self):
+        # Mount the bricks which are unmounted as part of test
+        if getattr(self, 'umount_host', None) and getattr(self, 'umount_brick',
+                                                          None):
+            self.redant.execute_abstract_op_node('mount -a',
+                                                 self.umount_host)
 
-    #     # Mount the bricks which are unmounted as part of test
-    #     if getattr(self, 'umount_host', None) and getattr(self,
-    #                                                       'umount_brick',
-    #                                                       None):
-    #         ret, _, _ = g.run(self.umount_host, 'mount -a')
-    #         if ret:
-    #             raise ExecutionError("Not able to mount unmounted brick on "
-    #                                  "{}".format(self.umount_host))
+        super().terminate()
 
     def run_test(self, redant):
         """
