@@ -16,11 +16,11 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 
 # disruptive;dist
-class TestVolumeOptionSetWithMaxcharacters(AbstractTest):
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
@@ -34,7 +34,7 @@ class TestVolumeOptionSetWithMaxcharacters(AbstractTest):
         """
 
         auth_list = []
-        for ip_addr in range(255):
+        for ip_addr in range(256):
             auth_list.append(f'192.168.122.{ip_addr}')
         for ip_addr in range(7):
             auth_list.append(f'192.168.123.{ip_addr}')
@@ -47,6 +47,11 @@ class TestVolumeOptionSetWithMaxcharacters(AbstractTest):
         redant.set_volume_options(self.vol_name, self.options,
                                   self.server_list[0])
         redant.restart_glusterd(self.server_list[0])
+
+        # wait for glusterd to start
+        if not redant.wait_for_glusterd_to_start(self.server_list[0]):
+            raise Exception("glusterd is not running on"
+                            f"{self.server_list}")
 
         # set auth.allow with >4096 characters and restart the glusterd
         ip_list = ip_list + ",192.168.123.7"
