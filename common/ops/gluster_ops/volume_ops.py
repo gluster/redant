@@ -7,10 +7,8 @@ from the test case.
 from time import sleep
 import re
 import io
-try:
-    import ConfigParser as configparser  # Python 2
-except ImportError:
-    import configparser as configparser  # Python 3
+
+import configparser
 
 from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
@@ -935,10 +933,7 @@ class VolumeOps(AbstractOps):
 
         data_buf = io.StringIO(out)
         config = configparser.ConfigParser()
-        try:
-            config.read_file(data_buf)   # Python3
-        except AttributeError:
-            config.readfp(data_buf)      # Python2
+        config.read_file(data_buf)   # Python3
         # Converts the config parser object to a dictionary and returns it
         return {section: dict(config.items(section)) for section in
                 config.sections()}

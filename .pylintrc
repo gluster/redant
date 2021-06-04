@@ -164,7 +164,8 @@ disable=print-statement,
         F841,
         C901,
         R0915,
-        W0102
+        W0102,
+        C0302
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
