@@ -1,90 +1,50 @@
-#  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along`
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Description:
+  Detaching a node which is used to mount volume and performing
+  various io operations like creation of files and checking the
+  existance of those files.
+"""
+
+import traceback
 from random import randint
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import (setup_volume, cleanup_volume,
-                                            form_bricks_list_to_add_brick)
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              rebalance_stop)
-from glustolibs.gluster.peer_ops import (peer_detach,
-                                         peer_probe,
-                                         wait_for_peers_to_connect)
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.mount_ops import mount_volume, umount_volume
-from glustolibs.gluster.glusterfile import (get_fattr, file_exists,
-                                            get_fattr_list)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated'], ['glusterfs']])
-class TestChangeReservcelimit(GlusterBaseClass):
+# disruptive;rep
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
+    def terminate(self):
+        try:
+            ret = (self.redant.
+                   wait_for_rebalance_to_complete(self.vol_name,
+                                                  self.server_list[0]))
+            if not ret:
+                raise Exception("Rebalance operation has not completed."
+                                "Wait timeout.")
 
-        cls.get_super_method(cls, 'setUpClass')()
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Override Volumes setup
-        cls.volume['voltype'] = {
-            'type': 'replicated',
-            'dist_count': 1,
-            'replica_count': 3,
-            'transport': 'tcp'}
-
-    def tearDown(self):
-
-        # Start rebalance for volume.
-        g.log.info("Stopping rebalance on the volume")
-        ret, _, _ = rebalance_stop(self.mnode, self.volname)
-        if ret:
-            raise ExecutionError("Failed to stop rebalance "
-                                 "on the volume .")
-        g.log.info("Successfully stopped rebalance on the volume %s",
-                   self.volname)
-
-        # Peer probe node which was detached
-        ret, _, _ = peer_probe(self.mnode, self.servers[4])
-        if ret:
-            raise ExecutionError("Failed to probe %s" % self.servers[4])
-        g.log.info("Peer probe successful %s", self.servers[4])
-
-        # Wait till peers are in connected state
-        for server in self.servers:
-            ret = wait_for_peers_to_connect(self.mnode, server)
-            self.assertTrue(ret, "glusterd is not connected %s with peer %s"
-                            % (self.mnode, server))
-
-        # Unmounting and cleaning volume
-        ret, _, _ = umount_volume(mclient=self.mounts[0].client_system,
-                                  mpoint=self.mounts[0].mountpoint)
-        if ret:
-            raise ExecutionError("Unable to unmount volume %s" % self.volname)
-        g.log.info("Volume unmounted successfully  %s", self.volname)
-
-        ret = cleanup_volume(self.mnode, self.volname)
-        if not ret:
-            raise ExecutionError("Unable to delete volume %s" % self.volname)
-        g.log.info("Volume deleted successfully  %s", self.volname)
-        self.get_super_method(self, 'tearDown')()
-
-    def test_detach_node_used_to_mount(self):
-        # pylint: disable=too-many-statements
+    def run_test(self, redant):
         """
         Test case:
         1.Create a 1X3 volume with only 3 nodes from the cluster.
@@ -102,71 +62,41 @@ class TestChangeReservcelimit(GlusterBaseClass):
         12.Check for directory in both replica sets.
         """
 
-        # Create and start a volume
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start volume")
-        g.log.info("Volume %s created successfully", self.volname)
-
-        # Mounting the volume.
-        ret, _, _ = mount_volume(self.volname, mtype=self.mount_type,
-                                 mpoint=self.mounts[0].mountpoint,
-                                 mserver=self.servers[4],
-                                 mclient=self.mounts[0].client_system)
-        self.assertEqual(ret, 0, ("Volume %s is not mounted") % self.volname)
-        g.log.info("Volume mounted successfully using %s", self.servers[4])
-
         # Creating 100 files.
         command = ('for number in `seq 1 100`;do touch ' +
-                   self.mounts[0].mountpoint + '/file$number; done')
-        ret, _, _ = g.run(self.mounts[0].client_system, command)
-        self.assertEqual(ret, 0, "File creation failed.")
-        g.log.info("Files create on mount point.")
+                   self.mountpoint + '/file$number; done')
+        redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Detach N4 from the list.
-        ret, _, _ = peer_detach(self.mnode, self.servers[4])
-        self.assertEqual(ret, 0, "Failed to detach %s" % self.servers[4])
-        g.log.info("Peer detach successful %s", self.servers[4])
+        redant.peer_detach(self.client_list[0], self.server_list[0])
 
         # Creating a dir.
-        ret = mkdir(self.mounts[0].client_system,
-                    self.mounts[0].mountpoint+"/dir1",
-                    parents=True)
-        self.assertTrue(ret, ("Failed to create directory dir1."))
-        g.log.info("Directory dir1 created successfully.")
+        command = f"mkdir -p {self.mountpoint}/dir1"
+        redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Creating 100 files.
         command = ('for number in `seq 101 200`;do touch ' +
-                   self.mounts[0].mountpoint + '/file$number; done')
-        ret, _, _ = g.run(self.mounts[0].client_system, command)
-        self.assertEqual(ret, 0, "File creation failed.")
-        g.log.info("Files create on mount point.")
+                   self.mountpoint + '/file$number; done')
+        redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Forming brick list
-        brick_list = form_bricks_list_to_add_brick(self.mnode,
-                                                   self.volname,
-                                                   self.servers,
-                                                   self.all_servers_info)
+        brick_str = redant.form_brick_cmd(self.server_list, self.brick_roots,
+                                          self.vol_name, 3, True)
 
         # Adding bricks
-        ret, _, _ = add_brick(self.mnode, self.volname, brick_list)
-        self.assertEqual(ret, 0, "Failed to add brick to the volume %s"
-                         % self.volname)
-        g.log.info("Brick added successfully to the volume %s", self.volname)
+        redant.add_brick(self.vol_name, brick_str, self.server_list[0],
+                         replica_count=3)
 
         # Start rebalance for volume.
-        g.log.info("Starting rebalance on the volume")
-        ret, _, _ = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to start rebalance "
-                                  "on the volume %s", self.volname))
-        g.log.info("Successfully started rebalance on the volume %s",
-                   self.volname)
+        redant.logger.info("Starting rebalance on the volume")
+        redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Creating 100 files.
         command = ('for number in `seq 201 300`;do touch ' +
                    self.mounts[0].mountpoint + '/file$number; done')
-        ret, _, _ = g.run(self.mounts[0].client_system, command)
-        self.assertEqual(ret, 0, "File creation failed.")
-        g.log.info("Files create on mount point.")
+        redant.execute_abstract_op_node(command, self.client_list[0])
+
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
 
         # Check for files on bricks.
         attempts = 10
@@ -175,42 +105,36 @@ class TestChangeReservcelimit(GlusterBaseClass):
             for brick in brick_list:
                 brick_server, brick_dir = brick.split(':')
                 file_name = brick_dir+"/file" + number
-                if file_exists(brick_server, file_name):
-                    g.log.info("Check xattr"
-                               " on host %s for file %s",
-                               brick_server, file_name)
-                    ret = get_fattr_list(brick_server, file_name)
-                    self.assertTrue(ret, ("Failed to get xattr for %s"
-                                          % file_name))
-                    g.log.info("Got xattr for %s successfully",
-                               file_name)
+                if redant.path_exists(brick_server, file_name):
+                    redant.logger.info(f"Check xattr on host {brick_server} "
+                                       f"for file {file_name}")
+                    redant.get_fattr_list(file_name, brick_server)
             attempts -= 1
 
         # Creating a dir.
-        ret = mkdir(self.mounts[0].client_system,
-                    self.mounts[0].mountpoint+"/dir2")
-        if not ret:
+        command = f"mkdir -p {self.mountpoint}/dir2"
+        ret = redant.execute_abstract_op_node(command, self.client_list[0],
+                                              False)
+
+        if ret['error_code'] != 0:
             attempts = 5
             while attempts:
-                ret = mkdir(self.mounts[0].client_system,
-                            self.mounts[0].mountpoint+"/dir2")
-                if ret:
+                ret = redant.execute_abstract_op_node(command,
+                                                      self.client_list[0],
+                                                      False)
+                if ret['error_code'] == 0:
                     break
                 attempts -= 1
-        self.assertTrue(ret, ("Failed to create directory dir2."))
-        g.log.info("Directory dir2 created successfully.")
+        if ret['error_code'] != 0:
+            raise Exception("Failed to create directory dir2.")
 
         # Check for directory in both replica sets.
         for brick in brick_list:
             brick_server, brick_dir = brick.split(':')
             folder_name = brick_dir+"/dir2"
-            if file_exists(brick_server, folder_name):
-                g.log.info("Check trusted.glusterfs.dht"
-                           " on host %s for directory %s",
-                           brick_server, folder_name)
-                ret = get_fattr(brick_server, folder_name,
-                                'trusted.glusterfs.dht')
-                self.assertTrue(ret, ("Failed to get trusted.glusterfs.dht"
-                                      " xattr for %s" % folder_name))
-                g.log.info("Get trusted.glusterfs.dht xattr"
-                           " for %s successfully", folder_name)
+            if redant.path_exists(brick_server, folder_name):
+                redant.logger.info("Check trusted.glusterfs.dht on host"
+                                   f"{brick_server} for directory "
+                                   f"{folder_name}")
+                redant.get_fattr(folder_name, 'trusted.glusterfs.dht',
+                                 brick_server)

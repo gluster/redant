@@ -801,6 +801,35 @@ class IoOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
         return ret['msg']
 
+    def get_fattr_list(self, fqpath: str, node: str,
+                       encode_hex=False) -> dict:
+        """
+        List of xattr for filepath on remote system.
+        Args:
+            host (str): The hostname/ip of the remote system.
+            fqpath (str): The fully-qualified path to the file.
+        Kwargs:
+        encode_hex(bool): Fetch xattr in hex if True
+                            (Default:False)
+        Returns:
+            xattr_list (dict): dict of xattr values.
+        """
+
+        cmd = f"getfattr --absolute-names -d -m - {fqpath}"
+        if encode_hex:
+            cmd = f"getfattr --absolute-names -d -m - -e hex {fqpath}"
+
+        ret = self.execute_abstract_op_node(cmd, node)
+
+        xattr_list = {}
+        for xattr_string in ret['msg'].strip().split('\n'):
+            xattr = xattr_string.split('=', 1)
+            if len(xattr) > 1:
+                key, value = xattr
+                xattr_list[key] = value
+
+        return xattr_list
+
     def set_fattr(self, fpath: str, fattr: str, node: str, value: str) -> list:
         """
         Function to set fattr on a path.
