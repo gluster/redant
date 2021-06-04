@@ -1013,7 +1013,7 @@ class VolumeOps(AbstractOps):
         Returns:
             list: Empty list if no volumes, or else a list of sub volume
                   lists. Wherein each subvol list contains bricks belonging
-                  to that subvol in node:brick_path format. 
+                  to that subvol in node:brick_path format.
         """
         subvols = []
 
@@ -1022,16 +1022,16 @@ class VolumeOps(AbstractOps):
             voltype = volinfo[volname]['typeStr']
             brick_list = volinfo[volname]['bricks']
             bricks = [x["name"] for x in brick_list if "name" in x]
-            if voltype == "Replicate" or voltype == "Distributed-Replicate":
-                rep_count = int(volinfo[volname]['replicaCount'])
-                subvol_list = [bricks[i:i + rep_count] for i in range(0,
-                                                                      len(bricks),
-                                                                      rep_count)]
+            if voltype in ("Replicate", "Distributed-Replicate"):
+                rep = int(volinfo[volname]['replicaCount'])
+                subvol_list = [bricks[i:i + rep] for i in range(0,
+                                                                len(bricks),
+                                                                rep)]
                 subvols = subvol_list
             elif voltype == 'Distribute':
                 for brick in bricks:
                     subvols.append([brick])
-            elif voltype == 'Disperse' or voltype == 'Distributed-Disperse':
+            elif voltype in ('Disperse', 'Distributed-Disperse'):
                 disp_count = int(volinfo[volname]['disperseCount'])
                 subvol_list = ([bricks[i:i + disp_count]
                                 for i in range(0, len(bricks), disp_count)])
