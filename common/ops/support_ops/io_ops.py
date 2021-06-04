@@ -806,3 +806,25 @@ class IoOps(AbstractOps):
         cmd = (f"setfattr -x {fattr} {fpath}")
         ret = self.execute_abstract_op_node(cmd, node)
         return ret['msg']
+
+    def check_if_pattern_in_file(self, node: str,
+                                 pattern: str, fqpath: str):
+        """Check if a give pattern is in seen in file or not.
+
+        Args:
+            node (str): The hostname/ip of the remote system.
+            pattern(str): Pattern to be found in file.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            0: If pattern present in file.
+            1: If pattern not present in file.
+           -1: If command was not executed.
+        """
+        cmd = f"cat {fqpath} | grep {pattern}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            return -1
+        if len(ret['msg']) == 0:
+            return 1
+        return 0
