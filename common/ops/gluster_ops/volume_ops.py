@@ -5,6 +5,13 @@ from the test case.
 """
 
 from time import sleep
+import re
+import io
+try:
+    import ConfigParser as configparser  # Python 2
+except ImportError:
+    import configparser as configparser  # Python 3
+
 from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
 
@@ -863,7 +870,6 @@ class VolumeOps(AbstractOps):
 
         return ret
 
-    
     def get_gluster_state(self, node: str):
         """Executes the 'gluster get-state' command on the specified node, checks
         for the data dump, reads the glusterd state dump and returns it.
@@ -879,7 +885,7 @@ class VolumeOps(AbstractOps):
             {'Global': {'myuuid': 'e92964c8-a7d2-4e59-81ac-feb0687df55e',
             'op-version': '70000'}, 'Global options': {}, 'Peers':
             {'peer1.primary_hostname': 'dhcp43-167.lab.eng.blr.redhat.com',
-            'peer1.uuid': 'd3a85b6a-134f-4df2-ba93-4bd0321b6d6a', 'peer1.state':
+            'peer1.uuid': 'd3a85b6a-134f-4df2-ba93-4bd0321b6d6a','peer1.state':
             'Peer in Cluster', 'peer1.connected': 'Connected',
             'peer1.othernames': '', 'peer2.primary_hostname':
             'dhcp43-68.lab.eng.blr.redhat.com', 'peer2.uuid':
@@ -906,26 +912,29 @@ class VolumeOps(AbstractOps):
             'last allocated port': '49154'}}
         """
 
-        ret, out, _ = g.run(mnode, "gluster get-state")
-        if ret:
-            g.log.error("Failed to execute gluster get-state command!")
+        ret = self.execute_abstract_op_node("gluster get-state", node, False)
+        if ret['error_code'] != 0:
             return None
+        out = ret['msg'][0].rstrip("\n")
+        print(f"\nDump: {out}\n")
         # get-state should dump properly.
         # Checking whether a path is returned or not and then
         # extracting path from the out data
 
         path = re.search(r"/.*?/.\S*", out).group()
+        print(f"Path: {path}\n")
         if not path:
-            g.log.error("Failed to get the gluster state dump file path.")
+            self.logger.error("Failed to get the gluster "
+                              "state dump file path.")
             return None
-        ret, out, _ = g.run(mnode, "cat {}".format(path))
-        if ret:
-            g.log.error("Failed to read the gluster state dump.")
-            return None
-        g.log.info("Command Executed successfully and the data dump verified")
+        ret = self.execute_abstract_op_node(f"cat {path}",
+                                            node, False)
+        if ret['error_code'] != 0:
+            raise Exception("Failed to read the gluster state dump.")
 
         # Converting the string to unicode for py2/3 compatibility
-        out = u"".join(out)
+        out = u"".join(ret['msg'])
+
         data_buf = io.StringIO(out)
         config = configparser.ConfigParser()
         try:
