@@ -205,7 +205,14 @@ class MachineOps(AbstractOps):
             Example:
                 >>> bring_down_network_interface("10.70.43.68", timout=100)
         """
-        interface = "eth0" if self.is_rhel7(node) else "enp1s0"
+        int_cmd = "/sbin/ip a | grep BROADCAST"
+        ret = self.execute_abstract_op_node(int_cmd,
+                                            node, False)
+        if ret['error_code'] != 0:
+            raise Exception("Failed: Could not find the interface")
+
+        interface = ret['msg'][0].split(":")[1].strip()
+
         cmd = (f"ip link set {interface} down\nsleep {timeout}\n"
                f"ip link set {interface} up")
         cmd1 = f"echo  \"{cmd}\"> 'test.sh'"
