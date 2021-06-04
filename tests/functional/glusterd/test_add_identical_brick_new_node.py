@@ -47,10 +47,9 @@ class TestCase(DParentTest):
                             [self.server_list[0]], self.brick_roots, True)
 
         # Getting the bricks list to bring down a brick
-        redant.logger.info("Get all the bricks of the volume")
         bricks_list = redant.get_all_bricks(self.volume_name1,
                                             self.server_list[0])
-        if len(bricks_list) == 0:
+        if bricks_list is None:
             raise Exception(f"Failed to fetch bricks for {self.volume_name1}")
 
         # Bring the brick offline
@@ -58,8 +57,11 @@ class TestCase(DParentTest):
         if not ret:
             raise Exception("Failed to bring down the bricks")
 
-        redant.peer_probe_servers(self.server_list[1], self.server_list[0],
-                                  True)
+        ret = redant.peer_probe_servers(self.server_list[1],
+                                        self.server_list[0],
+                                        True)
+        if not ret:
+            raise Exception("Peer Probing servers failed")
 
         _, brick_str = redant.form_brick_cmd([self.server_list[1]],
                                              self.brick_roots,
