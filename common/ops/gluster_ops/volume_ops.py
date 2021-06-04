@@ -189,26 +189,24 @@ class VolumeOps(AbstractOps):
                 - node : node on which the command got executed
 
         """
-        if conf_hash is not None:
-            if ("replica_count" in conf_hash
-               and conf_hash['replica_count'] > 1):
-                # arbiter vol and distributed-arbiter vol
-                if "arbiter_count" in conf_hash:
-                    cmd = (f"gluster volume create {volname} "
-                           f"replica {conf_hash['replica_count']} "
-                           f"arbiter {conf_hash['arbiter_count']} {brick_cmd}"
-                           " --mode=script")
-                # replicated vol
-                else:
-                    cmd = (f"gluster volume create {volname} "
-                           f"replica {conf_hash['replica_count']}"
-                           f" {brick_cmd} --mode=script")
-            # dispersed vol and distributed-dispersed vol
-            elif "disperse_count" in conf_hash:
+        if "replica_count" in conf_hash and conf_hash['replica_count'] > 1:
+            # arbiter vol and distributed-arbiter vol
+            if "arbiter_count" in conf_hash:
                 cmd = (f"gluster volume create {volname} "
-                       f"{conf_hash['disperse_count']} redundancy "
-                       f"{conf_hash['redundancy_count']} {brick_cmd}"
+                       f"replica {conf_hash['replica_count']} "
+                       f"arbiter {conf_hash['arbiter_count']} {brick_cmd}"
                        " --mode=script")
+            # replicated vol
+            else:
+                cmd = (f"gluster volume create {volname} "
+                       f"replica {conf_hash['replica_count']}"
+                       f" {brick_cmd} --mode=script")
+        # dispersed vol and distributed-dispersed vol
+        elif "disperse_count" in conf_hash:
+            cmd = (f"gluster volume create {volname} "
+                   f"{conf_hash['disperse_count']} redundancy "
+                   f"{conf_hash['redundancy_count']} {brick_cmd}"
+                   " --mode=script")
         # distributed vol
         else:
             cmd = (f"gluster volume create {volname} {brick_cmd} "
@@ -490,6 +488,8 @@ class VolumeOps(AbstractOps):
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
+        if volume_info['count'] == '0':
+            return ret_dict
         volume_list = volume_info['volume']
         if not isinstance(volume_list, list):
             volume_list = [volume_list]

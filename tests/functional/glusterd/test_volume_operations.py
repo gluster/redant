@@ -23,6 +23,7 @@ import random
 import re
 import os
 import copy
+import traceback
 from tests.d_parent_test import DParentTest
 
 # disruptive;dist
@@ -40,7 +41,24 @@ class TestVolumeCreate(DParentTest):
                                  conf_hash, self.server_list,
                                  self.brick_roots, False, True)
 
+    def terminate(self):
+        """
+        Delete the brick directory created at the root path
+        """
+        try:
+            if self.brick_created_at_root_dir:
+                cmd = f"rm -rf {self.root_brickpath.split(':')[1]}"
+                self.redant.execute_abstract_op_node(cmd,
+                                                     self.brick_root_node)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
     def run_test(self, redant):
+
+        self.brick_created_at_root_dir = False
 
         # Get brick list
         bricks_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
@@ -72,6 +90,9 @@ class TestVolumeCreate(DParentTest):
             raise Exception("Volume start shouldn't have brought the bricks"
                             " online")
 
+        # Delete the volume
+        redant.cleanup_volume(self.vol_name, self.server_list[0])
+
         # Merged TC test_volume_create_on_brick_root
 
         self.volume1 = "second_volume"
@@ -88,24 +109,33 @@ class TestVolumeCreate(DParentTest):
         brick_list = brick_cmd.split(" ")
         complete_brick = brick_list[0].split(":")
         brick_root = os.path.dirname(complete_brick[1])
-        root_brickpath = f"{complete_brick[0]}:{brick_root}"
-        brick_list[0] = root_brickpath
+        self.root_brickpath = f"{complete_brick[0]}:{brick_root}-b1"
+        self.brick_root_node = complete_brick[0]
+        brick_list[0] = self.root_brickpath
         brick_cmd = " ".join(brick_list)
-        brick_dict[complete_brick[1]] = [brick_root]
+        brick_dict[complete_brick[0]] = [self.root_brickpath]
+
+        conf_hash = {
+            "dist_count": 3,
+            "replica_count": 1,
+            "transport": "tcp"
+        }
 
         ret = redant.volume_create_with_custom_bricks(self.volume1,
                                                       self.server_list[0],
-                                                      None, brick_cmd,
+                                                      conf_hash, brick_cmd,
                                                       brick_dict, False,
                                                       False)
         if ret['error_code'] == 0:
             raise Exception("Volume creation at root brick path should have"
                             " failed")
 
+        self.brick_created_at_root_dir = True
+
         # Volume creation with force should succeed
         ret = redant.volume_create_with_custom_bricks(self.volume1,
                                                       self.server_list[0],
-                                                      None, brick_cmd,
+                                                      conf_hash, brick_cmd,
                                                       brick_dict, True,
                                                       False)
         if ret['error_code'] != 0:
@@ -117,7 +147,7 @@ class TestVolumeCreate(DParentTest):
 
         sub_dir_path = f"{brick_root}/sub_dir"
         cmd = f"mkdir {sub_dir_path}"
-        self.execute_abstract_op_node(cmd, self.server_list[0])
+        redant.execute_abstract_op_node(cmd, self.server_list[0])
         sub_dir_brick_node = brick_list[0].split(":")[0]
         sub_dir_brick = f"{sub_dir_brick_node}:{sub_dir_path}"
         brick_list[0] = sub_dir_brick
@@ -125,9 +155,9 @@ class TestVolumeCreate(DParentTest):
         brick_dict[sub_dir_brick_node] = [sub_dir_path]
 
         # Volume create with used bricks should fail
-        ret = redant.volume_create_with_custom_bricks(self.volume1,
+        ret = redant.volume_create_with_custom_bricks(self.volume2,
                                                       self.server_list[0],
-                                                      None, brick_cmd,
+                                                      conf_hash, brick_cmd,
                                                       brick_dict, True,
                                                       False)
         if ret['error_code'] == 0:
@@ -155,9 +185,12 @@ class TestVolumeCreate(DParentTest):
         # creation of volume should succeed
         redant.volume_create_with_custom_bricks(self.volume1,
                                                 self.server_list[0],
-                                                None, same_brick_cmd,
+                                                conf_hash, same_brick_cmd,
                                                 same_brick_dict, False,
                                                 False)
+
+        # Delete the volume
+        redant.volume_delete(self.volume1, self.server_list[0])
 
         # Merged TC test_volume_op
 
@@ -169,14 +202,14 @@ class TestVolumeCreate(DParentTest):
                             "a non existing volume")
 
         # Stopping a non existing volume should fail
-        ret = redant.volume_stop("no_vol", self.server_list[0], True)
+        ret = redant.volume_stop("no_vol", self.server_list[0], True, False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Expected: It should fail to stop "
                             "non-existing volume. Actual: Successfully "
                             "stopped a non existing volume")
 
         # Deleting a non existing volume should fail
-        ret = redant.volume_delete("no_vol", self.server_list[0])
+        ret = redant.volume_delete("no_vol", self.server_list[0], False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Expected: It should fail to delete a "
                             "non existing volume. Actual:Successfully deleted"
@@ -187,7 +220,7 @@ class TestVolumeCreate(DParentTest):
         redant.peer_detach(self.server_list[1], self.server_list[0])
 
         self.volume3 = "fourth-volume"
-        num_of_bricks = len(self.servers)
+        num_of_bricks = len(self.server_list)
         brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
                                                       self.brick_roots,
                                                       self.volume3,
@@ -195,7 +228,7 @@ class TestVolumeCreate(DParentTest):
 
         ret = redant.volume_create_with_custom_bricks(self.volume3,
                                                       self.server_list[0],
-                                                      None, brick_cmd,
+                                                      conf_hash, brick_cmd,
                                                       brick_dict, False,
                                                       False)
         if ret['error_code'] == 0:
@@ -205,17 +238,29 @@ class TestVolumeCreate(DParentTest):
         # Peer probe the detached server
         redant.peer_probe(self.server_list[1], self.server_list[0])
 
+        # Wait for peer to connect
+        if not redant.wait_for_peers_to_connect(self.server_list[1],
+                                                self.server_list[0]):
+            raise Exception("Peers are not in connected state")
+
+        # Remove the brick directories created above
+        brick_list = brick_cmd.split(" ")
+        for brick in brick_list:
+            brick_node, brick_path = brick.split(":")
+            cmd = f"rm -rf {brick_path}"
+            redant.execute_abstract_op_node(cmd, brick_node)
+
         # Create and start a volume
         redant.volume_create_with_custom_bricks(self.volume3,
                                                 self.server_list[0],
-                                                None, brick_cmd,
-                                                brick_dict, False,
-                                                False)
+                                                conf_hash, brick_cmd,
+                                                brick_dict)
 
         redant.volume_start(self.volume3, self.server_list[0])
 
         # Starting already started volume should fail
-        ret = redant.volume_start(self.volume3, self.server_list[0])
+        ret = redant.volume_start(self.volume3, self.server_list[0], False,
+                                  False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Expected: It should fail to start a "
                             "already started volume. Actual:Successfully"
