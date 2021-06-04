@@ -1,33 +1,59 @@
-#  Copyright (C) 2020-2021 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020-2021 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.peer_ops import peer_probe
-from glustolibs.gluster.lib_utils import is_core_file_created
-from glustolibs.gluster.peer_ops import peer_detach, is_peer_connected
-from glustolibs.gluster.gluster_init import stop_glusterd, start_glusterd
-from glustolibs.misc.misc_libs import bring_down_network_interface
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+Test deal with probing a peer in which glusterd is down.
+"""
+
+# disruptive;
+
+from tests.d_parent_test import DParentTest
 
 
-class PeerProbeWhenGlusterdDown(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def test_peer_probe_when_glusterd_down(self):
-        # pylint: disable=too-many-statements
+    def terminate(self):
+
+        for server in self.server_list:
+            if not self.redant.is_peer_connected(self.server_list,
+                                                 server):
+                ret = self.redant.peer_probe(server,
+                                             self.server_list[0])
+                if ret['error_code'] != 0:
+                    raise Exception(f"Peer probe failed with "
+                                    f"{ret['error_msg']}")
+
+    def _peer_probe_operations(self, hostname):
+        # Trying to peer probe the node whose glusterd was stopped using IP
+        ret = self.redant.peer_probe(self.server_list[1],
+                                     self.server_list[0],
+                                     False)
+        if ret['msg']['opRet'] == 0:
+            raise Exception("Peer probe should have failed"
+                            " when glusterd is down.")
+
+        ret = self.redant.peer_probe(hostname,
+                                     self.server_list[0],
+                                     False)
+        if ret['msg']['opRet'] == 0:
+            raise Exception("Peer probe should have failed"
+                            " when glusterd is down.")
+
+    def run_test(self, redant):
         '''
         Test script to verify the behavior when we try to peer
         probe a valid node whose glusterd is down
@@ -50,91 +76,53 @@ class PeerProbeWhenGlusterdDown(GlusterBaseClass):
           connected"
         10 Check peer status and make sure no other nodes in peer reject state
         '''
-
-        ret, test_timestamp, _ = g.run_local('date +%s')
-        test_timestamp = test_timestamp.strip()
+        ret = redant.execute_abstract_op_node('date +%s',
+                                              self.server_list[0])
+        test_timestamp = ret['msg'][0].rstrip('\n').strip()
 
         # Detach one of the nodes which is part of the cluster
-        g.log.info("detaching server %s ", self.servers[1])
-        ret, _, err = peer_detach(self.mnode, self.servers[1])
-        msg = 'peer detach: failed: %s is not part of cluster\n' \
-              % self.servers[1]
-        if ret:
-            self.assertEqual(err, msg, "Failed to detach %s "
-                             % (self.servers[1]))
+        redant.peer_detach(self.server_list[1],
+                           self.server_list[0])
 
         # Bring down glusterd of the server which has been detached
-        g.log.info("Stopping glusterd on %s ", self.servers[1])
-        ret = stop_glusterd(self.servers[1])
-        self.assertTrue(ret, "Fail to stop glusterd on %s " % self.servers[1])
+        redant.stop_glusterd(self.server_list[1])
 
-        # Trying to peer probe the node whose glusterd was stopped using IP
-        g.log.info("Peer probing %s when glusterd down ", self.servers[1])
-        ret, _, err = peer_probe(self.mnode, self.servers[1])
-        self.assertNotEqual(ret, 0, "Peer probe should not pass when "
-                                    "glusterd is down")
-        self.assertEqual(err, "peer probe: failed: Probe returned with "
-                              "Transport endpoint is not connected\n")
+        if not (redant.
+                wait_for_glusterd_to_stop(self.server_list[1])):
+            raise Exception(f"Glusterd is still running on"
+                            f" {self.server_list[1]}")
 
         # Trying to peer probe the same node with hostname
-        g.log.info("Peer probing node %s using hostname with glusterd down ",
-                   self.servers[1])
-        hostname = g.run(self.servers[1], "hostname")
-        ret, _, err = peer_probe(self.mnode, hostname[1].strip())
-        self.assertNotEqual(ret, 0, "Peer probe should not pass when "
-                                    "glusterd is down")
-        self.assertEqual(err, "peer probe: failed: Probe returned with"
-                              " Transport endpoint is not connected\n")
+        ret = redant.execute_abstract_op_node("hostname",
+                                              self.server_list[1])
+        hostname = ret['msg'][0].rstrip('\n')
+
+        # perform probing operations
+        self._peer_probe_operations(hostname)
 
         # Start glusterd again for the next set of test steps
-        g.log.info("starting glusterd on %s ", self.servers[1])
-        ret = start_glusterd(self.servers[1])
-        self.assertTrue(ret, "glusterd couldn't start successfully on %s"
-                        % self.servers[1])
+        redant.start_glusterd(self.server_list[1])
+
+        if not (redant.
+                wait_for_glusterd_to_start(self.server_list[1])):
+            raise Exception(f"Glusterd is not running on "
+                            f"{self.server_list[1]}")
 
         # Bring down the network for sometime
-        network_status = bring_down_network_interface(self.servers[1], 150)
+        network_status = (redant.
+                          bring_down_network_interface(self.server_list[1],
+                                                       30))
 
-        # Peer probing the node using IP when it is still not online
-        g.log.info("Peer probing node %s when network is down",
-                   self.servers[1])
-        ret, _, err = peer_probe(self.mnode, self.servers[1])
-        self.assertNotEqual(ret, 0, "Peer probe passed when it was expected to"
-                                    " fail")
-        self.assertEqual(err.split("\n")[0], "peer probe: failed: Probe "
-                                             "returned with Transport endpoint"
-                                             " is not connected")
+        # perform probing operations
+        self._peer_probe_operations(hostname)
 
-        # Peer probing the node using hostname when it is still not online
-        g.log.info("Peer probing node %s using hostname which is still "
-                   "not online ",
-                   self.servers[1])
-        ret, _, err = peer_probe(self.mnode, hostname[1].strip())
-        self.assertNotEqual(ret, 0, "Peer probe should not pass when node "
-                                    "has not come online")
-        self.assertEqual(err.split("\n")[0], "peer probe: failed: Probe "
-                                             "returned with Transport endpoint"
-                                             " is not connected")
-
-        ret, _, _ = network_status.async_communicate()
-        if ret != 0:
-            g.log.error("Failed to perform network interface ops")
+        ret = redant.wait_till_async_command_ends(network_status)
+        if ret['error_code'] != 0:
+            raise Exception("Failed to perform network interface ops")
 
         # Peer probe the node must pass
-        g.log.info("peer probing node %s", self.servers[1])
-        ret, _, err = peer_probe(self.mnode, self.servers[1])
-        self.assertEqual(ret, 0, "Peer probe has failed unexpectedly with "
-                                 "%s " % err)
+        redant.peer_probe(self.server_list[1], self.server_list[0])
 
         # Checking if core file created in "/", "/tmp" and "/var/log/core"
-        ret = is_core_file_created(self.servers, test_timestamp)
-        self.assertTrue(ret, "core file found")
-
-    def tearDown(self):
-        g.log.info("Peering any nodes which are not part of cluster as "
-                   "part of cleanup")
-        for server in self.servers:
-            if not is_peer_connected(self.mnode, server):
-                ret, _, err = peer_probe(self.mnode, server)
-                if ret:
-                    raise ExecutionError("Peer probe failed with %s " % err)
+        if redant.check_core_file_exists(self.server_list, test_timestamp):
+            raise Exception("glusterd service should not have crashed")
