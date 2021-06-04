@@ -73,15 +73,15 @@ class TestCase(DParentTest):
             select_brick.split(':'))
 
         # Verify mount entry in /etc/fstab
-        # ret = redant.check_if_pattern_in_file(self.umount_host,
-        #                                       self.umount_brick,
-        #                                       '/etc/fstab')
-        # if ret != 0:
-        #     raise Exception("Brick mount entry not found in"
-        #                     f"/etc/fstab of {self.umount_host}")
-        # Unmount the selected brick
-        # cmd = f'umount {self.umount_brick}'
-        # redant.execute_abstract_op_node(cmd, self.umount_host)
+        ret = redant.check_if_pattern_in_file(self.umount_host,
+                                              self.umount_brick,
+                                              '/etc/fstab')
+        if ret != 0:
+            raise Exception("Brick mount entry not found in"
+                            f"/etc/fstab of {self.umount_host}")
+        Unmount the selected brick
+        cmd = f'umount {self.umount_brick}'
+        redant.execute_abstract_op_node(cmd, self.umount_host)
 
         # Run 'gluster get-state' and verify absence of any error
         ret = redant.get_gluster_state(self.server_list[0])
