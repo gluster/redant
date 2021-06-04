@@ -18,23 +18,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Tests to verify 'gluster get state' command on unmounting the brick from
     an online volume
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import (setup_volume, cleanup_volume,)
-from glustolibs.gluster.volume_ops import (get_gluster_state, get_volume_list)
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.glusterfile import check_if_pattern_in_file
-
-
-@runs_on([['distributed', 'replicated',
-           'distributed-replicated',
-           'dispersed', 'distributed-dispersed',
-           'arbiter', 'distributed-arbiter'], []])
 """
-# disruptive;rep
+# disruptive;rep,dist,dist-rep,disp,dist-disp,arb,dist-arb
 
 from random import choice
 from tests.d_parent_test import DParentTest
@@ -79,7 +64,7 @@ class TestCase(DParentTest):
         if ret != 0:
             raise Exception("Brick mount entry not found in"
                             f"/etc/fstab of {self.umount_host}")
-        Unmount the selected brick
+        # Unmount the selected brick
         cmd = f'umount {self.umount_brick}'
         redant.execute_abstract_op_node(cmd, self.umount_host)
 
