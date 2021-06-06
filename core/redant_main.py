@@ -8,7 +8,9 @@ import sys
 import time
 import datetime
 import argparse
-from environ import environ
+import pyfiglet
+from halo import Halo
+from environ import environ, FrameworkEnv
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
@@ -65,43 +67,51 @@ def main():
     start = time.time()
     args = pars_args()
 
+    spinner = Halo(spinner='dots')
+    spinner.start("Starting param handling")
     try:
         param_obj = ParamsHandler(args.config_file)
     except IOError:
         print("Error: can't find config file or read data.")
+        spinner.fail("IOError in param handling")
         return
+    spinner.succeed("Param Handling Success.")
 
+    spinner.start("Building test list")
     # Building the test list and obtaining the TC details.
     excluded_tests = param_obj.get_excluded_tests()
-    test_cases_tuple = TestListBuilder.create_test_dict(args.test_dir,
-                                                        excluded_tests,
-                                                        args.spec_test)
-    test_cases_dict = test_cases_tuple[0]
-    test_cases_component = test_cases_tuple[1]
-    excluded_tests = test_cases_tuple[2]
+    TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
+                                     args.spec_test)
+    spinner.succeed("Test List built")
 
+    spinner.start("Creating log dirs")
     # Creating log dirs.
     args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
-    Logger.log_dir_creation(args.log_dir, test_cases_component,
-                            test_cases_dict)
+    Logger.log_dir_creation(args.log_dir, TestListBuilder.get_test_path_list())
+    spinner.succeed("Log dir creation successful.")
 
-    # Pre test run test list builder is modified.
-    test_cases_dict = TestListBuilder.pre_test_run_list_modify(test_cases_dict)
+    # Framework Environment datastructure.
+    env_obj = FrameworkEnv()
+    env_obj.init_ds()
 
     # Environment setup.
-    env_obj = environ(param_obj, f"{args.log_dir}/main.log", args.log_level)
-    env_obj.setup_env()
+    env_set = environ(param_obj, env_obj, f"{args.log_dir}/main.log",
+                      args.log_level)
+    env_set.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(test_cases_dict, param_obj, excluded_tests, args.log_dir,
-                    args.log_level, args.concur_count)
-    result_queue = TestRunner.run_tests()
+    TestRunner.init(TestListBuilder, param_obj, env_set, args.log_dir,
+                    args.log_level, args.concur_count, args.spec_test)
+    result_queue = TestRunner.run_tests(env_obj)
 
     # Environment cleanup. TBD.
     total_time = time.time() - start
     ResultHandler.handle_results(
         result_queue, args.result_path, total_time, args.excel_sheet)
 
+    env_set.teardown_env()
+
 
 if __name__ == '__main__':
+    print(pyfiglet.figlet_format("REDANT", font="slant"))
     main()

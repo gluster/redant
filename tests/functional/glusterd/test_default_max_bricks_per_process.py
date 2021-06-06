@@ -9,7 +9,7 @@
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+  GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
@@ -19,12 +19,12 @@
       Default max bricks per-process should be 250
 """
 
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 # disruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 
 
-class TestDefaultMaxBricksPerProcess(AbstractTest):
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         """

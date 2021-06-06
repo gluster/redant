@@ -152,6 +152,8 @@ class ParamsHandler:
         Get the mapping of server ip to their brick roots
         Returns:
            Dict
+        TODO: Update the values in the dict to be a list of bricks, instead
+              of the first brick of the list.
         """
         brick_roots = {}
         for server in self.server_config:

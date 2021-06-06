@@ -3,6 +3,7 @@ This file contains one class - IoOps which
 holds API for running all the IO commands.
 """
 import os
+import re
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -14,30 +15,7 @@ class IoOps(AbstractOps):
     the other the io_ops which execute on mountpoints.
     """
 
-    def execute_io_cmd(self, cmd: str, host: str = None):
-        '''
-        Used for all the IO commands
-
-        Args:
-            cmd (str): The IO command which is to be run
-            host (str): The node in the cluster where the command is to be run
-
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-
-        '''
-
-        ret = self.execute_abstract_op_node(cmd, host)
-
-        return ret
-
-    def create_file(self, path: str, filename: str, node: str):
+    def create_file(self, path: str, filename: str, node: str) -> bool:
         """
         Creates a file in the specified specified path
         Args:
@@ -46,11 +24,18 @@ class IoOps(AbstractOps):
             filename (str): Name of the file
             node (str): The node on which command
                         has to run.
+        Returns:
+            True if file is successfully created or already present and false
+            if file creation failed.
         """
         cmd = f"touch {path}/{filename}"
-        self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            return False
+        return True
 
-    def create_dir(self, path: str, dirname: str, node: str):
+    def create_dir(self, path: str, dirname: str, node: str,
+                   excep: bool = True) -> dict:
         """
         Creates a directory in the specified path
         Args:
@@ -59,11 +44,16 @@ class IoOps(AbstractOps):
             dirname (str): Name of the directory
             node (str): The node on which command
                         has to run.
+            excep (bool): Whether to bypass the exception handling in
+                          abstract ops.
+        Returns:
+            ret_dict returned by the abstract ops.
         """
         cmd = f"mkdir -p {path}/{dirname}"
-        self.execute_abstract_op_node(cmd, node)
+        return self.execute_abstract_op_node(cmd, node, excep)
 
-    def create_dirs(self, list_of_nodes: list, list_of_dir_paths: list):
+    def create_dirs(self, list_of_nodes: list,
+                    list_of_dir_paths: list) -> bool:
         """
         Create directories on nodes.
         Args:
@@ -94,7 +84,7 @@ class IoOps(AbstractOps):
 
         return _rc
 
-    def path_exists(self, list_of_nodes, list_of_paths):
+    def path_exists(self, list_of_nodes: list, list_of_paths: list) -> bool:
         """Check if paths exist on nodes.
         Args:
             list_of_nodes (list): List of nodes.
@@ -108,20 +98,248 @@ class IoOps(AbstractOps):
         if not isinstance(list_of_paths, list):
             list_of_paths = (list_of_paths.split(" "))
 
-        _rc = True
-
         for path in list_of_paths:
-            cmd = f"ls -l {path}"
+            cmd = f"stat {path}"
             ret = self.execute_command_multinode(cmd, list_of_nodes)
-        for each_ret in ret:
-            if each_ret['error_code'] != 0:
-                error_string = each_ret['error_msg'].rstrip('\n')
-                self.logger.error(f"{error_string} on node {each_ret['node']}")
-                _rc = False
+            for each_ret in ret:
+                if each_ret['error_code'] != 0:
+                    error_string = each_ret['error_msg'].rstrip('\n')
+                    self.logger.error(f"{error_string} on node "
+                                      f"{each_ret['node']}")
+                    return False
 
-        return _rc
+        return True
 
-    def collect_mounts_arequal(self, mounts: dict, path=''):
+    def get_dir_contents(self, path: str, node: str,
+                         recursive: bool = False) -> list:
+        """
+        Get the files and directories present in a given directory.
+
+        Args:
+            path (str): The path to the directory.
+            node (str): IP of the remote system.
+
+        Optional:
+            recursive (bool): lists all entries recursively
+
+        Returns:
+            file_dir_list (list): List of files and directories on path.
+            None: In case of error or failure.
+        """
+        if recursive:
+            cmd = f"find {path}"
+        else:
+            cmd = f"ls {path}"
+
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code']:
+            self.logger.error(f"Unable to list directory contents for {path}:"
+                              f" {ret['error_msg']}")
+            return None
+
+        out = "".join(ret['msg'])
+        return list(filter(None, out.split("\n")))
+
+    def get_file_stat(self, node: str, path: str) -> str:
+        """
+        Function to get file stat.
+        Args:
+            node (str)
+            path (str)
+        Returns:
+            Dictionary of the form,
+            {
+              "error_code" : 0/something else,
+              "msg" : DICT or string of error
+            }
+        """
+        ret_val = {'error_code': 0, 'msg': ''}
+        cmd = (f"python3 /tmp/file_dir_ops.py stat {path}")
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            ret_val['error_code'] = ret['error_code']
+            ret_val['msg'] = ret['error_msg']
+            return ret_val
+        tmp_msg = ret['msg'][2:-3]
+        tmp_msg = tmp_msg[0][tmp_msg[0].find('{'):-1]
+        stat_res = {}
+        for list_val in tmp_msg.split(','):
+            tmp_val = list_val.split(':')
+            if len(tmp_val) == 1:
+                tmp_val = list_val.split('=')
+            if tmp_val[0].find('{') >= 0:
+                tmp_val[0] = tmp_val[0][1:]
+            if tmp_val[1].find('}') >= 0:
+                tmp_val[1] = tmp_val[1][:-1]
+            if tmp_val[1].find(')') >= 0:
+                tmp_val[1] = tmp_val[1][:-1]
+            tmp_val[0] = tmp_val[0].strip().replace("'", "")
+            tmp_val[1] = tmp_val[1].strip().replace("'", "")
+            if tmp_val[0] == 'stat':
+                tmp_val[0] = tmp_val[1][15:].split('=')[0]
+                tmp_val[1] = tmp_val[1][15:].split('=')[1]
+            if tmp_val[1].isdigit():
+                tmp_val[1] = float(tmp_val[1])
+                if tmp_val[1].is_integer():
+                    tmp_val[1] = int(tmp_val[1])
+            stat_res[tmp_val[0]] = tmp_val[1]
+        ret_val['msg'] = stat_res
+        return ret_val
+
+    def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
+                                    dir_depth: int, dir_length: int,
+                                    max_no_dirs: int, no_files: int,
+                                    node: str):
+        """
+        Create deep directories and files. This function encapsulates the
+        operation of the file_dir_ops script present in the client machines.
+        Args:
+            path (str) : Path wherein this io is to be done.
+            dir_start_no (int) : From which number, the dir numbering will be
+                                 started
+            dir_depth (int) : The depth till which dirs have to be created.
+            dir_length (int) : The number of dirs at the top level.
+            max_no_dirs (int) : The number of dirs in a level.
+            no_files (int) : The number of files to be created under a
+                             directory.
+            node (str) : Node wherein the commad has to be run.
+        Returns:
+            async_object
+        """
+        cmd = (f"python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
+               f"--dirname-start-num {dir_start_no} --dir-depth {dir_depth}"
+               f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
+               f"--num-of-files {no_files} {path}")
+        return self.execute_command_async(cmd, node)
+
+    def get_file_permission(self, node: str, path: str) -> dict:
+        """
+        Function to get file permissions.
+
+        Args:
+            node (str)
+            path (str)
+        Returns:
+            Dictionary has the following key-value pairs
+            1. error_code (int): 0 being success.
+            2. file_perm (int): valid file permission or 0 for error.
+        """
+        ret_val = {}
+        cmd = f'stat -c "%a" {path}'
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            ret_val['error_code'] = ret['error_code']
+            ret_val['file_perm'] = 0
+            return ret_val
+        ret_val['error_code'] = ret['error_code']
+        ret_val['file_perm'] = int(ret['msg'][0][:-1])
+        return ret_val
+
+    def set_file_permissions(self, node: str, fqpath: str, perms: str):
+        """Set permissions on a remote file.
+
+        Args:
+            node (str): The node on which command has to execute
+            fqpath (str): The fully-qualified path to the file.
+            perms (str): A permissions string as passed to chmod.
+
+        Returns:
+            True on success. False on fail.
+        """
+        cmd = f"chmod {perms} {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+
+        if ret['error_code'] == 0:
+            return True
+
+        self.logger.error(f"chmod failed: {ret['error_msg']}")
+        return False
+
+    def check_core_file_exists(self, nodes: list, testrun_timestamp,
+                               paths=['/', '/var/log/core',
+                                      '/tmp', '/var/crash', '~/']):
+        '''
+        Listing directories and files in "/", /var/log/core, /tmp,
+        "/var/crash", "~/" directory for checking if the core file
+        created or not
+
+        Args:
+
+            nodes(list):
+                List of nodes need to pass from test method
+            testrun_timestamp:
+                This time stamp need to pass from test method
+                test case running started time, time format is EPOCH
+                time format, use below command for getting timestamp
+                of test case 'date +%s'
+            paths(list):
+                By default core file will be verified in "/","/tmp",
+                "/var/log/core", "/var/crash", "~/"
+        Return:
+         bool : True if core file was created
+                else False
+        If test case need to verify core file in specific path,
+        need to pass path from test method
+        '''
+        count = 0
+        cmd_list = []
+        for path in paths:
+            cmd = ' '.join(['cd', path, '&&', 'ls', 'core*'])
+            cmd_list.append(cmd)
+
+        # Checks for core file in "/", "/var/log/core", "/tmp" "/var/crash",
+        # "~/" directory
+        for node in nodes:
+            cmd = 'grep -r "time of crash" /var/log/glusterfs/'
+            try:
+                ret = self.execute_abstract_op_node(cmd, node)
+                logfiles = " ".join(ret['msg'])
+                if ret['error_code'] == 0:
+                    self.logger.error(" Seems like there was a crash,"
+                                      " kindly check the logfiles, "
+                                      "even if you don't see a core file")
+                for logfile in logfiles.strip('\n').split('\n'):
+                    self.logger.error(f"Core was found in "
+                                      f"{logfile.split(':')[0]}")
+            except Exception as error:
+                self.logger.info(f"Error: {error}")
+
+            for cmd in cmd_list:
+                try:
+                    ret = self.execute_abstract_op_node(cmd, node)
+                    out = " ".join(ret['msg'])
+                    self.logger.info("storing all files and directory "
+                                     "names into list")
+                    dir_list = re.split(r'\s+', out)
+
+                    # checking for core file created or not in "/"
+                    # "/var/log/core", "/tmp" directory
+                    self.logger.info("checking core file created or not")
+                    for file1 in dir_list:
+                        if re.search(r'\bcore\.[\S]+\b', file1):
+                            file_path_list = re.split(r'[\s]+', cmd)
+                            file_path = file_path_list[1] + '/' + file1
+                            time_cmd = 'stat ' + '-c ' + '%X ' + file_path
+                            ret = self.execute_abstract_op_node(time_cmd, node)
+                            file_timestamp = ret['msg'][0].rstrip('\n')
+                            file_timestamp = file_timestamp.strip()
+                            if file_timestamp > testrun_timestamp:
+                                count += 1
+                                self.logger.error(f"New core file was created "
+                                                  f"and found at {file1}")
+                            else:
+                                self.logger.info("Old core file Found")
+                except Exception as error:
+                    self.logger.info(f"Error: {error}")
+        # return the status of core file
+        if count >= 1:
+            self.logger.error("Core file created glusterd crashed")
+            return True
+        else:
+            self.logger.info("No core files found ")
+            return False
+
+    def collect_mounts_arequal(self, mounts: dict, path='') -> list:
         """
         Collects arequal from all the mounts
         Args:
@@ -201,7 +419,7 @@ class IoOps(AbstractOps):
             ret = self.execute_abstract_op_node(cmd, host)
             self.logger.info(ret['msg'])
 
-    def get_mounts_stat(self, mounts):
+    def get_mounts_stat(self, mounts: list) -> list:
         """
         Recursively get stat of the mountpoint
         Args:
@@ -233,7 +451,7 @@ class IoOps(AbstractOps):
             raise Exception(error_msg)
         return ret['msg']
 
-    def list_all_files_and_dirs_mounts(self, mounts):
+    def list_all_files_and_dirs_mounts(self, mounts: list) -> bool:
         """List all Files and Directories from mounts.
         Args:
             mounts (list): List of all GlusterMount objs.
@@ -268,7 +486,7 @@ class IoOps(AbstractOps):
         return _rc
 
     # TODO: Test the below function when snaphot library is added.
-    def view_snaps_from_mount(self, mounts, snaps):
+    def view_snaps_from_mount(self, mounts: list, snaps: list) -> list:
         """
         View snaps from the mountpoint under ".snaps" directory
         Args:
@@ -324,14 +542,16 @@ class IoOps(AbstractOps):
             raise Exception("Failed to list snaps for some mountpoints")
         return _rc
 
-    def validate_io_procs(self, all_mounts_async_objs, mounts):
+    def validate_io_procs(self, all_mounts_async_objs: list,
+                          mounts: list) -> bool:
         """
         Validate whether IO was successful or not.
         Args:
-            all_mounts_async_objs (list): List of open connection descriptor as
-                returned by self.execute_command_async method.
+            all_mounts_async_objs (list): List of open connection descriptor
+                                          as returned by
+                                          self.execute_command_async method.
             mounts (list): List of all mountpoints on which process were
-                started.
+                           started.
         Returns:
             bool: True if IO is successful on all mounts. False otherwise.
         """
@@ -355,14 +575,15 @@ class IoOps(AbstractOps):
             return True
         return False
 
-    def wait_for_io_to_complete(self, all_mounts_async_objs, mounts):
+    def wait_for_io_to_complete(self, all_mounts_async_objs: list,
+                                mounts: list) -> bool:
         """
         Waits for IO to complete
         Args:
-            all_mounts_async_objs (list): List of open connection descriptor as
-                returned by g.run_async method.
+            all_mounts_async_objs (list): List of open connection descriptor
+                                          as returned by g.run_async method.
             mounts (list): List of all mountpoints on which process were
-                started.
+                           started.
         Returns:
             bool: True if IO is complete on all mounts. False otherwise.
         """
@@ -383,13 +604,14 @@ class IoOps(AbstractOps):
 
         return _rc
 
-    def cleanup_mounts(self, mounts):
+    def cleanup_mounts(self, mounts: list) -> bool:
         """
         Removes all the data from all the mountpoints
         Args:
             mounts (list): List of all GlusterMount objs.
         Returns:
-            bool: True if cleanup is successful on all mounts. False otherwise.
+            bool: True if cleanup is successful on all mounts
+                  False otherwise.
         """
         if isinstance(mounts, dict):
             mounts = [mounts]
@@ -449,8 +671,10 @@ class IoOps(AbstractOps):
 
         return _rc_lookup
 
-    def compare_dir_structure_mount_with_brick(self, mnthost, mntloc,
-                                               brick_list, perm_type):
+    def compare_dir_structure_mount_with_brick(self, mnthost: str,
+                                               mntloc: str,
+                                               brick_list: list,
+                                               perm_type: int) -> bool:
         """
         Compare mount point dir structure with brick path along
         with stat param.
@@ -458,12 +682,12 @@ class IoOps(AbstractOps):
             mnthost (str): hostname or ip of mnt system
             mntloc (str) : mount location of gluster file system
             brick_list (list) : list of all brick ip's with brick path
-            type  (int) : 0 represent user permission
+            perm_type  (int) : 0 represent user permission
                         : 1 represent group permission
                         : 2 represent access permission
         Returns:
-            True if directory structure are same
-            False if structure is not same
+            bool: True if directory structure are same,
+                  False if structure is not same
         """
 
         statformat = ''
@@ -493,18 +717,19 @@ class IoOps(AbstractOps):
 
         return True
 
-    def run_linux_untar(self, clients, mountpoint, dirs=('.')):
+    def run_linux_untar(self, clients: list, mountpoint: str,
+                        dirs: tuple = ('.')) -> list:
         """Run linux kernal untar on a given mount point
         Args:
-        clients(str|list): Client nodes on which I/O
-                            has to be started.
-        mountpoint(str): Mount point where the volume is
-                        mounted.
+            clients(str|list): Client nodes on which I/O
+                               has to be started.
+            mountpoint(str): Mount point where the volume is
+                             mounted.
         Kwagrs:
-        dirs(tuple): A tuple of dirs where untar has to
-                        started. (Default:('.'))
+            dirs(tuple): A tuple of dirs where untar has to
+                         started. (Default:('.'))
         Returns:
-        list: Returns a list of process object
+            list: Returns a list of process object
         """
         # Checking and convering clients to list.
         if not isinstance(clients, list):
@@ -522,13 +747,84 @@ class IoOps(AbstractOps):
             for directory in dirs:
                 # copy linux tar to dir
                 cmd = (f"cp /root/linux-5.4.54.tar.xz "
-                       f"{mountpoint['mountpath']}/{directory}")
+                       f"{mountpoint}/{directory}")
                 self.execute_abstract_op_node(cmd, client)
 
                 # Start linux untar
-                cmd = ("cp /root/linux-5.4.54.tar.xz {}/{}"
-                       .format(mountpoint['mountpath'], directory))
+                cmd = ("cd {}/{}; tar -xvf linux-5.4.54.tar.xz"
+                       .format(mountpoint, directory))
                 async_obj = self.execute_command_async(cmd, client)
                 list_of_procs.append(async_obj)
 
         return list_of_procs
+
+    def get_fattr(self, fpath: str, fattr: str, node: str,
+                  encode: str = "hex") -> list:
+        """
+        Function to get the fattr on a said file on a remote folder.
+
+        Args:
+            1. fpath (str): The file path wherein the fattr is to be checked.
+            2. fattr (str): The fattr name to be checked.
+            3. node (str): The node wherein the fattr is to be checked.
+            4. encode (str): Optional parameter with default value of 'hex'.
+                             The encoding in which the return value s required.
+        Returns:
+            getfattr result on success. Exception thrown on failure.
+        """
+        cmd = (f"getfattr --absolute-names -e '{encode}' -n '{fattr}' {fpath}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        return ret['msg']
+
+    def set_fattr(self, fpath: str, fattr: str, node: str, value: str) -> list:
+        """
+        Function to set fattr on a path.
+
+        Args:
+            1. fpath (str): The file path wherein the fattr is to be set.
+            2. fattr (str): The fattr name to be set.
+            3. node (str): Node wherein the fattr is to be checked.
+            4. value (str): value to be set.
+        Returns:
+            setfattr result or exception will be raised on failure.
+        """
+        cmd = (f"setfattr -n {fattr} -v {value} {fpath}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        return ret['msg']
+
+    def delete_fattr(self, fpath: str, fattr: str, node: str) -> list:
+        """
+        Function to delete fattr set on a path.
+
+        Args:
+            1. fpath (str): The file path wherein the fattr is to be set.
+            2. fattr (str): The fattr to be delete
+            3. node (str): Node wherein the fattr is to be set.
+        Returns:
+            The setfattr result or exception will be raised on failure.
+        """
+        cmd = (f"setfattr -x {fattr} {fpath}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        return ret['msg']
+
+    def check_if_pattern_in_file(self, node: str,
+                                 pattern: str, fqpath: str):
+        """Check if a give pattern is in seen in file or not.
+
+        Args:
+            node (str): The hostname/ip of the remote system.
+            pattern(str): Pattern to be found in file.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            0: If pattern present in file.
+            1: If pattern not present in file.
+           -1: If command was not executed.
+        """
+        cmd = f"cat {fqpath} | grep {pattern}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            return -1
+        if len(ret['msg']) == 0:
+            return 1
+        return 0

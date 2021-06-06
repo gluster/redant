@@ -9,22 +9,22 @@
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+  GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
- Description:
+  Description:
       Test to check that default log level of CLI should be INFO
 """
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 # nonDisruptive;rep,dist,arb,disp,dist-rep,dist-arb,dist-disp
 
 
-class TestDefaultLogLevelOfCLI(AbstractTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """

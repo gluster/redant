@@ -4,6 +4,7 @@ operations on the glusterd service on the server
 or the client.
 """
 from time import sleep
+import configparser
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -13,7 +14,7 @@ class GlusterOps(AbstractOps):
     the glusterd service on either the client or the sever.
     """
 
-    def start_glusterd(self, node=None, enable_retry: bool = True):
+    def start_glusterd(self, node=None, enable_retry: bool = True) -> dict:
         """
         Starts the glusterd service on the specified node or nodes.
         Args:
@@ -59,9 +60,10 @@ class GlusterOps(AbstractOps):
 
         return ret
 
-    def restart_glusterd(self, node: str, enable_retry: bool = True):
+    def restart_glusterd(self, node: str, enable_retry: bool = True) -> dict:
         """
-        Restarts the glusterd service on the specified node or nodes.
+        Restarts the glusterd service on the specified node or list of
+        nodes.
         Args:
             node (str|list): The node(s) on which the glusterd service
                              is to be restarted.
@@ -84,7 +86,6 @@ class GlusterOps(AbstractOps):
         cmd = "systemctl restart glusterd"
 
         self.logger.info(f"Running {cmd} on {node}")
-        self.logger.info(f"Running {cmd} on {node}")
 
         ret = self.execute_command_multinode(cmd, node)
 
@@ -103,12 +104,12 @@ class GlusterOps(AbstractOps):
 
         return ret
 
-    def stop_glusterd(self, node=None):
+    def stop_glusterd(self, node=None) -> dict:
         """
         Stops the glusterd service on the specified node(s).
         Args:
             node (str|list): The node on which the glusterd service
-                        is to be stopped.
+                             is to be stopped.
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -147,7 +148,7 @@ class GlusterOps(AbstractOps):
 
         Args:
             node (str|list): A node or list of nodes on which glusterd
-            reset-failed has to be run.
+                             reset-failed has to be run.
 
         Returns:
             ret: A dictionary consisting
@@ -177,57 +178,75 @@ class GlusterOps(AbstractOps):
 
         return ret
 
-    def is_glusterd_running(self, node: str) -> bool:
+    def is_glusterd_running(self, servers: list) -> bool:
         """
         Checks the status of the glusterd service on the
-        specified node.
+        specified servers.
         Args:
-            node (str): The node on which the glusterd service
-                        is to be stopped.
+            servers (str|list): A server|list of server on which the glusterd
+                                service status has to be checked.
         Returns:
             1  : if glusterd active
             0  : if glusterd not active
            -1  : if glusterd not active and PID is alive
         """
-        is_active = 1
+        if not isinstance(servers, list):
+            servers = [servers]
+
         cmd1 = "systemctl status glusterd"
         cmd2 = "pidof glusterd"
 
-        self.logger.info(f"Running {cmd1} on {node}")
+        ret1 = self.execute_command_multinode(cmd1, servers)
 
-        ret = self.execute_command(cmd=cmd1, node=node)
-
-        if int(ret['error_code']) != 0:
-            is_active = 0
-            self.logger.info(f"Running {cmd2} on {node}")
-            ret1 = self.execute_command(cmd=cmd2, node=node)
-            if ret1['error_code'] == 0:
-                is_active = -1
+        is_active = 1
+        for ret_value in ret1:
+            if int(ret_value['error_code']) != 0:
+                is_active = 0
+                self.logger.error(f"Glusterd is not running on "
+                                  f"{ret_value['node']}")
+                ret2 = self.execute_command(cmd2, ret_value['node'])
+                if ret2['error_code'] == 0:
+                    is_active = -1
 
         return is_active
 
-    def wait_for_glusterd_to_start(self, node=None, timeout: int = 80):
+    def wait_for_glusterd_to_start(self, node: str, timeout: int = 80) -> bool:
         """
-        Checks if the glusterd has started already or waits for
+        Checks if glusterd has started already or waits for
         it till the timeout is reached.
 
         Args:
-            node (str|list): A node or list of nodes wherein this is
-            to be executed.
+            node (str|list): Node on which this has to be executed.
             timeout (int) : We cannot wait till eternity right :p
 
         Returns:
-            bool: True if glusterd is running on the node(s) or else False.
+            bool: True if glusterd started on the node or else False.
         """
-        if not isinstance(node, list) and node is not None:
-            node = [node]
-        elif node is None:
-            return False
-
         count = 0
         while count <= timeout:
             ret = self.is_glusterd_running(node)
-            if not ret:
+            if ret == 1:
+                return True
+            sleep(1)
+            count += 1
+        return False
+
+    def wait_for_glusterd_to_stop(self, node: str, timeout: int = 80) -> bool:
+        """
+        Checks the glusterd has stopeed already or waits for
+        it till the timeout is reached.
+
+        Args:
+            node (str|list): Node on which this is to be executed.
+            timeout (int) : We cannot wait till eternity right :p
+
+        Returns:
+            bool: True if glusterd stopped on the node or else False.
+        """
+        count = 0
+        while count <= timeout:
+            ret = self.is_glusterd_running(node)
+            if ret == 0:
                 return True
             sleep(1)
             count += 1
@@ -241,13 +260,73 @@ class GlusterOps(AbstractOps):
 
         Args:
             node (str): Node wherein the gluster version is
-            checked.
+                        checked.
 
         Returns:
             str: The gluster version value.
         """
         cmd = "gluster --version"
 
-        ret = self.execute_abstract_op_multinode(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node)
 
-        return ret['msg'].split(' ')[1]
+        return ret['msg'][0].rstrip('\n').split(' ')[1]
+
+    def get_state(self, node: str) -> dict:
+        """
+        Function to get the gluster state data.
+
+        Args:
+            node (str): Node wherein the command is to be run.
+        Returns:
+            State dictionary.
+        """
+        cmd = ("gluster get-state")
+
+        ret = self.execute_abstract_op_node(cmd, node)
+        file_path = ret['msg'][0][ret['msg'][0].find('/'):-1]
+
+        cmd = (f"cat {file_path}")
+        ret = self.execute_abstract_op_node(cmd, node)
+        state_string_val = "".join(ret['msg'])
+        config = configparser.ConfigParser()
+        config.read_string(state_string_val)
+        return {section: dict(config.items(section)) for section in
+                config.sections()}
+
+    def get_glusterd_process_count(self, node: str) -> int:
+        """
+        Get the gluster process count for a given node.
+
+        Args:
+            node (str): Node on which glusterd process has to be counted.
+
+        Returns:
+            int: Number of glusterd processes running on the node.
+            None: If the command fails to execute.
+        """
+        ret = self.execute_abstract_op_node("pgrep -c glusterd", node,
+                                            False)
+        if ret['error_code'] == 0:
+            count_of_proc = int(ret['msg'][0].rstrip('\n'))
+            return count_of_proc
+        else:
+            return None
+
+    def get_all_gluster_process_count(self, node: str) -> int:
+        """
+        Get all gluster related process count for a given node.
+
+        Args:
+            node (str): Node on which gluster process has to be counted.
+
+        Returns:
+            int: Number of gluster processes running on the node.
+            None: If the command fails to execute.
+        """
+        cmd = "pgrep -c '(glusterd|glusterfsd|glusterfs)'"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] == 0:
+            count_of_proc = int(ret['msg'][0].rstrip('\n'))
+            return count_of_proc
+        else:
+            return None

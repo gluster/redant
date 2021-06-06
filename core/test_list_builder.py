@@ -15,23 +15,37 @@ import sys
 from comment_parser.comment_parser import extract_comments
 
 
+valid_vol_types = ['rep', 'dist', 'arb', 'disp', 'dist-rep', 'dist-arb',
+                   'dist-disp', "Generic"]
+
+
 class TestListBuilder:
     """
     The test list builder is concerned with parsing
     avialable TCs and their options so as to pass on the
     TC related data to the test_runner.
     """
-    tests_to_run: list = []
     excluded_tests: list = []
-    tests_run_dict: dict = {"disruptive": [],
-                            "nonDisruptive": []}
-    tests_component_dir: dict = {"functional": set([]),
-                                 "performance": set([]),
-                                 "example": set([])}
+    tests_path_list = []
+    r_ndtest_list = []
+    dt_ndtest_list = []
+    dtr_ndtest_list = []
+    a_ndtest_list = []
+    dta_ndtest_list = []
+    ds_ndtest_list = []
+    dtds_ndtest_list = []
+    gen_ndtest_list = []
+    dtest_list = []
+    test_nd_volc_dict = {}
+    test_nd_vold_dict = {}
+    nd_category = {'rep': r_ndtest_list, 'dist': dt_ndtest_list,
+                   'arb': a_ndtest_list, 'disp': ds_ndtest_list,
+                   'dist-rep': dtr_ndtest_list, 'dist-arb': dta_ndtest_list,
+                   'dist-disp': dtds_ndtest_list, 'Generic': gen_ndtest_list}
 
     @classmethod
     def create_test_dict(cls, path: str, excluded_tests: list,
-                         single_tc: bool = False) -> tuple:
+                         single_tc: bool = False):
         """
         This method creates a dict of TCs wrt the given directory
         path.
@@ -41,46 +55,8 @@ class TestListBuilder:
             single_tc (bool): If the user wants to run a single TC instead
             of the complete suite.
         Returns:
-            A Tuple of the following format
-            ({
-              "disruptive" : [
-                              {
-                                "volType" : [replicated,..],
-                                "modulePath" : "../glusterd/test_sample.py",
-                                "moduleName" : "test_sample.py",
-                                "componentName" : "glusterd",
-                                "testClass" : <class>,
-                                "testType" : "functional/performance/example"
-                              },
-                              {
-                              ...
-                              }
-                             ],
-              "nonDisruptive" : [
-                                 {
-                                   "volType" : [replicated,..],
-                                   "modulePath" : "../DHT/test_sample.py",
-                                   "moduleName" : "test_sample.py",
-                                   "componentName" : "DHT",
-                                   "testClass" : <class>,
-                                   "testType" : "functional"
-                                 },
-                                 {
-                                 ...
-                                 }
-                                ]
-            },
-            {
-                "functional" : ["component1", "component2",...],
-                "performance" : ["component1", "component2", ...],
-                "example" : ["component1"...]
-            },
-            [
-                ../glusterd/test_1,
-                ../glusterd/test_2
-            ])
-
         """
+        global valid_vol_types
         # Obtaining list of paths to the TCs under given directory.
         if not single_tc:
             try:
@@ -89,137 +65,136 @@ class TestListBuilder:
                         if tfile.endswith(".py") and tfile.startswith("test"):
                             test_case_path = os.path.join(root, tfile)
                             if test_case_path not in excluded_tests:
-                                cls.tests_to_run.append(test_case_path)
-                            else:
-                                cls.excluded_tests.append(test_case_path)
+                                cls.tests_path_list.append(test_case_path)
 
             except Exception as e:
                 print(e)
-                return {}
-        else:
-            if path not in excluded_tests:
-                cls.tests_to_run.append(path)
-            else:
-                cls.excluded_tests.append(path)
+        elif path not in excluded_tests:
+            cls.tests_path_list.append(path)
 
         # Extracting the test case flags and adding module level info.
-        for test_case_path in cls.tests_to_run:
+        for test_case_path in cls.tests_path_list:
             test_flags = cls._get_test_module_info(test_case_path)
             test_dict = {}
-            test_dict["volType"] = test_flags["volType"]
             test_dict["modulePath"] = test_case_path
             test_dict["moduleName"] = test_case_path.split("/")[-1]
             test_dict["componentName"] = test_case_path.split("/")[-2]
             test_dict["testClass"] = cls._get_test_class(test_case_path)
             test_dict["testType"] = test_case_path.split("/")[-3]
-            cls.tests_component_dir[test_dict["testType"]].add(
-                test_case_path.split("/")[-2])
-            cls.tests_run_dict[test_flags["tcNature"]].append(test_dict)
+            test_dict["tcNature"] = test_flags["tcNature"]
+            if test_flags["tcNature"] == "disruptive":
+                for vol_type in test_flags["volType"]:
+                    if vol_type not in valid_vol_types:
+                        raise Exception(f"{test_dict['modulePath']} has"
+                                        f" invalid volume type {vol_type}")
+                    temp_test_dict = copy.deepcopy(test_dict)
+                    temp_test_dict["volType"] = copy.deepcopy(vol_type)
+                    cls.dtest_list.append(temp_test_dict)
+            elif test_flags["tcNature"] == "nonDisruptive":
+                for vol_type in test_flags["volType"]:
+                    if vol_type not in valid_vol_types:
+                        raise Exception(f"{test_dict['modulePath']} has"
+                                        f" invalid volume type {vol_type}")
+                    temp_test_dict = copy.deepcopy(test_dict)
+                    cls.nd_category[vol_type].append(temp_test_dict)
+            else:
+                raise Exception(f"Invalid test nature : "
+                                f" {test_flags['tcNature']}")
 
-        # Cleaning up the component list
-        for test_type in cls.tests_component_dir:
-            cls.tests_component_dir[test_type] =\
-                list(cls.tests_component_dir[test_type])
-
-        return (cls.tests_run_dict, cls.tests_component_dir,
-                cls.excluded_tests)
+        cls.spec_vol = []
+        nd_tests_count = 0
+        for (vol_t, listv) in cls.nd_category.items():
+            if vol_t == "Generic":
+                continue
+            nd_tests_count += len(listv)
+            if single_tc and len(listv) != 0:
+                cls.spec_vol.append(vol_t)
+        if nd_tests_count > 0:
+            cls._create_nd_special_tests()
 
     @classmethod
-    def pre_test_run_list_modify(cls, test_dict: dict) -> dict:
+    def get_spec_vol_types(cls):
         """
-        The test list dictionary is currently condensed so as to
-        make it easy for creating log dirs and other operations like
-        obtaining test class information. But test runs will be based on the
-        type of the volume being mentioned for a given test case. Hence the
-        list will be modified accordingly.
-        Args:
-            test_dict (dict)
-            example:
-            {
-              "disruptive" : [
-                              {
-                                "volType" : ["type1", "type2", ...],
-                                "modulePath" : "../glusterd/test_sample.py",
-                                "moduleName" : "test_sample.py",
-                                "componentName" : "glusterd",
-                                "testClass" : <class>,
-                                "testType" : "functional/performance/example"
-                              },
-                              {
-                              ...
-                              }
-                             ],
-              "nonDisruptive" : [
-                                 {
-                                   "volType" : ["type1", "type2", ...],
-                                   "modulePath" : "../DHT/test_sample.py",
-                                   "moduleName" : "test_sample.py",
-                                   "componentName" : "DHT",
-                                   "testClass" : <class>,
-                                   "testType" : "functional/performance"
-                                 },
-                                 {
-                                 ...
-                                 }
-                                ]
-            }
-
+        Method to obtain the list of volume types for which this
+        specifc test has to run.
         Returns:
-            new_test_dict (dict)
-            example:
-            {
-              "disruptive" : [
-                              {
-                                "volType" : "type1",
-                                "modulePath" : "../glusterd/test_sample.py",
-                                "moduleName" : "test_sample.py",
-                                "componentName" : "glusterd",
-                                "testClass" : <class>,
-                                "testType" : "functional/performance/example"
-                              },
-                              {
-                                "volType" : "type2",
-                                "modulePath" : "../glusterd/test_sample.py",
-                                "moduleName" : "test_sample.py",
-                                "componentName" : "glusterd",
-                                "testClass" : <class>,
-                                "testType" : "functional/performance/example"
-                              },
-                              {
-                              ...
-                              }
-                             ],
-              "nonDisruptive" : [
-                                 {
-                                   "volType" : "type1",
-                                   "modulePath" : "../DHT/test_sample.py",
-                                   "moduleName" : "test_sample.py",
-                                   "componentName" : "DHT",
-                                   "testClass" : <class>,
-                                   "testType" : "functional/performance"
-                                 },
-                                 {
-                                   "volType" : "type2",
-                                   "modulePath" : "../DHT/test_sample.py",
-                                   "moduleName" : "test_sample.py",
-                                   "componentName" : "DHT",
-                                   "testClass" : <class>,
-                                   "testType" : "functional/performance"
-                                 },
-                                 {
-                                 ...
-                                 }
-                                ]
-            }
+            list
         """
-        new_test_dict = {"disruptive": [], "nonDisruptive": []}
-        for test_concur_state in test_dict:
-            for test in test_dict[test_concur_state]:
-                for vol_type in test["volType"]:
-                    temp_test_dict = copy.deepcopy(test)
-                    temp_test_dict["volType"] = copy.deepcopy(vol_type)
-                    new_test_dict[test_concur_state].append(temp_test_dict)
-        return new_test_dict
+        return cls.spec_vol
+
+    @classmethod
+    def _create_nd_special_tests(cls):
+        """
+        Method to create the test dictionary for the special
+        tests, create and destroy volume which are used for
+        non Disruptive test cases.
+        """
+        special_paths = ['tests/vol_create_test.py',
+                         'tests/vol_destroy_test.py']
+        for path in special_paths:
+            special_nd = {}
+            special_nd['modulePath'] = path
+            special_nd['moduleName'] = path.split("/")[-1]
+            special_nd['testClass'] = cls._get_test_class(path)
+            special_nd['tcNature'] = 's'
+            if cls.test_nd_volc_dict == {}:
+                cls.test_nd_volc_dict = special_nd
+            else:
+                cls.test_nd_vold_dict = special_nd
+
+    @classmethod
+    def get_special_tests_dict(cls) -> list:
+        """
+        Method to get special tests dictionary.
+        """
+        if cls.test_nd_volc_dict == {}:
+            return []
+        return [cls.test_nd_volc_dict, cls.test_nd_vold_dict]
+
+    @classmethod
+    def get_test_path_list(cls) -> list:
+        """
+        Method to return the list of test case paths.
+        Return:
+            list of test case paths.
+        """
+        return cls.tests_path_list
+
+    @classmethod
+    def get_dtest_list(cls) -> list:
+        """
+        Method to return the dtest_list.
+        Returns:
+            dtest_list
+        """
+        return cls.dtest_list
+
+    @classmethod
+    def get_ndtest_list(cls, vol_type: str) -> list:
+        """
+        Method to return ndtest_list of a volume type
+        as requested.
+        Arg:
+            vol_type (list)
+        Returns:
+            *_ndtest_list (list)
+        """
+        global valid_vol_types
+        if vol_type not in valid_vol_types:
+            return []
+        return cls.nd_category[vol_type]
+
+    @classmethod
+    def get_nd_tests_count(cls) -> int:
+        """
+        Method to obtain a count of nd tests.
+        Returns integer value.
+        """
+        global valid_vol_types
+        count = 0
+        for vol_type in valid_vol_types:
+            count += len(cls.nd_category[vol_type])
+        return count
 
     @classmethod
     def _get_test_module_info(cls, tc_path: str) -> dict:

@@ -4,10 +4,10 @@ the creation of different volume types.
 """
 # nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
-from tests.abstract_test import AbstractTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestCase(AbstractTest):
+class TestCase(NdParentTest):
     """
     The test case contains one function to test
     for the creation of different types of files and
@@ -18,3 +18,5 @@ class TestCase(AbstractTest):
         """
         In the testcase:
         """
+        ret = redant.get_subvols(self.vol_name, self.server_list[0])
+        redant.logger.info(f"{self.volume_type} : {ret}")

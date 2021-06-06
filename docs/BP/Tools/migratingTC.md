@@ -16,6 +16,14 @@ source idealogy.
 
 ## Cool, but what needs to be done ?
 
+## Automatic migration.
+
+There are couple of tools which have been created.
+1. One for the migration of test case from glusto-test to redant repo.[migrate_tc.py](../../tools/migrate_tc.py)
+2. Seconds script for converting the glusto-test test file into redantish model. [glusto_redant_parser.py](../../tools/glusto_redant_parser.py)
+
+## Manual migration.
+
 The very first step would be to fork both the redant and glusto-test repos.
 For those who don't know where to find glusto-tests, the repository lives at
 [glusto-tests](https://github.com/gluster/glusto-tests).

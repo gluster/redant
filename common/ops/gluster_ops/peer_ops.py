@@ -13,16 +13,17 @@ from common.ops.abstract_ops import AbstractOps
 class PeerOps(AbstractOps):
     """
     PeerOps class provides APIs to perform operations
-    like adding and deleting the peers,checking the status
+    like probing and detaching the peers,checking the status
     and list of peers in the pool.
     """
 
-    def peer_probe(self, server: str, node: str):
+    def peer_probe(self, server: str, node: str,
+                   excep: bool = True) -> dict:
         """
         Adds a new peer to the cluster
         Args:
-            node (str): The node in the cluster where peer probe is to be run
             server (str): The server to probe
+            node (str): The node in the cluster where peer probe is to be run
 
         Returns:
             ret: A dictionary consisting
@@ -36,16 +37,81 @@ class PeerOps(AbstractOps):
 
         cmd = f'gluster --xml peer probe {server}'
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
-    def peer_detach(self, server: str, node: str, force: bool = False):
+    def peer_probe_servers(self, servers: list, node: str,
+                           validate: bool = True,
+                           time_delay: int = 10) -> bool:
+        """
+        Probe specified servers and validate whether probed servers
+        are in cluster and connected state if validate is set to True.
+        Args:
+            servers (str|list): A server|List of servers to be peer probed.
+            node (str): Node on which command has to be executed.
+        Kwargs:
+            validate (bool): True to validate if probed peer is in cluster and
+                             connected state. False otherwise. Default is True
+            time_delay (int): time delay before validating peer status.
+                              Defaults to 10 seconds.
+        Returns:
+            bool: True on success and False on failure.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+        else:
+            servers = servers[:]
+
+        if node in servers:
+            servers.remove(node)
+
+        # Get list of nodes from 'gluster pool list'
+        nodes_in_pool_list = self.nodes_from_pool_list(node)
+        if nodes_in_pool_list is None:
+            self.logger.error("Unable to get nodes from gluster pool list. "
+                              "Failing peer probe.")
+            return False
+
+        for server in servers:
+            if server not in nodes_in_pool_list:
+                ret = self.peer_probe(server, node, False)
+                if 'output' not in ret['msg']:
+                    return False
+                if (ret['error_code'] != 0
+                        or ret['msg']['output'] != 'success'
+                        or ret['msg']['opRet'] != '0'):
+                    self.logger.error("Failed to peer probe the node"
+                                      f" {server}")
+                    return False
+                else:
+                    self.logger.info("Successfully peer probed the node"
+                                     f" {server}")
+
+        # Validating whether peer is in connected state after peer probe
+        if validate:
+            sleep(time_delay)
+            if not self.is_peer_connected(servers, node):
+                self.logger.error("Validation after peer probe failed.")
+                return False
+            else:
+                self.logger.info("Validation after peer probe is successful.")
+
+        return True
+
+    def peer_detach(self, server: str, node: str, force: bool = False,
+                    excep: bool = True) -> dict:
         """
         Detach the specified server.
         Args:
-            node (str): Node on which command has to be executed.
             server (str): Server to be detached from the cluster
+            node (str): Node on which command has to be executed.
+            force (bool): if set to true will execute the peer
+                          detach command with force option.
+            excep (bool): exception flag to bypass the exception if the
+                          peer detach command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
 
         Kwargs:
             force (bool): option to detach peer. Defaults to False.
@@ -66,58 +132,83 @@ class PeerOps(AbstractOps):
         else:
             cmd = f"gluster --xml peer detach {server} --mode=script"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         return ret
 
-    def peer_status(self, node: str):
+    def peer_detach_servers(self, servers: list, node: str,
+                            force: bool = False, validate: bool = True,
+                            time_delay: int = 10) -> bool:
+        """
+        Detach peers and validate status of peer if validate is set to True.
+
+        Args:
+            servers (str|list): A server|List of servers to be detached.
+            node (str): Node on which command has to be executed.
+
+        Kwargs:
+            force (bool): option to detach peer.
+                          Defaults to False.
+            validate (bool): True if status of the peer needs to be validated,
+                             False otherwise. Defaults to True.
+            time_delay (int): time delay before executing validating peer.
+                              status. Defaults to 10 seconds.
+
+        Returns:
+            bool: True on success and False on failure.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+        else:
+            servers = servers[:]
+
+        if node in servers:
+            servers.remove(node)
+
+        for server in servers:
+            ret = self.peer_detach(server, node, force, False)
+            if (ret['error_code'] != 0
+                    or ret['msg']['output'] != 'success'
+                    or ret['msg']['opRet'] != '0'):
+                self.logger.error(f"Failed to detach the node {server}")
+                return False
+
+        # Validating whether peer detach is successful
+        if validate:
+            sleep(time_delay)
+            nodes_in_pool = self.nodes_from_pool_list(node)
+            rc = True
+            for server in servers:
+                if server in nodes_in_pool:
+                    self.logger.error(f"Peer {server} still in pool")
+                    rc = False
+            if not rc:
+                self.logger.error("Validation after peer detach failed.")
+            else:
+                self.logger.info("Validation after peer detach is successful")
+
+        return True
+
+    def get_peer_status(self, node: str) -> list:
         """
         Checks the status of the peers
         Args:
             node (str): Node on which command has to be executed.
 
         Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-
+            'peer'(list|dict): If single peer is present then dict is returned
+                               If multiple peers are present then list is
+                               returned
         """
 
         cmd = 'gluster --xml peer status'
 
         ret = self.execute_abstract_op_node(cmd, node)
 
-        return ret
+        if ret['msg']['peerStatus'] is None:
+            return None
 
-    def pool_list(self, node: str) -> list:
-        """
-        Runs the command gluster pool list on `node`
-        Args:
-            node (str): Node on which command has to be executed.
-
-        Returns:
-            list : gives list of all the UUID's of all the connected peers
-        """
-
-        cmd = 'gluster --xml pool list'
-
-        ret = self.execute_abstract_op_node(cmd, node)
-
-        peer_list = []
-
-        peers = ret['msg']['peerStatus']['peer']
-        if not isinstance(peers, list):
-            peers = [peers]
-
-        for peer in peers:
-            if peer['connected'] == '1':
-                peer_list.append(peer['uuid'])
-
-        return peer_list
+        return ret['msg']['peerStatus']['peer']
 
     def nodes_from_pool_list(self, node: str) -> list:
         """
@@ -128,13 +219,16 @@ class PeerOps(AbstractOps):
 
         Returns:
             list: List of nodes in pool on Success, Empty list on failure.
+            None on failure
         """
         pool_list_data = self.get_pool_list(node)
 
         if pool_list_data is None:
-            self.logger.info("Unable to get Nodes")
+            self.logger.error("Unable to get Nodes")
+            return None
 
         nodes = []
+
         # WHY?
         # The pool_list_data is a simple dict of the form
         # {'uuid' : 'val', 'hostname' : 'val',...} when the node isn't
@@ -149,12 +243,12 @@ class PeerOps(AbstractOps):
         try:
             if 'hostname' in pool_list_data.keys():
                 nodes.append(pool_list_data['hostname'])
-                return nodes
-        except:
+                return self.convert_hosts_to_ip(nodes, node)
+        except Exception:
             pass
         for item in pool_list_data:
             nodes.append(item['hostname'])
-        return nodes
+        return self.convert_hosts_to_ip(nodes, node)
 
     def get_pool_list(self, node: str) -> list:
         """
@@ -170,13 +264,12 @@ class PeerOps(AbstractOps):
         cmd = 'gluster pool list --xml'
 
         ret = self.execute_abstract_op_node(cmd, node)
-
         peer_dict = ret['msg']
-
         pool_list = peer_dict['peerStatus']['peer']
+
         return pool_list
 
-    def convert_hosts_to_ip(self, node_list: list, node: str):
+    def convert_hosts_to_ip(self, node_list: list, node: str) -> list:
         """
         Redant framework works with IP addresses ( especially rexe )
         hence it makes sense to have a function to handle the conversion
@@ -184,9 +277,11 @@ class PeerOps(AbstractOps):
         a localhost term, that is replaced by the node value.
         Args:
             node_list (list): List of nodes obtained wherein the node can
-            be represented by ip or hostname.
+                              be represented by ip or hostname.
             node (str): The node which is represented by localhost. Has to
-            be replaced by corresponding IP.
+                        be replaced by corresponding IP.
+        Returns:
+            list : list of converted IPs
         """
         if 'localhost' in node_list:
             node_list.remove('localhost')
@@ -205,7 +300,7 @@ class PeerOps(AbstractOps):
         Args:
             node_list (list): All nodes which are to be part of the cluster.
         Returns:
-            Boolean value: Representing whether the cluster created failed
+            bool: Representing whether the cluster created failed
             or passed.
         """
         if len(node_list) in [0, 1]:
@@ -245,3 +340,130 @@ class PeerOps(AbstractOps):
             if nd == node:
                 continue
             self.peer_detach(nd, node)
+
+    def is_peer_connected(self, servers: list, node: str) -> bool:
+        """
+        Checks whether specified peers are in cluster and 'Connected' state.
+        Args:
+            servers (str|list): A server|List of servers to be validated.
+            node (str): Node on which peer status has to be executed.
+        Returns
+            bool : True on success (peer in cluster and connected), False on
+                   failure.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+        else:
+            servers = servers[:]
+
+        for index, server in enumerate(servers):
+            servers[index] = socket.gethostbyname(server)
+
+        if node in servers:
+            servers.remove(node)
+
+        peer_status_list = self.get_peer_status(node)
+        if peer_status_list is None:
+            return False
+        elif not isinstance(peer_status_list, list):
+            peer_status_list = [peer_status_list]
+
+        is_connected = True
+        for peer_stat in peer_status_list:
+            if (socket.gethostbyname(peer_stat['hostname']) in servers
+                and (peer_stat['stateStr'] != "Peer in Cluster"
+                     or peer_stat['state'] != '3'
+                     or peer_stat['connected'] != '1')):
+                self.logger.error(f"Peer '{peer_stat['hostname']}' "
+                                  f"not in connected state")
+                is_connected = False
+
+        return is_connected
+
+    def wait_for_peers_to_connect(self, servers: list, node: str,
+                                  wait_timeout: int = 10) -> bool:
+        """
+        Checks nodes are peer connected with timeout.
+        Args:
+            servers (str|list): A server|List of server hosts on which peer
+                                status has to be checked.
+            node: node on which cmd has to be executed.
+            wait_timeout: timeout to retry connected status check in node.
+        Returns:
+            bool : True if all the peers are connected.
+                   False otherwise.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        count = 0
+        while count <= wait_timeout:
+            ret = self.is_peer_connected(servers, node)
+            if ret:
+                return True
+            sleep(1)
+            count += 1
+        return False
+
+    def validate_peers_are_connected(self, server_list: list,
+                                     node: str = None) -> bool:
+        """
+        Validate whether each server in the cluster is connected to
+        all other servers in cluster.
+
+        Args:
+            server_list (list) : List of servers
+            node (str) : node on which caommand is to be executed
+
+        Returns (bool): True if all peers are in connected
+                        state with other peers.
+                        False otherwise.
+        """
+        # if the setup has single node cluster
+        # then by-pass this validation
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+
+        if len(server_list) == 1:
+            return True
+
+        # validate if peer is connected from all
+        # the servers
+        self.logger.info(f"Validating if {server_list} are connnected in"
+                         f" the cluster")
+
+        for server in server_list:
+            self.logger.info(f"Is peer connected {server}->{server_list}")
+            ret = self.is_peer_connected(server_list, server)
+
+            if not ret:
+                self.logger.error(f"Servers are not in connected state"
+                                  f" from {server}")
+                return False
+
+        self.logger.info("Successfully validated. All the servers"
+                         " in the cluster are connected")
+        if node is None:
+            node = random.choice(server_list)
+        self.get_peer_status(node)
+        return True
+
+    def wait_till_all_peers_connected(self, server_list: list,
+                                      timeout=100) -> bool:
+        """
+        Wait till all said peers are connected.
+
+        Args:
+            server_list (str)
+        Returns:
+            bool: True if everything is perfect. Else False
+        """
+        iter_v = 0
+        while iter_v < timeout:
+            ret = self.validate_peers_are_connected(server_list)
+            if ret:
+                return True
+            sleep(1)
+            iter_v += 1
+
+        return False

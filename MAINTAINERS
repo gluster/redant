@@ -7,30 +7,21 @@ have a question about a particular subset and also to provide a set of names
 to be CC'd when submitting a patch to obtain appropriate review.
 
 In general, if you have a question about inclusion of a patch, you should
-consult gluster-devel@gluster.org and not any specific individual privately.
+consult any of the active developers in the github discussions or issues.
 
 Descriptions of section entries:
 
 	M: Main contact that knows and takes care of this area
-	L: Mailing list that is relevant to this area
-	W: Web-page with status/info
-	S: Status, one of the following:
-	   Supported:	Someone is actually paid to look after this.
-	   Maintained:	Someone actually looks after it.
-	   Odd Fixes:	It has a maintainer but they don't have time to do
-			much other than throw the odd patch in. See below.
-	   Orphan:	No current maintainer [but maybe you could take the
-			role as you write your new code].
-	   Obsolete:	Old code. Something tagged obsolete generally means
-			it has been replaced by a better system and you
-			should be using that.
     P: Peer for a component
 
+Initial ideation and High Level Design:
+------------------
+Barak Sason Rofman <bsasonro@redhat.com>
 
 Project Architects:
 -------------------
-M: Barak Sason Rofman <bsasonro@redhat.com>
-P: Srijan Sivakumar <ssivakum@redhat.com>
+M: Srijan Sivakumar <ssivakum@redhat.com>
+P: Nikhil Ladha <nladha@redhat.com>
 
 Dev Team:
 ---------
@@ -44,4 +35,4 @@ Special Thanks
 --------------
 
 Redant would not be possible without the contributions of:
-# Let's add people in here once they migrate out of project :p
+Barak Sason Rofman <bsasonro@redhat.com>

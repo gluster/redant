@@ -15,16 +15,16 @@
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-Description:
-    Test quorum cli commands in glusterd
+  Description:
+      Test quorum cli commands in glusterd
 """
 
 # disruptive;rep,dist,disp,arb,dist-arb,dist-rep
 
-from tests.abstract_test import AbstractTest
+from tests.d_parent_test import DParentTest
 
 
-class TestGlusterDQuorumCLICommands(AbstractTest):
+class TestCase(DParentTest):
 
     def _set_and_validate_quorum_option(self, options_dict: dict,
                                         vol: str = 'all'):

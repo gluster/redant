@@ -81,8 +81,8 @@ while getopts "p:flh" opt; do
         ;;
         f)
             echo "Flake operation starts"
-            flake8 $FILEPATH --ignore=C901,F811,F841,E722,E226,E402 --count --select=E9,F63,F7,F82 --show-source --statistics
-            flake8 $FILEPATH --ignore=C901,F811,F841,E722,E226,E402 --count --max-complexity=10 --max-line-length=79 --statistics
+            flake8 $FILEPATH --ignore=C901,F811,F841,E722,E226,E402,W503,W605 --count --select=E9,F63,F7,F82 --show-source --statistics
+            flake8 $FILEPATH --ignore=C901,F811,F841,E722,E226,E402,W503,W605 --count --max-complexity=10 --max-line-length=79 --statistics
         ;;
         l)
             echo "Lint operation starts"
