@@ -15,16 +15,31 @@
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
- Description:
-      Gluster should detect drop of outbound traffic as network failure
+  Description:
+    Gluster should detect drop of outbound traffic as network failure
 """
+
+import traceback
+from tests.d_parent_test import DParentTest
 
 # disruptive;rep,dist,disp,arb,dist-arb,dist-rep
 
-from tests.abstract_test import AbstractTest
 
+class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(DParentTest):
 
-class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(AbstractTest):
+    def terminate(self):
+        """
+        Update the iptables to remove the DROP rule
+        """
+        try:
+            if self.iptablerule_set:
+                cmd = "iptables -D OUTPUT -p tcp -m tcp --dport 24007 -j DROP"
+                self.redant.execute_abstract_op_node(cmd, self.server1)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -35,49 +50,54 @@ class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(AbstractTest):
         4) Execute few Gluster CLI commands like volume status, peer status
         5) Gluster CLI commands should fail with suitable error message
         """
-        server1 = self.server_list[0]
+        self.server1 = self.server_list[1]
 
         # Set iptablerule_set as false initially
-        iptablerule_set = False
+        self.iptablerule_set = False
 
         # Set iptable rule on one node to drop outbound glusterd traffic
         cmd = "iptables -I OUTPUT -p tcp --dport 24007 -j DROP"
-        redant.execute_io_cmd(cmd, server1)
+        redant.execute_abstract_op_node(cmd, self.server1)
 
         # Update iptablerule_set to true
-        iptablerule_set = True
+        self.iptablerule_set = True
 
         # Confirm if the iptable rule was added successfully
         iptable_rule = "'OUTPUT -p tcp -m tcp --dport 24007 -j DROP'"
-        vol_types = "dist,disp,arb,dist-arb,dist-rep"
-        cmd = f"iptables -S OUTPUT | grep,{vol_types} {iptable_rule}"
-        redant.execute_io_cmd(cmd, server1)
+        cmd = f"iptables -S OUTPUT | grep {iptable_rule} | wc -l"
+        ret = redant.execute_abstract_op_node(cmd, self.server1, False)
+        if ret['error_code'] != 0:
+            raise Exception("Failed to get the iptables rule output")
+
+        if int(ret['msg'][0].rstip('\n')) != 1:
+            raise Exception("Failed to find the rule in the iptables"
+                            "rule list")
 
         # Fetch number of nodes in the pool, except localhost
-        pool_list = redant.nodes_from_pool_list(server1)
+        pool_list = redant.nodes_from_pool_list(self.server1)
         peers_count = len(pool_list) - 1
 
         # Gluster CLI commands should fail
         # Check volume status command
-        try:
-            redant.get_volume_status(node=server1)
-            redant.logger.error("Unexpected: gluster volume status command "
-                                "did not return any error")
-        except Exception:
-            redant.logger.info("Volume status command failed with expected"
-                               " error message")
+        vol_status = redant.get_volume_status(self.vol_name, self.server1,
+                                              excep=False)
+        if vol_status is None:
+            raise Exception("Failed to get the vol status")
+
+        err_count_staging = ret['msg']['opErrStr'].count("Staging failed on")
+        err_count_locking = ret['msg']['opErrStr'].count("Locking failed on")
+        if (err_count_staging != peers_count
+           or err_count_locking != peers_count):
+            raise Exception("Unexpected: Number of nodes on which command"
+                            " failed is not equal to the peers count")
 
         # Check peer status command and all peers are in 'Disconnected' state
-        peer_list = redant.get_peer_status(server1)
+        peer_list = redant.get_peer_status(self.server1)
 
         for peer in peer_list:
-            if peer["connected"] == 0:
+            if peer["connected"] != '0':
                 redant.logger.error("Unexpected: All the peers are not in "
                                     "'Disconnected' state")
-            if peer["stateStr"] == "Peer in CLuster":
+            if peer["stateStr"] != "Peer in CLuster":
                 redant.logger.error("Peer in Cluster", "Unexpected:All the "
                                     "peers not in 'Peer in Cluster' state")
-
-        if iptablerule_set:
-            cmd = "iptables -D OUTPUT -p tcp -m tcp --dport 24007 -j DROP"
-            redant.execute_io_cmd(cmd, server1)
