@@ -69,7 +69,7 @@ class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(DParentTest):
         if ret['error_code'] != 0:
             raise Exception("Failed to get the iptables rule output")
 
-        if int(ret['msg'][0].rstip('\n')) != 1:
+        if int(ret['msg'][0].rstrip('\n')) != 1:
             raise Exception("Failed to find the rule in the iptables"
                             "rule list")
 
@@ -84,10 +84,10 @@ class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(DParentTest):
         if vol_status is None:
             raise Exception("Failed to get the vol status")
 
-        err_count_staging = ret['msg']['opErrStr'].count("Staging failed on")
-        err_count_locking = ret['msg']['opErrStr'].count("Locking failed on")
-        if (err_count_staging != peers_count
-           or err_count_locking != peers_count):
+        err_str = vol_status['msg']['opErrstr']
+        err_count_staging = err_str.count("Staging failed on")
+        err_count_locking = err_str.count("Locking failed on")
+        if peers_count not in (err_count_staging, err_count_locking):
             raise Exception("Unexpected: Number of nodes on which command"
                             " failed is not equal to the peers count")
 
@@ -96,8 +96,8 @@ class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(DParentTest):
 
         for peer in peer_list:
             if peer["connected"] != '0':
-                redant.logger.error("Unexpected: All the peers are not in "
-                                    "'Disconnected' state")
-            if peer["stateStr"] != "Peer in CLuster":
-                redant.logger.error("Peer in Cluster", "Unexpected:All the "
-                                    "peers not in 'Peer in Cluster' state")
+                raise Exception("Unexpected: All the peers are not in "
+                                "'Disconnected' state")
+            if peer["stateStr"] != 'Peer in Cluster':
+                raise Exception("Unexpected:All the peers not in"
+                                " 'Peer in Cluster' state")
