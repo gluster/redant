@@ -158,3 +158,8 @@ class MachineOps(AbstractOps):
         cmd = "umount /mnt/* && rm -rf /mnt/*"
         for node in client_list:
             self.execute_abstract_op_node(cmd, node, False)
+
+        # Flush the IP tables
+        cmd = "iptables --flush"
+        for node in server_list:
+            self.execute_abstract_op_node(cmd, node, False)
