@@ -44,6 +44,11 @@ engineers being spartans who understand logic only from code is what we feel as
 . We need to be civilized humans and make it easy for the next person coming 
 in to just glance at what it is, why it is and how it is.
 
+
+
+For those who want a pure markdown experience and a deeper dive...
+
+
 # Readme Docs
 For those who want to take the red pill, this is where you go, the Readme index
 contains all the thought process, decision making and everything documented 
@@ -57,7 +62,8 @@ how to get things running and that's it, take the blue pill.
 
 # Contents
 * [Set up](#set-up)
-* [About](#flags)
+* [Those looking to get into the action of migrating test cases](#those-looking-to-get-into-the-action-of-migrating-test-cases)
+* [Detailed Design](#design-document)
 
 ## Set up
 
@@ -107,12 +113,12 @@ For example,
 
 One can also run the scripts given under the tools dir which will reduce the
 lengthy commands to be typed out everytime. Check out the README.md at the link
-[Tools-README](./tools/README.md)
+[Tools-README](./docs/BP/Tools/README.md)
 
-## Those looking to get into the action of migrating test cases.
+## Those looking to get into the action of migrating test cases
 
 Please refer the doc : [migratingTC.md](./docs/BP/Tools/migratingTC.md)
 
-## For those looking for Redant inspiration
+## Design Document
 
-Design Doc Link : [Gluster-test Design-doc](https://docs.google.com/document/d/1D8zUSmg-00ey711gsqvS6G9i_fGN2cE0EbG4u1TOsaQ/edit?usp=sharing)
+[Redant Design Doc](https://docs.google.com/document/d/1oJvUvvtfE5G8WlhFOg_gFbJwO2Ua7uCq12teqrjmwVU/edit?usp=sharing)
