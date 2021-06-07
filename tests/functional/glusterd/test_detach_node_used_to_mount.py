@@ -26,17 +26,14 @@ from random import randint
 from tests.d_parent_test import DParentTest
 
 
-# disruptive;rep
+# disruptive;
 class TestCase(DParentTest):
 
     def terminate(self):
         try:
-            ret = (self.redant.
-                   wait_for_rebalance_to_complete(self.vol_name,
-                                                  self.server_list[0]))
+            ret = self.rebalance_stop(self.vol_name, self.server_list[0])
             if not ret:
-                raise Exception("Rebalance operation has not completed."
-                                "Wait timeout.")
+                raise Exception("Rebalance operation failed to stop")
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -61,6 +58,21 @@ class TestCase(DParentTest):
         11.Create a new directory from the client on the mount point.
         12.Check for directory in both replica sets.
         """
+        # Check if servers are sufficient to run the test case.
+        if len(self.server_list) < 4:
+            raise Exception("Servers are not sufficient to run the test")
+
+        self.volume_type = 'rep'
+        self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
+        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
+
+        # Setup Volume
+        redant.setup_volume(self.volume_name1, self.server_list[0], conf_dict,
+                            self.server_list, self.brick_roots)
+
+        # Mount volume onto client
+        redant.volume_mount(self.server_list[3], self.volume_name1,
+                            self.mountpoint, self.client_list[0])
 
         # Creating 100 files.
         command = ('for number in `seq 1 100`;do touch '
@@ -68,7 +80,7 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Detach N4 from the list.
-        redant.peer_detach(self.client_list[0], self.server_list[0])
+        redant.peer_detach(self.server_list[3], self.server_list[0])
 
         # Creating a dir.
         command = f"mkdir -p {self.mountpoint}/dir1"
@@ -80,15 +92,15 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Forming brick list
-        brick_str = redant.form_brick_cmd(self.server_list, self.brick_roots,
-                                          self.vol_name, 3, True)
+        brick_dict, brick_str = redant.form_brick_cmd(self.server_list,
+                                                      self.brick_roots,
+                                                      self.vol_name, 3, True)
 
         # Adding bricks
         redant.add_brick(self.vol_name, brick_str, self.server_list[0],
                          replica_count=3)
 
         # Start rebalance for volume.
-        redant.logger.info("Starting rebalance on the volume")
         redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Creating 100 files.
@@ -96,7 +108,10 @@ class TestCase(DParentTest):
                    + self.mounts[0].mountpoint + '/file$number; done')
         redant.execute_abstract_op_node(command, self.client_list[0])
 
-        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        # Forming brivk list of added bricks
+        brick_list = []
+        for server in brick_dict:
+            brick_list += brick_dict[server]
 
         # Check for files on bricks.
         attempts = 10
