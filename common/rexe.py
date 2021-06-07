@@ -167,9 +167,9 @@ class Rexe:
         if not self.connect_flag:
             return async_obj
         try:
-            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
             async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
-                         "stderr": stderr}
+                         "stderr": stderr, "stdin": stdin}
         except Exception as e:
             # Reconnection to be done.
             node_ssh_client = paramiko.SSHClient()
@@ -185,10 +185,10 @@ class Rexe:
             except Exception as e:
                 self.logger.error(f"Connection failure. Exceptions {e}.")
             # On rebooting the node
-            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
 
             async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
-                         "stderr": stderr}
+                         "stderr": stderr, "stdin": stdin}
         return async_obj
 
     def check_async_command_status(self, async_obj: dict) -> bool:
