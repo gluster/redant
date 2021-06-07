@@ -39,7 +39,7 @@ class TestCase(DParentTest):
 
     def run_test(self, redant):
 
-        # # create a 2x3 volume
+        # create a 2x3 volume
         conf_hash = self.vol_type_inf[self.conv_dict['dist-rep']]
         redant.setup_volume(self.vol_name, self.server_list[0],
                             conf_hash, self.server_list[:-1],
@@ -49,8 +49,10 @@ class TestCase(DParentTest):
         # stop glusterd on a random node of the cluster
         random_server_index = random.randint(1, num_of_servers - 2)
         random_server = self.server_list[random_server_index]
-        cmd = "systemctl stop glusterd"
-        redant.execute_command_async(cmd, random_server)
+        redant.stop_glusterd(random_server)
+
+        if not redant.wait_for_glusterd_to_stop(random_server):
+            raise Exception(f"Glusterd not stopped in {random_server}")
 
         # set a option on volume, stat-prefetch on
         self.options = {"stat-prefetch": "on"}
@@ -84,8 +86,10 @@ class TestCase(DParentTest):
         # stop glusterd on a random server from cluster
         random_server_index = random.randint(1, num_of_servers - 1)
         random_server = self.server_list[random_server_index]
-        cmd = "systemctl stop glusterd"
-        redant.execute_command_async(cmd, random_server)
+        redant.stop_glusterd(random_server)
+
+        if not redant.wait_for_glusterd_to_stop(random_server):
+            raise Exception(f"Glusterd not stopped in {random_server}")
 
         # peer probe a new node
         redant.peer_probe_servers(self.server_list[num_of_servers-1],
