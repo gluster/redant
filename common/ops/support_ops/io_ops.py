@@ -806,8 +806,8 @@ class IoOps(AbstractOps):
         """
         List of xattr for filepath on remote system.
         Args:
-            host (str): The hostname/ip of the remote system.
             fqpath (str): The fully-qualified path to the file.
+            node (str): The hostname/ip of the remote system.
         Kwargs:
         encode_hex(bool): Fetch xattr in hex if True
                             (Default:False)
