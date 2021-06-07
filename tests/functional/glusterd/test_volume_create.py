@@ -16,7 +16,7 @@
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
   Description:
-  Test glusterd behavior with the gluster volume create command
+    Test glusterd behavior with the gluster volume create command
 """
 
 import random
@@ -75,32 +75,19 @@ class TestCase(DParentTest):
         self.volume_type2 = 'dist'
         self.volume_name2 = f"{self.test_name}-{self.volume_type2}-2"
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type2]]
-        excep = True
-        try:
-            redant.volume_create_with_custom_bricks(self.volume_name2,
-                                                    self.server_list[0],
-                                                    conf_dict, brick_cmd,
-                                                    brick_dict)
-            excep = False
-        except Exception:
-            redant.logger.info("Expected: Failed to create a volume "
-                               "with previously used bricks.")
-
-        if not excep:
+        ret = redant.volume_create_with_custom_bricks(self.volume_name2,
+                                                      self.server_list[0],
+                                                      conf_dict, brick_cmd,
+                                                      brick_dict, excep=False)
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created the volume "
                             "with previously used bricks")
 
         # create a volume with already existing volume name
-        try:
-            redant.setup_volume(self.volume_name1, self.server_list[0],
-                                conf_dict, self.server_list,
-                                self.brick_roots)
-            excep = False
-        except Exception:
-            redant.logger.info("Expected: Failed to create the volume with "
-                               "already existing volname")
-
-        if not excep:
+        ret = redant.setup_volume(self.volume_name1, self.server_list[0],
+                                  conf_dict, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created the volume with "
                             "already existing volname")
 
@@ -115,17 +102,11 @@ class TestCase(DParentTest):
         non_existing_brick = " " + str(self.server_list[0]) + non_exist_path
         brick_cmd += non_existing_brick
 
-        try:
-            redant.volume_create_with_custom_bricks(self.volume_name3,
-                                                    self.server_list[0],
-                                                    conf_dict, brick_cmd,
-                                                    brick_dict)
-            excep = False
-        except Exception:
-            redant.logger.info("Expected: Failed to create the volume with "
-                               "non existing brick path")
-
-        if not excep:
+        ret = redant.volume_create_with_custom_bricks(self.volume_name3,
+                                                      self.server_list[0],
+                                                      conf_dict, brick_cmd,
+                                                      brick_dict, excep=False)
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created the volume "
                             "with non existing brick path")
 
@@ -151,16 +132,10 @@ class TestCase(DParentTest):
 
         # Creating a volume with bricks which are part of another
         # cluster should fail
-        try:
-            redant.setup_volume(self.volume_name3, self.server_list[0],
-                                conf_dict, self.server_list,
-                                self.brick_roots)
-            excep = False
-        except Exception:
-            redant.logger.info("Expected: Failed to create the volume with "
-                               "bricks which are part of another cluster")
-
-        if not excep:
+        ret = redant.setup_volume(self.volume_name3, self.server_list[0],
+                                  conf_dict, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created the volume "
                             "with bricks which are part of another cluster")
 
@@ -180,15 +155,9 @@ class TestCase(DParentTest):
         self.volume_type4 = 'dist'
         self.volume_name4 = f"{self.test_name}-{self.volume_type4}-4"
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type4]]
-        try:
-            redant.setup_volume(self.volume_name4, self.server_list[0],
-                                conf_dict, self.server_list,
-                                self.brick_roots, True)
-            excep = False
-        except Exception:
-            redant.logger.info("Expected: Failed to create the volume with "
-                               "brick whose node is down")
-
-        if not excep:
+        ret = redant.setup_volume(self.volume_name4, self.server_list[0],
+                                  conf_dict, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created the volume "
                             "with brick whose node is down")
