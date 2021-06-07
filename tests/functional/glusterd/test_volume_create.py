@@ -53,9 +53,9 @@ class TestCase(DParentTest):
         redant.volume_start(self.volume_name1, self.server_list[0])
 
         # bring a brick down and volume start force should bring it to online
-        redant.logger.info("Get all the bricks of the volume")
-        bricks_list = redant.es.get_all_bricks_list(self.volume_name1)
-        if len(bricks_list) == 0:
+        bricks_list = redant.get_all_bricks(self.volume_name1,
+                                            self.server_list[0])
+        if bricks_list is None:
             raise Exception("Failed to get the brick list")
 
         ret = redant.bring_bricks_offline(self.volume_name1, bricks_list[0:2])
@@ -114,8 +114,8 @@ class TestCase(DParentTest):
         # to create a volume with bricks whose nodes are in different clusters
 
         # cleanup volumes
-        vol_list = redant.es.get_volnames()
-        if vol_list is None:
+        vol_list = redant.get_volume_list(self.server_list[0])
+        if len(vol_list) == 0 :
             raise Exception("Failed to get the volume list")
 
         for volume in vol_list:
