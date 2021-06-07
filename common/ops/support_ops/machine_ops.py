@@ -206,22 +206,22 @@ class MachineOps(AbstractOps):
             Example:
                 >>> bring_down_network_interface("10.70.43.68", timout=100)
         """
-        int_cmd = "netstat -i"
+        int_cmd = "ps -aux | grep glusterd"
         ret = self.execute_abstract_op_node(int_cmd,
                                             node, False)
-        print(f"\n{' '.join(ret['msg'])}\n")
-        int_cmd = "ps -aux | grep gluster"
-        ret = self.execute_abstract_op_node(int_cmd,
-                                            node, False)
-        print(f"\n{' '.join(ret['msg'])}\n")
+        pid = None
+        for i in ret['msg'][0].split(' '):
+            if i.isnumeric():
+                pid = i
+                break
 
-        int_cmd = "/sbin/ip a | grep BROADCAST"
+        int_cmd = f"cat /proc/{pid}/net/route"
         ret = self.execute_abstract_op_node(int_cmd,
                                             node, False)
         if ret['error_code'] != 0:
             raise Exception("Failed: Could not find the interface")
 
-        interface = ret['msg'][0].split(":")[1].strip()
+        interface = ret['msg'][1].split('\t')[0]
 
         cmd = (f"ip link set {interface} down\nsleep {timeout}\n"
                f"ip link set {interface} up")
