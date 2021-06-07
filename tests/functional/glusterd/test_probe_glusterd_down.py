@@ -26,17 +26,6 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def terminate(self):
-
-        for server in self.server_list:
-            if not self.redant.is_peer_connected(self.server_list,
-                                                 server):
-                ret = self.redant.peer_probe(server,
-                                             self.server_list[0])
-                if ret['error_code'] != 0:
-                    raise Exception(f"Peer probe failed with "
-                                    f"{ret['error_msg']}")
-
     def _peer_probe_operations(self, hostname):
         # Trying to peer probe the node whose glusterd was stopped using IP
         ret = self.redant.peer_probe(self.server_list[1],

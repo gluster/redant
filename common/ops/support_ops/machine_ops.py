@@ -163,6 +163,7 @@ class MachineOps(AbstractOps):
         cmd = "iptables --flush"
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
+
     def is_rhel7(self, servers):
         """Function to get whether the server is RHEL-7
 
@@ -205,6 +206,15 @@ class MachineOps(AbstractOps):
             Example:
                 >>> bring_down_network_interface("10.70.43.68", timout=100)
         """
+        int_cmd = "netstat -i"
+        ret = self.execute_abstract_op_node(int_cmd,
+                                            node, False)
+        print(f"\n{' '.join(ret['msg'])}\n")
+        int_cmd = "ps -aux | grep gluster"
+        ret = self.execute_abstract_op_node(int_cmd,
+                                            node, False)
+        print(f"\n{' '.join(ret['msg'])}\n")
+
         int_cmd = "/sbin/ip a | grep BROADCAST"
         ret = self.execute_abstract_op_node(int_cmd,
                                             node, False)
