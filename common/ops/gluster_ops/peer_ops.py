@@ -378,6 +378,9 @@ class PeerOps(AbstractOps):
                                   f"not in connected state")
                 is_connected = False
 
+        if not is_connected:
+            return False
+
         # check which server in servers is not part of the pool itself
         peer_ips = [socket.gethostbyname(peer_stat['hostname']) for
                     peer_stat in peer_status_list]
