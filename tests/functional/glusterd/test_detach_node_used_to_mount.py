@@ -63,8 +63,8 @@ class TestCase(DParentTest):
         """
 
         # Creating 100 files.
-        command = ('for number in `seq 1 100`;do touch ' +
-                   self.mountpoint + '/file$number; done')
+        command = ('for number in `seq 1 100`;do touch '
+                   + self.mountpoint + '/file$number; done')
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Detach N4 from the list.
@@ -75,8 +75,8 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Creating 100 files.
-        command = ('for number in `seq 101 200`;do touch ' +
-                   self.mountpoint + '/file$number; done')
+        command = ('for number in `seq 101 200`;do touch '
+                   + self.mountpoint + '/file$number; done')
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Forming brick list
@@ -92,8 +92,8 @@ class TestCase(DParentTest):
         redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Creating 100 files.
-        command = ('for number in `seq 201 300`;do touch ' +
-                   self.mounts[0].mountpoint + '/file$number; done')
+        command = ('for number in `seq 201 300`;do touch '
+                   + self.mounts[0].mountpoint + '/file$number; done')
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
