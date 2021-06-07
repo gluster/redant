@@ -75,7 +75,7 @@ class MachineOps(AbstractOps):
                 return True
             time.sleep(1)
             iter_v += 1
-        status = self.check_power_node_status(node)
+        status = self.check_node_power_status(node)
         if status[node]:
             self.logger.info(f"{node} online.")
             return True
@@ -102,7 +102,7 @@ class MachineOps(AbstractOps):
                 return True
             time.sleep(1)
             iter_v += 1
-        status = self.check_power_node_status(node)
+        status = self.check_node_power_status(node)
         if not status[node]:
             self.logger.info(f"{node} offline.")
             return True
