@@ -115,7 +115,7 @@ class TestCase(DParentTest):
 
         # cleanup volumes
         vol_list = redant.get_volume_list(self.server_list[0])
-        if len(vol_list) == 0 :
+        if len(vol_list) == 0:
             raise Exception("Failed to get the volume list")
 
         for volume in vol_list:
