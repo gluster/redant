@@ -62,16 +62,12 @@ class TestCase(DParentTest):
         self.options = {"auth.allow": ip_list}
         redant.logger.info("Setting auth.allow with string of length "
                            f"{len(ip_list)} for {self.vol_name}")
-        try:
-            redant.set_volume_options(self.vol_name, self.options,
-                                      self.server_list[0])
-        except Exception:
-            redant.logger.info("EXPECTED: setting volume option with more than"
-                               " 4096 characters failed")
+
+        redant.set_volume_options(self.vol_name, self.options,
+                                  self.server_list[0])
+
         redant.restart_glusterd(self.server_list[0])
 
-        for server in self.server_list:
-            ret = redant.wait_for_glusterd_to_start(server)
-            if not ret:
-                raise Exception("glusterd is not running on"
-                                f"{self.server_list}")
+        if not redant.wait_for_glusterd_to_start(self.server_list[0]):
+            raise Exception("glusterd is not running on"
+                            f"{self.server_list}")
