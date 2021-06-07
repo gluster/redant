@@ -23,7 +23,7 @@ import random
 from tests.d_parent_test import DParentTest
 
 
-# disruptive;dist
+# disruptive;
 class TestCase(DParentTest):
 
     def run_test(self, redant):
@@ -62,8 +62,8 @@ class TestCase(DParentTest):
         if not ret:
             raise Exception("Failed to bring down the bricks")
 
-        ret = redant.volume_start(self.volume_name1, self.server_list[0],
-                                  force=True)
+        redant.volume_start(self.volume_name1, self.server_list[0],
+                            force=True)
 
         ret = redant.wait_for_bricks_to_come_online(self.volume_name1,
                                                     self.server_list,
@@ -75,27 +75,34 @@ class TestCase(DParentTest):
         self.volume_type2 = 'dist'
         self.volume_name2 = f"{self.test_name}-{self.volume_type2}-2"
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type2]]
+        excep = True
         try:
             redant.volume_create_with_custom_bricks(self.volume_name2,
                                                     self.server_list[0],
                                                     conf_dict, brick_cmd,
                                                     brick_dict)
-            raise Exception("Unexpected: Successfully created the volume "
-                            "with previously used bricks")
+            excep = False
         except Exception:
             redant.logger.info("Expected: Failed to create a volume "
                                "with previously used bricks.")
+
+        if not excep:
+            raise Exception("Unexpected: Successfully created the volume "
+                            "with previously used bricks")
 
         # create a volume with already existing volume name
         try:
             redant.setup_volume(self.volume_name1, self.server_list[0],
                                 conf_dict, self.server_list,
-                                self.brick_roots, True)
-            raise Exception("Unexpected: Successfully created the volume with "
-                            "already existing volname")
+                                self.brick_roots)
+            excep = False
         except Exception:
             redant.logger.info("Expected: Failed to create the volume with "
                                "already existing volname")
+
+        if not excep:
+            raise Exception("Unexpected: Successfully created the volume with "
+                            "already existing volname")
 
         # creating a volume with non existing brick path should fail
         self.volume_type3 = 'dist'
@@ -113,11 +120,14 @@ class TestCase(DParentTest):
                                                     self.server_list[0],
                                                     conf_dict, brick_cmd,
                                                     brick_dict)
-            raise Exception("Unexpected: Successfully created the volume "
-                            "with non existing brick path")
+            excep = False
         except Exception:
             redant.logger.info("Expected: Failed to create the volume with "
                                "non existing brick path")
+
+        if not excep:
+            raise Exception("Unexpected: Successfully created the volume "
+                            "with non existing brick path")
 
         # cleanup the volume and peer detach all servers. form two clusters,try
         # to create a volume with bricks whose nodes are in different clusters
@@ -144,25 +154,28 @@ class TestCase(DParentTest):
         try:
             redant.setup_volume(self.volume_name3, self.server_list[0],
                                 conf_dict, self.server_list,
-                                self.brick_roots, True)
-            raise Exception("Unexpected: Successfully created the volume "
-                            "with bricks which are part of another cluster")
+                                self.brick_roots)
+            excep = False
         except Exception:
             redant.logger.info("Expected: Failed to create the volume with "
                                "bricks which are part of another cluster")
 
+        if not excep:
+            raise Exception("Unexpected: Successfully created the volume "
+                            "with bricks which are part of another cluster")
+
         # form a cluster, bring a node down. try to create a volume when one of
         # the brick node is down
-        ret = redant.peer_detach(self.server_list[3], self.server_list[2])
+        redant.peer_detach(self.server_list[3], self.server_list[2])
 
-        ret = redant.peer_probe_servers(self.server_list, self.server_list[0])
+        redant.peer_probe_servers(self.server_list, self.server_list[0])
 
         # Taking random node from the first four nodes as the
         # volume getting created is using first four nodes
         # Excluding server_list[0]
         first_four_servers = self.server_list[:4]
         random_server = random.choice(first_four_servers[1:])
-        ret = redant.stop_glusterd(random_server)
+        redant.stop_glusterd(random_server)
 
         self.volume_type4 = 'dist'
         self.volume_name4 = f"{self.test_name}-{self.volume_type4}-4"
@@ -171,8 +184,11 @@ class TestCase(DParentTest):
             redant.setup_volume(self.volume_name4, self.server_list[0],
                                 conf_dict, self.server_list,
                                 self.brick_roots, True)
-            raise Exception("Unexpected: Successfully created the volume "
-                            "with brick whose node is down")
+            excep = False
         except Exception:
             redant.logger.info("Expected: Failed to create the volume with "
                                "brick whose node is down")
+
+        if not excep:
+            raise Exception("Unexpected: Successfully created the volume "
+                            "with brick whose node is down")
