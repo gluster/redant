@@ -378,6 +378,22 @@ class PeerOps(AbstractOps):
                                   f"not in connected state")
                 is_connected = False
 
+        if not is_connected:
+            return False
+
+        # check which server in servers is not part of the pool itself
+        peer_ips = [socket.gethostbyname(peer_stat['hostname']) for
+                    peer_stat in peer_status_list]
+
+        if not set(servers).issubset(peer_ips):
+            servers_not_in_pool = list(set(servers).difference(peer_ips))
+            for index, server in enumerate(servers_not_in_pool):
+                if server not in servers:
+                    servers_not_in_pool[index] = (socket.
+                                                  gethostbyaddr(server)[0])
+            self.logger.error(f"Servers: {servers_not_in_pool} not "
+                              "yet added to the pool.")
+            return False
         return is_connected
 
     def wait_for_peers_to_connect(self, servers: list, node: str,
