@@ -129,5 +129,6 @@ class DParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-        self.redant.cleanup_brick_dirs()
+        self.redant.hard_terminate(self.server_list, self.client_list,
+                                   self.brick_roots)
         self.redant.deconstruct_connection()
