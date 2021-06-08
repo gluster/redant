@@ -24,7 +24,26 @@
         Example:
             redant.rebalance_start(self.vol_name, self.server_list[0], excep=False)
 
-2) **get_rebalance_status**<br>
+2) **rebalance_stop**<br>
+        This function stops rebalance on the specified volume.
+        
+        Args:
+            1. node (str): Node on which cmd has to be executed.
+            2. volname (str): volume name
+        
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        Example:
+            redant.rebalance_stop(self.vol_name, self.server_list[0])
+        
+
+3) **get_rebalance_status**<br>
         Function to get the rebalance status for a given volume.
 
         Args:
@@ -35,7 +54,7 @@
         Example:
             ret = redant.get_rebalance_status(self.vol_name, self.server_list)
 
-3) **wait_for_fix_layout_to_complete**<br>
+4) **wait_for_fix_layout_to_complete**<br>
         Function to wait for the fix layout to complete.
 
         Args:
@@ -47,7 +66,7 @@
 	Example:
             ret = self.wait_for_fix_layout_to_complete(self.server_list[0], self.vol_name)
 
-4) **wait_for_rebalance_to_complete**<br>
+5) **wait_for_rebalance_to_complete**<br>
         Function to wait for the rebalance to complete.
 
         Args:
