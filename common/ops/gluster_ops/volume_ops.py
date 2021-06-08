@@ -19,7 +19,7 @@ class VolumeOps(AbstractOps):
     """
 
     def setup_volume(self, volname: str, node: str, conf_hash: dict,
-                     server_list: list, brick_root: list,
+                     server_list: list, brick_root: dict,
                      force: bool = False, create_only: bool = False,
                      excep: bool = True):
         """
@@ -30,7 +30,7 @@ class VolumeOps(AbstractOps):
             conf_hash (dict): Config hash providing parameters for volume
                               creation.
             server_list (list): List of servers
-            brick_root (list): List of root path of bricks
+            brick_root (dict): List of root path of bricks
             force (bool): If this option is set to True, then create volume
                           will get executed with force option.
             create_only (bool): True, if only volume creation is needed.
@@ -71,7 +71,7 @@ class VolumeOps(AbstractOps):
         return ret
 
     def volume_create(self, volname: str, node: str, conf_hash: dict,
-                      server_list: list, brick_root: list,
+                      server_list: list, brick_root: dict,
                       force: bool = False, excep: bool = True):
         """
         Create the gluster volume with specified configuration
@@ -81,7 +81,7 @@ class VolumeOps(AbstractOps):
             conf_hash (dict): Config hash providing parameters for volume
                               creation.
             server_list (list): List of servers
-            brick_root (list): List of root path of bricks
+            brick_root (dict): List of root path of bricks
             force (bool): If this option is set to True, then create volume
                           will get executed with force option.
             excep (bool): exception flag to bypass the exception if the
@@ -99,6 +99,9 @@ class VolumeOps(AbstractOps):
                 - node : node on which the command got executed
 
         """
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+
         brick_cmd = ""
         mul_fac = 0
         cmd = ""

@@ -54,25 +54,21 @@ class TestCase(DParentTest):
         self.vol_type_inf[self.conv_dict[volume_type1]]['dist-count'] = 1
         vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type1]]
         ret = redant.volume_create(volume_name1, self.server_list[0],
-                                   vol_params_dict, [self.server_list[0]],
+                                   vol_params_dict, self.server_list[0],
                                    self.brick_roots, True)
 
         # Create a replicate volume on Node2 without force should fail
         volume_type2 = 'rep'
         volume_name2 = f"{self.test_name}-{volume_type2}-2"
         self.vol_type_inf[self.conv_dict[volume_type2]]['replica_count'] = 2
-        try:
-            vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type2]]
-            ret = redant.volume_create(volume_name2, self.server_list[1],
-                                       vol_params_dict, [self.server_list[1]],
-                                       self.brick_roots)
+        vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type2]]
+        ret = redant.volume_create(volume_name2, self.server_list[1],
+                                   vol_params_dict, self.server_list[1],
+                                   self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created "
                             "the replicate volume on node2 "
                             "without force")
-        except Exception:
-            redant.logger.info("Expected: Failed to create the replicate "
-                               f"volume {volume_name2} as  expected without "
-                               "force")
 
         # Create a replica volume on Node2 with force should succeed
         volume_type3 = 'rep'
@@ -80,17 +76,16 @@ class TestCase(DParentTest):
         self.vol_type_inf[self.conv_dict[volume_type3]]['replica-count'] = 3
         vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type3]]
         ret = redant.volume_create(volume_name3, self.server_list[1],
-                                   vol_params_dict, [self.server_list[1]],
+                                   vol_params_dict, self.server_list[1],
                                    self.brick_roots, True)
 
         # Perform peer probe from N1 to N2
-        try:
-            redant.peer_probe(self.server_list[1], self.server_list[0])
-        except Exception:
-            redant.logger.info("Expected: peer probe failed from "
-                               f"{self.server_list[0]} "
-                               f"to {self.server_list[1]} "
-                               "as expected")
+        ret = redant.peer_probe(self.server_list[1], self.server_list[0],
+                                False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: peer probe succeeded from "
+                            f"{self.server_list[0]} "
+                            f"to {self.server_list[1]}")
 
         # clean up all volumes
         volnames = redant.es.get_volnames()
@@ -114,12 +109,12 @@ class TestCase(DParentTest):
             raise Exception("Peer is not in connected state.")
 
         # Perform peer probe from N3 to N2 should fail
-        try:
-            redant.peer_probe(self.server_list[2], self.server_list[1])
-        except Exception:
-            redant.logger.info("Expected: peer probe failed from "
-                               f"{self.server_list[2]} to "
-                               f"{self.server_list[1]} as expected")
+        ret = redant.peer_probe(self.server_list[1], self.server_list[2],
+                                False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: peer probe succeeded from "
+                            f"{self.server_list[2]} to "
+                            f"{self.server_list[1]}")
 
         # Create a replica volume on N1 and N2 with force
         volume_type4 = 'rep'
@@ -131,12 +126,12 @@ class TestCase(DParentTest):
                                    self.brick_roots, True)
 
         # Perform peer probe from N3 to N1 should fail
-        try:
-            redant.peer_probe(self.server_list[0], self.server_list[2])
-        except Exception:
-            redant.logger.info("Expected: peer probe failed from "
-                               f"{self.server_list[2]} to "
-                               f"{self.server_list[0]} as expected")
+        ret = redant.peer_probe(self.server_list[0], self.server_list[2],
+                                False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: peer probe succeeded from "
+                            f"{self.server_list[2]} to "
+                            f"{self.server_list[0]}")
 
         # Perform peer probe from N1 to N3 should succed
         redant.peer_probe(self.server_list[2], self.server_list[0])
@@ -165,13 +160,10 @@ class TestCase(DParentTest):
         ret = redant.volume_start(volume_name5, self.server_list[2], True)
 
         # Volume delete should fail without stopping volume
-        try:
-            redant.volume_delete(volume_name5, self.server_list[2])
-            raise Exception("Unexpected Error: Volume deleted "
+        ret = redant.volume_delete(volume_name5, self.server_list[2], False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Volume deleted "
                             "successfully without stopping volume")
-        except Exception:
-            redant.logger.info("Expected: volume delete should fail without "
-                               f"stopping volume: {volume_name5}")
 
         # Volume stop with force
-        ret = redant.volume_stop(volume_name5, self.server_list[0], True)
+        redant.volume_stop(volume_name5, self.server_list[0], True)
