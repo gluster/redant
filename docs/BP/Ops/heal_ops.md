@@ -2,7 +2,7 @@
 
 [Heal Ops](../../../common/ops/gluster_ops/heal_ops.py) contains all the functions which are required for heal operations.
 
-1) **wait_fo_self_heal_daemons_to_be_online**<br>
+1) **wait_for_self_heal_daemons_to_be_online**<br>
         This function waits for the volume self-heal-daemons to be online until timeout.
 
         Args:
