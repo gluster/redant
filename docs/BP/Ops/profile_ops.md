@@ -87,4 +87,4 @@ The code can be found at [profile_ops.py](../../../common/ops/gluster_ops/profil
             False: If invalid option is given
 
         Example:
-            ret = redant.check_profile_options(['peek'])
+            ret = redant.check_profile_options('peek')
