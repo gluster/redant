@@ -555,7 +555,7 @@
             self.redant.wait_for_volume_process_to_be_online(self.vol_name,
                self.server_list[0], self.server_list, timeout=600)
 
-25) **get_subvols**
+25) **get_subvols**<br>
         This function helps in getting the subvolumes in the given volume.
 
         Args:
