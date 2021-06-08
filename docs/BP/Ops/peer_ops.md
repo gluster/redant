@@ -35,8 +35,6 @@ Args:
     node (str): Node on which command has to be executed.
     force (bool): if set to true will exceute the peer
                     detach command with force option.
-
-Kwargs:
     force (bool): option to detach peer. Defaults to False.
 ```
 
@@ -277,7 +275,6 @@ This function probes specified servers and validate whether the probed servers a
 Args:
     servers (str|list): A server|List of servers to be peer probed.
     node (str): Node on which command has to be executed.
-Kwargs:
     validate (bool): True to validate if probed peer is in cluster and
                         connected state. False otherwise. Default is True
     time_delay (int): time delay before validating peer status.
@@ -300,7 +297,6 @@ Args:
     servers (str|list): A server|List of servers to be detached.
     node (str): Node on which command has to be executed.
 
-Kwargs:
     force (bool): option to detach peer.
                   Defaults to False.
     validate (bool): True if status of the peer needs to be validated,
