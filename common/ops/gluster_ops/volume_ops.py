@@ -99,6 +99,12 @@ class VolumeOps(AbstractOps):
                 - node : node on which the command got executed
 
         """
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+
+        if not isinstance(brick_root, list):
+            brick_root = [brick_root]
+
         brick_cmd = ""
         mul_fac = 0
         cmd = ""

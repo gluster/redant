@@ -283,6 +283,9 @@ class PeerOps(AbstractOps):
         Returns:
             list : list of converted IPs
         """
+        if not isinstance(node_list, list):
+            node_list = [node_list]
+
         if 'localhost' in node_list:
             node_list.remove('localhost')
             node_list.append(node)

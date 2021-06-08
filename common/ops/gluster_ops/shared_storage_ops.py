@@ -73,8 +73,9 @@ class SharedStorageOps(AbstractOps):
         """
         counter = 0
         path = "/run/gluster/shared_storage"
+        ip_node = self.convert_hosts_to_ip(node)
         while counter < timeout:
-            ret = self.execute_abstract_op_node("df -h", node, False)
+            ret = self.execute_abstract_op_node("df -h", ip_node, False)
             if is_mounted and path in " ".join(ret['msg']):
                 self.logger.info("Shared storage is mounted")
                 return True
