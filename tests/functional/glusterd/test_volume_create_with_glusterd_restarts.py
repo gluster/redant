@@ -33,11 +33,6 @@ class TestCase(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         self.setup_done = True
-        ret = self.redant.peer_detach_servers(self.server_list[3:],
-                                              self.server_list[0],
-                                              True)
-        if not ret:
-            raise Exception("Cluster does not have 3 servers exactly")
 
     def terminate(self):
         """

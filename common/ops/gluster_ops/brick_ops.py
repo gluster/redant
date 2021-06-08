@@ -274,7 +274,7 @@ class BrickOps(AbstractOps):
 
         return ret
 
-    def form_brick_cmd(self, server_list: list, brick_root: list,
+    def form_brick_cmd(self, server_list: list, brick_root: dict,
                        volname: str, mul_fac: int, add_flag: bool = False):
         """
         # TODO: Function has to designed for dispersed, distributed-dispersed,
@@ -284,7 +284,7 @@ class BrickOps(AbstractOps):
 
         Args:
             server_list (list): List of servers
-            brick_root (list) : List of brick roots
+            brick_root (dict) : List of brick roots
             volname (str) : Name of the volume
             mul_fac (int) : Stores the number of bricks
                             needed to form the brick command
