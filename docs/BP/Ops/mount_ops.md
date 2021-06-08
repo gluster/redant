@@ -93,9 +93,9 @@
         'Transport endpoint not connected'. Hence, this functions comes out handy.
 
         Args:
-            mountpoint (str) : the mountpoint to check
-            client_node (str): client node to execute the command
-            timeout (int) : Timeout by default 20s.
+            1. mountpoint (str) : the mountpoint to check
+            2. client_node (str): client node to execute the command
+            3. timeout (int) : Timeout by default 20s.
 
         Returns:
             True if mountpoint gets connected within the timeout
