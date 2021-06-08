@@ -134,7 +134,7 @@ class MachineOps(AbstractOps):
 
         # Kill glusterfs and glusterfsd processes in the server machines.
         # TODO. Add other gluster related processes later.
-        cmd = "pkill glusterfs && pkill glusterfsd"
+        cmd = "pkill glusterfs; pkill glusterfsd"
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
@@ -144,7 +144,7 @@ class MachineOps(AbstractOps):
             self.execute_abstract_op_node(cmd, node, False)
 
         # Clear out the vol and peer file on the servers.
-        cmd = ("rm -rf /var/lib/glusterd/vols/* && rm -rf /var/lib/glusterd"
+        cmd = ("rm -rf /var/lib/glusterd/vols/*; rm -rf /var/lib/glusterd"
                "/peers/*")
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
@@ -155,7 +155,7 @@ class MachineOps(AbstractOps):
             self.execute_abstract_op_node(cmd, server, False)
 
         # Clear out the mountpoints in clients.
-        cmd = "umount /mnt/* && rm -rf /mnt/*"
+        cmd = "umount /mnt/*; rm -rf /mnt/*"
         for node in client_list:
             self.execute_abstract_op_node(cmd, node, False)
 
