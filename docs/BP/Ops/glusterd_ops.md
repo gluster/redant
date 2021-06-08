@@ -123,7 +123,6 @@
 			self.get_state(self.server_list[0])
 
 9) **get_gluster_version**<br>
-
 		This function checks the glusterfs version on the node.
 
         Args:
@@ -138,8 +137,7 @@
 
 	
 10) **get_glusterd_process_count**<br>
-
-		This function gets the gluster process count for a given node.
+	This function gets the gluster process count for a given node.
 
         Args:
             node (str): Node on which glusterd process has to be counted.
@@ -153,7 +151,6 @@
 
 
 11) **get_all_gluster_process_coun**<br>
-
 		This function gets all gluster related process count for a given node.
 
         Args:
