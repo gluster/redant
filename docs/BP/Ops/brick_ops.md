@@ -168,7 +168,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			offline_list = self.get_offline_bricks_list(self.vol_name, self.server_list[2])
 
-11) **bring_bricks_offline**<br>
+12) **bring_bricks_offline**<br>
 		Function to bring the given seet of bricks offline.
 
 		Args:
@@ -180,7 +180,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.bring_bricks_offline(self.volname, self.brick_list[2:4])
 
-12) **bring_bricks_online**<br>
+13) **bring_bricks_online**<br>
 		Function to bring the given seet of bricks online.
 
 		Args:
@@ -192,7 +192,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.bring_bricks_offline(self.volname, self.brick_list[2:4])
 
-13) **wait_for_bricks_to_go_offline**<br>
+14) **wait_for_bricks_to_go_offline**<br>
 		Function to wait till a given set of bricks go offline
 
 		Args:
@@ -204,7 +204,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.wait_for_bricks_to_go_offline(self.vol_name, self.brick_list, timeout)
 
-14) **wait_for_bricks_to_come_online**<br>
+15) **wait_for_bricks_to_come_online**<br>
 		Function to wait till a given set of bricks come online
 
 		Args:
@@ -217,7 +217,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.wait_for_bricks_to_come_online(self.volname, self.server_list, self.brick_list, timeout)
 
-15) **replace_brick_from_volume**<br>
+16) **replace_brick_from_volume**<br>
 		Function to replace a faulty brick from a volume.
 
 		Args:
@@ -241,7 +241,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 											 brick_to_replace,
 											 new_brick_to_replace)
 
-16) **are_bricks_online**<br>
+17) **are_bricks_online**<br>
 		Function to check if the given list of bricks are online.
 
 		Args:
@@ -256,7 +256,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			redant.are_bricks_online(self.vol_name, bricks_list, self.server_list[0])
 
-17) **get_brick_processes_count**<br>
+18) **get_brick_processes_count**<br>
 		This function helps in getting the brick process count for a given node.
 
         Args:
