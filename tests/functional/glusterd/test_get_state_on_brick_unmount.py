@@ -27,6 +27,16 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.setup_done = True
+        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_dict, self.server_list,
+                                 self.brick_roots, False, True)
+
     def terminate(self):
         # Mount the bricks which are unmounted as part of test
         if getattr(self, 'umount_host', None) and getattr(self, 'umount_brick',
@@ -53,9 +63,9 @@ class TestCase(DParentTest):
         if brick_list is None:
             raise Exception("Bricks list is empty")
 
-        select_brick = choice(brick_list[1:])
+        select_brick = choice(brick_list)
         self.umount_host, self.umount_brick = (
-            select_brick.split(':'))
+            select_brick[0:select_brick.rfind('/')].split(':'))
 
         # Verify mount entry in /etc/fstab
         ret = redant.check_if_pattern_in_file(self.umount_host,
@@ -69,15 +79,21 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(cmd, self.umount_host)
 
         # Run 'gluster get-state' and verify absence of any error
-        redant.get_state(self.server_list[0])
+        ret = redant.get_state(self.server_list[0])
+
+        # Create list of servers except the unmounted brick host
+        node_list = self.server_list[:]
+        node_list.remove(self.umount_host)
+
         # Create another volume
         self.volume_name1 = 'second_volume'
-        self.volume_type1 = 'dist-rep'
+        self.volume_type1 = 'dist'
         conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
 
         redant.setup_volume(self.volume_name1, self.server_list[0],
-                            conf_dict, self.server_list,
-                            self.brick_roots, True)
+                            conf_dict, node_list,
+                            self.brick_roots)
+
         # Run 'gluster get-state' and verify absence of any error after
         # creation of second-volume
         redant.get_state(self.server_list[0])
