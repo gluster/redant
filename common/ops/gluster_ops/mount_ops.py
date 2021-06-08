@@ -139,8 +139,8 @@ class MountOps(AbstractOps):
                             Moreover, no one likes to wait forever :)
 
         Returns:
-        True if mountpoint gets connected within the timeout
-        else False.
+            True if mountpoint gets connected within the timeout
+            else False.
 
         """
         cmd = f"stat -c '%a' {mountpoint}"
