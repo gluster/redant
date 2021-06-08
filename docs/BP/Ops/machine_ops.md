@@ -51,3 +51,45 @@
         	Boolean value. True if the node goes down within timeout or else False.
 		Example:
 			ret = self.wait_for_node_power_down(self.server_list[0])
+
+5) **hard_terminate**<br>
+
+        This function will clear out the env completely and is to be used with caution. Don't use it inside the non disruptive tests or else, you might have a string of failures.
+
+        Args:
+            server_list (list): List of gluster server machines
+            client_list (list): List of gluster client machines
+            brick_root (dict): Dictionary of brick roots and nodes.
+
+        Example:
+            self.redant.hard_terminate(self.server_list, self.client_list,
+                                       self.brick_root)
+
+6) **isrhel7**<br>
+
+        Function to check whether the machine or list of machines are rhel-7.
+
+        Args:
+        servers (str|list): A server|List of servers hosts to
+                            know the RHEL Version
+
+        Returns:
+        bool:Returns True, if its RHEL-7 else returns false
+        
+        Example:
+            self.is_rhel7(self.server_list)
+
+7) **bring_down_network_interface**<br>
+
+        This function brings the network interface down for a defined time
+
+            Args:
+                node (str): Node at which the interface has to be bought down
+                timeout (int): Time duration (in secs) for which network has to be down
+
+            Returns:
+                network_status(object): Returns a process object
+
+            Example:
+                self.bring_down_network_interface(self.server_list[0])
+        
