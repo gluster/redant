@@ -99,7 +99,7 @@
 		Example:
 			self.wait_for_glusterd_to_start(self.server_list[0])
 
-6) **wait_for_glusterd_to_stop**<br>
+7) **wait_for_glusterd_to_stop**<br>
 		Function to wait for glusterd to stop on said node.
 
 		Args:
@@ -112,7 +112,7 @@
 		Example:
 			self.wait_for_glusterd_to_stop(self.server_list[0])
 
-7) **get_state**<br>
+8) **get_state**<br>
 		Function to run gluster get-state command on a said node.
 
 		Args:
@@ -121,3 +121,44 @@
 			The get-state output in dictionary format on success
 		Example:
 			self.get_state(self.server_list[0])
+
+9) **get_gluster_version**<br>
+		This function checks the glusterfs version on the node.
+
+        Args:
+            node (str): Node wherein the gluster version is
+                        checked.
+
+        Returns:
+            str: The gluster version value.
+
+		Example:
+			ver = redant.get_gluster_version(self.server_list[0])
+
+	
+10) **get_glusterd_process_count**<br>
+	This function gets the gluster process count for a given node.
+
+        Args:
+            node (str): Node on which glusterd process has to be counted.
+
+        Returns:
+            int: Number of glusterd processes running on the node.
+            None: If the command fails to execute.
+
+		Example:
+			pcnt = redant.get_glusterd_process_count(self.server_list[0])
+
+
+11) **get_all_gluster_process_coun**<br>
+		This function gets all gluster related process count for a given node.
+
+        Args:
+            node (str): Node on which gluster process has to be counted.
+
+        Returns:
+            int: Number of gluster processes running on the node.
+            None: If the command fails to execute.
+
+		Example:
+			pcnt = redant.get_all_gluster_process_count(self.server_list[0])
