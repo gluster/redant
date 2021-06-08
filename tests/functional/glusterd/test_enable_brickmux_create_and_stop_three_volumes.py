@@ -16,10 +16,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 Description:
-A testcase to enable cluster.brick-multiplex and create three 1x3
-volumes and stop the volumes.
+  A testcase to enable cluster.brick-multiplex and create three 1x3
+  volumes and stop the volumes.
 """
-# disruptive;rep,dist-rep,dist,disp
+
+# disruptive;
 
 from tests.d_parent_test import DParentTest
 
@@ -56,17 +57,19 @@ class TestCase(DParentTest):
                                 self.brick_roots)
 
         # Checking brick process count.
-        brick_list = self.redant.get_all_bricks(self.vol_name,
-                                                self.server_list[0])
-        if brick_list is None:
-            raise Exception("Failed to get all bricks: "
-                            "Brick list is empty")
-        for brick in brick_list:
-            server = brick.split(":")[0]
-            count = redant.get_brick_processes_count(server)
-            if count != 1:
-                raise Exception(f"ERROR: More than one brick process "
-                                f" on {server}.")
+        for num in range(1, 4):
+            self.volname = f"test_volume_{num}"
+            brick_list = self.redant.get_all_bricks(self.volname,
+                                                    self.server_list[0])
+            if brick_list is None:
+                raise Exception("Failed to get all bricks: "
+                                "Brick list is empty")
+            for brick in brick_list:
+                server = brick.split(":")[0]
+                count = redant.get_brick_processes_count(server)
+                if count != 1:
+                    raise Exception(f"ERROR: More than one brick process "
+                                    f" on {server}.")
 
         # Stop three volumes one by one.
         for number in range(1, 4):
