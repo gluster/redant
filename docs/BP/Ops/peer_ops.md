@@ -10,9 +10,19 @@ This function is used to probe  a peer or add a new peer to the cluster. The arg
 Args:
     server (str): The server to probe
     node (str): The node in the cluster where peer probe is to be run
-```
 
-It returns a boolean value: True if the probe was successful, False if not.
+Returns:
+    ret: A dictionary consisting
+        - Flag : Flag to check if connection failed
+        - msg : message
+        - error_msg: error message
+        - error_code: error code returned
+        - cmd : command that got executed
+        - node : node on which the command got executed
+
+Example:
+    self.peer_probe(server, self.server_list[0])
+```
 
 ## 2. peer_detach()
 
@@ -41,16 +51,38 @@ It returns a dictionary `ret` which includes the following:
     node : node on which the command got executed
 ```
 
+```js
+Example:
+    self.peer_detach(server, self.server_list[0])
+```
+
 ## 3. get_peer_status()
 
 This function checks the status of the peer in the cluster.
 It takes the node as the only arg. This node is the one on which the peer status command has to be executed.
+
+```m
+Args:
+    node (str): Node on which command has to be executed.
+
+```
 
 It returns a list or a dictionary on the following criteria:
 
 dict: if single peer is present in the cluster
 list: if multiple peers are present in the cluster
 
+```m
+Returns:
+    'peer'(list|dict): If single peer is present then dict is returned
+                        If multiple peers are present then list is
+                        returned
+```
+
+```js
+Example:
+    self.get_peer_status(self.server_list[0])
+```
 
 ## 4. nodes_from_pool_list():
 
@@ -67,9 +99,36 @@ xxxxxx-xxxxx-xxxxxx-xxxxxxx    localhost       Connected
 It takes the node on which the command has to be run as the only args.
 It returns a list of nodes in the pool on successful execution while an empty list on failure.
 
+```m
+Args:
+    node (str): Node on which command has to be executed.
+
+Returns:
+    list: List of nodes in pool on Success, Empty list on failure.
+    None on failure
+```
+
+```js
+Example:
+    self.nodes_from_pool_list(self.server_list[0])
+```
+
 ## 5. get_pool_list()
 
 This function parses the output received from executing `gluster pool list`. It takes `node` on which the command has to be executed as the only argument. It creates a list of dictionary on successful execution and returns it. 
+
+```m
+Args:
+    node (str): Node on which command has to be executed.
+
+Returns:
+    list : list of dicts on success.
+```
+
+```js
+Example:
+    self.get_pool_list(self.server_list[0])
+```
 
 ## 6. convert_hosts_to_ip()
 
@@ -87,6 +146,18 @@ node (str): The node which is represented by localhost. Has to
 
 It returns a list consisting of the converted IP addresses.
 
+```m
+Returns:
+    list : list of converted IPs
+```
+
+```js
+Example:
+
+self.convert_host_to_op(self.server_list, self.server_list[0])
+```
+
+
 ## 7. create_cluster()
 
 This function helps in creating a cluster out of the given set of nodes irrespective of their existing cluster configurations.
@@ -100,6 +171,17 @@ Args:
 
 It returns a boolean value, which is True if the cluster was successfully created else False.
 
+```m
+Returns:
+    bool: Representing whether the cluster created failed
+    or passed.
+```
+
+```js
+Example:
+    self.create_cluster(self.server_list)
+```
+
 ## 8. delete_cluster()
 
 This functions helps in deleting the cluster or in other words, breaking down the cluster.
@@ -112,7 +194,10 @@ Args:
 ```
 This node_list contains the nodes that are a part of the cluster.
 These nodes are detached one by one from the cluster.
-
+```js
+Example:
+    self.delete_cluster(self.server_list)
+```
 ## 9. is_peer_connected()
 
 This function checks if a specific peer is connected in the cluster or attached to the cluster.
@@ -124,6 +209,16 @@ It takes the following args:
     servers (str|list): A server|List of servers to be validated.
 ```
 It returns True if the peer is connected else False.
+```m
+Returns
+    bool : True on success (peer in cluster and connected), False on
+            failure.
+```
+
+```js
+Example:
+    self.is_peer_connected(self.server_list, self.server_list[0])
+```
 
 ## 10. wait_for_peers_to_connect()
 
@@ -138,6 +233,17 @@ Args:
     wait_timeout: timeout to retry connected status check in node.
 ```
 
+```m
+Returns:
+    bool : True if all the peers are connected.
+           False otherwise.
+```
+
+```js
+Example:
+    self.wait_for_peers_to_connect(self.server_list, self.server_list[0])
+```
+
 ## 11. validate_peers_are_connected()
 
 This function helps in validating if each server is connected to all the other servers in the cluster. 
@@ -150,4 +256,79 @@ Args:
     node (str) : node on which peer status is to be checked
 ```
 
+```m
+Returns (bool): True if all peers are in connected
+                state with other peers.
+                False otherwise.
+```
+
+```js
+Example:
+    self.validate_peers_are_connected(self.server_list, self.server_list[0])
+```
+
 It returns True if all the peers are in connected state else False.
+
+## 12. peer_probe_servers()
+This function probes specified servers and validate whether the probed servers are in cluster and connected state if validate is set to True.
+
+```m
+
+Args:
+    servers (str|list): A server|List of servers to be peer probed.
+    node (str): Node on which command has to be executed.
+Kwargs:
+    validate (bool): True to validate if probed peer is in cluster and
+                        connected state. False otherwise. Default is True
+    time_delay (int): time delay before validating peer status.
+                        Defaults to 10 seconds.
+Returns:
+    bool: True on success and False on failure.
+```
+
+```js
+Example:
+    self.peer_probe_servers(self.server_list, self.server_list[0])
+```
+
+## 13. peer_detach_servers()
+This function detaches a set of servers and validates the same if `validate` is set to `True`.
+
+```m
+
+Args:
+    servers (str|list): A server|List of servers to be detached.
+    node (str): Node on which command has to be executed.
+
+Kwargs:
+    force (bool): option to detach peer.
+                  Defaults to False.
+    validate (bool): True if status of the peer needs to be validated,
+                     False otherwise. Defaults to True.
+    time_delay (int): time delay before executing validating peer.
+                      status. Defaults to 10 seconds.
+
+Returns:
+    bool: True on success and False on failure.
+```
+
+```js
+Example:
+    self.peer_detach_servers(self.server_list, self.server_list[0])
+```
+
+## 14. wait_till_all_peers_are_connected()
+
+This function helps in connecting all the peers by waiting till timeout.
+
+```m
+ Args:
+    server_list (str)
+Returns:
+    bool: True if everything is perfect. Else False
+```
+
+```js
+Example:
+    self.wait_till_all_peers_are_connected(self.server_list)
+```
