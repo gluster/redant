@@ -52,7 +52,7 @@
             conf_hash (dict): Config hash providing parameters for volume
             creation.
             server_list (list): List of servers
-            brick_root (list): List of root path of bricks
+            brick_root (dict): List of root path of bricks
         Kwargs:
             force (bool): If this option is set to True, then create volume
                           will get executed with force option. Default - False
