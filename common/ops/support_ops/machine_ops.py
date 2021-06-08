@@ -202,9 +202,6 @@ class MachineOps(AbstractOps):
 
             Returns:
                 network_status(object): Returns a process object
-
-            Example:
-                >>> bring_down_network_interface("10.70.43.68", timout=100)
         """
         int_cmd = "ps -aux | grep glusterd"
         ret = self.execute_abstract_op_node(int_cmd,
