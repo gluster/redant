@@ -56,7 +56,9 @@ class SharedStorageOps(AbstractOps):
 
         return True
 
-    def is_shared_volume_mounted(self, node: str, timeout: int = 20) -> bool:
+    def is_shared_volume_mounted_or_unmounted(self, node: str,
+                                              is_mounted=True,
+                                              timeout: int = 20) -> bool:
         """
         Checks if shared storage volume is mounted
 
@@ -66,21 +68,23 @@ class SharedStorageOps(AbstractOps):
             timeout(int) : Maximum time allowed to check for shared volume
 
         Returns:
-            bool : True if successfully disabled shared storage.
-                   False otherwise.
+            bool : True if shared storage volume is mounted/unmounted as
+                   expected, False otherwise.
         """
         counter = 0
         path = "/run/gluster/shared_storage"
         while counter < timeout:
             ret = self.execute_abstract_op_node("df -h", node, False)
-            if path in " ".join(ret['msg']):
+            if is_mounted and path in " ".join(ret['msg']):
                 self.logger.info("Shared storage is mounted")
+                return True
+            elif not is_mounted and path not in " ".join(ret['msg']):
+                self.logger.info("Shared storage not mounted")
                 return True
 
             sleep(2)
             counter += 2
 
-        self.logger.info("Shared storage not mounted")
         return False
 
     def check_gluster_shared_volume(self, node: str,
@@ -97,8 +101,8 @@ class SharedStorageOps(AbstractOps):
             timeout(int) : Maximum time allowed to check for shared volume
 
         Returns:
-            bool : True if successfully disabled shared storage.
-                   False otherwise.
+            bool : True if gluster_shared_storage volume present/absent in
+                   volume list as expected, False otherwise.
         """
         counter = 0
         self.logger.info("Waiting for shared storage to be"
