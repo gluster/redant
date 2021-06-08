@@ -20,6 +20,7 @@
    disabling shared storage
 """
 
+import traceback
 from random import choice
 from tests.d_parent_test import DParentTest
 
@@ -27,6 +28,19 @@ from tests.d_parent_test import DParentTest
 
 
 class TestSharedStorage(DParentTest):
+
+    def terminate(self):
+        """
+        Disable shared storage if the test fails midway
+        """
+        try:
+            if not self.redant.disable_shared_storage(self.server_list[0]):
+                raise Exception("Failed to disable shared storage volume")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _enable_and_check_shared_storage(self):
         """Enable and check shared storage is present"""
@@ -61,11 +75,13 @@ class TestSharedStorage(DParentTest):
         created.
         """
         for brick in brick_details:
-            ret = self.redant.is_shared_volume_mounted(brick.split(":")[0])
+            node = brick.split(":")[0]
+            ret = self.redant.is_shared_volume_mounted_or_unmounted(node,
+                                                                    mounted)
             if mounted and not ret:
                 raise Exception("Shared volume not mounted even after "
                                 "enabling it")
-            elif not mounted and ret:
+            elif not mounted and not ret:
                 raise Exception("Shared volume not unmounted even"
                                 " after disabling it")
 
