@@ -88,7 +88,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 
 		Args:
 			1. server_list (list): List of servers
-			2. brick_root (list) : List of brick roots
+			2. brick_root (dict) : List of brick roots
 			3. volname (str) : Name of the volume
 			4. mul_fac (int) : Stores the number of bricks needed to form the brick command
 			5. add_flag (bool): Optional parameter with default value of False. When set, the brick cmd creation will happen with respect to brick addition.

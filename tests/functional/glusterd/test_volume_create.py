@@ -87,7 +87,7 @@ class TestCase(DParentTest):
         ret = redant.setup_volume(self.volume_name1, self.server_list[0],
                                   conf_dict, self.server_list,
                                   self.brick_roots, excep=False)
-        if ret['error_code'] == 0:
+        if not ret:
             raise Exception("Unexpected: Successfully created the volume with "
                             "already existing volname")
 

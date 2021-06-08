@@ -83,7 +83,7 @@ class TestPeerStatus(DParentTest):
         redant.peer_probe(self.server_list[2], self.server_list[0])
 
         # Validate if first three peers are in connected state
-        ret = redant.wait_for_peers_to_connect(self.server_list,
+        ret = redant.wait_for_peers_to_connect(self.server_list[0:3],
                                                self.server_list[0])
         if not ret:
             raise Exception("Some peers are not in connected state")

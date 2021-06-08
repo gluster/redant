@@ -50,7 +50,6 @@ class PeerOps(AbstractOps):
         Args:
             servers (str|list): A server|List of servers to be peer probed.
             node (str): Node on which command has to be executed.
-        Kwargs:
             validate (bool): True to validate if probed peer is in cluster and
                              connected state. False otherwise. Default is True
             time_delay (int): time delay before validating peer status.
@@ -113,7 +112,6 @@ class PeerOps(AbstractOps):
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
-        Kwargs:
             force (bool): option to detach peer. Defaults to False.
 
         Returns:
@@ -146,7 +144,6 @@ class PeerOps(AbstractOps):
             servers (str|list): A server|List of servers to be detached.
             node (str): Node on which command has to be executed.
 
-        Kwargs:
             force (bool): option to detach peer.
                           Defaults to False.
             validate (bool): True if status of the peer needs to be validated,
@@ -269,7 +266,7 @@ class PeerOps(AbstractOps):
 
         return pool_list
 
-    def convert_hosts_to_ip(self, node_list: list, node: str) -> list:
+    def convert_hosts_to_ip(self, node_list: list, node: str = None) -> list:
         """
         Redant framework works with IP addresses ( especially rexe )
         hence it makes sense to have a function to handle the conversion
@@ -283,6 +280,9 @@ class PeerOps(AbstractOps):
         Returns:
             list : list of converted IPs
         """
+        if not isinstance(node_list, list):
+            node_list = [node_list]
+
         if 'localhost' in node_list:
             node_list.remove('localhost')
             node_list.append(node)
