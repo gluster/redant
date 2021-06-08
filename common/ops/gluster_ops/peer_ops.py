@@ -266,7 +266,7 @@ class PeerOps(AbstractOps):
 
         return pool_list
 
-    def convert_hosts_to_ip(self, node_list: list, node: str) -> list:
+    def convert_hosts_to_ip(self, node_list: list, node: str = None) -> list:
         """
         Redant framework works with IP addresses ( especially rexe )
         hence it makes sense to have a function to handle the conversion
@@ -280,6 +280,9 @@ class PeerOps(AbstractOps):
         Returns:
             list : list of converted IPs
         """
+        if not isinstance(node_list, list):
+            node_list = [node_list]
+
         if 'localhost' in node_list:
             node_list.remove('localhost')
             node_list.append(node)
