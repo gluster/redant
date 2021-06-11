@@ -828,3 +828,68 @@ class IoOps(AbstractOps):
         if len(ret['msg']) == 0:
             return 1
         return 0
+
+    def find_and_replace_in_file(self, node: str,
+                                 fpattern: str, rpattern: str,
+                                 fqpath: str):
+        """Find and replace all occurances of a given pattern in a specific file.
+
+        Args:
+            node (str): The node on which the command has to be executed.
+            fpattern(str): Pattern to be found in file.
+            rpattern(str): Pattern to used as replacement in file.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            True: If find and replace is successful.
+            False: If find and replace is failed.
+        Note:
+        / can't be given as an input in patterns(fpattern/rpattern).
+        Please follow proper regex format for patterns.
+        """
+        cmd = f"sed -i 's/{fpattern}/{rpattern}/g' {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            return False
+        return True
+
+    def move_file(self, node, source_fqpath, dest_fqpath):
+        """Move a remote file.
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            source_fqpath (str): The fully-qualified path to
+                                 the file to move.
+            dest_fqpath (str): The fully-qualified path to the new
+                               file location.
+
+        Returns:
+            True on success. False on fail.
+        """
+        cmd = f"mv {source_fqpath} {dest_fqpath}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+
+        if ret['error_code'] == 0:
+            return True
+        return False
+
+    def check_if_pattern_in_file(self, node, pattern, fqpath):
+        """Check if a give pattern is in seen in file or not.
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            pattern(str): Pattern to be found in file.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            0: If pattern present in file.
+            1: If pattern not present in file.
+            -1: If command was not executed.
+        """
+        cmd = f"cat {fqpath} | grep '{pattern}'"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            return -1
+        if len(ret['msg']) == 0:
+            return 1
+        return 0

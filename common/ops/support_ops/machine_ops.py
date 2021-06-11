@@ -164,6 +164,33 @@ class MachineOps(AbstractOps):
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
+    def is_rhel6(self, servers):
+        """Function to get whether the server is RHEL-6
+
+        Args:
+        servers (str|list): A server|List of servers hosts to
+                            know the RHEL Version
+
+        Returns:
+        bool:Returns True, if its RHEL-6 else returns false
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+        cmd = "cat /etc/redhat-release"
+        results = self.execute_abstract_op_multinode(cmd,
+                                                     servers)
+        rc = True
+
+        for item in results:
+            if item['error_code'] != 0:
+                self.logger.error(f"Unable to get RHEL version on"
+                                  f"{item['node']}")
+                rc = False
+            if item['error_code'] == 0 and 'release 6' not in item['msg'][0]:
+                self.logger.error(f"Server {item['node']} is not RHEL-6")
+                rc = False
+        return rc
+
     def is_rhel7(self, servers):
         """Function to get whether the server is RHEL-7
 
@@ -226,3 +253,25 @@ class MachineOps(AbstractOps):
         self.execute_abstract_op_node(cmd1, node)
         network_status = self.execute_command_async("sh test.sh", node)
         return network_status
+
+    def daemon_reload(self, node):
+        """Reload the Daemons when unit files are changed.
+
+        Args:
+            node (str): Node on which daemon has to be reloaded.
+
+        Returns:
+            bool: True, On successful daemon reload
+                False, Otherwise
+        """
+        if self.is_rhel6([node]):
+            cmd = 'service glusterd reload'
+            ret = self.execute_abstract_op_node(node, cmd, False)
+        else:
+            cmd = "systemctl daemon-reload"
+            ret = self.execute_abstract_op_node(cmd, node, False)
+
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to reload the daemon")
+            return False
+        return True
