@@ -61,7 +61,7 @@ class TestCase(DParentTest):
             raise Exception("Reverting glusterd log failed.")
 
         # Daemon should be reloaded as unit file is changed
-        ret = self.redant.daemon_reload(self.server_list[0])
+        ret = self.redant.reload_glusterd_service(self.server_list[0])
         if not ret:
             raise Exception("Unable to reload the daemon")
 
@@ -105,7 +105,7 @@ class TestCase(DParentTest):
             raise Exception("Renaming the glusterd log is failed")
 
         # Daemon reloading as the unit file of the daemon changed
-        ret = redant.daemon_reload(self.server_list[0])
+        ret = redant.reload_glusterd_service(self.server_list[0])
         if not ret:
             raise Exception("Daemon reloaded successfully")
 

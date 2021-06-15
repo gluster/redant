@@ -164,59 +164,42 @@ class MachineOps(AbstractOps):
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
-    def is_rhel6(self, servers):
-        """Function to get whether the server is RHEL-6
+    def check_os(self, os_name: str, os_version: str, nodes: str):
+        """
+        Checks the os release and compares the
+        os and version.
 
         Args:
-        servers (str|list): A server|List of servers hosts to
-                            know the RHEL Version
+            os_name (str): Operating system name
+            os_version (str): Operating system version
+            nodes (str|list): Nodes on which command
+                              has to be executed
 
-        Returns:
-        bool:Returns True, if its RHEL-6 else returns false
+        Returns: bool, True, if os_name and os_version found
+                 else False
         """
-        if not isinstance(servers, list):
-            servers = [servers]
-        cmd = "cat /etc/redhat-release"
-        results = self.execute_abstract_op_multinode(cmd,
-                                                     servers)
-        rc = True
+        cmd = "cat /etc/os-release"
+        os_name = os_name.lower()
 
-        for item in results:
+        ret = self.execute_abstract_op_multinode(cmd,
+                                                 nodes,
+                                                 False)
+        for item in ret:
             if item['error_code'] != 0:
-                self.logger.error(f"Unable to get RHEL version on"
-                                  f"{item['node']}")
-                rc = False
-            if item['error_code'] == 0 and 'release 6' not in item['msg'][0]:
-                self.logger.error(f"Server {item['node']} is not RHEL-6")
-                rc = False
-        return rc
+                self.logger.error("Couldn't fetch the os-release"
+                                  f" from {item['node']}")
+                return False
 
-    def is_rhel7(self, servers):
-        """Function to get whether the server is RHEL-7
+            out = item['msg']
+            if os_name not in out[0].lower():
+                self.logger.error(f"OS not same as {os_name}")
+                return False
 
-        Args:
-        servers (str|list): A server|List of servers hosts to
-                            know the RHEL Version
+            if os_version not in out[1]:
+                self.logger.error(f"version not same as {os_version}")
+                return False
 
-        Returns:
-        bool:Returns True, if its RHEL-7 else returns false
-        """
-        if not isinstance(servers, list):
-            servers = [servers]
-        cmd = "cat /etc/redhat-release"
-        results = self.execute_abstract_op_multinode(cmd,
-                                                     servers)
-        rc = True
-
-        for item in results:
-            if item['error_code'] != 0:
-                self.logger.error(f"Unable to get RHEL version on"
-                                  f"{item['node']}")
-                rc = False
-            if item['error_code'] == 0 and 'release 7' not in item['msg'][0]:
-                self.logger.error(f"Server {item['node']} is not RHEL-7")
-                rc = False
-        return rc
+        return True
 
     def bring_down_network_interface(self, node: str,
                                      timeout: int = 150):
@@ -254,7 +237,7 @@ class MachineOps(AbstractOps):
         network_status = self.execute_command_async("sh test.sh", node)
         return network_status
 
-    def daemon_reload(self, node):
+    def reload_glusterd_service(self, node):
         """Reload the Daemons when unit files are changed.
 
         Args:
@@ -264,7 +247,7 @@ class MachineOps(AbstractOps):
             bool: True, On successful daemon reload
                 False, Otherwise
         """
-        if self.is_rhel6([node]):
+        if self.check_os('rhel', '6', [node]):
             cmd = 'service glusterd reload'
             ret = self.execute_abstract_op_node(node, cmd, False)
         else:
