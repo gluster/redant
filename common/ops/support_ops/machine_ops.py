@@ -191,12 +191,10 @@ class MachineOps(AbstractOps):
                 return False
 
             out = item['msg']
-            if os_name not in out[0].lower():
-                self.logger.error(f"OS not same as {os_name}")
-                return False
-
-            if os_version not in out[1]:
-                self.logger.error(f"version not same as {os_version}")
+            if (
+                os_name not in out[0].lower()
+                or os_version not in out[1]
+            ):
                 return False
 
         return True
