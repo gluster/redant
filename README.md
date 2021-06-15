@@ -8,7 +8,7 @@
 /_/ |_/_____/_____/_/  |_/_/ |_/ /_/     
                                          
 
-usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-sp] [-l LOG_DIR]
+usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-l LOG_DIR]
                       [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-rf RESULT_PATH]
                       [-xls EXCEL_SHEET]
 
@@ -20,8 +20,6 @@ optional arguments:
                         Config file(s) to read.
   -t TEST_DIR, --test-dir TEST_DIR
                         The test directory where TC(s) exist
-  -sp, --specific-test-path
-                        Path of the specific test to be run from tests/
   -l LOG_DIR, --log-dir LOG_DIR
                         The directory wherein log will be stored.
   -ll LOG_LEVEL, --log-level LOG_LEVEL
@@ -106,8 +104,7 @@ which will inturn contain the log files specific to volume type.
 
 In addition to running TCs from within a suite, either performance or
 functional or even under a more granular level of component, one can select to
-run a specific TC also. To do this, one simply has to use the `-sp` flag while
-invoking redant and instead of the directory path provide the path of the TC.
+run a specific TC also.
 For example,
 `python3 core/redant_main.py -c core/parsing/config.yml -t tests/example/sample_component`
 
