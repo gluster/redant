@@ -79,8 +79,13 @@ def main():
     excluded_tests = param_obj.get_excluded_tests()
     spec_test = (args.test_dir.endswith(".py")
                  and args.test_dir.split("/")[-1].startswith("test"))
-    TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
-                                     spec_test)
+    try:
+        TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
+                                         spec_test)
+    except FileNotFoundError:
+        print("Error: Can't find the file\n")
+        spinner.fail("FileNotFoundError in test list builder")
+        return
     spinner.succeed("Test List built")
 
     spinner.start("Creating log dirs")
