@@ -41,40 +41,6 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    # @classmethod
-    # def setUpClass(cls):
-    #     # Calling GlusterBaseClass setUpClass
-    #     cls.get_super_method(cls, 'setUpClass')()
-
-    #     # Override Volumes
-    #     cls.volume['voltype'] = {
-    #         'type': 'distributed-replicated',
-    #         'dist_count': 2,
-    #         'replica_count': 3,
-    #         'transport': 'tcp'}
-
-    # def setUp(self):
-    #     # calling GlusterBaseClass setUp
-    #     self.get_super_method(self, 'setUp')()
-
-    #     # Creating Volume
-    #     ret = self.setup_volume_and_mount_volume(self.mounts)
-    #     if not ret:
-    #         raise ExecutionError("Volume creation or mount failed: %s"
-    #                              % self.volname)
-    #     g.log.info("Volme created and mounted successfully : %s",
-    #                self.volname)
-
-    # def tearDown(self):
-
-    #     # Unmounting and cleaning volume
-    #     ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-    #     if not ret:
-    #         raise ExecutionError("Unable to delete volume % s" % self.volname)
-    #     g.log.info("Volume deleted successfully : %s", self.volname)
-
-    #     self.get_super_method(self, 'tearDown')()
-
     def run_test(self, redant):
         """
         Test case:
@@ -100,7 +66,7 @@ class TestCase(DParentTest):
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
         if bricks_list is None:
-            raise Exception("Error: Couldn't fetch the bricks list")                              
+            raise Exception("Error: Couldn't fetch the bricks list")                          
         # # Running IO.
         # pool = ThreadPool(5)
         # # Build a command per each thread
@@ -131,58 +97,51 @@ class TestCase(DParentTest):
                                   'stop', excep=False)
 
         if ret['msg']['opRet'] == 0:
-            raise Exeption("Error: Remove brick operation stopped"
-                           " on other pair of bricks")
+            raise Exception("Error: Remove brick operation stopped"
+                            " on other pair of bricks")
 
         # Checking status of brick remove operation for other pair of bricks.
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 remove_brick_list_other_pair, 'status')
-        self.assertEqual(ret, 1, "Error: Got status on other pair of bricks.")
-        g.log.info("EXPECTED: Failed to get status on other pair of bricks.")
+        ret = redant.remove_brick(self.server_list[0], self.vol_name,
+                                  remove_brick_list_other_pair, 'status',
+                                  excep=False)
+        if ret['msg']['opRet'] == 0:
+            raise Exception("Error: Got status on other pair of bricks.")
 
-        # # Stopping remove operation for non-existent bricks.
-        # remove_brick_list_non_existent = [bricks_list[0] + 'non-existent',
-        #                                   bricks_list[1] + 'non-existent',
-        #                                   bricks_list[2] + 'non-existent']
-        # ret, _, _ = remove_brick(self.mnode, self.volname,
-        #                          remove_brick_list_non_existent, 'stop')
-        # self.assertEqual(ret, 1, "Error: Successfully stopped remove brick"
-        #                          " operation on non-existent bricks.")
-        # g.log.info("EXPECTED: Failed to stop remove brick operation"
-        #            " on non existent bricks.")
+        # Stopping remove operation for non-existent bricks.
+        remove_brick_list_non_existent = [bricks_list[0] + 'non-existent',
+                                          bricks_list[1] + 'non-existent',
+                                          bricks_list[2] + 'non-existent']
+        ret = redant.remove_brick(self.server_list[0], self.vol_name,
+                                  remove_brick_list_non_existent, 'stop',
+                                  excep=False)
+
+        if ret['msg']['opRet'] == 0:
+            raise Exception("Error: Successfully stopped remove brick"
+                            " operation on non-existent bricks.")
 
         # # Checking status of brick remove opeation for non-existent bricks.
-        # ret, _, _ = remove_brick(self.mnode, self.volname,
-        #                          remove_brick_list_non_existent, 'status')
-        # self.assertEqual(ret, 1,
-        #                  "Error: Status on non-existent bricks successful.")
-        # g.log.info("EXPECTED: Failed to get status on non existent bricks.")
+        ret = redant.remove_brick(self.server_list[0], self.vol_name,
+                                  remove_brick_list_non_existent, 'status',
+                                  excep=False)
+        if ret['msg']['opRet'] == 0:
+            raise Exception("Error: Got status on non-existent"
+                            " pair of bricks.")
 
-        # # Stopping the initial brick remove opeation.
-        # ret, _, _ = remove_brick(self.mnode, self.volname,
-        #                          remove_brick_list_original, 'stop')
-        # self.assertEqual(ret, 0, "Failed to stop remove brick operation")
-        # g.log.info("Remove bricks operation stop successfully")
+        # Stopping the initial brick remove opeation.
+        redant.remove_brick(self.server_list[0], self.vol_name,
+                            remove_brick_list_original, 'stop')
 
-        # # Start rebalance fix layout for volume.
-        # g.log.info("Starting Fix-layout on the volume")
-        # ret, _, _ = rebalance_start(self.mnode, self.volname, fix_layout=True)
-        # self.assertEqual(ret, 0, ("Failed to start rebalance for fix-layout"
-        #                           "on the volume %s", self.volname))
-        # g.log.info("Successfully started fix-layout on the volume %s",
-        #            self.volname)
+        # Start rebalance fix layout for volume.
+        redant.rebalance_start(self.vol_name,
+                               self.server_list[0],
+                               fix_layout=True)
 
-        # # Checking status of rebalance fix layout for the volume.
-        # ret, _, _ = rebalance_status(self.mnode, self.volname)
-        # self.assertEqual(ret, 0, ("Failed to check status of rebalance"
-        #                           "on the volume %s", self.volname))
-        # g.log.info("Successfully checked status on the volume %s",
-        #            self.volname)
-        # ret = wait_for_fix_layout_to_complete(self.mnode,
-        #                                       self.volname, timeout=30000)
-        # self.assertTrue(ret, ("Failed to check for rebalance."))
-        # g.log.info("Rebalance completed.")
-
+        # Checking status of rebalance fix layout for the volume.
+        redant.get_rebalance_status(self.vol_name, self.server_list[0])
+        if not redant.wait_for_fix_layout_to_complete(self.server_list[0],
+                                                      self.vol_name,
+                                                      timeout=30000):
+            raise Exception("Failed to check for rebalance")
         # # Creating directory.
         # dir_name = ''
         # for counter in range(0, 10):
