@@ -20,22 +20,10 @@ Description:
 This test deals with scenarios with remove brick
 functionality.
 
-from multiprocessing.pool import ThreadPool
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_ops import remove_brick
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              rebalance_status,
-                                              wait_for_fix_layout_to_complete)
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.glusterfile import get_fattr
-
-@runs_on([['distributed-replicated'], ['glusterfs']])
 """
 # disruptive;dist-rep
 
+from multiprocessing.pool import ThreadPool
 from tests.d_parent_test import DParentTest
 
 
@@ -66,24 +54,28 @@ class TestCase(DParentTest):
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
         if bricks_list is None:
-            raise Exception("Error: Couldn't fetch the bricks list")                          
-        # # Running IO.
-        # pool = ThreadPool(5)
-        # # Build a command per each thread
-        # # e.g. "seq 1 20000 ... touch" , "seq 20001 40000 ... touch" etc
-        # cmds = ["seq {} {} | sed 's|^|{}/test_file|' | xargs touch".
-        #         format(i, i + 19999, self.mounts[0].mountpoint)
-        #         for i in range(1, 100000, 20000)]
-        # # Run all commands in parallel (each thread returns a tuple from g.run)
-        # ret = pool.map(
-        #     lambda command: g.run(self.mounts[0].client_system, command), cmds)
-        # # ret -> list of tuples [(return_code, stdout, stderr),...]
-        # pool.close()
-        # pool.join()
-        # # Verify all commands' exit code is 0 (first element of each tuple)
-        # for thread_return in ret:
-        #     self.assertEqual(thread_return[0], 0, "File creation failed.")
-        # g.log.info("Files create on mount point.")
+            raise Exception("Error: Couldn't fetch the bricks list")
+
+        # Running IO.
+        pool = ThreadPool(5)
+        # Build a command per each thread
+        # e.g. "seq 1 20000 ... touch" , "seq 20001 40000 ... touch" etc
+        cmds = [f"seq {i} {i + 19999} | sed 's|^|{self.mountpoint}/"
+                f"test_file|' | xargs touch"
+                for i in range(1, 100000, 20000)]
+        # Run all commands in parallel
+        ret = pool.map(
+            lambda command: (redant.
+                             execute_abstract_op_node(command,
+                                                      self.client_list[0],
+                                                      False)), cmds)
+        # ret -> list of tuples [(return_code, stdout, stderr),...]
+        pool.close()
+        pool.join()
+        # Verify all commands' exit code is 0 (first element of each tuple)
+        for thread_return in ret:
+            if thread_return['error_code'] != 0:
+                raise Exception("File creation failed.")
 
         # Removing bricks from volume.
         remove_brick_list_original = bricks_list[3:6]
@@ -142,25 +134,17 @@ class TestCase(DParentTest):
                                                       self.vol_name,
                                                       timeout=30000):
             raise Exception("Failed to check for rebalance")
-        # # Creating directory.
-        # dir_name = ''
-        # for counter in range(0, 10):
-        #     ret = mkdir(self.mounts[0].client_system,
-        #                 self.mounts[0].mountpoint + "/dir1" + str(counter),
-        #                 parents=True)
-        #     if ret:
-        #         dir_name = "/dir1" + str(counter)
-        #         break
-        # self.assertTrue(ret, ("Failed to create directory dir1."))
-        # g.log.info("Directory dir1 created successfully.")
 
-        # # Checking value of attribute for dht.
-        # brick_server, brick_dir = bricks_list[0].split(':')
-        # dir_name = brick_dir + dir_name
-        # g.log.info("Check trusted.glusterfs.dht on host  %s for directory %s",
-        #            brick_server, dir_name)
-        # ret = get_fattr(brick_server, dir_name, 'trusted.glusterfs.dht')
-        # self.assertTrue(ret, ("Failed to get trusted.glusterfs.dht for %s"
-        #                       % dir_name))
-        # g.log.info("Get trusted.glusterfs.dht xattr for %s successfully",
-        #            dir_name)
+        # Creating directory.
+        dir_name = ''
+        for counter in range(0, 10):
+            ret = redant.create_dir(self.mountpoint, f"dir1{str(counter)}",
+                                    self.client_list[0], False)
+            if ret['error_code'] == 0:
+                dir_name = "/dir1" + str(counter)
+                break
+
+        # Checking value of attribute for dht.
+        brick_server, brick_dir = bricks_list[0].split(':')
+        dir_name = brick_dir + dir_name
+        redant.get_fattr(dir_name, 'trusted.glusterfs.dht', brick_server)
