@@ -34,9 +34,6 @@ def pars_args():
     parser.add_argument("-t", "--test-dir",
                         help="The test directory where TC(s) exist",
                         dest="test_dir", default=None, type=str, required=True)
-    parser.add_argument("-sp", "--specific-test-path",
-                        help="Path of the specific test to be run from tests/",
-                        dest="spec_test", action='store_true', required=False)
     parser.add_argument("-l", "--log-dir",
                         help="The directory wherein log will be stored.",
                         dest="log_dir", default="/tmp/redant", type=str)
@@ -80,8 +77,15 @@ def main():
     spinner.start("Building test list")
     # Building the test list and obtaining the TC details.
     excluded_tests = param_obj.get_excluded_tests()
-    TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
-                                     args.spec_test)
+    spec_test = (args.test_dir.endswith(".py")
+                 and args.test_dir.split("/")[-1].startswith("test"))
+    try:
+        TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
+                                         spec_test)
+    except FileNotFoundError:
+        print("Error: Can't find the file\n")
+        spinner.fail("FileNotFoundError in test list builder")
+        return
     spinner.succeed("Test List built")
 
     spinner.start("Creating log dirs")
@@ -101,7 +105,7 @@ def main():
 
     # invoke the test_runner.
     TestRunner.init(TestListBuilder, param_obj, env_set, args.log_dir,
-                    args.log_level, args.concur_count, args.spec_test)
+                    args.log_level, args.concur_count, spec_test)
     result_queue = TestRunner.run_tests(env_obj)
 
     # Environment cleanup. TBD.
