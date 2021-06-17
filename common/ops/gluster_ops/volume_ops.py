@@ -1069,7 +1069,7 @@ class VolumeOps(AbstractOps):
         Returns: (bool)
         True if all the volumes were created, false otherwise.
         """
-        if not (number_of_volumes > 1):
+        if not number_of_volumes > 1:
             self.logger.error("Number of volumes should be >1")
             return False
 
@@ -1077,7 +1077,8 @@ class VolumeOps(AbstractOps):
             bulkvolname = f"{vol_prefix}{volname}{str(volume)}"
             ret = self.setup_volume(bulkvolname, node,
                                     conf_hash, server_list,
-                                    brick_roots, excep=False)
+                                    brick_roots, force,
+                                    create_only, False)
             if ret['error_code'] != 0:
                 self.logger.error("Volume creation failed for the"
                                   f" volume {volname}")
