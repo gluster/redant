@@ -100,9 +100,9 @@ class TestCase(DParentTest):
             raise Exception("Error: Got status on other pair of bricks.")
 
         # Stopping remove operation for non-existent bricks.
-        remove_brick_list_non_existent = [bricks_list[0] + 'non-existent',
-                                          bricks_list[1] + 'non-existent',
-                                          bricks_list[2] + 'non-existent']
+        remove_brick_list_non_existent = [f"{bricks_list[0]}non-existent",
+                                          f"{bricks_list[1]}non-existent",
+                                          f"{bricks_list[2]}non-existent"]
         ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                   remove_brick_list_non_existent, 'stop',
                                   excep=False)
@@ -141,10 +141,10 @@ class TestCase(DParentTest):
             ret = redant.create_dir(self.mountpoint, f"dir1{str(counter)}",
                                     self.client_list[0], False)
             if ret['error_code'] == 0:
-                dir_name = "/dir1" + str(counter)
+                dir_name = f"/dir1{str(counter)}"
                 break
 
         # Checking value of attribute for dht.
         brick_server, brick_dir = bricks_list[0].split(':')
-        dir_name = brick_dir + dir_name
+        dir_name = f"{brick_dir}{dir_name}"
         redant.get_fattr(dir_name, 'trusted.glusterfs.dht', brick_server)
