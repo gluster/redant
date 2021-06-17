@@ -20,3 +20,9 @@ class TestCase(NdParentTest):
         """
         ret = redant.get_subvols(self.vol_name, self.server_list[0])
         redant.logger.info(f"{self.volume_type} : {ret}")
+        volname = f"{self.test_name}"
+        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        ret = redant.bulk_volume_creation(self.server_list[0], 5,
+                                          volname, conf_dict,
+                                          self.server_list,
+                                          self.brick_roots)

@@ -1040,3 +1040,47 @@ class VolumeOps(AbstractOps):
                                 for i in range(0, len(bricks), disp_count)])
                 subvols = subvol_list
         return subvols
+
+    def bulk_volume_creation(self, node: str, number_of_volumes: int,
+                             volname: str, conf_hash: dict,
+                             server_list: list, brick_roots: dict,
+                             vol_prefix="mult_vol_",
+                             force: bool = False,
+                             create_only: bool = False):
+        """
+        Creates the number of volumes user has specified.
+
+        Args:
+        node (str) : node on which command has to execute
+        number_of_volumes (int) : number of volumes to create
+        volname (str): Name  of the volume
+        conf_hash (dict) : Config hash providing parameters for volume
+                        creation.
+        server_list (list): list of servers.
+        brick_roots (dict): brick root dictionary.
+        vol_prefix (str): Prefix to be added to the volume name.
+        force (bool): True, If volume create command need to be executed
+                            with force, False Otherwise. Defaults to False.
+        create_only (bool): True, if only volume creation is needed.
+                            False, will do volume create, start, set operation
+                            if any provided in the volume_config.
+                            By default, value is set to False.
+
+        Returns: (bool)
+        True if all the volumes were created, false otherwise.
+        """
+        if not (number_of_volumes > 1):
+            self.logger.error("Number of volumes should be >1")
+            return False
+
+        for volume in range(number_of_volumes):
+            bulkvolname = f"{vol_prefix}{volname}{str(volume)}"
+            ret = self.setup_volume(bulkvolname, node,
+                                    conf_hash, server_list,
+                                    brick_roots, excep=False)
+            if ret['error_code'] != 0:
+                self.logger.error("Volume creation failed for the"
+                                  f" volume {volname}")
+                return False
+
+        return True
