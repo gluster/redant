@@ -819,13 +819,16 @@ class VolumeOps(AbstractOps):
         return ret_dict
 
     def set_volume_options(self, volname: str, options: dict,
-                           node: str = None, excep: bool = True):
+                           node: str = None, multi_option: bool = False,
+                           excep: bool = True):
         """
         Sets the option values for the given volume.
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
             options (dict): volume options in key:value format
+            node (str): Node on which cmd has to be executed.
+            multi_option (bool): Set multiple options together for a
+                                 volume/cluster
             excep (bool): To bypass or not to bypass the exception handling.
         Example:
             options = {"user.cifs":"enable","user.smb":"enable"}
@@ -842,18 +845,33 @@ class VolumeOps(AbstractOps):
                        "--mode=script --xml")
                 ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        for option in volume_options:
-            cmd = (f"gluster volume set {volname} {option} "
-                   f"{volume_options[option]} --mode=script --xml")
+        if multi_option:
+            opt_str = ""
+            for option in volume_options:
+                opt_str += f"{option} {volume_options[option]} "
 
+            cmd = (f"gluster volume set {volname} {opt_str} "
+                   "--mode=script --xml")
             ret = self.execute_abstract_op_node(cmd, node, excep)
             if ret['msg']['opRet'] == '0':
                 if volname != 'all':
-                    self.es.set_vol_option(volname,
-                                           {option: volume_options[option]})
+                    self.es.set_vol_option(volname, volume_options)
                 else:
-                    self.es.set_vol_options_all(
-                        {option: volume_options[option]})
+                    self.es.set_vol_options_all(volume_options)
+        else:
+            for option in volume_options:
+                cmd = (f"gluster volume set {volname} {option} "
+                       f"{volume_options[option]} --mode=script --xml")
+
+                ret = self.execute_abstract_op_node(cmd, node, excep)
+                if ret['msg']['opRet'] == '0':
+                    if volname != 'all':
+                        self.es.set_vol_option(
+                            volname,
+                            {option: volume_options[option]})
+                    else:
+                        self.es.set_vol_options_all(
+                            {option: volume_options[option]})
 
         return ret
 

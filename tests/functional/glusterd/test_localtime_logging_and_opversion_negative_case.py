@@ -64,7 +64,7 @@ class TestCase(DParentTest):
         # Set invalid value for transport type, should fail
         option_val = {'config.transport': 'rcp'}
         ret = redant.set_volume_options(self.vol_name, option_val,
-                                        self.server_list[0], False)
+                                        self.server_list[0], excep=False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully set invalid "
                             "config.transport option for volume")
@@ -72,7 +72,7 @@ class TestCase(DParentTest):
         # Set op-version for a volume should fail
         option_val = {'cluster.op-version': '80000'}
         ret = redant.set_volume_options(self.vol_name, option_val,
-                                        self.server_list[0], False)
+                                        self.server_list[0], excep=False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully set op-version "
                             "option for a volume")
@@ -81,7 +81,7 @@ class TestCase(DParentTest):
         option_val = {'cluster.op-version': '80000',
                       'localtime-logging': 'enable'}
         ret = redant.set_volume_options('all', option_val,
-                                        self.server_list[0], False)
+                                        self.server_list[0], True, False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully set another "
                             "option with op-version")
@@ -89,7 +89,7 @@ class TestCase(DParentTest):
         # Set invalid op-version, should fail
         option_val = {'cluster.op-version': '80-000'}
         ret = redant.set_volume_options('all', option_val,
-                                        self.server_list[0], False)
+                                        self.server_list[0], excep=False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully set invalid "
                             "op-version option for a volume")
@@ -103,7 +103,7 @@ class TestCase(DParentTest):
         new_op_version = max_op_version + 1000
         option_val = {'cluster.op-version': new_op_version}
         ret = redant.set_volume_options('all', option_val,
-                                        self.server_list[0], False)
+                                        self.server_list[0], excep=False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully set op-version "
                             "greater than the max-op-version option for the"
@@ -118,7 +118,7 @@ class TestCase(DParentTest):
         new_op_version = curr_op_version - 1000
         option_val = {'cluster.op-version': new_op_version}
         ret = redant.set_volume_options('all', option_val,
-                                        self.server_list[0], False)
+                                        self.server_list[0], excep=False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully set op-version "
                             "lesser than the current-op-version option for"

@@ -38,15 +38,13 @@ class TestCase(NdParentTest):
         """
 
         # Set transport.listen-backlog to 128 for all volumes.(Should fail!)
-        try:
-            redant.set_volume_options('all',
-                                      {'transport.listen-backlog': '128'},
-                                      self.server_list[0])
-        except Exception as error:
-            redant.logger.info(error)
-            redant.logger.info("Successfully tested"
-                               " setting transport.listen-backlog"
-                               " to 128 for all volumes")
+        ret = redant.set_volume_options('all',
+                                        {'transport.listen-backlog': '128'},
+                                        self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully tested"
+                            " setting transport.listen-backlog"
+                            " to 128 for all volumes")
 
         # Checking if glusterd is running on all the nodes.
         for each_server in self.server_list:
@@ -65,13 +63,12 @@ class TestCase(NdParentTest):
         redant.logger.info("All peers are in connected state.")
 
         # Set performance.parallel-readdir to on for all volumes.(Should fail!)
-        try:
-            redant.set_volume_options('all',
-                                      {'performance.parallel-readdir': 'on'},
-                                      self.server_list[0])
-        except Exception as error:
-            redant.logger.info("EXPECTED: Failed to set parallel-readdir to"
-                               " ON for all volumes.")
+        option = {'performance.parallel-readdir': 'on'}
+        ret = redant.set_volume_options('all', option, self.server_list[0],
+                                        excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully set parallel-readdir to"
+                            " ON for all volumes.")
 
         # Checking if glusterd is running on all the nodes.
         for each_server in self.server_list:
