@@ -7,7 +7,6 @@ from the test case.
 
 from time import sleep
 
-from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
 
 
