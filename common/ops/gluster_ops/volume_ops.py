@@ -1140,8 +1140,6 @@ class VolumeOps(AbstractOps):
                                                 False)
             if ret['error_code'] != 0:
                 return False
-            else:
-                return True
 
         if 'cifs' in share_type or 'smb' in share_type:
             cmd = "smbclient -L localhost"
