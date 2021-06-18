@@ -711,18 +711,9 @@ class VolumeOps(AbstractOps):
         ret = {}
 
         cmd = f"gluster volume status {volname} {service} {options} --xml"
-        if not excep:
-            ret = self.execute_abstract_op_node(cmd, node, excep=False)
-
-            if ret['error_code'] != 0:
-                self.logger.error(ret['error_msg'])
-                return ret
-            elif isinstance(ret['msg'], (OrderedDict, dict)):
-                if int(ret['msg']['opRet']) != 0:
-                    self.logger.error(ret['msg']['opErrstr'])
-                    return ret
-        else:
-            ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
 
         volume_status = ret['msg']['volStatus']['volumes']
 
