@@ -2,7 +2,7 @@
 This file contains a test-case which tests
 the creation of different volume types.
 """
-# nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
+# nonDisruptive;rep,dist,dist-rep,arb-dist-arb,disp,dist-disp
 
 from tests.nd_parent_test import NdParentTest
 
@@ -26,3 +26,7 @@ class TestCase(NdParentTest):
                                           volname, conf_dict,
                                           self.server_list,
                                           self.brick_roots)
+        ret = redant.log_volume_info_and_status(self.server_list[0],
+                                                self.vol_name)
+        if not ret:
+            self.logger.error("Can't get vol info and status")

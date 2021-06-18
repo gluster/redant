@@ -1105,13 +1105,55 @@ class VolumeOps(AbstractOps):
             status is successful. False Otherwise.
         """
         ret = self.get_volume_info(node, volname, False)
-        if int(ret['msg']['opRet']) != 0:
+        if 'msg' in ret.keys() and int(ret['msg']['opRet']) != 0:
             return False
 
         ret = self.get_volume_status(volname, node,
                                      excep=False)
-        if int(ret['msg']['opRet']) != 0:
+        if 'msg' in ret.keys() and int(ret['msg']['opRet']) != 0:
             return False
 
         return True
 
+    def is_volume_exported(self, node: str, volname: str,
+                           share_type: str):
+        """
+        Checks whether the volume is exported as nfs
+        or cifs share
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            volname (str): volume name
+            share_type (str): nfs or cifs
+
+        Returns:
+            bool: If volume is exported returns True.
+                False Otherwise.
+        """
+        if 'nfs' in share_type:
+            cmd = "showmount -e localhost"
+            self.execute_abstract_op_node(cmd, node)
+
+            cmd = f"showmount -e localhost | grep -w {volname}"
+            ret = self.execute_abstract_op_node(cmd,
+                                                node,
+                                                False)
+            if ret['error_code'] != 0:
+                return False
+            else:
+                return True
+
+        if 'cifs' in share_type or 'smb' in share_type:
+            cmd = "smbclient -L localhost"
+            self.execute_abstract_op_node(cmd, node)
+
+            cmd = ("smbclient -L localhost -U | "
+                   f"grep -i -Fw gluster {volname}")
+            ret = self.execute_abstract_op_node(cmd,
+                                                node,
+                                                False)
+            if ret['error_code'] != 0:
+                return False
+            else:
+                return True
+        return True
