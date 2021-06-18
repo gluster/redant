@@ -81,8 +81,8 @@ class TestGlusterDetectDropOfOutboundTrafficAsNetworkFailure(DParentTest):
         # Check volume status command
         vol_status = redant.get_volume_status(self.vol_name, self.server1,
                                               excep=False)
-        if ret['msg']['opRet'] != '0':
-            raise Exception("Failed to get the vol status")
+        if vol_status['msg']['opRet'] == '0':
+            raise Exception("Successfully got the volume status")
 
         err_str = vol_status['msg']['opErrstr']
         err_count_staging = err_str.count("Staging failed on")
