@@ -425,12 +425,17 @@ class VolumeOps(AbstractOps):
             self.volume_stop(volname, node, True)
             self.volume_delete(volname, node)
 
-    def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
+    def get_volume_info(self, node: str = None, volname: str = 'all',
+                        excep: bool = True) -> dict:
         """
         Gives volume information
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            excep (bool): exception flag to bypass the exception if the
+                          volume info command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             dict: a dictionary with volume information.
         Example:
@@ -485,7 +490,10 @@ class VolumeOps(AbstractOps):
 
         cmd = f"gluster volume info {volname} --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        if not excep and int(ret['msg']['opRet']) != 0:
+            return ret
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
@@ -1082,3 +1090,28 @@ class VolumeOps(AbstractOps):
                 return False
 
         return True
+
+    def log_volume_info_and_status(self, node: str,
+                                   volname: str):
+        """
+        Logs volume info and status
+
+        Args:
+            node (str): Node on which the command
+                        has to be executed.
+            volname (str): Name of volume
+        Returns:
+            bool: Returns True if getting volume info and
+            status is successful. False Otherwise.
+        """
+        ret = self.get_volume_info(node, volname, False)
+        if int(ret['msg']['opRet']) != 0:
+            return False
+
+        ret = self.get_volume_status(volname, node,
+                                     excep=False)
+        if int(ret['msg']['opRet']) != 0:
+            return False
+
+        return True
+
