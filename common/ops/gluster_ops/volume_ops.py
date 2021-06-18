@@ -840,18 +840,22 @@ class VolumeOps(AbstractOps):
             for group_option in group_options:
                 cmd = (f"gluster volume set {volname} group {group_option} "
                        "--mode=script --xml")
-                self.execute_abstract_op_node(cmd, node, excep)
+                ret = self.execute_abstract_op_node(cmd, node, excep)
 
         for option in volume_options:
             cmd = (f"gluster volume set {volname} {option} "
                    f"{volume_options[option]} --mode=script --xml")
 
-            self.execute_abstract_op_node(cmd, node, excep)
-            if volname != 'all':
-                self.es.set_vol_option(volname,
-                                       {option: volume_options[option]})
-            else:
-                self.es.set_vol_options_all({option: volume_options[option]})
+            ret = self.execute_abstract_op_node(cmd, node, excep)
+            if ret['msg']['opRet'] == '0':
+                if volname != 'all':
+                    self.es.set_vol_option(volname,
+                                           {option: volume_options[option]})
+                else:
+                    self.es.set_vol_options_all(
+                        {option: volume_options[option]})
+
+        return ret
 
     def validate_volume_option(self, volname: str, options: dict,
                                node: str = None):
