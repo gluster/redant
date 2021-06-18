@@ -2,7 +2,7 @@
 This file contains a test-case which tests
 the creation of different volume types.
 """
-# nonDisruptive;rep,dist,dist-rep,arb-dist-arb,disp,dist-disp
+# nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
 from tests.nd_parent_test import NdParentTest
 
