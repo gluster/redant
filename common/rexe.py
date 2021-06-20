@@ -22,6 +22,32 @@ class Rexe:
         """
         return random.choice(list(self.node_dict.keys()))
 
+    def connect_node(self, node, timeout=None):
+        """
+        Function to establish connection with the given node.
+        """
+        if timeout is None:
+            timeout_opt = {}
+        else:
+            timeout_opt = {'timeout': timeout}
+
+        node_ssh_client = paramiko.SSHClient()
+        node_ssh_client.load_host_keys(
+            os.path.expanduser('~/.ssh/known_hosts'))
+        mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
+        try:
+            node_ssh_client.connect(
+                hostname=node,
+                username='root',
+                pkey=mykey,
+                **timeout_opt
+            )
+        except Exception as e:
+            self.logger.error(f"Connection failure. Exception: {e}")
+            self.connect_flag = False
+            raise e
+        self.node_dict[node] = node_ssh_client
+
     def establish_connection(self, timeout=15):
         """
         Function to establish connection with the given
@@ -32,23 +58,7 @@ class Rexe:
         self.connect_flag = True
 
         for node in self.host_dict:
-
-            node_ssh_client = paramiko.SSHClient()
-            node_ssh_client.load_host_keys(
-                os.path.expanduser('~/.ssh/known_hosts'))
-            mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
-            try:
-                node_ssh_client.connect(
-                    hostname=node,
-                    username='root',
-                    pkey=mykey,
-                    timeout=timeout,
-                )
-            except Exception as e:
-                self.logger.error(f"Connection failure. Exception : {e}")
-                self.connect_flag = False
-                raise e
-            self.node_dict[node] = node_ssh_client
+            self.connect_node(node, timeout)
 
     def deconstruct_connection(self):
         """
@@ -98,21 +108,9 @@ class Rexe:
             return ret_dict
         try:
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
-        except Exception as e:
+        except Exception:
             # Reconnection to be done.
-            node_ssh_client = paramiko.SSHClient()
-            node_ssh_client.load_host_keys(
-                os.path.expanduser('~/.ssh/known_hosts'))
-            mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
-            try:
-                node_ssh_client.connect(
-                    hostname=node,
-                    username='root',
-                    pkey=mykey,
-                )
-                self.node_dict[node] = node_ssh_client
-            except Exception as e:
-                self.logger.error(f"Connection failure. Exceptions {e}.")
+            self.connect_node(node)
             # On rebooting the node
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
 
@@ -170,28 +168,14 @@ class Rexe:
             return async_obj
         try:
             stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
-            async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
-                         "stderr": stderr, "stdin": stdin}
-        except Exception as e:
+        except Exception:
             # Reconnection to be done.
-            node_ssh_client = paramiko.SSHClient()
-            node_ssh_client.load_host_keys(
-                os.path.expanduser('~/.ssh/known_hosts'))
-            mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
-            try:
-                node_ssh_client.connect(
-                    hostname=node,
-                    username='root',
-                    pkey=mykey,
-                )
-                self.node_dict[node] = node_ssh_client
-            except Exception as e:
-                self.logger.error(f"Connection failure. Exceptions {e}.")
+            self.connect_node(node)
             # On rebooting the node
             stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
 
-            async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
-                         "stderr": stderr, "stdin": stdin}
+        async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
+                     "stderr": stderr, "stdin": stdin}
         return async_obj
 
     def check_async_command_status(self, async_obj: dict) -> bool:
