@@ -4,6 +4,7 @@ This module takes care of:
 2) Tests-to-run list preparation (by test_list_builder).
 3) Invocation of the test_runner.
 """
+import os
 import sys
 import time
 import datetime
@@ -101,8 +102,14 @@ def main():
 
     spinner.start("Creating log dirs")
     # Creating log dirs.
-    args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
-    Logger.log_dir_creation(args.log_dir, TestListBuilder.get_test_path_list())
+    current_time_rep = str(datetime.datetime.now())
+    log_dir_current = f"{args.log_dir}/{current_time_rep}"
+    Logger.log_dir_creation(
+        log_dir_current, TestListBuilder.get_test_path_list())
+    latest = 'latest'
+    tmplink = f"{args.log_dir}/{latest}.{current_time_rep}"
+    os.symlink(current_time_rep, tmplink)
+    os.rename(tmplink, f"{args.log_dir}/{latest}")
     spinner.succeed("Log dir creation successful.")
 
     # Framework Environment datastructure.
@@ -110,12 +117,12 @@ def main():
     env_obj.init_ds()
 
     # Environment setup.
-    env_set = environ(param_obj, env_obj, errer, f"{args.log_dir}/main.log",
+    env_set = environ(param_obj, env_obj, errer, f"{log_dir_current}/main.log",
                       args.log_level)
     env_set.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(TestListBuilder, param_obj, env_set, args.log_dir,
+    TestRunner.init(TestListBuilder, param_obj, env_set, log_dir_current,
                     args.log_level, args.concur_count, spec_test)
     result_queue = TestRunner.run_tests(env_obj)
 
