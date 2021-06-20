@@ -35,11 +35,12 @@ class Rexe:
 
             node_ssh_client = paramiko.SSHClient()
             node_ssh_client.load_host_keys(
-                os.path.expanduser('/root/.ssh/known_hosts'))
-            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
+                os.path.expanduser('~/.ssh/known_hosts'))
+            mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
             try:
                 node_ssh_client.connect(
                     hostname=node,
+                    username='root',
                     pkey=mykey,
                     timeout=timeout,
                 )
@@ -101,11 +102,12 @@ class Rexe:
             # Reconnection to be done.
             node_ssh_client = paramiko.SSHClient()
             node_ssh_client.load_host_keys(
-                os.path.expanduser('/root/.ssh/known_hosts'))
-            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
+                os.path.expanduser('~/.ssh/known_hosts'))
+            mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
             try:
                 node_ssh_client.connect(
                     hostname=node,
+                    username='root',
                     pkey=mykey,
                 )
                 self.node_dict[node] = node_ssh_client
@@ -174,11 +176,12 @@ class Rexe:
             # Reconnection to be done.
             node_ssh_client = paramiko.SSHClient()
             node_ssh_client.load_host_keys(
-                os.path.expanduser('/root/.ssh/known_hosts'))
-            mykey = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
+                os.path.expanduser('~/.ssh/known_hosts'))
+            mykey = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'))
             try:
                 node_ssh_client.connect(
                     hostname=node,
+                    username='root',
                     pkey=mykey,
                 )
                 self.node_dict[node] = node_ssh_client
