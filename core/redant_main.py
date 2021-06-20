@@ -68,10 +68,10 @@ def main():
     spinner.start("Starting param handling")
     try:
         param_obj = ParamsHandler(args.config_file)
-    except IOError:
-        print("Error: can't find config file or read data.")
-        spinner.fail("IOError in param handling")
-        return
+    except OSError as e:
+        print("Error on loading config file:", e)
+        spinner.fail("error in param handling")
+        sys.exit(1)
     spinner.succeed("Param Handling Success.")
 
     spinner.start("Building test list")
