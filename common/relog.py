@@ -35,7 +35,8 @@ class Logger(logging.Logger):
         log_format = logging.Formatter("[%(asctime)s] %(levelname)s "
                                        " - %(message)s")
         if log_file_level not in valid_log_level:
-            print("Invalid log level given, Taking Log Level as Info.")
+            print("Log level indicator should be one of %s, "
+                  "falling back to I (Info)." % ','.join(valid_log_level))
             log_file_level = 'I'
         self.logger.setLevel(log_level_dict[log_file_level])
         test_log_dir = self.get_test_log_dir(log_file_path)
