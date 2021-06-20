@@ -49,6 +49,9 @@ def pars_args():
     parser.add_argument("-xls", "--excel-sheet",
                         help="Spreadsheet for result. Default value is NULL",
                         dest="excel_sheet", default=None, type=str)
+    parser.add_argument("--show-backtrace",
+                        help="Show full backtrace on error",
+                        dest="show_backtrace", action='store_true')
     return parser.parse_args()
 
 
@@ -64,14 +67,23 @@ def main():
     start = time.time()
     args = pars_args()
 
+    if args.show_backtrace:
+        def errer(exc, msg=None):
+            raise exc
+    else:
+        def errer(exc, msg=None):
+            if not msg:
+                msg = "error: {exc}"
+            print(msg.format(exc=exc), file=sys.stderr)
+            sys.exit(1)
+
     spinner = Halo(spinner='dots')
     spinner.start("Starting param handling")
     try:
         param_obj = ParamsHandler(args.config_file)
     except OSError as e:
-        print("Error on loading config file:", e)
         spinner.fail("error in param handling")
-        sys.exit(1)
+        errer(e, "Error on loading config file: {exc}")
     spinner.succeed("Param Handling Success.")
 
     spinner.start("Building test list")
@@ -82,10 +94,9 @@ def main():
     try:
         TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
                                          spec_test)
-    except FileNotFoundError:
-        print("Error: Can't find the file\n")
+    except FileNotFoundError as e:
         spinner.fail("FileNotFoundError in test list builder")
-        return
+        errer(e, "Error: Can't find the file")
     spinner.succeed("Test List built")
 
     spinner.start("Creating log dirs")
@@ -99,7 +110,7 @@ def main():
     env_obj.init_ds()
 
     # Environment setup.
-    env_set = environ(param_obj, env_obj, f"{args.log_dir}/main.log",
+    env_set = environ(param_obj, env_obj, errer, f"{args.log_dir}/main.log",
                       args.log_level)
     env_set.setup_env()
 
