@@ -167,4 +167,4 @@ class ParamsHandler:
             list : list of exluded tests
         """
 
-        return self.config_hashmap["excluded_tests"]
+        return self.config_hashmap.get("excluded_tests", [])
