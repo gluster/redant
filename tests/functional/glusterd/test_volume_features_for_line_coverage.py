@@ -55,7 +55,7 @@ class TestCase(DParentTest):
 
         # Disable bitrot without enabling
         ret = redant.disable_bitrot(self.vol_name, self.server_list[0], False)
-        if ret['msg']['opRet'] == '0':
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully disabled bitrot"
                             " without enabling")
 
@@ -64,7 +64,7 @@ class TestCase(DParentTest):
 
         # Try enabling bitrot for stopped volume, should fail
         ret = redant.enable_bitrot(self.vol_name, self.server_list[0], False)
-        if ret['msg']['opRet'] == '0':
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully enabled bitrot"
                             " for stopped volume")
 
@@ -95,7 +95,7 @@ class TestCase(DParentTest):
         # Get few individual options
         ret = redant.get_volume_options("volume", 'all', self.server_list[0],
                                         False)
-        if ret['msg']['opRet'] == '0':
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully fetched all options "
                             "for non-existing volume")
 
@@ -109,11 +109,10 @@ class TestCase(DParentTest):
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
         pid = ret['msg'][0].rstrip('\n')
 
-        cmd = f"kill -USR1 {pid}"
+        cmd = f"rm -rf /var/run/gluster/*.dump*; kill -USR1 {pid}"
         redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        cmd = ("rm -rf /var/run/gluster/*.dump*; ls -l /var/run/gluster/"
-               " | grep 'glusterdump' | wc -l")
+        cmd = ("ls -l /var/run/gluster/ | grep 'glusterdump' | wc -l")
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
         if ret['msg'][0].rstrip('\n') != '1':
             raise Exception("Failed to generate statedump for glusterd"

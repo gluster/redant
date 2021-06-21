@@ -36,7 +36,7 @@ class BitrotOps(AbstractOps):
                 - node : node on which the command got executed
         """
 
-        cmd = f"gluster volume bitrot {volname} enable --mode=script --xml"
+        cmd = f"gluster volume bitrot {volname} enable --mode=script"
         ret = self.execute_abstract_op_node(cmd, node, excep)
         return ret
 
@@ -64,7 +64,7 @@ class BitrotOps(AbstractOps):
                 - node : node on which the command got executed
         """
 
-        cmd = f"gluster volume bitrot {volname} disable --mode=script --xml"
+        cmd = f"gluster volume bitrot {volname} disable --mode=script"
         ret = self.execute_abstract_op_node(cmd, node, excep)
         return ret
 
