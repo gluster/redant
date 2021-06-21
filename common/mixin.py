@@ -16,11 +16,12 @@ from .ops.gluster_ops.rebalance_ops import RebalanceOps
 from .ops.gluster_ops.mount_ops import MountOps
 from .ops.gluster_ops.heal_ops import HealOps
 from .ops.gluster_ops.shared_storage_ops import SharedStorageOps
+from .ops.gluster_ops.bitrot_ops import BitrotOps
 
 
 class RedantMixin(GlusterOps, VolumeOps, BrickOps, PeerOps,
                   IoOps, MachineOps, MountOps, ProfileOps, RebalanceOps,
-                  HealOps, SharedStorageOps, Rexe, Logger):
+                  HealOps, SharedStorageOps, BitrotOps, Rexe, Logger):
     """
     A mixin class for redant project to encompass all ops, support
     modules and encapsulates the object responsible for the framework

@@ -801,7 +801,7 @@ class VolumeOps(AbstractOps):
         cmd = f"gluster volume get {volname} {option} --xml --mode=script"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        if ret['error_code'] != 0:
+        if ret['msg']['opRet'] != '0':
             return ret
         volume_options = ret['msg']['volGetopts']
 
