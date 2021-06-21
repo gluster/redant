@@ -7,7 +7,6 @@ from the test case.
 
 from time import sleep
 
-from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -425,12 +424,17 @@ class VolumeOps(AbstractOps):
             self.volume_stop(volname, node, True)
             self.volume_delete(volname, node)
 
-    def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
+    def get_volume_info(self, node: str = None, volname: str = 'all',
+                        excep: bool = True) -> dict:
         """
         Gives volume information
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            excep (bool): exception flag to bypass the exception if the
+                          volume info command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             dict: a dictionary with volume information.
         Example:
@@ -485,7 +489,10 @@ class VolumeOps(AbstractOps):
 
         cmd = f"gluster volume info {volname} --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
@@ -703,18 +710,9 @@ class VolumeOps(AbstractOps):
         ret = {}
 
         cmd = f"gluster volume status {volname} {service} {options} --xml"
-        if not excep:
-            ret = self.execute_abstract_op_node(cmd, node, excep=False)
-
-            if ret['error_code'] != 0:
-                self.logger.error(ret['error_msg'])
-                return ret
-            elif isinstance(ret['msg'], (OrderedDict, dict)):
-                if int(ret['msg']['opRet']) != 0:
-                    self.logger.error(ret['msg']['opErrstr'])
-                    return ret
-        else:
-            ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
 
         volume_status = ret['msg']['volStatus']['volumes']
 
@@ -819,13 +817,16 @@ class VolumeOps(AbstractOps):
         return ret_dict
 
     def set_volume_options(self, volname: str, options: dict,
-                           node: str = None, excep: bool = True):
+                           node: str = None, multi_option: bool = False,
+                           excep: bool = True):
         """
         Sets the option values for the given volume.
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
             options (dict): volume options in key:value format
+            node (str): Node on which cmd has to be executed.
+            multi_option (bool): Set multiple options together for a
+                                 volume/cluster
             excep (bool): To bypass or not to bypass the exception handling.
         Example:
             options = {"user.cifs":"enable","user.smb":"enable"}
@@ -840,18 +841,37 @@ class VolumeOps(AbstractOps):
             for group_option in group_options:
                 cmd = (f"gluster volume set {volname} group {group_option} "
                        "--mode=script --xml")
-                self.execute_abstract_op_node(cmd, node, excep)
+                ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        for option in volume_options:
-            cmd = (f"gluster volume set {volname} {option} "
-                   f"{volume_options[option]} --mode=script --xml")
+        if multi_option:
+            opt_str = ""
+            for option in volume_options:
+                opt_str += f"{option} {volume_options[option]} "
 
-            self.execute_abstract_op_node(cmd, node, excep)
-            if volname != 'all':
-                self.es.set_vol_option(volname,
-                                       {option: volume_options[option]})
-            else:
-                self.es.set_vol_options_all({option: volume_options[option]})
+            cmd = (f"gluster volume set {volname} {opt_str} "
+                   "--mode=script --xml")
+            ret = self.execute_abstract_op_node(cmd, node, excep)
+            if ret['msg']['opRet'] == '0':
+                if volname != 'all':
+                    self.es.set_vol_option(volname, volume_options)
+                else:
+                    self.es.set_vol_options_all(volume_options)
+        else:
+            for option in volume_options:
+                cmd = (f"gluster volume set {volname} {option} "
+                       f"{volume_options[option]} --mode=script --xml")
+
+                ret = self.execute_abstract_op_node(cmd, node, excep)
+                if ret['msg']['opRet'] == '0':
+                    if volname != 'all':
+                        self.es.set_vol_option(
+                            volname,
+                            {option: volume_options[option]})
+                    else:
+                        self.es.set_vol_options_all(
+                            {option: volume_options[option]})
+
+        return ret
 
     def validate_volume_option(self, volname: str, options: dict,
                                node: str = None):
@@ -1081,4 +1101,67 @@ class VolumeOps(AbstractOps):
                                   f" volume {volname}")
                 return False
 
+        return True
+
+    def log_volume_info_and_status(self, node: str,
+                                   volname: str):
+        """
+        Logs volume info and status
+
+        Args:
+            node (str): Node on which the command
+                        has to be executed.
+            volname (str): Name of volume
+        Returns:
+            bool: Returns True if getting volume info and
+            status is successful. False Otherwise.
+        """
+        ret = self.get_volume_info(node, volname, False)
+        if 'msg' in ret.keys() and ret['msg']['opRet'] != '0':
+            return False
+
+        ret = self.get_volume_status(volname, node,
+                                     excep=False)
+        if 'msg' in ret.keys() and ret['msg']['opRet'] != '0':
+            return False
+
+        return True
+
+    def is_volume_exported(self, node: str, volname: str,
+                           share_type: str):
+        """
+        Checks whether the volume is exported as nfs
+        or cifs share
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            volname (str): volume name
+            share_type (str): nfs or cifs
+
+        Returns:
+            bool: If volume is exported returns True.
+                False Otherwise.
+        """
+        if 'nfs' in share_type:
+            cmd = "showmount -e localhost"
+            self.execute_abstract_op_node(cmd, node)
+
+            cmd = f"showmount -e localhost | grep -w {volname}"
+            ret = self.execute_abstract_op_node(cmd,
+                                                node,
+                                                False)
+            if ret['error_code'] != 0:
+                return False
+
+        if 'cifs' in share_type or 'smb' in share_type:
+            cmd = "smbclient -L localhost"
+            self.execute_abstract_op_node(cmd, node)
+
+            cmd = ("smbclient -L localhost -U | "
+                   f"grep -i -Fw gluster {volname}")
+            ret = self.execute_abstract_op_node(cmd,
+                                                node,
+                                                False)
+            if ret['error_code'] != 0:
+                return False
         return True
