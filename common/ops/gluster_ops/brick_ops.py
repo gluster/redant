@@ -766,3 +766,58 @@ class BrickOps(AbstractOps):
             return count_of_proc
         else:
             return None
+
+    def delete_bricks(self, bricks_list: list) -> bool:
+        """
+        Deleted list of bricks specified from the brick nodes.
+
+        Args:
+            bricks_list (list): List of bricks to be deleted.
+
+        Returns:
+            bool : True if all the bricks are deleted. False, otherwise.
+
+        """
+        _rc = True
+        for brick in bricks_list:
+            brick_node, brick_path = brick.split(":")
+            self.execute_abstract_op_node(f"rm -rf {brick_path}",
+                                          brick_node)
+            ret = self.execute_abstract_op_node(f"ls {brick_path}",
+                                                brick_node,
+                                                False)
+            if ret['error_code'] == 0:
+                self.logger.error(f"Unable to delete brick {brick_path}"
+                                  f" on node {brick_node}")
+                _rc = False
+        return _rc
+
+    def is_broken_symlinks_present_on_bricks(self, node: str,
+                                             volname: str) -> bool:
+        """
+        Checks if the backend bricks have broken symlinks.
+
+        Args:
+            node (str): Node on which command has to be executed.
+            volname (str): Name of the volume
+
+        Returns:
+            (bool)True if present else False
+        """
+        brick_list = self.get_all_bricks(volname, node)
+        for brick in brick_list:
+            brick_node, brick_path = brick.split(":")
+            cmd = f"find {brick_path} -xtype l | wc -l"
+            ret = self.execute_abstract_op_node(cmd, brick_node,
+                                                False)
+            if ret['error_code'] != 0:
+                self.logger.error(f"Failed to run the command {cmd}"
+                                  f" on node {brick_node}")
+                return True
+
+            if len(ret['msg']) > 0:
+                self.logger.error("Error: Broken symlink found on brick"
+                                  f" path {brick_path} on {brick_node}")
+                return True
+
+        return False
