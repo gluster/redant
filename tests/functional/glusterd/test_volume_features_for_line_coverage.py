@@ -120,6 +120,9 @@ class TestCase(DParentTest):
 
         # Replace brick with itself should fail
         brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if brick_list is None:
+            raise Exception("Failed to get the brick list")
+
         ret = redant.replace_brick(self.server_list[0], self.vol_name,
                                    brick_list[0], brick_list[0], False)
         if ret['msg']['opRet'] == '0':

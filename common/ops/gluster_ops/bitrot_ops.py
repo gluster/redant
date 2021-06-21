@@ -22,7 +22,7 @@ class BitrotOps(AbstractOps):
             node (str): Node on which cmd has to be executed.
         Optional:
             excep (bool): exception flag to bypass the exception if the
-                          setup volume command fails. If set to False
+                          bitrot enable command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
@@ -50,7 +50,7 @@ class BitrotOps(AbstractOps):
             node (str): Node on which cmd has to be executed.
         Optional:
             excep (bool): exception flag to bypass the exception if the
-                          setup volume command fails. If set to False
+                          bitrot disable command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
