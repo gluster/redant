@@ -53,7 +53,9 @@ class AuthOps(AbstractOps):
 
         # Execute auth.allow setting on server
         ret = self.execute_abstract_op_node(auth_cmd, server)
-        if (not ret) and self.verify_auth_allow(volname, server, auth_dict):
+        if ret['error_code'] == 0 and self.verify_auth_allow(volname,
+                                                             server,
+                                                             auth_dict):
             self.logger.info("Authentication set and verified successfully.")
             return True
 
@@ -92,7 +94,7 @@ class AuthOps(AbstractOps):
         auth_clients_dict = self.get_volume_options(volname,
                                                     "auth.allow",
                                                     server)
-        auth_clients = auth_clients_dict['auth_allow']
+        auth_clients = auth_clients_dict['auth.allow']
 
         # When authentication has to be verified on entire
         # volume(not on sub-dirs) check whether the required
@@ -239,9 +241,9 @@ class AuthOps(AbstractOps):
 
         # Execute auth.allow setting on server.
         ret = self.execute_abstract_op_node(auth_cmd, server)
-        if (not ret) and self.verify_auth_reject(volname,
-                                                 server,
-                                                 auth_dict):
+        if ret['error_code'] == 0 and self.verify_auth_reject(volname,
+                                                              server,
+                                                              auth_dict):
             self.logger.info("Auth reject set and verified successfully.")
             return True
         return False
