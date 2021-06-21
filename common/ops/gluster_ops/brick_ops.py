@@ -767,7 +767,7 @@ class BrickOps(AbstractOps):
         else:
             return None
 
-    def delete_bricks(self, bricks_list: list):
+    def delete_bricks(self, bricks_list: list) -> bool:
         """
         Deleted list of bricks specified from the brick nodes.
 
@@ -793,7 +793,7 @@ class BrickOps(AbstractOps):
         return _rc
 
     def is_broken_symlinks_present_on_bricks(self, node: str,
-                                             volname: str):
+                                             volname: str) -> bool:
         """
         Checks if the backend bricks have broken symlinks.
 
@@ -801,8 +801,8 @@ class BrickOps(AbstractOps):
             node (str): Node on which command has to be executed.
             volname (str): Name of the volume
 
-        Returns: Bool
-                 True if present else False
+        Returns:
+            (bool)True if present else False
         """
         brick_list = self.get_all_bricks(volname, node)
         for brick in brick_list:
