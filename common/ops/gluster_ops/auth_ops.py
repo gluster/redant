@@ -94,8 +94,9 @@ class AuthOps(AbstractOps):
                                                     server)
         auth_clients = auth_clients_dict['auth_allow']
 
-        # When authentication has to be verified on entire volume(not on sub-dirs)
-        # check whether the required clients names are listed in auth.allow option
+        # When authentication has to be verified on entire
+        # volume(not on sub-dirs) check whether the required
+        # clients names are listed in auth.allow option
         if 'all' in auth_dict:
             clients_list = auth_clients.split(",")
             res = all(elem in clients_list for elem in auth_dict['all'])
@@ -106,4 +107,20 @@ class AuthOps(AbstractOps):
             self.logger.info("Authentication verified successfully. "
                              f"auth.allow: {auth_clients}")
             return True
-        
+
+        # When authentication has to be verified on sub-dirs, convert the
+        # key-value pair to a format which matches
+        # the value of auth.allow option
+        for key, value in list(auth_dict.items()):
+            auth_details.append(f"{key}({'|'.join(value)})")
+
+        # Check whether the required clients names are listed
+        # in auth.allow option
+        for auth_detail in auth_details:
+            if auth_detail not in auth_clients:
+                self.logger.error("Authentication verification failed."
+                                  f" auth.allow: {auth_clients}")
+                return False
+        self.logger.info("Authentication verified successfully."
+                         f" auth.allow: {auth_clients}")
+        return True
