@@ -58,3 +58,52 @@ class AuthOps(AbstractOps):
             return True
 
         return False
+
+    def verify_auth_allow(self, volname: str, server: str,
+                          auth_dict: dict) -> bool:
+        """
+        Verify authentication for volumes or sub directories as required
+
+        Args:
+            volname(str): The name of volume in which auth.allow
+                has to be verified
+            server(str): IP or hostname of one node
+            auth_dict(dict): key-value pair of dirs and clients list
+                Example: auth_dict = {'/d1':['10.70.37.172',
+                '10.70.37,173'],
+                    '/d3/subd1':['10.70.37.172','10.70.37.197']}
+                If authentication is set on entire volume,
+                use 'all' as key to
+                verify.
+                    auth_dict = {'all': ['10.70.37.172',
+                    '10.70.37,173']}
+                    auth_dict = {'all': ['*']}
+                    'all' refers to entire volume
+        Returns (bool):
+            True if the verification is success, else False
+        """
+        auth_details = []
+        if not auth_dict:
+            self.logger.error("Authentication details are not "
+                              "provided.")
+            return False
+
+        # Get the value of auth.allow option of the volume
+        auth_clients_dict = self.get_volume_options(volname,
+                                                    "auth.allow",
+                                                    server)
+        auth_clients = auth_clients_dict['auth_allow']
+
+        # When authentication has to be verified on entire volume(not on sub-dirs)
+        # check whether the required clients names are listed in auth.allow option
+        if 'all' in auth_dict:
+            clients_list = auth_clients.split(",")
+            res = all(elem in clients_list for elem in auth_dict['all'])
+            if not res:
+                self.logger.error("Authentication verification failed."
+                                  f" auth.allow: {auth_clients}")
+                return False
+            self.logger.info("Authentication verified successfully. "
+                             f"auth.allow: {auth_clients}")
+            return True
+        
