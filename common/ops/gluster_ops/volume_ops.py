@@ -7,7 +7,6 @@ from the test case.
 
 from time import sleep
 
-from collections import OrderedDict
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -425,12 +424,17 @@ class VolumeOps(AbstractOps):
             self.volume_stop(volname, node, True)
             self.volume_delete(volname, node)
 
-    def get_volume_info(self, node: str = None, volname: str = 'all') -> dict:
+    def get_volume_info(self, node: str = None, volname: str = 'all',
+                        excep: bool = True) -> dict:
         """
         Gives volume information
         Args:
             node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            excep (bool): exception flag to bypass the exception if the
+                          volume info command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             dict: a dictionary with volume information.
         Example:
@@ -485,7 +489,10 @@ class VolumeOps(AbstractOps):
 
         cmd = f"gluster volume info {volname} --xml"
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
 
         volume_info = ret['msg']['volInfo']['volumes']
         ret_dict = {}
@@ -703,18 +710,9 @@ class VolumeOps(AbstractOps):
         ret = {}
 
         cmd = f"gluster volume status {volname} {service} {options} --xml"
-        if not excep:
-            ret = self.execute_abstract_op_node(cmd, node, excep=False)
-
-            if ret['error_code'] != 0:
-                self.logger.error(ret['error_msg'])
-                return ret
-            elif isinstance(ret['msg'], (OrderedDict, dict)):
-                if int(ret['msg']['opRet']) != 0:
-                    self.logger.error(ret['msg']['opErrstr'])
-                    return ret
-        else:
-            ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
 
         volume_status = ret['msg']['volStatus']['volumes']
 
@@ -1103,4 +1101,67 @@ class VolumeOps(AbstractOps):
                                   f" volume {volname}")
                 return False
 
+        return True
+
+    def log_volume_info_and_status(self, node: str,
+                                   volname: str):
+        """
+        Logs volume info and status
+
+        Args:
+            node (str): Node on which the command
+                        has to be executed.
+            volname (str): Name of volume
+        Returns:
+            bool: Returns True if getting volume info and
+            status is successful. False Otherwise.
+        """
+        ret = self.get_volume_info(node, volname, False)
+        if 'msg' in ret.keys() and ret['msg']['opRet'] != '0':
+            return False
+
+        ret = self.get_volume_status(volname, node,
+                                     excep=False)
+        if 'msg' in ret.keys() and ret['msg']['opRet'] != '0':
+            return False
+
+        return True
+
+    def is_volume_exported(self, node: str, volname: str,
+                           share_type: str):
+        """
+        Checks whether the volume is exported as nfs
+        or cifs share
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            volname (str): volume name
+            share_type (str): nfs or cifs
+
+        Returns:
+            bool: If volume is exported returns True.
+                False Otherwise.
+        """
+        if 'nfs' in share_type:
+            cmd = "showmount -e localhost"
+            self.execute_abstract_op_node(cmd, node)
+
+            cmd = f"showmount -e localhost | grep -w {volname}"
+            ret = self.execute_abstract_op_node(cmd,
+                                                node,
+                                                False)
+            if ret['error_code'] != 0:
+                return False
+
+        if 'cifs' in share_type or 'smb' in share_type:
+            cmd = "smbclient -L localhost"
+            self.execute_abstract_op_node(cmd, node)
+
+            cmd = ("smbclient -L localhost -U | "
+                   f"grep -i -Fw gluster {volname}")
+            ret = self.execute_abstract_op_node(cmd,
+                                                node,
+                                                False)
+            if ret['error_code'] != 0:
+                return False
         return True
