@@ -85,12 +85,13 @@ class TestCase(DParentTest):
         self.new_servers = self.server_list[1:]
         self.new_servers.remove(self.node_on_glusterd_to_stop)
         self.nfs_options = {"nfs.disable": "off"}
-        try:
-            redant.set_volume_options(self.vol_name,
-                                      self.nfs_options,
-                                      choice(self.new_servers), False)
-        except Exception as error:
-            redant.logger.info(f"Volume set failed as expected : {error}")
+        ret = redant.set_volume_options(self.vol_name,
+                                        self.nfs_options,
+                                        choice(self.new_servers),
+                                        excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully set option when quorum"
+                            " is not met")
 
         # Start glusterd on the node where it is stopped
         redant.start_glusterd(self.node_on_glusterd_to_stop)

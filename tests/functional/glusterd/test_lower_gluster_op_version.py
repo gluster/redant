@@ -47,19 +47,15 @@ class TestCase(NdParentTest):
         invalid_op_version_dict = {'cluster.op-version': invalid_op_version}
 
         # Set the volume option with lower op-version
-        try:
-            redant.set_volume_options('all', lower_op_version_dict,
-                                      self.server_list[0])
-        except Exception as error:
-            redant.logger.info(error)
-            redant.logger.info("Failed: setting lower"
-                               " op-version.")
+        ret = redant.set_volume_options('all', lower_op_version_dict,
+                                        self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully set lower "
+                            "op-version for a volume")
 
         # Setting invalid opversion
-        try:
-            redant.set_volume_options('all', invalid_op_version_dict,
-                                      self.server_list[0])
-        except Exception as error:
-            redant.logger.info(error)
-            redant.logger.info("Successfully tested setting invalid"
-                               " op-version.")
+        ret = redant.set_volume_options('all', invalid_op_version_dict,
+                                        self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully set invalid "
+                            "op-version option for a volume")
