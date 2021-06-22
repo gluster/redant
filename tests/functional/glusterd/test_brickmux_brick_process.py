@@ -55,11 +55,13 @@ class TestCase(DParentTest):
                                   self.server_list[0])
         vol_list = redant.get_volume_list(self.server_list[0])
         for volname in vol_list:
-            # if vol_list.index(volname) == 2:
-            #     redant.execute_abstract_op_node("reboot",
-            #                                     self.server_list[2])
-            redant.volume_start(volname,
-                                self.server_list[0])
+            if vol_list.index(volname) == 2:
+                redant.execute_abstract_op_node("reboot",
+                                                self.server_list[2])
+            ret = redant.volume_start(volname,
+                                      self.server_list[0],
+                                      excep=False)
+            print(ret,"\n\n")
 
         for _ in range(10):
             sleep(1)
