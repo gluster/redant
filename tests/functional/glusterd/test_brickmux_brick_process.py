@@ -61,7 +61,7 @@ class TestCase(DParentTest):
             ret = redant.volume_start(volname,
                                       self.server_list[0],
                                       excep=False)
-            print(ret,"\n\n")
+            print(ret, "\n\n")
 
         for _ in range(10):
             sleep(1)
