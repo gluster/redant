@@ -24,54 +24,29 @@ from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
-    
-    # def _volume_operations_in_loop(self):
-    #     """ Create, start, stop and delete 100 volumes in a loop """
-    #     # Create and start 100 volumes in a loop
-    #     self.volume_config = {
-    #         'name': 'volume-',
-    #         'servers': self.servers,
-    #         'voltype': {'type': 'distributed-replicated',
-    #                     'dist_count': 2,
-    #                     'replica_count': 3},
-    #     }
 
-    #     ret = bulk_volume_creation(self.mnode, 100, self.all_servers_info,
-    #                                self.volume_config, "", False, True)
-    #     self.assertTrue(ret, "Failed to create volumes")
+    def _volume_operations_in_loop(self, index):
+        """ Create, start, stop and delete 100 volumes in a loop """
+        # Create and start 100 volumes in a loop
+        volname = f"{self.test_name}{index}"
+        conf_dict = self.vol_type_inf[self.conv_dict['dist-rep']]
+        ret = self.redant.bulk_volume_creation(self.server_list[0], 100,
+                                               volname, conf_dict,
+                                               self.server_list,
+                                               self.brick_roots)
 
-    #     self.volume_present = True
+        if not ret:
+            print("Failed to create volumes")
 
-    #     g.log.info("Successfully created all the volumes")
+        # Stop 100 volumes in loop
+        for i in range(100):
+            volname = f"mult_vol_{self.test_name}{index}{i}"
+            self.redant.volume_stop(volname, self.server_list[0])
 
-    #     # Start 100 volumes in loop
-    #     for i in range(100):
-    #         self.volname = "volume-%d" % i
-    #         ret, _, _ = volume_start(self.mnode, self.volname)
-    #         self.assertEqual(ret, 0, "Failed to start volume: %s"
-    #                          % self.volname)
-
-    #     g.log.info("Successfully started all the volumes")
-
-    #     # Stop 100 volumes in loop
-    #     for i in range(100):
-    #         self.volname = "volume-%d" % i
-    #         ret, _, _ = volume_stop(self.mnode, self.volname)
-    #         self.assertEqual(ret, 0, "Failed to stop volume: %s"
-    #                          % self.volname)
-
-    #     g.log.info("Successfully stopped all the volumes")
-
-    #     # Delete 100 volumes in loop
-    #     for i in range(100):
-    #         self.volname = "volume-%d" % i
-    #         ret = volume_delete(self.mnode, self.volname)
-    #         self.assertTrue(ret, "Failed to delete volume: %s"
-    #                         % self.volname)
-
-    #     self.volume_present = False
-
-    #     g.log.info("Successfully deleted all the volumes")
+        # Delete 100 volumes in loop
+        for i in range(100):
+            volname = f"mult_vol_{self.test_name}{index}{i}"
+            self.redant.volume_delete(volname, self.server_list[0])
 
     def _memory_consumption_for_all_nodes(self, pid_list):
         """Fetch the memory consumption by glusterd process for
@@ -87,8 +62,8 @@ class TestCase(DParentTest):
                                                        False)
 
             if ret['error_code'] != 0:
-                print("Failed to get the memory usage of"
-                      " glusterd process")
+                raise Exception("Failed to get the memory usage of"
+                                " glusterd process")
             mem = 0
             if len(ret['msg']) > 0:
                 mem = int((ret['msg'][0]).rstrip("\n"))//1024
@@ -114,13 +89,12 @@ class TestCase(DParentTest):
         # check if glusterd is running post reboot
         if not redant.wait_for_glusterd_to_start(self.server_list):
             raise Exception("Glusterd service is not running post reboot")
-        
+
         # Enable brick-multiplex, set max-bricks-per-process to 3 in cluster
         for key, value in (('cluster.brick-multiplex', 'enable'),
-                           ('cluster.max-bricks-per-process', '3')):
+                           ('cluster.max-bricks-per-process', '100')):
             redant.set_volume_options('all', {key: value},
                                       self.server_list[0])
-            
 
         cmd = "pidof glusterd"
         # Get the pidof of glusterd process
@@ -134,49 +108,45 @@ class TestCase(DParentTest):
         # Fetch the list of memory consumed in all the nodes
         mem_consumed_list = (self.
                              _memory_consumption_for_all_nodes(pid_list))
-        print(f"Mem: \n{mem_consumed_list}")
 
-        # # Perform volume operations for 100 volumes for first time
-        # self._volume_operations_in_loop()
+        # Perform volume operations for 100 volumes for first time
+        self._volume_operations_in_loop(1)
 
-        # # Fetch the list of memory consumed in all the nodes after 1 iteration
-        # mem_consumed_list_1 = self._memory_consumption_for_all_nodes(pid_list)
+        # Fetch the list of memory consumed in all
+        # the nodes after 1 iteration
+        mem_consumed_list_1 = (self.
+                               _memory_consumption_for_all_nodes(pid_list))
 
-        # for i, mem in enumerate(mem_consumed_list_1):
-        #     condition_met = False
-        #     if mem - mem_consumed_list[i] <= 50:
-        #         condition_met = True
+        for i, mem in enumerate(mem_consumed_list_1):
+            if mem - mem_consumed_list[i] > 50:
+                raise Exception("Unexpected: Memory consumption"
+                                " glusterd increased more than the expected"
+                                " of value")
 
-        #     self.assertTrue(condition_met, "Unexpected: Memory consumption"
-        #                     " glusterd increased more than the expected"
-        #                     " of value")
+        # Perform volume operations for 100 volumes for second time
+        self._volume_operations_in_loop(2)
 
-        # # Perform volume operations for 100 volumes for second time
-        # self._volume_operations_in_loop()
+        # Fetch the list of memory consumed in all
+        # the nodes after 2 iterations
+        mem_consumed_list_2 = (self.
+                               _memory_consumption_for_all_nodes(pid_list))
 
-        # # Fetch the list of memory consumed in all the nodes after 2 iterations
-        # mem_consumed_list_2 = self._memory_consumption_for_all_nodes(pid_list)
+        for i, mem in enumerate(mem_consumed_list_2):
+            if mem - mem_consumed_list_1[i] > 10:
+                raise Exception("Unexpected: Memory consumption"
+                                " glusterd increased more than the expected"
+                                " of value")
 
-        # for i, mem in enumerate(mem_consumed_list_2):
-        #     condition_met = False
-        #     if mem - mem_consumed_list_1[i] <= 10:
-        #         condition_met = True
+        # Perform volume operations for 100 volumes for third time
+        self._volume_operations_in_loop(3)
 
-        #     self.assertTrue(condition_met, "Unexpected: Memory consumption"
-        #                     " glusterd increased more than the expected"
-        #                     " of value")
+        # Fetch the list of memory consumed in all
+        # the nodes after 3 iterations
+        mem_consumed_list_3 = (self.
+                               _memory_consumption_for_all_nodes(pid_list))
 
-        # # Perform volume operations for 100 volumes for third time
-        # self._volume_operations_in_loop()
-
-        # # Fetch the list of memory consumed in all the nodes after 3 iterations
-        # mem_consumed_list_3 = self._memory_consumption_for_all_nodes(pid_list)
-
-        # for i, mem in enumerate(mem_consumed_list_3):
-        #     condition_met = False
-        #     if mem - mem_consumed_list_2[i] <= 10:
-        #         condition_met = True
-
-        #     self.assertTrue(condition_met, "Unexpected: Memory consumption"
-        #                     " glusterd increased more than the expected"
-        #                     " of value")
+        for i, mem in enumerate(mem_consumed_list_3):
+            if mem - mem_consumed_list_2[i] > 10:
+                raise Exception("Unexpected: Memory consumption"
+                                " glusterd increased more than the expected"
+                                " of value")
