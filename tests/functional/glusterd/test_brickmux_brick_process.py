@@ -55,13 +55,11 @@ class TestCase(DParentTest):
                                   self.server_list[0])
         vol_list = redant.get_volume_list(self.server_list[0])
         for volname in vol_list:
-            print(volname)
-            print(vol_list.index(volname))
             # if vol_list.index(volname) == 2:
             #     redant.execute_abstract_op_node("reboot",
             #                                     self.server_list[2])
-            # redant.volume_start(volname,
-            #                     self.server_list[0])
+            redant.volume_start(volname,
+                                self.server_list[0])
 
         for _ in range(10):
             sleep(1)
@@ -75,8 +73,6 @@ class TestCase(DParentTest):
         for server in self.server_list:
             ret = redant.execute_abstract_op_node("pgrep glusterfsd",
                                                   server)
-            print("\n\n", ret['msg'])
-            # out = ret['msg'].split()
-            # self.assertFalse(ret, "Failed to get 'glusterfsd' pid")
-            # self.assertEqual(
-            #     len(out), 1, "More then 1 brick process  seen in glusterfsd")
+            out = ret['msg']
+            if len(out) != 1:
+                raise Exception("More then 1 brick process seen in glusterfsd")

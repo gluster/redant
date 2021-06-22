@@ -65,7 +65,6 @@ class MachineOps(AbstractOps):
         True if all the nodes are online else False
         """
         ret = self.check_node_power_status(nodes)
-        print(ret)
         for key in ret:
             if not ret[key]:
                 return False
