@@ -73,21 +73,28 @@ class TestCase(DParentTest):
 
     #     g.log.info("Successfully deleted all the volumes")
 
-    # def _memory_consumption_for_all_nodes(self, pid_list):
-    #     """Fetch the memory consumption by glusterd process for
-    #        all the nodes
-    #     """
-    #     memory_consumed_list = []
-    #     for i, server in enumerate(self.servers):
-    #         # Get the memory consumption of glusterd in each node
-    #         cmd = "top -b -n 1 -p %d | awk 'FNR==8 {print $6}'" % pid_list[i]
-    #         ret, mem, _ = g.run(server, cmd)
-    #         self.assertEqual(ret, 0, "Failed to get the memory usage of"
-    #                          " glusterd process")
-    #         mem = int(mem)//1024
-    #         memory_consumed_list.append(mem)
+    def _memory_consumption_for_all_nodes(self, pid_list):
+        """Fetch the memory consumption by glusterd process for
+           all the nodes
+        """
+        memory_consumed_list = []
+        for i, server in enumerate(self.server_list):
+            # Get the memory consumption of glusterd in each node
+            cmd = (f"top -b -n 1 -p {pid_list[i]} | "
+                   "awk 'FNR==8 {print $6}'")
+            ret = self.redant.execute_abstract_op_node(cmd,
+                                                       server,
+                                                       False)
 
-    #     return memory_consumed_list
+            if ret['error_code'] != 0:
+                print("Failed to get the memory usage of"
+                      " glusterd process")
+            mem = 0
+            if len(ret['msg']) > 0:
+                mem = int((ret['msg'][0]).rstrip("\n"))//1024
+            memory_consumed_list.append(mem)
+
+        return memory_consumed_list
 
     def run_test(self, redant):
         """
@@ -106,27 +113,28 @@ class TestCase(DParentTest):
         redant.restart_glusterd(self.server_list)
         # check if glusterd is running post reboot
         if not redant.wait_for_glusterd_to_start(self.server_list):
-            print("Glusterd service is not running post reboot")
+            raise Exception("Glusterd service is not running post reboot")
         
-        # # Enable brick-multiplex, set max-bricks-per-process to 3 in cluster
-        # for key, value in (('cluster.brick-multiplex', 'enable'),
-        #                    ('cluster.max-bricks-per-process', '3')):
-        #     ret = set_volume_options(self.mnode, 'all', {key: value})
-        #     self.assertTrue(ret, "Failed to set {} to {} "
-        #                     " for the cluster".format(key, value))
+        # Enable brick-multiplex, set max-bricks-per-process to 3 in cluster
+        for key, value in (('cluster.brick-multiplex', 'enable'),
+                           ('cluster.max-bricks-per-process', '3')):
+            redant.set_volume_options('all', {key: value},
+                                      self.server_list[0])
+            
 
-        # # Get the pidof of glusterd process
-        # pid_list = []
-        # for server in self.servers:
-        #     # Get the pidof of glusterd process
-        #     cmd = "pidof glusterd"
-        #     ret, pid, _ = g.run(server, cmd)
-        #     self.assertEqual(ret, 0, "Failed to get the pid of glusterd")
-        #     pid = int(pid)
-        #     pid_list.append(pid)
+        cmd = "pidof glusterd"
+        # Get the pidof of glusterd process
+        pid_list = []
+        ret = redant.execute_abstract_op_multinode(cmd,
+                                                   self.server_list)
 
-        # # Fetch the list of memory consumed in all the nodes
-        # mem_consumed_list = self._memory_consumption_for_all_nodes(pid_list)
+        for result in ret:
+            pid_list.append(int(result['msg'][0].rstrip("\n")))
+
+        # Fetch the list of memory consumed in all the nodes
+        mem_consumed_list = (self.
+                             _memory_consumption_for_all_nodes(pid_list))
+        print(f"Mem: \n{mem_consumed_list}")
 
         # # Perform volume operations for 100 volumes for first time
         # self._volume_operations_in_loop()
