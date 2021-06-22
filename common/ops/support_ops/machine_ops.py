@@ -55,6 +55,22 @@ class MachineOps(AbstractOps):
         self.logger.info(f"{nodes} power state : {ret}")
         return ret
 
+    def are_nodes_online(self, nodes: str):
+        """
+        Checks if all the nodes are online.
+
+        Args:
+            nodes (str|list): List of nodes
+        Return:
+        True if all the nodes are online else False
+        """
+        ret = self.check_node_power_status(nodes)
+        print(ret)
+        for key in ret:
+            if not ret[key]:
+                return False
+        return True
+
     def wait_node_power_up(self, node: str, timeout: int = 100):
         """
         Wait for a node to come up online.
