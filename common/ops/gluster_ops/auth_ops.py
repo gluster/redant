@@ -1,5 +1,5 @@
 """
-Auth ops module deals with the aut allow and reject operations
+Auth ops module deals with the auth allow and reject operations
 """
 
 from common.ops.abstract_ops import AbstractOps
@@ -52,7 +52,7 @@ class AuthOps(AbstractOps):
                         f" auth.allow \"{','.join(auth_dict['all'])}\"")
 
         # Execute auth.allow setting on server
-        ret = self.execute_abstract_op_node(auth_cmd, server)
+        ret = self.execute_abstract_op_node(auth_cmd, server, False)
         if ret['error_code'] == 0 and self.verify_auth_allow(volname,
                                                              server,
                                                              auth_dict):
@@ -240,7 +240,7 @@ class AuthOps(AbstractOps):
                         f"auth.reject \"{','.join(auth_dict['all'])}\"")
 
         # Execute auth.allow setting on server.
-        ret = self.execute_abstract_op_node(auth_cmd, server)
+        ret = self.execute_abstract_op_node(auth_cmd, server, False)
         if ret['error_code'] == 0 and self.verify_auth_reject(volname,
                                                               server,
                                                               auth_dict):
