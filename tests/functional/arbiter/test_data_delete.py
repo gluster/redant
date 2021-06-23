@@ -19,12 +19,12 @@
     Test data delete/rename on arbiter volume
 """
 
-# disruptive;arb,dist-arb
+# nonDisruptive;arb,dist-arb
 
-from tests.d_parent_test import DParentTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestCase(DParentTest):
+class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
