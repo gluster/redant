@@ -36,7 +36,7 @@ class TestCase(DParentTest):
                                                self.brick_roots)
 
         if not ret:
-            print("Failed to create volumes")
+            raise Exception("Failed to create volumes")
 
         # Stop 100 volumes in loop
         for i in range(100):
@@ -92,7 +92,7 @@ class TestCase(DParentTest):
 
         # Enable brick-multiplex, set max-bricks-per-process to 3 in cluster
         for key, value in (('cluster.brick-multiplex', 'enable'),
-                           ('cluster.max-bricks-per-process', '100')):
+                           ('cluster.max-bricks-per-process', '3')):
             redant.set_volume_options('all', {key: value},
                                       self.server_list[0])
 
