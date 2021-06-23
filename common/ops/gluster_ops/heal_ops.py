@@ -106,7 +106,32 @@ class HealOps:
             self.logger.error("Some of the self-heal Daemons are offline")
             return False
 
-    def is_heal_complete(self, node: str, volname: str):
+    def get_heal_info(self, node: str, volname: str):
+        """
+        From the xml output of heal info command get the heal info data.
+
+        Args:
+            node : Node on which commands are executed
+            volname : Name of the volume
+
+        Returns:
+            NoneType: None if parse errors.
+            list: list of dictionaries. Each element in the list is the
+                heal_info data per brick.
+        """
+        cmd = f"gluster volume heal {volname} info --xml"
+        ret = self.execute_abstract_op_node(cmd, node)
+        print(ret)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to get the heal info xml output for"
+                              f" the volume {volname}.Hence failed to get"
+                              " the heal info summary.")
+            return None
+
+        heal_info_data = []
+        ret.findall("")
+
+    def is_heal_complete(self, node: str, volname: str) -> bool:
         """
         Verifies there are no pending heals on the volume.
         The 'number of entries' in the output of heal info
@@ -116,7 +141,7 @@ class HealOps:
             node : Node on which commands are executed
             volname : Name of the volume
 
-        Return:
+        Returns:
             bool: True if heal is complete. False otherwise
         """
         heal_info_data = self.get_heal_info(node, volname)
@@ -137,7 +162,7 @@ class HealOps:
 
     def monitor_heal_completion(self, node: str, volname: str,
                                 timeout_period=1200, bricks=None,
-                                interval_check=120):
+                                interval_check=120) -> bool:
         """
         Monitors heal completion by looking into .glusterfs/indices/xattrop
         directory of every brick for certain time. When there are no entries
