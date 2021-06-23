@@ -105,3 +105,81 @@ class HealOps:
         else:
             self.logger.error("Some of the self-heal Daemons are offline")
             return False
+
+    def monitor_heal_completion(self, node: str, volname: str,
+                                timeout_period=1200, bricks=None,
+                                interval_check=120):
+        """
+        Monitors heal completion by looking into .glusterfs/indices/xattrop
+        directory of every brick for certain time. When there are no entries
+        in all the brick directories then heal is successful.
+        Otherwise heal is pending on the volume.
+
+        Args:
+            node : Node on which commands are executed
+            volname : Name of the volume
+            timeout_period : time until which the heal monitoring to be done.
+                             Default: 1200 i.e 20 minutes.
+            bricks : list of bricks to monitor heal, if not provided
+                    heal will be monitored on all bricks of volume
+            interval_check : Time in seconds, for every given interval checks
+                            the heal info, defaults to 120.
+
+        Returns:
+            bool: True if heal is complete within timeout_period.
+            False otherwise
+        """
+        if timeout_period != 0:
+            heal_monitor_timeout = timeout_period
+
+        time_counter = heal_monitor_timeout
+        self.logger.info("Heal monitor timeout is : ",
+                         f"{(heal_monitor_timeout / 60)} minutes")
+
+        # Get all bricks
+        bricks_list = bricks or self.get_all_bricks(volname, node)
+        if bricks_list is None:
+            self.logger.error("Unable to get the bricks list. Hence"
+                              "unable to verify whether self-heal-daemon "
+                              "process is running or not "
+                              f"on the volume {volname}")
+
+            return False
+
+        while time_counter > 0:
+            heal_complete = True
+            for brick in bricks_list:
+                brick_node, brick_path = brick.split(":")
+                cmd = (f"ls -1 {brick_path}/.glusterfs/indices/xattrop/ | "
+                       "grep -ve \"xattrop-\" | wc -l")
+                ret = self.execute_abstract_op_node(cmd, brick_node)
+                out = int((ret['msg'][0]).rstrip("\n"))
+                if out != 0:
+                    heal_complete = False
+            if heal_complete:
+                break
+            else:
+                sleep(interval_check)
+                time_counter = time_counter - interval_check
+
+        if heal_complete and bricks:
+            # In EC volumes, check heal completion only on online bricks
+            # and `gluster volume heal info` fails for an offline brick
+            return True
+
+        if heal_complete and not bricks:
+            heal_completion_status = self.is_heal_complete(node, volname)
+
+            if heal_completion_status:
+                self.logger.info("Heal has successfully completed"
+                                 f" on volume {volname}")
+
+                return True
+
+        self.logger.info(f"Heal has not yet completed on volume {volname}")
+
+        for brick in bricks_list:
+            brick_node, brick_path = brick.split(":")
+            cmd = f"ls -1 {brick_path}/.glusterfs/indices/xattrop/ "
+            self.execute_abstract_op_node(cmd, brick_node)
+        return False
