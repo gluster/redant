@@ -106,7 +106,7 @@ class HealOps:
             self.logger.error("Some of the self-heal Daemons are offline")
             return False
 
-    def get_heal_info(self, node: str, volname: str):
+    def get_heal_info(self, node: str, volname: str) -> list:
         """
         From the xml output of heal info command get the heal info data.
 
@@ -117,10 +117,10 @@ class HealOps:
         Returns:
             NoneType: None if parse errors.
             list: list of dictionaries. Each element in the list is the
-                heal_info data per brick.
+                  heal_info data per brick.
         """
         cmd = f"gluster volume heal {volname} info --xml"
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to get the heal info xml output for"
                               f" the volume {volname}.Hence failed to get"
@@ -176,8 +176,9 @@ class HealOps:
         return True
 
     def monitor_heal_completion(self, node: str, volname: str,
-                                timeout_period=1200, bricks=None,
-                                interval_check=120) -> bool:
+                                timeout_period: int = 1200,
+                                bricks: list = None,
+                                interval_check: int = 120) -> bool:
         """
         Monitors heal completion by looking into .glusterfs/indices/xattrop
         directory of every brick for certain time. When there are no entries
@@ -222,7 +223,7 @@ class HealOps:
                 brick_node, brick_path = brick.split(":")
                 cmd = (f"ls -1 {brick_path}/.glusterfs/indices/xattrop/ | "
                        "grep -ve \"xattrop-\" | wc -l")
-                ret = self.execute_abstract_op_node(cmd, brick_node)
+                ret = self.execute_abstract_op_node(cmd, brick_node, False)
                 out = int((ret['msg'][0]).rstrip("\n"))
                 if out != 0:
                     heal_complete = False
@@ -253,7 +254,7 @@ class HealOps:
             self.execute_abstract_op_node(cmd, brick_node)
         return False
 
-    def get_heal_info_split_brain(self, node: str, volname: str):
+    def get_heal_info_split_brain(self, node: str, volname: str) -> list:
         """
         From the xml output of heal info aplit-brain command get
         the heal info data.
@@ -268,7 +269,7 @@ class HealOps:
                 heal_info data per brick.
         """
         cmd = f"gluster volume heal {volname} info split-brain --xml"
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to get the heal info xml output for"
                               f" the volume {volname}.Hence failed to get"
@@ -294,7 +295,7 @@ class HealOps:
             heal_info_split_brain_data.append(brick_heal_info_split_brain)
         return heal_info_split_brain_data
 
-    def is_volume_in_split_brain(self, node: str, volname: str):
+    def is_volume_in_split_brain(self, node: str, volname: str) -> bool:
         """
         Verifies there are no split-brain on the volume.
         The 'number of entries' in the output of heal info split-brain
@@ -305,7 +306,7 @@ class HealOps:
             volname : Name of the volume
 
         Return:
-            bool: True if volume is not in split-brain. False otherwise
+            bool: True if volume is in split-brain. False otherwise
         """
         heal_info_split_brain_data = self.get_heal_info_split_brain(node,
                                                                     volname)
