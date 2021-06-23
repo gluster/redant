@@ -121,7 +121,6 @@ class HealOps:
         """
         cmd = f"gluster volume heal {volname} info --xml"
         ret = self.execute_abstract_op_node(cmd, node)
-        print(ret)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to get the heal info xml output for"
                               f" the volume {volname}.Hence failed to get"
@@ -129,7 +128,23 @@ class HealOps:
             return None
 
         heal_info_data = []
-        ret.findall("")
+        for brick in ret['msg']['healInfo']['bricks']['brick']:
+            brick_heal_info = {}
+            brick_files_to_heal = []
+            file_to_heal_exist = False
+
+            for element in brick:
+                if element == 'file':
+                    file_to_heal_exist = True
+                    file_info = {}
+                    file_info[element['gfid']] = brick[element]
+                    brick_files_to_heal.append(file_info)
+                else:
+                    brick_heal_info[element] = brick[element]
+            if file_to_heal_exist:
+                brick_heal_info['file'] = brick_files_to_heal
+            heal_info_data.append(brick_heal_info)
+        return heal_info_data
 
     def is_heal_complete(self, node: str, volname: str) -> bool:
         """
