@@ -252,3 +252,74 @@ class HealOps:
             cmd = f"ls -1 {brick_path}/.glusterfs/indices/xattrop/ "
             self.execute_abstract_op_node(cmd, brick_node)
         return False
+
+    def get_heal_info_split_brain(self, node: str, volname: str):
+        """
+        From the xml output of heal info aplit-brain command get
+        the heal info data.
+
+        Args:
+            node : Node on which commands are executed
+            volname : Name of the volume
+
+        Returns:
+            NoneType: None if parse errors.
+            list: list of dictionaries. Each element in the list is the
+                heal_info data per brick.
+        """
+        cmd = f"gluster volume heal {volname} info split-brain --xml"
+        ret = self.execute_abstract_op_node(cmd, node)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to get the heal info xml output for"
+                              f" the volume {volname}.Hence failed to get"
+                              " the heal info summary.")
+            return None
+
+        heal_info_split_brain_data = []
+        for brick in ret['msg']['healInfo']['bricks']['brick']:
+            brick_heal_info_split_brain = {}
+            brick_files_sp_brain = []
+            is_file_in_split_brain = False
+
+            for element in brick:
+                if element == 'file':
+                    is_file_in_split_brain = True
+                    file_info = {}
+                    file_info[element['gfid']] = brick[element]
+                    brick_files_sp_brain.append(file_info)
+                else:
+                    brick_heal_info_split_brain[element] = brick[element]
+            if is_file_in_split_brain:
+                brick_heal_info_split_brain['file'] = brick_files_sp_brain
+            heal_info_split_brain_data.append(brick_heal_info_split_brain)
+        return heal_info_split_brain_data
+
+    def is_volume_in_split_brain(self, node: str, volname: str):
+        """
+        Verifies there are no split-brain on the volume.
+        The 'number of entries' in the output of heal info split-brain
+        for all the bricks should be 0 for volume not to be in split-brain.
+
+        Args:
+            node : Node on which commands are executed
+            volname : Name of the volume
+
+        Return:
+            bool: True if volume is not in split-brain. False otherwise
+        """
+        heal_info_split_brain_data = self.get_heal_info_split_brain(node,
+                                                                    volname)
+        if heal_info_split_brain_data is None:
+            self.logger.error(f"Unable to verify whether volume {volname}"
+                              " is not in split-brain or not")
+            return False
+
+        for brick_heal_info_split_brain_data in heal_info_split_brain_data:
+            if brick_heal_info_split_brain_data['numberOfEntries'] == '-':
+                continue
+            if brick_heal_info_split_brain_data['numberOfEntries'] != '0':
+                self.logger.error(f"Volume {volname} is in split-brain state.")
+                return True
+
+        self.logger.info(f"Volume {volname} is not in split-brain state.")
+        return False

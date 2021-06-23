@@ -3,7 +3,7 @@ Test case that deals with testing the functionalities
 in heal ops
 """
 
-# nonDisruptive;rep
+# nonDisruptive;rep,dist-rep,arb,dist-arb
 
 from tests.nd_parent_test import NdParentTest
 
@@ -23,4 +23,12 @@ class TestCase(NdParentTest):
         if not redant.is_heal_complete(self.server_list[0],
                                        self.vol_name):
             raise Exception("Heal not yet finished")
-            
+        sp_br_heal_info = (redant.
+                           get_heal_info_split_brain(self.server_list[0],
+                                                     self.vol_name))
+        if sp_br_heal_info is None:
+            raise Exception("Failed to get heal info in split-brain")
+
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume in split-brain")
