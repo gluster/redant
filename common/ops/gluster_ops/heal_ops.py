@@ -127,24 +127,7 @@ class HealOps:
                               " the heal info summary.")
             return None
 
-        heal_info_data = []
-        for brick in ret['msg']['healInfo']['bricks']['brick']:
-            brick_heal_info = {}
-            brick_files_to_heal = []
-            file_to_heal_exist = False
-
-            for element in brick:
-                if element == 'file':
-                    file_to_heal_exist = True
-                    file_info = {}
-                    file_info[element['gfid']] = brick[element]
-                    brick_files_to_heal.append(file_info)
-                else:
-                    brick_heal_info[element] = brick[element]
-            if file_to_heal_exist:
-                brick_heal_info['file'] = brick_files_to_heal
-            heal_info_data.append(brick_heal_info)
-        return heal_info_data
+        return ret['msg']['healInfo']['bricks']['brick']
 
     def is_heal_complete(self, node: str, volname: str) -> bool:
         """
@@ -277,24 +260,7 @@ class HealOps:
                               " the heal info summary.")
             return None
 
-        heal_info_split_brain_data = []
-        for brick in ret['msg']['healInfo']['bricks']['brick']:
-            brick_heal_info_split_brain = {}
-            brick_files_sp_brain = []
-            is_file_in_split_brain = False
-
-            for element in brick:
-                if element == 'file':
-                    is_file_in_split_brain = True
-                    file_info = {}
-                    file_info[element['gfid']] = brick[element]
-                    brick_files_sp_brain.append(file_info)
-                else:
-                    brick_heal_info_split_brain[element] = brick[element]
-            if is_file_in_split_brain:
-                brick_heal_info_split_brain['file'] = brick_files_sp_brain
-            heal_info_split_brain_data.append(brick_heal_info_split_brain)
-        return heal_info_split_brain_data
+        return ret['msg']['healInfo']['bricks']['brick']
 
     def is_volume_in_split_brain(self, node: str, volname: str) -> bool:
         """
