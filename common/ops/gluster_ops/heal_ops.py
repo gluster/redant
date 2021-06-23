@@ -227,6 +227,7 @@ class HealOps:
                 out = int((ret['msg'][0]).rstrip("\n"))
                 if out != 0:
                     heal_complete = False
+                    break
             if heal_complete:
                 break
             sleep(interval_check)
