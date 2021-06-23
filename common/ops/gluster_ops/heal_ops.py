@@ -202,7 +202,7 @@ class HealOps:
             heal_monitor_timeout = timeout_period
 
         time_counter = heal_monitor_timeout
-        self.logger.info("Heal monitor timeout is : ",
+        self.logger.info("Heal monitor timeout is : "
                          f"{(heal_monitor_timeout / 60)} minutes")
 
         # Get all bricks
