@@ -148,6 +148,7 @@ class HealOps:
 
         while time_counter > 0:
             heal_complete = True
+
             for brick in bricks_list:
                 brick_node, brick_path = brick.split(":")
                 cmd = (f"ls -1 {brick_path}/.glusterfs/indices/xattrop/ | "
@@ -158,9 +159,8 @@ class HealOps:
                     heal_complete = False
             if heal_complete:
                 break
-            else:
-                sleep(interval_check)
-                time_counter = time_counter - interval_check
+            sleep(interval_check)
+            time_counter = time_counter - interval_check
 
         if heal_complete and bricks:
             # In EC volumes, check heal completion only on online bricks
