@@ -106,6 +106,35 @@ class HealOps:
             self.logger.error("Some of the self-heal Daemons are offline")
             return False
 
+    def is_heal_complete(self, node: str, volname: str):
+        """
+        Verifies there are no pending heals on the volume.
+        The 'number of entries' in the output of heal info
+        for all the bricks should be 0 for heal to be completed.
+
+        Args:
+            node : Node on which commands are executed
+            volname : Name of the volume
+
+        Return:
+            bool: True if heal is complete. False otherwise
+        """
+        heal_info_data = self.get_heal_info(node, volname)
+        if heal_info_data is None:
+            self.logger.error("Unable to identify whether heal is"
+                              f" successfull or not on volume {volname}")
+            return False
+
+        for brick_heal_info_data in heal_info_data:
+            if brick_heal_info_data["numberOfEntries"] != '0':
+                self.logger.error("Heal is not complete on some of the bricks"
+                                  f" for the volume {volname}")
+                return False
+
+        self.logger.info("Heal is complete for all the bricks"
+                         f" on the volume {volname}")
+        return True
+
     def monitor_heal_completion(self, node: str, volname: str,
                                 timeout_period=1200, bricks=None,
                                 interval_check=120):
