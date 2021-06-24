@@ -828,6 +828,15 @@ class VolumeOps(AbstractOps):
             multi_option (bool): Set multiple options together for a
                                  volume/cluster
             excep (bool): To bypass or not to bypass the exception handling.
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+
         Example:
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, server)
