@@ -893,3 +893,64 @@ class IoOps(AbstractOps):
         if len(ret['msg']) == 0:
             return 1
         return 0
+
+    def add_user(self, servers: str, username: str,
+                 group: str = None) -> bool:
+        """
+        Add user with default home directory
+
+        Args:
+            servers(list|str): hostname/ip of the system
+            username(str): username of the user to be created.
+            group(str): Group name to which user is to be
+                        added.(Default:None)
+
+        Returns:
+            bool : True if user add is successful on all servers.
+                   False otherwise.
+        """
+        # Checking if group is given or not
+        if not group:
+            cmd = f"useradd -m {username} -d /home/{username}"
+        else:
+            cmd = f"useradd -G {group} {username}"
+
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+        for result in results:
+            if (result['error_code'] != 0
+               and "already exists" not in result['error_msg']):
+                self.logger.error("Unable to add user "
+                                  f"on {result['node']}")
+                return False
+        return True
+
+    def del_user(self, servers: str, uname: str) -> bool:
+        """
+        Delete user with home directory
+
+        Args:
+            servers (str|list): list of hostname/ip of the system
+            uname (str): username
+
+        Returns:
+        True if user delete is successful on all servers.
+        False otherwise.
+        """
+        cmd = f"userdel -r {uname}"
+
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+        for result in results:
+            if (result['error_code'] != 0
+               and "does not exist" not in result['error_msg']):
+                self.logger.error("Unable to delete user "
+                                  f"on {result['node']}")
+                return False
+        return True
