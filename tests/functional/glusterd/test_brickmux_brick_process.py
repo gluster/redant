@@ -55,12 +55,10 @@ class TestCase(DParentTest):
         vol_list = redant.get_volume_list(self.server_list[0])
         for volname in vol_list:
             if vol_list.index(volname) == 2:
-                redant.execute_abstract_op_node("reboot",
-                                                self.server_list[2],
-                                                False)
-            ret = redant.volume_start(volname,
-                                      self.server_list[0],
-                                      excep=False)
+                redant.reboot_nodes(self.server_list[2])
+
+            redant.volume_start(volname,
+                                self.server_list[0])
 
         if not redant.wait_node_power_up(self.server_list[2]):
             raise Exception(f"Node {self.server_list[2]} not yet up")
