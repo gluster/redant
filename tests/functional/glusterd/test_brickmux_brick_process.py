@@ -21,7 +21,6 @@
 """
 # disruptive;
 
-from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -57,21 +56,17 @@ class TestCase(DParentTest):
         for volname in vol_list:
             if vol_list.index(volname) == 2:
                 redant.execute_abstract_op_node("reboot",
-                                                self.server_list[2])
+                                                self.server_list[2],
+                                                False)
             ret = redant.volume_start(volname,
                                       self.server_list[0],
                                       excep=False)
-            print(ret, "\n\n")
 
-        for _ in range(10):
-            sleep(1)
-            ret = redant.are_nodes_online(self.server_list[2])
-            if ret:
-                break
+        if not redant.wait_node_power_up(self.server_list[2]):
+            raise Exception(f"Node {self.server_list[2]} not yet up")
 
-        if not ret:
-            raise Exception("Node is not online")
-
+        if not redant.wait_till_all_peers_connected(self.server_list):
+            raise Exception("Some peers not yet connected")
         for server in self.server_list:
             ret = redant.execute_abstract_op_node("pgrep glusterfsd",
                                                   server)

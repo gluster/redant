@@ -65,10 +65,8 @@ class MachineOps(AbstractOps):
         True if all the nodes are online else False
         """
         ret = self.check_node_power_status(nodes)
-        for key in ret:
-            if not ret[key]:
-                return False
-        return True
+
+        return all(list(ret.values()))
 
     def wait_node_power_up(self, node: str, timeout: int = 100):
         """
