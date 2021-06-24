@@ -66,8 +66,6 @@ class TestCase(DParentTest):
         if not redant.wait_till_all_peers_connected(self.server_list):
             raise Exception("Some peers not yet connected")
         for server in self.server_list:
-            ret = redant.execute_abstract_op_node("pgrep glusterfsd",
-                                                  server)
-            out = ret['msg']
-            if len(out) != 1:
+            out = redant.get_brick_processes_count(server)
+            if out is not None and out != 1:
                 raise Exception("More then 1 brick process seen in glusterfsd")
