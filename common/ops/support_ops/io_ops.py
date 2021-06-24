@@ -954,3 +954,57 @@ class IoOps(AbstractOps):
                                   f"on {result['node']}")
                 return False
         return True
+
+    def group_add(self, servers: list, groupname: str) -> bool:
+        """
+        Creates a group in all the servers.
+
+        Args:
+            servers(list|str): Nodes on which cmd is to be executed.
+            groupname(str): Name of the group to be created.
+
+        Returns:
+            bool: True if add group is successful on all servers.
+                  False otherwise.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        cmd = f"groupadd {groupname}"
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+
+        for result in results:
+            if (result['error_code'] != 0
+               and "already exists" not in result['error_msg']):
+                self.logger.error(f"Unable to add group {groupname} "
+                                  f"on {result['node']}")
+                return False
+        return True
+
+    def group_del(self, servers: list, groupname: str) -> bool:
+        """
+        Deletes a group in all the servers.
+
+        Args:
+            servers(list|str): Nodes on which cmd is to be executed.
+            groupname(str): Name of the group to be removed.
+
+        Returns:
+            bool: True if delete group is successful on all servers.
+                  False otherwise.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        cmd = f"groupdel {groupname}"
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+
+        for result in results:
+            if (result['error_code'] != 0
+               and "does not exist" not in result['error_msg']):
+                self.logger.error(f"Unable to delete group {groupname} "
+                                  f"on {result['node']}")
+                return False
+        return True
