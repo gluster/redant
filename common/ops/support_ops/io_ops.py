@@ -6,7 +6,7 @@ import os
 import re
 from common.ops.abstract_ops import AbstractOps
 
-
+# pylint: disable=too-many-lines
 class IoOps(AbstractOps):
     """
     IoOps class provides API to handle
