@@ -30,3 +30,27 @@ class TestCase(NdParentTest):
                                                 self.vol_name)
         if not ret:
             self.logger.error("Can't get vol info and status")
+        # checking auth ops for volume
+        auth_dict = {'all': [self.client_list[0]]}
+        ret = redant.set_auth_reject(self.vol_name,
+                                     self.server_list[1],
+                                     auth_dict)
+        if not ret:
+            raise Exception(f"Failed to set auth reject"
+                            f" on {self.server_list[1]}")
+        if not (redant.
+                verify_auth_reject(self.vol_name,
+                                   self.server_list[1],
+                                   auth_dict)):
+            raise Exception("Verification failed")
+        ret = redant.set_auth_allow(self.vol_name,
+                                    self.server_list[1],
+                                    auth_dict)
+        if not ret:
+            raise Exception(f"Failed to set auth allow "
+                            f"on {self.server_list[1]}")
+        if not (redant.
+                verify_auth_allow(self.vol_name,
+                                  self.server_list[1],
+                                  auth_dict)):
+            raise Exception("Verification failed")
