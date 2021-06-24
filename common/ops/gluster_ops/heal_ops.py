@@ -291,3 +291,44 @@ class HealOps:
 
         self.logger.info(f"Volume {volname} is not in split-brain state.")
         return False
+
+    def is_shd_daemonized(nodes: str, timeout: int = 120) -> bool:
+        """
+        Wait for the glustershd process to release parent process.
+
+        Args:
+            nodes ( str|list ) : Node/Nodes of the cluster
+            timeout (int): timeout value in seconds to wait for self-heal-daemons
+            to be online.
+
+        Returns:
+            bool : True if glustershd releases its parent.
+                   False Otherwise
+        """
+        counter = 0
+        flag = 0
+
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        while counter < timeout:
+            ret = self.get_self_heal_daemon_pid(nodes)
+
+            # TODO: verify it after creating get_self_heal_daemon
+            if not ret:
+                self.logger.info("Retry after 3 sec to get"
+                                 " self-heal daemon process.....")
+                sleep(3)
+                counter = counter + 3
+            else:
+                flag = 1
+                break
+
+        if not flag:
+            self.logger.error("Either No self heal daemon process found or more than"
+                              "One self heal daemon process found even "
+                              f"after {timeout/60.0} minutes")
+            return False
+        else:
+            self.logger.info(f"Single self heal daemon process on all nodes {nodes}")
+        return True
