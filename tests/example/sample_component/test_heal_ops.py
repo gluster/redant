@@ -53,6 +53,13 @@ class TestCase(NdParentTest):
 
         if 'file' not in self.heal_info[0]:
             raise Exception("File not in heal info")
+
+        ret = redant.get_self_heal_daemon_pid(self.server_list)
+        if not ret[0]:
+            raise Exception("Self heal daemon faced some issues")
+
+        if not redant.is_shd_daemonized(self.server_list):
+            raise Exception("Self heal daemon not daemonized")
         # monitor heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
                                               self.vol_name):

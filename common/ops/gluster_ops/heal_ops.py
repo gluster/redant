@@ -292,14 +292,68 @@ class HealOps:
         self.logger.info(f"Volume {volname} is not in split-brain state.")
         return False
 
-    def is_shd_daemonized(nodes: str, timeout: int = 120) -> bool:
+    def get_self_heal_daemon_pid(self, nodes: str) -> tuple:
+        """
+        Checks if self-heal daemon process is running and
+        return the process id's in dictionary format
+
+        Args:
+            nodes ( str|list ) : Node/Nodes of the cluster
+
+        Returns:
+            tuple : Tuple containing two elements (ret, glustershd_pids).
+            The first element 'ret' is of type 'bool', True if and only if
+            glustershd is running on all the nodes in the list and each
+            node contains only one instance of glustershd running.
+            False otherwise.
+
+            The second element 'glustershd_pids' is of type dictonary and it
+            contains the process ID's for glustershd
+        """
+        glustershd_pids = {}
+        _rc = True
+
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+        cmd = r"pgrep -f glustershd | grep -v ^$$\$"
+        self.logger.info(f"Running {cmd} on nodes {nodes}")
+        results = self.execute_abstract_op_multinode(cmd, nodes)
+
+        for result in results:
+            if result['error_code'] == 0:
+                if len(result['msg']) == 1:
+                    if not (result['msg'][0]).strip().rstrip("\n"):
+                        self.logger.error("No self heal daemon process found"
+                                          f" on node {result['node']}")
+                        _rc = False
+                        glustershd_pids[result['node']] = [-1]
+                    else:
+                        pid = (result['msg'][0]).rstrip('\n')
+                        self.logger.info("Single self heal daemon process with"
+                                         f" pid {pid}"
+                                         f" found on node {result['node']}")
+                        glustershd_pids[result['node']] = pid
+                else:
+                    self.logger.error("More than one self heal daemon process"
+                                      f" found on node {result['node']}")
+                    _rc = False
+                    glustershd_pids[result['node']] = [-1]
+            else:
+                self.logger.error("Unable to get self heal daemon process"
+                                  f" from node {result['node']}")
+                _rc = False
+                glustershd_pids[result['node']] = [-1]
+
+        return _rc, glustershd_pids
+
+    def is_shd_daemonized(self, nodes: str, timeout: int = 120) -> bool:
         """
         Wait for the glustershd process to release parent process.
 
         Args:
             nodes ( str|list ) : Node/Nodes of the cluster
-            timeout (int): timeout value in seconds to wait for self-heal-daemons
-            to be online.
+            timeout (int): timeout value in seconds to wait for
+            self-heal-daemons to be online.
 
         Returns:
             bool : True if glustershd releases its parent.
@@ -314,7 +368,6 @@ class HealOps:
         while counter < timeout:
             ret = self.get_self_heal_daemon_pid(nodes)
 
-            # TODO: verify it after creating get_self_heal_daemon
             if not ret:
                 self.logger.info("Retry after 3 sec to get"
                                  " self-heal daemon process.....")
@@ -325,10 +378,11 @@ class HealOps:
                 break
 
         if not flag:
-            self.logger.error("Either No self heal daemon process found or more than"
-                              "One self heal daemon process found even "
-                              f"after {timeout/60.0} minutes")
+            self.logger.error("Either No self heal daemon process found "
+                              "or more than one self heal daemon process"
+                              f" found even after {timeout/60.0} minutes")
             return False
         else:
-            self.logger.info(f"Single self heal daemon process on all nodes {nodes}")
+            self.logger.info("Single self heal daemon process on"
+                             f" all nodes {nodes}")
         return True
