@@ -1,18 +1,23 @@
-#  Copyright (C) 2016-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2016-2020  Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+This test case deals with self-heal tests related to arbiter volume
+type
 
 from glusto.core import Glusto as g
 
@@ -32,61 +37,16 @@ from glustolibs.misc.misc_libs import upload_scripts
 
 @runs_on([['arbiter'],
           ['glusterfs']])
-class ArbiterSelfHealTests(GlusterBaseClass):
-    """
-        Arbiter Self-Heal tests
-    """
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+"""
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on mounts",
-                   cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
+# disruptive;arb
 
-    def setUp(self):
-        """
-        setUp method for every test
-        """
+from tests.d_parent_test import DParentTest
 
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume %s", self.volname)
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
+class TestCase(DParentTest):
 
-    def tearDown(self):
-        """
-        If test method failed before validating IO, tearDown waits for the
-        IO's to complete and checks for the IO exit status
-
-        Cleanup and umount volume
-        """
-
-        # Cleanup and umount volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass teardown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_no_data_loss_arbiter_vol_after_rename_file(self):
+    def run_test(self, redant):
         """
         - Create a 1x(2+1) arbiter replicate volume
         - Turn off Clients side healing option
@@ -102,7 +62,6 @@ class ArbiterSelfHealTests(GlusterBaseClass):
         - Check if no pending heals
         - Check if md5sum on mountpoint is the same for md5sum_node on nodes
         """
-        # pylint: disable=too-many-locals,too-many-statements
         test_dir = 'test_dir'
 
         # Setting options
