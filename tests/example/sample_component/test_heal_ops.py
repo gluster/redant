@@ -60,6 +60,12 @@ class TestCase(NdParentTest):
 
         if not redant.is_shd_daemonized(self.server_list):
             raise Exception("Self heal daemon not daemonized")
+
+        if not redant.is_shd_daemon_running(self.server_list[0],
+                                            self.server_list[1],
+                                            self.vol_name):
+            raise Exception("Self-heal Daemon not running on"
+                            f" node {self.server_list[1]}")
         # monitor heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
                                               self.vol_name):
