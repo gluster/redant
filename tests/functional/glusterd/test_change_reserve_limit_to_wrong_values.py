@@ -52,17 +52,16 @@ class TestCase(NdParentTest):
             temp_val = self.get_random_string(char_type)
             temp_val = temp_val.replace("'", "").replace("&", "")
             value = "'{}'".format(temp_val)
-            try:
-                redant.set_volume_options(self.vol_name, {key: value},
-                                          self.server_list[0])
-            except Exception:
-                redant.logger.info("Wrong value was tested successfully")
+            ret = redant.set_volume_options(self.vol_name, {key: value},
+                                            self.server_list[0], excep=False)
+            if ret['msg']['opRet'] == '0':
+                raise Exception("Unexpected: Successfully set wrong value for"
+                                " a volume")
 
         # Passing an out of range value
         for value in ('-1%', '-101%', '101%', '-1', '-101'):
-            try:
-                redant.set_volume_options(self.vol_name,
-                                          {key: value},
-                                          self.server_list[0])
-            except Exception:
-                redant.logger.info("Wrong value was tested successfully")
+            ret = redant.set_volume_options(self.vol_name, {key: value},
+                                            self.server_list[0], excep=False)
+            if ret['msg']['opRet'] == '0':
+                raise Exception("Unexpected: Successfully set wrong value for"
+                                " a volume")

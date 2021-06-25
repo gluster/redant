@@ -7,6 +7,7 @@ import re
 from common.ops.abstract_ops import AbstractOps
 
 
+# pylint: disable=too-many-lines
 class IoOps(AbstractOps):
     """
     IoOps class provides API to handle
@@ -893,3 +894,118 @@ class IoOps(AbstractOps):
         if len(ret['msg']) == 0:
             return 1
         return 0
+
+    def add_user(self, servers: str, username: str,
+                 group: str = None) -> bool:
+        """
+        Add user with default home directory
+
+        Args:
+            servers(list|str): hostname/ip of the system
+            username(str): username of the user to be created.
+            group(str): Group name to which user is to be
+                        added.(Default:None)
+
+        Returns:
+            bool : True if user add is successful on all servers.
+                   False otherwise.
+        """
+        # Checking if group is given or not
+        if not group:
+            cmd = f"useradd -m {username} -d /home/{username}"
+        else:
+            cmd = f"useradd -G {group} {username}"
+
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+        for result in results:
+            if (result['error_code'] != 0
+               and "already exists" not in result['error_msg']):
+                self.logger.error("Unable to add user "
+                                  f"on {result['node']}")
+                return False
+        return True
+
+    def del_user(self, servers: str, uname: str) -> bool:
+        """
+        Delete user with home directory
+
+        Args:
+            servers (str|list): list of hostname/ip of the system
+            uname (str): username
+
+        Returns:
+        True if user delete is successful on all servers.
+        False otherwise.
+        """
+        cmd = f"userdel -r {uname}"
+
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+        for result in results:
+            if (result['error_code'] != 0
+               and "does not exist" not in result['error_msg']):
+                self.logger.error("Unable to delete user "
+                                  f"on {result['node']}")
+                return False
+        return True
+
+    def group_add(self, servers: list, groupname: str) -> bool:
+        """
+        Creates a group in all the servers.
+
+        Args:
+            servers(list|str): Nodes on which cmd is to be executed.
+            groupname(str): Name of the group to be created.
+
+        Returns:
+            bool: True if add group is successful on all servers.
+                  False otherwise.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        cmd = f"groupadd {groupname}"
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+
+        for result in results:
+            if (result['error_code'] != 0
+               and "already exists" not in result['error_msg']):
+                self.logger.error(f"Unable to add group {groupname} "
+                                  f"on {result['node']}")
+                return False
+        return True
+
+    def group_del(self, servers: list, groupname: str) -> bool:
+        """
+        Deletes a group in all the servers.
+
+        Args:
+            servers(list|str): Nodes on which cmd is to be executed.
+            groupname(str): Name of the group to be removed.
+
+        Returns:
+            bool: True if delete group is successful on all servers.
+                  False otherwise.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        cmd = f"groupdel {groupname}"
+        results = self.execute_abstract_op_multinode(cmd, servers,
+                                                     False)
+
+        for result in results:
+            if (result['error_code'] != 0
+               and "does not exist" not in result['error_msg']):
+                self.logger.error(f"Unable to delete group {groupname} "
+                                  f"on {result['node']}")
+                return False
+        return True

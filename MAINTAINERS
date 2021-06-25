@@ -14,14 +14,9 @@ Descriptions of section entries:
 	M: Main contact that knows and takes care of this area
     P: Peer for a component
 
-Initial ideation and High Level Design:
+Architecture & POC:
 ------------------
-Barak Sason Rofman <bsasonro@redhat.com>
-
-Project Architects:
--------------------
-M: Srijan Sivakumar <ssivakum@redhat.com>
-P: Nikhil Ladha <nladha@redhat.com>
+Barak Sason Rofman <sason922@gmail.com>
 
 Dev Team:
 ---------
@@ -35,4 +30,4 @@ Special Thanks
 --------------
 
 Redant would not be possible without the contributions of:
-Barak Sason Rofman <bsasonro@redhat.com>
+Barak Sason Rofman <sason922@gmail.com>

@@ -64,9 +64,9 @@ class TestCase(NdParentTest):
         if current_op_version < max_op_version:
 
             # Set max-op-version
-            ret = redant.set_volume_options(
-                'all', {'cluster.op-version': max_op_version},
-                self.server_list[0])
+            redant.set_volume_options('all',
+                                      {'cluster.op-version': max_op_version},
+                                      self.server_list[0])
 
             # Grepping version number from vol info file after
             # vol set operation
