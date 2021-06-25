@@ -135,7 +135,7 @@ class HealOps:
         i.e Bricks and it's corresponding number of entries, status.
 
         Args:
-            mnode : Node on which commands are executed
+            node : Node on which commands are executed
             volname : Name of the volume
 
         Returns:
@@ -357,7 +357,7 @@ class HealOps:
             nodes = [nodes]
         cmd = r"pgrep -f glustershd | grep -v ^$$\$"
         self.logger.info(f"Running {cmd} on nodes {nodes}")
-        results = self.execute_abstract_op_multinode(cmd, nodes)
+        results = self.execute_abstract_op_multinode(cmd, nodes, False)
 
         for result in results:
             if result['error_code'] == 0:
@@ -400,43 +400,40 @@ class HealOps:
                    False Otherwise
         """
         counter = 0
-        flag = 0
 
         if not isinstance(nodes, list):
             nodes = [nodes]
 
         while counter < timeout:
-            ret = self.get_self_heal_daemon_pid(nodes)
+            ret, _ = self.get_self_heal_daemon_pid(nodes)
 
-            if not ret:
-                self.logger.info("Retry after 3 sec to get"
-                                 " self-heal daemon process.....")
-                sleep(3)
-                counter = counter + 3
-            else:
-                flag = 1
+            if ret:
                 break
 
-        if not flag:
+            self.logger.info("Retry after 3 sec to get"
+                             " self-heal daemon process.....")
+            sleep(3)
+            counter = counter + 3
+
+        if not ret:
             self.logger.error("Either No self heal daemon process found "
                               "or more than one self heal daemon process"
                               f" found even after {timeout/60.0} minutes")
-            return False
         else:
             self.logger.info("Single self heal daemon process on"
                              f" all nodes {nodes}")
-        return True
+        return ret
 
-    def is_shd_daemon_running(self, mnode: str,
-                              node: str, volname: str) -> bool:
+    def is_shd_daemon_running(self, node: str,
+                              server: str, volname: str) -> bool:
         """
         Verifies whether the shd daemon is up and running on a
         particular node by checking the existence of shd pid
         and parsing the get volume status output.
 
         Args:
-            mnode (str): The first node in servers list
-            node (str): The node to be checked for whether
+            node (str): The first node in servers list
+            server (str): The node to be checked for whether
             the glustershd process is up or not
             volname (str): Name of the volume created
 
@@ -445,15 +442,16 @@ class HealOps:
             False, otherwise
         """
         # Get glustershd pid from node
-        ret, glustershd_pids = self.get_self_heal_daemon_pid(node)
-        if not ret and glustershd_pids[node] != -1:
+        ret, glustershd_pids = self.get_self_heal_daemon_pid(server)
+        if not ret and glustershd_pids[server] != -1:
             return False
 
         # Verifying glustershd process is no longer running from get status
-        vol_status = self.get_volume_status(volname, mnode)
+        vol_status = self.get_volume_status(volname, node)
         if vol_status is None:
             return False
         for host in vol_status[volname]['node']:
-            if host['hostname'] == 'Self-heal Daemon' and host['path'] == node:
+            if (host['hostname'] == 'Self-heal Daemon'
+               and host['path'] == server):
                 return True
         return False
