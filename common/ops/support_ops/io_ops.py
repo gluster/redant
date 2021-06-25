@@ -854,11 +854,12 @@ class IoOps(AbstractOps):
             return False
         return True
 
-    def move_file(self, node, source_fqpath, dest_fqpath):
+    def move_file(self, node: str, source_fqpath: str,
+                  dest_fqpath: str) -> bool:
         """Move a remote file.
 
         Args:
-            host (str): The hostname/ip of the remote system.
+            node (str): The hostname/ip of the remote system.
             source_fqpath (str): The fully-qualified path to
                                  the file to move.
             dest_fqpath (str): The fully-qualified path to the new
@@ -874,11 +875,12 @@ class IoOps(AbstractOps):
             return True
         return False
 
-    def check_if_pattern_in_file(self, node, pattern, fqpath):
+    def check_if_pattern_in_file(self, node: str, pattern: str,
+                                 fqpath: str) -> int:
         """Check if a give pattern is in seen in file or not.
 
         Args:
-            host (str): The hostname/ip of the remote system.
+            node (str): The hostname/ip of the remote system.
             pattern(str): Pattern to be found in file.
             fqpath (str): The fully-qualified path to the file.
 
