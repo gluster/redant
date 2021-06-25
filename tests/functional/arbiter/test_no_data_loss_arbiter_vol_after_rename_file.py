@@ -16,27 +16,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 Description:
-This test case deals with self-heal tests related to arbiter volume
-type
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_ops import (set_volume_options,
-                                           get_volume_options)
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           bring_bricks_online,
-                                           are_bricks_offline,
-                                           get_all_bricks)
-from glustolibs.gluster.heal_libs import (monitor_heal_completion,
-                                          is_heal_complete,
-                                          is_volume_in_split_brain)
-from glustolibs.misc.misc_libs import upload_scripts
-
-
-@runs_on([['arbiter'],
-          ['glusterfs']])
+    This test case deals with self-heal tests related to arbiter volume
+    type.
 """
 
 # disruptive;arb
@@ -92,21 +73,20 @@ class TestCase(DParentTest):
 
         # self.assertFalse(ret, err)
         # g.log.info("IO is successful")
-        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        mount_obj = redant.es.get_mnt_pts_dict_in_list(self.vol_name)[0]
         self.list_of_procs = []
-        for mount_obj in self.mnt_list:
-            redant.logger.info(f"Starting IO on {mount_obj['client']}:"
-                               f"{mount_obj['mountpath']}")
-            path_dir = f"{mount_obj['mountpath']}/{test_dir}"
-            proc = redant.create_deep_dirs_with_files(path_dir,
-                                                      1,
-                                                      1, 0, 1, 0,
-                                                      mount_obj['client'])
+        redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                            f"{mount_obj['mountpath']}")
+        path_dir = f"{mount_obj['mountpath']}/{test_dir}"
+        proc = redant.create_deep_dirs_with_files(path_dir,
+                                                  1,
+                                                  1, 0, 1, 0,
+                                                  mount_obj['client'])
 
-            self.list_of_procs.append(proc)
+        self.list_of_procs.append(proc)
 
         # Validate IO
-        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        ret = redant.validate_io_procs(self.list_of_procs, mount_obj)
         if not ret:
             raise Exception("IO validation failed")
 
@@ -125,66 +105,43 @@ class TestCase(DParentTest):
                             "is not offline")
 
         # Create file under dir test_dir
-        for mount_obj in self.mnt_list:
-            if not (redant.
-                    create_file(path_dir, 'test_file',
-                                mount_obj['client'])):
-                print("File creation failed")
+        if not (redant.
+                create_file(path_dir, 'test_file.txt',
+                            mount_obj['client'])):
+            print("File creation failed")
 
-        # # get md5sum for file
-        # g.log.info('Getting md5sum for file on %s', self.mounts[0].mountpoint)
+        # get md5sum for file
+        cmd = (f"md5sum {path_dir}/test_file.txt |"
+                " awk '{ print $1 }'")
 
-        # command = ("md5sum %s/%s/testfile0.txt | awk '{ print $1 }'"
-        #            % (self.mounts[0].mountpoint, test_dir))
+        ret = redant.execute_abstract_op_node(cmd,
+                                                mount_obj['client'])
+        md5sum = (ret['msg'][0]).rstrip("\n")
+        redant.logger.info(f"md5sum: {md5sum}")
 
-        # ret, md5sum, err = g.run(self.mounts[0].client_system, command,
-        #                          user=self.mounts[0].user)
-        # self.assertFalse(ret, err)
-        # g.log.info('md5sum: %s', md5sum)
+        # Bring brick 2 offline
+        bricks_to_bring_offline = [bricks_list[1]]
+        redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
 
-        # # Bring brick 2 offline
-        # bricks_to_bring_offline = [bricks_list[1]]
-        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-        #                 bricks_to_bring_offline)
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception(f"Brick {bricks_to_bring_offline} "
+                            "is not offline")
+        # Bring 1-st brick online
+        bricks_to_bring_online = [bricks_list[0]]
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_to_bring_online)
 
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Bricks %s are not offline'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s offline is successful',
-        #            bricks_to_bring_offline)
+        # Rename file under test_dir
+        if not (redant.
+                move_file(mount_obj['client'], f"{path_dir}/test_file.txt",
+                          f"{path_dir}/test_file_new.txt")):
+            raise Exception("Failed to rename the file")
 
-        # # Bring 1-st brick online
-        # bricks_to_bring_online = [bricks_list[0]]
-        # g.log.info('Bringing bricks %s online...', bricks_to_bring_online)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_online)
-        # self.assertTrue(ret, 'Failed to bring bricks %s online'
-        #                 % bricks_to_bring_online)
-        # g.log.info('Bringing bricks %s online is successful',
-        #            bricks_to_bring_online)
-
-        # # Rename file under test_dir
-        # g.log.info("Renaming file for %s:%s",
-        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
-        # command = "/usr/bin/env python %s mv %s/%s" % (
-        #     self.script_upload_path,
-        #     self.mounts[0].mountpoint, test_dir)
-        # ret, _, err = g.run(self.mounts[0].client_system, command)
-        # self.assertEqual(ret, 0, err)
-        # g.log.info("Renaming file for %s:%s is successful",
-        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
-
-        # # Bring 2-nd brick online
-        # g.log.info('Bringing bricks %s online...', bricks_to_bring_offline)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s online'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s online is successful',
-        #            bricks_to_bring_offline)
+        # Bring 2-nd brick online
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_to_bring_offline)
 
         # # Mount and unmount mounts
         # ret = self.unmount_volume(self.mounts)
