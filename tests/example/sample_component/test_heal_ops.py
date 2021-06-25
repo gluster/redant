@@ -54,10 +54,6 @@ class TestCase(NdParentTest):
         if 'file' not in self.heal_info[0]:
             raise Exception("File not in heal info")
 
-        ret = redant.get_self_heal_daemon_pid(self.server_list)
-        if not ret[0]:
-            raise Exception("Self heal daemon faced some issues")
-
         if not redant.is_shd_daemonized(self.server_list):
             raise Exception("Self heal daemon not daemonized")
 
@@ -66,14 +62,22 @@ class TestCase(NdParentTest):
                                             self.vol_name):
             raise Exception("Self-heal Daemon not running on"
                             f" node {self.server_list[1]}")
+
+        heal_summ = redant.get_heal_info_summary(self.server_list[0],
+                                                 self.vol_name)
+        if heal_summ is None:
+            raise Exception("Unable to get the heal info summary")
+
         # monitor heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
                                               self.vol_name):
             raise Exception("Heal is not yet finished")
+
         # is heal complete testing
         if not redant.is_heal_complete(self.server_list[0],
                                        self.vol_name):
             raise Exception("Heal not yet finished")
+
         sp_br_heal_info = (redant.
                            get_heal_info_split_brain(self.server_list[0],
                                                      self.vol_name))

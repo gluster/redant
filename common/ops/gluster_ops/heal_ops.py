@@ -129,7 +129,45 @@ class HealOps:
 
         return ret['msg']['healInfo']['bricks']['brick']
 
-    # def get_heal_info_summary(self, )
+    def get_heal_info_summary(self, node: str, volname: str) -> dict:
+        """
+        From the xml output of heal info command  get heal info summary
+        i.e Bricks and it's corresponding number of entries, status.
+
+        Args:
+            mnode : Node on which commands are executed
+            volname : Name of the volume
+
+        Returns:
+            NoneType: None if parse errors.
+            dict: dict of dictionaries. brick names are the keys of the
+                  dict with each key having brick's status,
+                  numberOfEntries info as dict.
+                Example:
+                    heal_info_summary_data = {
+                        'ijk.lab.eng.xyz.com': {
+                            'status': 'Connected'
+                            'numberOfEntries': '11'
+                            },
+                        'def.lab.eng.xyz.com': {
+                            'status': 'Transport endpoint is not connected',
+                            'numberOfEntries': '-'
+                            }
+                        }
+        """
+        heal_info_data = self.get_heal_info(node, volname)
+        if heal_info_data is None:
+            self.logger.error("Unable to get heal info summary "
+                              f"for the volume {volname}")
+            return None
+
+        heal_info_summary_data = {}
+        for info_data in heal_info_data:
+            heal_info_summary_data[info_data['name']] = {
+                'status': info_data['status'],
+                'numberOfEntries': info_data['numberOfEntries']
+            }
+        return heal_info_summary_data
 
     def is_heal_complete(self, node: str, volname: str) -> bool:
         """
