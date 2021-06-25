@@ -94,18 +94,16 @@ class TestCase(DParentTest):
         # g.log.info("IO is successful")
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.list_of_procs = []
-        self.counter = 1
         for mount_obj in self.mnt_list:
             redant.logger.info(f"Starting IO on {mount_obj['client']}:"
                                f"{mount_obj['mountpath']}")
             path_dir = f"{mount_obj['mountpath']}/{test_dir}"
             proc = redant.create_deep_dirs_with_files(path_dir,
-                                                      self.counter,
+                                                      1,
                                                       1, 0, 1, 0,
                                                       mount_obj['client'])
 
             self.list_of_procs.append(proc)
-            self.counter += 10
 
         # Validate IO
         ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
@@ -123,22 +121,15 @@ class TestCase(DParentTest):
         if not redant.are_bricks_offline(self.vol_name,
                                          bricks_to_bring_offline,
                                          self.server_list[0]):
-            print(f"Brick {bricks_to_bring_offline} is not offline")
+            raise Exception(f"Brick {bricks_to_bring_offline} "
+                            "is not offline")
 
-        # # Create file under dir test_dir
-        # g.log.info("Generating file for %s:%s",
-        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
-        # # Create file
-        # g.log.info('Creating file...')
-        # command = "/usr/bin/env python %s create_files -f 1 %s/%s" % (
-        #     self.script_upload_path,
-        #     self.mounts[0].mountpoint, test_dir)
-
-        # ret, _, err = g.run(self.mounts[0].client_system, command,
-        #                     user=self.mounts[0].user)
-
-        # self.assertFalse(ret, err)
-        # g.log.info("Created file successfully")
+        # Create file under dir test_dir
+        for mount_obj in self.mnt_list:
+            if not (redant.
+                    create_file(path_dir, 'test_file',
+                                mount_obj['client'])):
+                print("File creation failed")
 
         # # get md5sum for file
         # g.log.info('Getting md5sum for file on %s', self.mounts[0].mountpoint)
