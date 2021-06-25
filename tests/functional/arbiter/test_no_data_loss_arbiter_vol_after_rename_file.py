@@ -68,183 +68,177 @@ class TestCase(DParentTest):
         options = {"cluster.metadata-self-heal": "off",
                    "cluster.entry-self-heal": "off",
                    "cluster.data-self-heal": "off"}
-        g.log.info('Setting options %s for volume %s...',
-                   options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, 'Failed to set options %s for volume %s'
-                        % (options, self.volname))
-        g.log.info("Successfully set %s for volume %s",
-                   options, self.volname)
-        options_dict = get_volume_options(self.mnode, self.volname)
+       
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
+        options_dict = redant.get_volume_options(self.vol_name,
+                                                 node=self.server_list[0])
         # validating  options are off
         for opt in options:
-            self.assertEqual(options_dict[opt], 'off',
-                             'options are  not set to off')
-        g.log.info('Option are set to off for volume %s: %s',
-                   options, self.volname)
+            if options_dict[opt] != 'off':
+                raise Exception("Options are not set to off")
 
-        # Creating IO on client side
-        g.log.info("Generating data for %s:%s",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
-        # Create dir
-        g.log.info('Creating dir...')
-        command = ('/usr/bin/env python %s create_deep_dir -d 1 -l 0 -n 1 '
-                   '%s/%s' % (
-                       self.script_upload_path,
-                       self.mounts[0].mountpoint, test_dir))
+        # # Creating IO on client side
+        # g.log.info("Generating data for %s:%s",
+        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
+        # # Create dir
+        # g.log.info('Creating dir...')
+        # command = ('/usr/bin/env python %s create_deep_dir -d 1 -l 0 -n 1 '
+        #            '%s/%s' % (
+        #                self.script_upload_path,
+        #                self.mounts[0].mountpoint, test_dir))
 
-        ret, _, err = g.run(self.mounts[0].client_system, command,
-                            user=self.mounts[0].user)
+        # ret, _, err = g.run(self.mounts[0].client_system, command,
+        #                     user=self.mounts[0].user)
 
-        self.assertFalse(ret, err)
-        g.log.info("IO is successful")
+        # self.assertFalse(ret, err)
+        # g.log.info("IO is successful")
 
-        # get the bricks for the volume
-        g.log.info("Fetching bricks for the volume : %s", self.volname)
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List : %s", bricks_list)
+        # # get the bricks for the volume
+        # g.log.info("Fetching bricks for the volume : %s", self.volname)
+        # bricks_list = get_all_bricks(self.mnode, self.volname)
+        # g.log.info("Brick List : %s", bricks_list)
 
-        # Bring brick 1 offline
-        bricks_to_bring_offline = [bricks_list[0]]
-        g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-                        bricks_to_bring_offline)
+        # # Bring brick 1 offline
+        # bricks_to_bring_offline = [bricks_list[0]]
+        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
+        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
+        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
+        #                 bricks_to_bring_offline)
 
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 bricks_to_bring_offline)
-        self.assertTrue(ret, 'Bricks %s are not offline'
-                        % bricks_to_bring_offline)
-        g.log.info('Bringing bricks %s offline is successful',
-                   bricks_to_bring_offline)
+        # ret = are_bricks_offline(self.mnode, self.volname,
+        #                          bricks_to_bring_offline)
+        # self.assertTrue(ret, 'Bricks %s are not offline'
+        #                 % bricks_to_bring_offline)
+        # g.log.info('Bringing bricks %s offline is successful',
+        #            bricks_to_bring_offline)
 
-        # Create file under dir test_dir
-        g.log.info("Generating file for %s:%s",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
-        # Create file
-        g.log.info('Creating file...')
-        command = "/usr/bin/env python %s create_files -f 1 %s/%s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint, test_dir)
+        # # Create file under dir test_dir
+        # g.log.info("Generating file for %s:%s",
+        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
+        # # Create file
+        # g.log.info('Creating file...')
+        # command = "/usr/bin/env python %s create_files -f 1 %s/%s" % (
+        #     self.script_upload_path,
+        #     self.mounts[0].mountpoint, test_dir)
 
-        ret, _, err = g.run(self.mounts[0].client_system, command,
-                            user=self.mounts[0].user)
+        # ret, _, err = g.run(self.mounts[0].client_system, command,
+        #                     user=self.mounts[0].user)
 
-        self.assertFalse(ret, err)
-        g.log.info("Created file successfully")
+        # self.assertFalse(ret, err)
+        # g.log.info("Created file successfully")
 
-        # get md5sum for file
-        g.log.info('Getting md5sum for file on %s', self.mounts[0].mountpoint)
+        # # get md5sum for file
+        # g.log.info('Getting md5sum for file on %s', self.mounts[0].mountpoint)
 
-        command = ("md5sum %s/%s/testfile0.txt | awk '{ print $1 }'"
-                   % (self.mounts[0].mountpoint, test_dir))
+        # command = ("md5sum %s/%s/testfile0.txt | awk '{ print $1 }'"
+        #            % (self.mounts[0].mountpoint, test_dir))
 
-        ret, md5sum, err = g.run(self.mounts[0].client_system, command,
-                                 user=self.mounts[0].user)
-        self.assertFalse(ret, err)
-        g.log.info('md5sum: %s', md5sum)
+        # ret, md5sum, err = g.run(self.mounts[0].client_system, command,
+        #                          user=self.mounts[0].user)
+        # self.assertFalse(ret, err)
+        # g.log.info('md5sum: %s', md5sum)
 
-        # Bring brick 2 offline
-        bricks_to_bring_offline = [bricks_list[1]]
-        g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-                        bricks_to_bring_offline)
+        # # Bring brick 2 offline
+        # bricks_to_bring_offline = [bricks_list[1]]
+        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
+        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
+        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
+        #                 bricks_to_bring_offline)
 
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 bricks_to_bring_offline)
-        self.assertTrue(ret, 'Bricks %s are not offline'
-                        % bricks_to_bring_offline)
-        g.log.info('Bringing bricks %s offline is successful',
-                   bricks_to_bring_offline)
+        # ret = are_bricks_offline(self.mnode, self.volname,
+        #                          bricks_to_bring_offline)
+        # self.assertTrue(ret, 'Bricks %s are not offline'
+        #                 % bricks_to_bring_offline)
+        # g.log.info('Bringing bricks %s offline is successful',
+        #            bricks_to_bring_offline)
 
-        # Bring 1-st brick online
-        bricks_to_bring_online = [bricks_list[0]]
-        g.log.info('Bringing bricks %s online...', bricks_to_bring_online)
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  bricks_to_bring_online)
-        self.assertTrue(ret, 'Failed to bring bricks %s online'
-                        % bricks_to_bring_online)
-        g.log.info('Bringing bricks %s online is successful',
-                   bricks_to_bring_online)
+        # # Bring 1-st brick online
+        # bricks_to_bring_online = [bricks_list[0]]
+        # g.log.info('Bringing bricks %s online...', bricks_to_bring_online)
+        # ret = bring_bricks_online(self.mnode, self.volname,
+        #                           bricks_to_bring_online)
+        # self.assertTrue(ret, 'Failed to bring bricks %s online'
+        #                 % bricks_to_bring_online)
+        # g.log.info('Bringing bricks %s online is successful',
+        #            bricks_to_bring_online)
 
-        # Rename file under test_dir
-        g.log.info("Renaming file for %s:%s",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
-        command = "/usr/bin/env python %s mv %s/%s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint, test_dir)
-        ret, _, err = g.run(self.mounts[0].client_system, command)
-        self.assertEqual(ret, 0, err)
-        g.log.info("Renaming file for %s:%s is successful",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
+        # # Rename file under test_dir
+        # g.log.info("Renaming file for %s:%s",
+        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
+        # command = "/usr/bin/env python %s mv %s/%s" % (
+        #     self.script_upload_path,
+        #     self.mounts[0].mountpoint, test_dir)
+        # ret, _, err = g.run(self.mounts[0].client_system, command)
+        # self.assertEqual(ret, 0, err)
+        # g.log.info("Renaming file for %s:%s is successful",
+        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
 
-        # Bring 2-nd brick online
-        g.log.info('Bringing bricks %s online...', bricks_to_bring_offline)
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  bricks_to_bring_offline)
-        self.assertTrue(ret, 'Failed to bring bricks %s online'
-                        % bricks_to_bring_offline)
-        g.log.info('Bringing bricks %s online is successful',
-                   bricks_to_bring_offline)
+        # # Bring 2-nd brick online
+        # g.log.info('Bringing bricks %s online...', bricks_to_bring_offline)
+        # ret = bring_bricks_online(self.mnode, self.volname,
+        #                           bricks_to_bring_offline)
+        # self.assertTrue(ret, 'Failed to bring bricks %s online'
+        #                 % bricks_to_bring_offline)
+        # g.log.info('Bringing bricks %s online is successful',
+        #            bricks_to_bring_offline)
 
-        # Mount and unmount mounts
-        ret = self.unmount_volume(self.mounts)
-        self.assertTrue(ret, 'Failed to unmount %s' % self.volname)
+        # # Mount and unmount mounts
+        # ret = self.unmount_volume(self.mounts)
+        # self.assertTrue(ret, 'Failed to unmount %s' % self.volname)
 
-        ret = self.mount_volume(self.mounts)
-        self.assertTrue(ret, 'Unable to mount %s' % self.volname)
+        # ret = self.mount_volume(self.mounts)
+        # self.assertTrue(ret, 'Unable to mount %s' % self.volname)
 
-        # Enable client side healing
-        g.log.info("Enable client side healing options")
-        options = {"metadata-self-heal": "on",
-                   "entry-self-heal": "on",
-                   "data-self-heal": "on"}
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, 'Failed to set options %s' % options)
-        g.log.info("Successfully set %s for volume %s",
-                   options, self.volname)
-        # Trigger heal from mount point
-        g.log.info("Triggering heal for %s:%s",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
-        command = ("cd %s/%s ; find . | xargs getfattr -d -m . -e hex"
-                   % (self.mounts[0].mountpoint,
-                      test_dir))
+        # # Enable client side healing
+        # g.log.info("Enable client side healing options")
+        # options = {"metadata-self-heal": "on",
+        #            "entry-self-heal": "on",
+        #            "data-self-heal": "on"}
+        # ret = set_volume_options(self.mnode, self.volname, options)
+        # self.assertTrue(ret, 'Failed to set options %s' % options)
+        # g.log.info("Successfully set %s for volume %s",
+        #            options, self.volname)
+        # # Trigger heal from mount point
+        # g.log.info("Triggering heal for %s:%s",
+        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
+        # command = ("cd %s/%s ; find . | xargs getfattr -d -m . -e hex"
+        #            % (self.mounts[0].mountpoint,
+        #               test_dir))
 
-        ret, _, err = g.run(self.mounts[0].client_system, command)
-        self.assertFalse(ret, 'Failed to trigger heal using '
-                              '"find . | xargs getfattr -d -m . -e hex" on %s'
-                         % self.mounts[0].client_system)
+        # ret, _, err = g.run(self.mounts[0].client_system, command)
+        # self.assertFalse(ret, 'Failed to trigger heal using '
+        #                       '"find . | xargs getfattr -d -m . -e hex" on %s'
+        #                  % self.mounts[0].client_system)
 
-        # Monitor heal completion
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal has not yet completed')
+        # # Monitor heal completion
+        # ret = monitor_heal_completion(self.mnode, self.volname)
+        # self.assertTrue(ret, 'Heal has not yet completed')
 
-        # Check if heal is completed
-        ret = is_heal_complete(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal is not complete')
-        g.log.info('Heal is completed successfully')
+        # # Check if heal is completed
+        # ret = is_heal_complete(self.mnode, self.volname)
+        # self.assertTrue(ret, 'Heal is not complete')
+        # g.log.info('Heal is completed successfully')
 
-        # Check for split-brain
-        ret = is_volume_in_split_brain(self.mnode, self.volname)
-        self.assertFalse(ret, 'Volume is in split-brain state')
-        g.log.info('Volume is not in split-brain state')
+        # # Check for split-brain
+        # ret = is_volume_in_split_brain(self.mnode, self.volname)
+        # self.assertFalse(ret, 'Volume is in split-brain state')
+        # g.log.info('Volume is not in split-brain state')
 
-        # Get md5sum for file on all nodes and compare with mountpoint
-        for brick in bricks_list[0:2]:
-            g.log.info('Getting md5sum for file on %s', brick)
-            node, brick_path = brick.split(':')
-            command = ("md5sum %s/%s/testfile0_a.txt  | awk '{ print $1 }'"
-                       % (brick_path, test_dir))
-            ret, md5sum_node, err = g.run(node, command,
-                                          user=self.mounts[0].user)
-            self.assertFalse(ret, err)
-            g.log.info('md5sum for the node: %s', md5sum_node)
+        # # Get md5sum for file on all nodes and compare with mountpoint
+        # for brick in bricks_list[0:2]:
+        #     g.log.info('Getting md5sum for file on %s', brick)
+        #     node, brick_path = brick.split(':')
+        #     command = ("md5sum %s/%s/testfile0_a.txt  | awk '{ print $1 }'"
+        #                % (brick_path, test_dir))
+        #     ret, md5sum_node, err = g.run(node, command,
+        #                                   user=self.mounts[0].user)
+        #     self.assertFalse(ret, err)
+        #     g.log.info('md5sum for the node: %s', md5sum_node)
 
-            # Comparing md5sum_node result with mountpoint
-            g.log.info('Comparing md5sum result with mountpoint...')
-            self.assertEqual(md5sum, md5sum_node, 'md5sums are not equal'
-                                                  ' on %s and %s'
-                             % (self.mounts[0].mountpoint, brick))
-            g.log.info('md5sums are equal on %s and %s',
-                       self.mounts[0].mountpoint, brick)
+        #     # Comparing md5sum_node result with mountpoint
+        #     g.log.info('Comparing md5sum result with mountpoint...')
+        #     self.assertEqual(md5sum, md5sum_node, 'md5sums are not equal'
+        #                                           ' on %s and %s'
+        #                      % (self.mounts[0].mountpoint, brick))
+        #     g.log.info('md5sums are equal on %s and %s',
+        #                self.mounts[0].mountpoint, brick)
