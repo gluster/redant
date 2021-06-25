@@ -94,7 +94,7 @@ class TestCase(DParentTest):
         if not (redant.
                 create_file(path_dir, 'test_file.txt',
                             mount_obj['client'])):
-            print("File creation failed")
+            raise Exception("File creation failed")
 
         # get md5sum for file
         cmd = (f"md5sum {path_dir}/test_file.txt |"
