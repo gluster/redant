@@ -49,7 +49,7 @@ class TestCase(DParentTest):
         options = {"cluster.metadata-self-heal": "off",
                    "cluster.entry-self-heal": "off",
                    "cluster.data-self-heal": "off"}
-       
+
         redant.set_volume_options(self.vol_name, options, self.server_list[0])
         options_dict = redant.get_volume_options(self.vol_name,
                                                  node=self.server_list[0])
@@ -58,25 +58,11 @@ class TestCase(DParentTest):
             if options_dict[opt] != 'off':
                 raise Exception("Options are not set to off")
 
-        # # Creating IO on client side
-        # g.log.info("Generating data for %s:%s",
-        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
-        # # Create dir
-        # g.log.info('Creating dir...')
-        # command = ('/usr/bin/env python %s create_deep_dir -d 1 -l 0 -n 1 '
-        #            '%s/%s' % (
-        #                self.script_upload_path,
-        #                self.mounts[0].mountpoint, test_dir))
-
-        # ret, _, err = g.run(self.mounts[0].client_system, command,
-        #                     user=self.mounts[0].user)
-
-        # self.assertFalse(ret, err)
-        # g.log.info("IO is successful")
+        # Creating IO on client side
         mount_obj = redant.es.get_mnt_pts_dict_in_list(self.vol_name)[0]
         self.list_of_procs = []
         redant.logger.info(f"Starting IO on {mount_obj['client']}:"
-                            f"{mount_obj['mountpath']}")
+                           f"{mount_obj['mountpath']}")
         path_dir = f"{mount_obj['mountpath']}/{test_dir}"
         proc = redant.create_deep_dirs_with_files(path_dir,
                                                   1,
@@ -112,10 +98,10 @@ class TestCase(DParentTest):
 
         # get md5sum for file
         cmd = (f"md5sum {path_dir}/test_file.txt |"
-                " awk '{ print $1 }'")
+               " awk '{ print $1 }'")
 
         ret = redant.execute_abstract_op_node(cmd,
-                                                mount_obj['client'])
+                                              mount_obj['client'])
         md5sum = (ret['msg'][0]).rstrip("\n")
         redant.logger.info(f"md5sum: {md5sum}")
 
@@ -143,63 +129,51 @@ class TestCase(DParentTest):
         redant.bring_bricks_online(self.vol_name, self.server_list,
                                    bricks_to_bring_offline)
 
-        # # Mount and unmount mounts
-        # ret = self.unmount_volume(self.mounts)
-        # self.assertTrue(ret, 'Failed to unmount %s' % self.volname)
+        # Mount and unmount mounts
+        redant.volume_unmount(self.vol_name, self.mountpoint,
+                              self.client_list[0])
 
-        # ret = self.mount_volume(self.mounts)
-        # self.assertTrue(ret, 'Unable to mount %s' % self.volname)
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[0])
 
-        # # Enable client side healing
-        # g.log.info("Enable client side healing options")
-        # options = {"metadata-self-heal": "on",
-        #            "entry-self-heal": "on",
-        #            "data-self-heal": "on"}
-        # ret = set_volume_options(self.mnode, self.volname, options)
-        # self.assertTrue(ret, 'Failed to set options %s' % options)
-        # g.log.info("Successfully set %s for volume %s",
-        #            options, self.volname)
-        # # Trigger heal from mount point
-        # g.log.info("Triggering heal for %s:%s",
-        #            self.mounts[0].client_system, self.mounts[0].mountpoint)
-        # command = ("cd %s/%s ; find . | xargs getfattr -d -m . -e hex"
-        #            % (self.mounts[0].mountpoint,
-        #               test_dir))
+        # Enable client side healing
+        options = {"metadata-self-heal": "on",
+                   "entry-self-heal": "on",
+                   "data-self-heal": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
+        # Trigger heal from mount point
+        cmd = (f"cd {path_dir} ; find . | xargs getfattr"
+               " -d -m . -e hex")
 
-        # ret, _, err = g.run(self.mounts[0].client_system, command)
-        # self.assertFalse(ret, 'Failed to trigger heal using '
-        #                       '"find . | xargs getfattr -d -m . -e hex" on %s'
-        #                  % self.mounts[0].client_system)
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        # # Monitor heal completion
-        # ret = monitor_heal_completion(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal has not yet completed')
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet finished")
 
-        # # Check if heal is completed
-        # ret = is_heal_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not complete')
-        # g.log.info('Heal is completed successfully')
+        # Check if heal is completed
+        if not redant.is_heal_complete(self.server_list[0],
+                                       self.vol_name):
+            raise Exception("Heal not yet finished")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        # Check for split-brain
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume is in split-brain")
 
-        # # Get md5sum for file on all nodes and compare with mountpoint
-        # for brick in bricks_list[0:2]:
-        #     g.log.info('Getting md5sum for file on %s', brick)
-        #     node, brick_path = brick.split(':')
-        #     command = ("md5sum %s/%s/testfile0_a.txt  | awk '{ print $1 }'"
-        #                % (brick_path, test_dir))
-        #     ret, md5sum_node, err = g.run(node, command,
-        #                                   user=self.mounts[0].user)
-        #     self.assertFalse(ret, err)
-        #     g.log.info('md5sum for the node: %s', md5sum_node)
+        # Get md5sum for file on all nodes and compare with mountpoint
+        for brick in bricks_list[0:2]:
+            node, brick_path = brick.split(':')
+            cmd = (f"md5sum {brick_path}/{test_dir}/test_file_new.txt"
+                   " | awk '{ print $1 }'")
 
-        #     # Comparing md5sum_node result with mountpoint
-        #     g.log.info('Comparing md5sum result with mountpoint...')
-        #     self.assertEqual(md5sum, md5sum_node, 'md5sums are not equal'
-        #                                           ' on %s and %s'
-        #                      % (self.mounts[0].mountpoint, brick))
-        #     g.log.info('md5sums are equal on %s and %s',
-        #                self.mounts[0].mountpoint, brick)
+            ret = redant.execute_abstract_op_node(cmd, node)
+            md5sum_node = (ret['msg'][0]).rstrip("\n")
+            redant.logger.info(f"md5sum: {md5sum_node}")
+
+            # Comparing md5sum_node result with mountpoint
+            if md5sum != md5sum_node:
+                raise Exception('md5sums are not equal on '
+                                f'{mount_obj["client"]} and {brick}')
