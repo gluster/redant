@@ -92,25 +92,38 @@ class TestCase(DParentTest):
 
         # self.assertFalse(ret, err)
         # g.log.info("IO is successful")
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.list_of_procs = []
+        self.counter = 1
+        for mount_obj in self.mnt_list:
+            redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                               f"{mount_obj['mountpath']}")
+            path_dir = f"{mount_obj['mountpath']}/{test_dir}"
+            proc = redant.create_deep_dirs_with_files(path_dir,
+                                                      self.counter,
+                                                      1, 0, 1, 0,
+                                                      mount_obj['client'])
 
-        # # get the bricks for the volume
-        # g.log.info("Fetching bricks for the volume : %s", self.volname)
-        # bricks_list = get_all_bricks(self.mnode, self.volname)
-        # g.log.info("Brick List : %s", bricks_list)
+            self.list_of_procs.append(proc)
+            self.counter += 10
 
-        # # Bring brick 1 offline
-        # bricks_to_bring_offline = [bricks_list[0]]
-        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-        #                 bricks_to_bring_offline)
+        # Validate IO
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
 
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Bricks %s are not offline'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s offline is successful',
-        #            bricks_to_bring_offline)
+        # get the bricks for the volume
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+
+        # Bring brick 1 offline
+        bricks_to_bring_offline = [bricks_list[0]]
+        redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
+
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            print(f"Brick {bricks_to_bring_offline} is not offline")
 
         # # Create file under dir test_dir
         # g.log.info("Generating file for %s:%s",
