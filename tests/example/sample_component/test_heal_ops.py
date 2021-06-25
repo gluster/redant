@@ -42,10 +42,13 @@ class TestCase(NdParentTest):
         5. Bring the brick online
         6. Check the heal info
         7. Check if file attribute exist in heal info
-        8. Monitor heal completion
-        9. Check if heal is completed
-        10. Check heal info for split brain
-        11. Check if volume in split brain.
+        8. Check is shd is daemonized
+        9. Check if shd daemon is running
+        10. Get the heal info summary
+        11. Monitor heal completion
+        12. Check if heal is completed
+        13. Check heal info for split brain
+        14. Check if volume in split brain.
         """
         self._perform_simple_io()
         if self.heal_info is None:
