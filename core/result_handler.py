@@ -13,6 +13,67 @@ from colorama import Fore, Style
 
 class ResultHandler:
 
+
+    @classmethod
+    def _sanitize_time_format(cls, data: int) -> str:
+        """
+        The function formats the values to 0X or XY
+        format.
+
+        Args:
+            data (int): The time data.
+        Returns:
+            str
+        """
+        if len(str(data)) != 2:
+            return f"0{data}"
+        return f"{data}"
+
+    @classmethod
+    def _time_rollover_conversion(cls, time_in_sec: float) -> str:
+        """
+        The function takes in input in raw seconds and converts
+        it to the format of x HH:MM:SS, wherein the x can be
+        replaced by `y days` if there is a rollover till days.
+
+        Args:
+            time_in_sec (float): as name suggests time run in seconds.
+        Returns:
+            str in the form of HH:MM:SS or y days HH:MM:SS
+        """
+        days = 0
+        hours = 0
+        minutes = 0
+        seconds = 0
+
+        time_in_sec = int(time_in_sec)
+        if time_in_sec >= 60:
+            seconds = time_in_sec % 60
+            time_in_sec -= seconds
+            time_in_min = time_in_sec / 60
+            if time_in_min >= 60:
+                minutes = time_in_min % 60
+                time_in_min -= minutes
+                time_in_hour = time_in_min / 60
+                if time_in_hour >= 24:
+                    hours = time_in_hour % 24
+                    time_in_hour -= hours
+                    days = time_in_hour / 24
+                else:
+                    hours = int(time_in_hour)
+            else:
+                minutes = int(time_in_min)
+        else:
+            seconds = time_in_sec
+
+        seconds = cls._sanitize_time_format(seconds)
+        minutes = cls._sanitize_time_format(minutes)
+        hours = cls._sanitize_time_format(hours)
+
+        if days != 0:
+            return (f"{days} days {hours}:{minutes}:{seconds}")
+        return (f"{hours}:{minutes}:{seconds}")
+
     @classmethod
     def _get_output(cls, test_results: dict, colorify: bool,
                     total_time: float):
@@ -45,7 +106,7 @@ class ResultHandler:
                 cls.result = (f"{cls.result} {item}\n")
 
             table = PrettyTable(
-                ['Volume Type', 'Test Result', 'Time taken (sec)'])
+                ['Volume Type', 'Test Result', 'Time taken (HH:MM:SS)'])
 
             if test_results[item][0]['tcNature'] == 'disruptive':
                 dtest += 1
@@ -53,9 +114,11 @@ class ResultHandler:
                 ndtest += 1
             for each_vol_test in test_results[item]:
 
+                time_taken = cls._time_rollover_conversion(\
+                                 each_vol_test['timeTaken'])
                 table.add_row(
                     [each_vol_test['volType'], each_vol_test['testResult'],
-                     each_vol_test['timeTaken']])
+                     time_taken])
 
                 if each_vol_test['tcNature'] == 'disruptive':
                     dcount += 1
@@ -82,7 +145,8 @@ class ResultHandler:
 
         cls.result = (f"Summary:\n{str(table)}\n{cls.result}\n")
 
-        cls.result = (f"{cls.result}\nFramework runtime : {total_time}\n")
+        time_taken = cls._time_rollover_conversion(total_time)
+        cls.result = (f"{cls.result}\nFramework runtime : {time_taken}\n")
 
     @classmethod
     def _display_test_results(cls, test_results: dict, total_time: float):
@@ -188,8 +252,9 @@ class ResultHandler:
 
         row += 2
 
-        result_sheet.write(row, 0, 'Total time taken (s)', style)
-        result_sheet.write(row, 1, total_time)
+        result_sheet.write(row, 0, 'Total time taken (HH:MM:SS)', style)
+        time_taken = cls._time_rollover_conversion(total_time)
+        result_sheet.write(row, 1, time_taken)
         row += 2
 
         for item in test_results:
@@ -197,13 +262,15 @@ class ResultHandler:
             row += 1
             result_sheet.write(row, 0, 'Volume Type', style)
             result_sheet.write(row, 1, 'Test Result', style)
-            result_sheet.write(row, 2, 'Time Taken (s)', style)
+            result_sheet.write(row, 2, 'Time Taken (HH:MM:SS)', style)
             row += 1
 
             for each_vol_test in test_results[item]:
                 result_sheet.write(row, 0, each_vol_test['volType'])
                 result_sheet.write(row, 1, each_vol_test['testResult'])
-                result_sheet.write(row, 2, each_vol_test['timeTaken'])
+                time_taken = cls._time_rollover_conversion(\
+                                 each_vol_test['timeTaken'])
+                result_sheet.write(row, 2, time_taken)
                 row += 1
 
             row += 2
