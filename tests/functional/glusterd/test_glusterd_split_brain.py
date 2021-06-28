@@ -39,6 +39,7 @@ class TestCase(DParentTest):
         """
         # Before starting the testcase, proceed only it has minimum of 6 nodes
         if len(self.server_list) < 6:
+            self.TEST_RES = None
             raise Exception("Minimum 6 nodes are required for this testcase")
 
         # Create a dist-rep volume using first 4 nodes

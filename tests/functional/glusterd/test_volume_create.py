@@ -36,6 +36,7 @@ class TestCase(DParentTest):
         """
         # Check for 4 servers
         if len(self.server_list) < 4:
+            self.TEST_RES = None
             raise Exception("The test case requires 4 servers to run the test")
 
         # create and start a volume

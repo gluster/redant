@@ -67,7 +67,10 @@ class NdParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-            self.TEST_RES = False
+            if self.TEST_RES is None:
+                self.SKIP_REASON = error
+            else:
+                self.TEST_RES = False
 
     def terminate(self):
         """

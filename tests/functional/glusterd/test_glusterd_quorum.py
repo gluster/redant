@@ -69,6 +69,7 @@ class TestCase(DParentTest):
 
         # Exit if cluster size less than 4
         if len(self.server_list) < 4:
+            self.TEST_RES = None
             raise Exception("Minimum 4 nodes required for this TC to run")
 
         # Peer probe first 3 servers
