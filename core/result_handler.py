@@ -70,8 +70,8 @@ class ResultHandler:
         hours = cls._sanitize_time_format(hours)
 
         if days != 0:
-            return (f"{days} days {hours}:{minutes}:{seconds}")
-        return (f"{hours}:{minutes}:{seconds}")
+            return f"{days} days {hours}:{minutes}:{seconds}"
+        return f"{hours}:{minutes}:{seconds}"
 
     @classmethod
     def _get_output(cls, test_results: dict, colorify: bool,
