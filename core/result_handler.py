@@ -36,6 +36,7 @@ class ResultHandler:
         ndpass = 0
         dtest = 0
         ndtest = 0
+        skipCount = 0
 
         for item in test_results:
             if colorify:
@@ -45,26 +46,34 @@ class ResultHandler:
                 cls.result = (f"{cls.result} {item}\n")
 
             table = PrettyTable(
-                ['Volume Type', 'Test Result', 'Time taken (sec)'])
+                ['Volume Type', 'Test Result', 'Time taken (sec)',
+                 'Skip Reason'])
 
-            if test_results[item][0]['tcNature'] == 'disruptive':
+            if test_results[item][0]['tcNature'] == 'disruptive' and\
+                    test_results[item][0]['testResult'] is not None:
                 dtest += 1
-            elif test_results[item][0]['tcNature'] == 'nonDisruptive':
+            elif test_results[item][0]['tcNature'] == 'nonDisruptive' and\
+                    test_results[item][0]['testResult'] is not None:
                 ndtest += 1
+
             for each_vol_test in test_results[item]:
 
+                if each_vol_test['testResult'] is not None:
+                    skip_reason = "N/A"
+                    if each_vol_test['tcNature'] == 'disruptive':
+                        dcount += 1
+                        if each_vol_test['testResult'] == 'PASS':
+                            dpass += 1
+                    elif each_vol_test['tcNature'] == 'nonDisruptive':
+                        ndcount += 1
+                        if each_vol_test['testResult'] == 'PASS':
+                            ndpass += 1
+                elif each_vol_test['testResult'] is None:
+                    skipCount += 1
+                    skip_reason = each_vol_test['skipReason']
                 table.add_row(
                     [each_vol_test['volType'], each_vol_test['testResult'],
-                     each_vol_test['timeTaken']])
-
-                if each_vol_test['tcNature'] == 'disruptive':
-                    dcount += 1
-                    if each_vol_test['testResult'] == 'PASS':
-                        dpass += 1
-                elif each_vol_test['tcNature'] == 'nonDisruptive':
-                    ndcount += 1
-                    if each_vol_test['testResult'] == 'PASS':
-                        ndpass += 1
+                     each_vol_test['timeTaken'], skip_reason])
 
             cls.result = (f"{cls.result}{str(table)}\n\n")
 
@@ -76,6 +85,7 @@ class ResultHandler:
                        0 if ndcount == 0 else (ndpass/ndcount)*100])
         table.add_row(['Disruptive', dtest,
                        0 if dcount == 0 else (dpass/dcount)*100])
+        table.add_row(['Skipped', skipCount, 0])
         table.add_row(['Total', ndtest+dtest,
                        (0 if (ndcount + dcount == 0)
                         else ((ndpass + dpass)/(ndcount + dcount))*100)])
@@ -139,23 +149,29 @@ class ResultHandler:
         ndpass = 0
         dtest = 0
         ndtest = 0
+        skipCount = 0
 
         for item in test_results:
-            if test_results[item][0]['tcNature'] == 'disruptive':
+            if test_results[item][0]['tcNature'] == 'disruptive' and\
+                    test_results[item][0]['testResult'] is not None:
                 dtest += 1
-            elif test_results[item][0]['tcNature'] == 'nonDisruptive':
+            elif test_results[item][0]['tcNature'] == 'nonDisruptive' and\
+                    test_results[item][0]['testResult'] is not None:
                 ndtest += 1
 
             for each_vol_test in test_results[item]:
 
-                if each_vol_test['tcNature'] == 'disruptive':
-                    dcount += 1
-                    if each_vol_test['testResult'] == 'PASS':
-                        dpass += 1
-                elif each_vol_test['tcNature'] == 'nonDisruptive':
-                    ndcount += 1
-                    if each_vol_test['testResult'] == 'PASS':
-                        ndpass += 1
+                if each_vol_test['testResult'] is None:
+                    skipCount += 1
+                else:
+                    if each_vol_test['tcNature'] == 'disruptive':
+                        dcount += 1
+                        if each_vol_test['testResult'] == 'PASS':
+                            dpass += 1
+                    elif each_vol_test['tcNature'] == 'nonDisruptive':
+                        ndcount += 1
+                        if each_vol_test['testResult'] == 'PASS':
+                            ndpass += 1
 
         row = 0
         style = xlwt.easyxf('font: bold 1')
@@ -179,6 +195,11 @@ class ResultHandler:
                            else (dpass/dcount)*100)
 
         row += 1
+        result_sheet.write(row, 0, 'Skipped')
+        result_sheet.write(row, 1, skipCount)
+        result_sheet.write(row, 2, 0)
+
+        row += 1
         result_sheet.write(row, 0, 'Total')
         result_sheet.write(row, 1, ndtest + dtest)
         result_sheet.write(row, 2,
@@ -198,12 +219,17 @@ class ResultHandler:
             result_sheet.write(row, 0, 'Volume Type', style)
             result_sheet.write(row, 1, 'Test Result', style)
             result_sheet.write(row, 2, 'Time Taken (s)', style)
+            result_sheet.write(row, 3, 'Skip Reason', style)
             row += 1
 
             for each_vol_test in test_results[item]:
                 result_sheet.write(row, 0, each_vol_test['volType'])
                 result_sheet.write(row, 1, each_vol_test['testResult'])
                 result_sheet.write(row, 2, each_vol_test['timeTaken'])
+                if each_vol_test['testResult'] is None:
+                    result_sheet.write(row, 3, each_vol_test['skipReason'])
+                else:
+                    result_sheet.write(row, 3, "NA")
                 row += 1
 
             row += 2

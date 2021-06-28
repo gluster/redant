@@ -82,6 +82,7 @@ class TestCase(DParentTest):
         6) Check if glusterd has crashed on any node.
         """
         if len(self.server_list) < 4:
+            self.TEST_RES = None
             raise Exception("Minimum 4 nodes required for this TC to run")
 
         # Fetching all the parameters for volume_create

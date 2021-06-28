@@ -57,6 +57,7 @@ class TestCase(DParentTest):
         # TODO: Update this check when get_brick_roots is fixed
         # Exit if server/brick requirements not met
         if len(self.server_list) < 6:
+            self.TEST_RES = None
             raise Exception("Server/Brick requirements not met")
 
         # Fetching the brick list
