@@ -22,10 +22,23 @@ Description:
 # disruptive;arb
 # TODO: add nfs and cifs
 
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _brick_operations(self, bricks_to_bring_offline: list):
         """

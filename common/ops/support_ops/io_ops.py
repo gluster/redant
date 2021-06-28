@@ -190,7 +190,7 @@ class IoOps(AbstractOps):
     def create_files(self, fix_fil_size: str, path: str, node: str,
                      num_files: int = 1,
                      base_file_name: str = "testfile",
-                     file_type: str = "txt"):
+                     file_type: str = "txt") -> dict:
         """
         Create files with fixed size. This function encapsulates the
         operation of the file_dir_ops script present in the client machines.
@@ -214,7 +214,7 @@ class IoOps(AbstractOps):
     def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
                                     dir_depth: int, dir_length: int,
                                     max_no_dirs: int, no_files: int,
-                                    node: str):
+                                    node: str) -> dict:
         """
         Create deep directories and files. This function encapsulates the
         operation of the file_dir_ops script present in the client machines.
