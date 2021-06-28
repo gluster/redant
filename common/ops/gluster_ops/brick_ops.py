@@ -69,7 +69,8 @@ class BrickOps(AbstractOps):
         return ret
 
     def remove_brick(self, node: str, volname: str, brick_list: list,
-                     option: str, replica_count: int = None) -> dict:
+                     option: str, replica_count: int = None,
+                     excep: bool = True) -> dict:
         """
         This function removes the given list of bricks from the volume.
 
@@ -81,7 +82,10 @@ class BrickOps(AbstractOps):
             option (str): Remove brick options:
                           <start|stop|status|commit|force>
             replica_count (int): Optional parameter with default value as None.
-
+            excep (bool): exception flag to bypass the exception if the
+                          remove brick command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -106,7 +110,11 @@ class BrickOps(AbstractOps):
         cmd = (f"gluster vol remove-brick {volname} {replica} {brick_cmd}"
                f" {option} --mode=script --xml")
 
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        if not excep and ret['msg']['opRet'] == -1:
+            return ret
+
         if option in ['commit', 'force']:
             server_brick = {}
             for brickd in brick_list:
