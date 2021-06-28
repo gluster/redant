@@ -18,32 +18,32 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     This test case deals with testing split-brain issue.
 
-,dist-arb
 """
 
-# disruptive;arb
+# disruptive;arb,dist-arb
 
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
 
-    # def _bring_bricks_online(self):
-    #     """
-    #     Bring bricks online and monitor heal completion
-    #     """
-    #     # Bring bricks online
-    #     ret = bring_bricks_online(
-    #         self.mnode,
-    #         self.volname,
-    #         self.bricks_to_bring_offline,
-    #         bring_bricks_online_methods=['volume_start_force'])
-    #     self.assertTrue(ret, 'Failed to bring bricks online')
-
-    #     # Wait for volume processes to be online
-    #     ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-    #     self.assertTrue(ret, ("Failed to wait for volume {} processes to "
-    #                           "be online".format(self.volname)))
+    def _perform_io(self, passed: bool):
+        # Write IO's
+        self.proc = (self.redant.
+                     create_files(num_files=1,
+                                  fix_fil_size="1k",
+                                  path=self.mnt_list[0]['mountpath'],
+                                  node=self.mnt_list[0]['client'],
+                                  base_file_name="test_file"))
+        # Validate IO
+        ret = self.redant.validate_io_procs(self.proc, self.mnt_list[0])
+        if not passed:
+            if ret:
+                raise Exception("IO validation passed successfully "
+                                "in split-brain")
+        else:
+            if not ret:
+                raise Exception("IO validation failed")
 
     def run_test(self, redant):
 
@@ -70,68 +70,48 @@ class TestCase(DParentTest):
         # Get the bricks from the volume
         sub_vols = redant.get_subvols(self.vol_name,
                                       self.server_list[0])
-        print(sub_vols)
-        self.bricks_to_bring_offline = list(sub_vols[0][0])
-
+        self.bricks_to_bring_offline = list(sub_vols[0])
         # Write IO's
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
-        self.proc = redant.create_files(num_files=1,
-                                        fix_fil_size="1k",
-                                        path=self.mnt_list[0]['mountpath'],
-                                        node=self.mnt_list[0]['client'],
-                                        base_file_name="test_file")
-        # Validate IO
-        ret = redant.validate_io_procs(self.proc, self.mnt_list[0])
-        if not ret:
-            raise Exception("IO validation failed")
+        self._perform_io(True)
 
-        # # Bring 1st set of brick offline(1 Data brick and arbiter brick)
-        # for bricks in ((0, -1), (1, -1)):
-        #     down_bricks = []
-        #     for brick in bricks:
-        #         down_bricks.append(self.bricks_to_bring_offline[brick])
-        #     ret = bring_bricks_offline(self.volname, down_bricks)
-        #     self.assertTrue(ret, 'Failed to bring bricks {} offline'.
-        #                     format(down_bricks))
-        #     proc = g.run_async(self.mounts[0].client_system, write_cmd)
+        # Bring 1st set of brick offline(1 Data brick and arbiter brick)
+        for bricks in ((0, -1), (1, -1)):
+            down_bricks = []
+            for brick in bricks:
+                down_bricks.append(self.bricks_to_bring_offline[brick])
 
-        #     # Validate I/O
-        #     self.assertTrue(
-        #         validate_io_procs([proc], self.mounts),
-        #         "IO failed on some of the clients"
-        #     )
+            # bring bricks offline
+            redant.bring_bricks_offline(self.vol_name, down_bricks)
+            if not self.redant.are_bricks_offline(self.vol_name,
+                                                  down_bricks,
+                                                  self.server_list[0]):
+                raise Exception(f"Bricks {down_bricks} "
+                                f"are not offline")
+            self._perform_io(True)
 
-        #     # Bring bricks online
-        #     self._bring_bricks_online()
+            # Bring bricks online
+            self.redant.bring_bricks_online(self.vol_name,
+                                            self.server_list,
+                                            down_bricks)
 
-        # # Check volume is in split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertTrue(ret, "unable to create split-brain scenario")
-        # g.log.info("Successfully created split brain scenario")
+            if not self.redant.are_bricks_online(self.vol_name,
+                                                 down_bricks,
+                                                 self.server_list[0]):
+                raise Exception(f"Bricks {down_bricks} "
+                                f"are not online")
 
-        # # Write IO's
-        # proc2 = g.run_async(self.mounts[0].client_system, write_cmd)
+        # Check volume is in split-brain
+        if not redant.is_volume_in_split_brain(self.server_list[0],
+                                               self.vol_name):
+            raise Exception("Volume is not in split-brain state")
 
-        # # Validate I/O
-        # self.assertFalse(
-        #     validate_io_procs([proc2], self.mounts),
-        #     "IO passed on split-brain"
-        # )
-        # g.log.info("Expected - IO's failed due to split-brain")
-
-        # # Enable self-heal and cluster-quorum-type
-        # options = {"self-heal-daemon": "on",
-        #            "cluster.quorum-type": "auto"}
-        # ret = set_volume_options(self.mnode, self.volname, options)
-        # self.assertTrue(ret, ("Unable to set volume option %s for "
-        #                       "volume %s" % (options, self.volname)))
-
-        # # Write IO's
-        # proc3 = g.run_async(self.mounts[0].client_system, write_cmd)
-
-        # # Validate I/O
-        # self.assertFalse(
-        #     validate_io_procs([proc3], self.mounts),
-        #     "IO passed on split-brain"
-        # )
-        # g.log.info("Expected - IO's failed due to split-brain")
+        # Write IO's
+        self._perform_io(False)
+        # Enable self-heal and cluster-quorum-type
+        options = {"self-heal-daemon": "on",
+                   "cluster.quorum-type": "auto"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
+        # Write IO's
+        self._perform_io(False)
