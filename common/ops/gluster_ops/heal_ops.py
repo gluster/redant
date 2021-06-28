@@ -10,6 +10,25 @@ class HealOps:
     Class which is responsible for methods for heal related operations.
     """
 
+    def trigger_heal(self, volname: str, node: str):
+        """
+        This function triggers the heal operation
+
+        Args:
+        volname (str): Name of the volume
+        node (str): Node on which command has to
+                    be executed.
+        Returns:
+        bool : True if heal is triggered successfully. False otherwise.
+        """
+        cmd = f"gluster volume heal {volname}"
+        ret = self.execute_abstract_op_node(cmd, node,
+                                            False)
+        if ret['error_code'] != 0:
+            return False
+
+        return True
+
     def wait_for_self_heal_daemons_to_be_online(self, volname: str, node: str,
                                                 timeout: int = 300) -> bool:
         """
