@@ -20,6 +20,7 @@
    disabling shared storage
 """
 
+from time import sleep
 import traceback
 from random import choice
 from tests.d_parent_test import DParentTest
@@ -120,9 +121,19 @@ class TestSharedStorage(DParentTest):
             "replica_count": 2,
             "transport": "tcp"
         }
-        self.redant.volume_create(volume, self.server_list[0],
-                                  conf_hash, self.server_list,
-                                  self.brick_roots, True)
+        count = 0
+        while count < 20:
+            ret = self.redant.volume_create(volume, self.server_list[0],
+                                            conf_hash, self.server_list,
+                                            self.brick_roots, True, False)
+            if ret['error_code'] == 0:
+                break
+            sleep(2)
+            count += 1
+
+        if ret['error_code'] != 0:
+            raise Exception(f"Failed to create the volume {volume}."
+                            f"Error: {ret['error_msg']}")
 
         # Disable the shared storage should fail
         ret = self.redant.disable_shared_storage(self.server_list[0])

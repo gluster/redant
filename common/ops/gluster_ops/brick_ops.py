@@ -112,7 +112,7 @@ class BrickOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        if not excep and ret['msg']['opRet'] == -1:
+        if not excep and ret['msg']['opRet'] != '0':
             return ret
 
         if option in ['commit', 'force']:
