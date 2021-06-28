@@ -38,6 +38,7 @@ class TestCase(NdParentTest):
         """
         # NOTE: This test case should be run with 2 clients
         if len(self.client_list) < 2:
+            self.TEST_RES = None
             raise Exception("Insufficient client systems")
 
         # Shell Script to be run on mount point

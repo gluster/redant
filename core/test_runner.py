@@ -203,16 +203,21 @@ class TestRunner:
         test_stats['tcNature'] = test_dict['tcNature']
         spinner.clear()
         result_text = f"{test_dict['moduleName'][:-3]}-{test_dict['volType']}"
-        if test_stats['testResult']:
+        if test_stats['testResult'] is True:
             test_stats['testResult'] = "PASS"
             result_text += " PASS"
             spinner = Halo(spinner='dots', text_color='green')
             spinner.succeed(text=f"{mname}-{volume_type} Succeeded")
-        else:
+        elif test_stats['testResult'] is False:
             result_text += " FAIL"
             test_stats['testResult'] = "FAIL"
             spinner = Halo(spinner='dots', text_color='red')
             spinner.fail(f"{mname}-{volume_type} Failed")
+        else:
+            result_text += " SKIP"
+            test_stats['testResult'] = None
+            spinner = Halo(spinner='dots', text_color='cyan')
+            spinner.info(f"{mname}-{volume_type} SKIP")
 
         result_value = {test_dict["moduleName"][:-3]: test_stats}
         cls.job_result_queue.put(result_value)
