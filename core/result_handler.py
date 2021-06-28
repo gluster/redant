@@ -13,7 +13,6 @@ from colorama import Fore, Style
 
 class ResultHandler:
 
-
     @classmethod
     def _sanitize_time_format(cls, data: int) -> str:
         """
@@ -133,11 +132,11 @@ class ResultHandler:
                     skipCount += 1
                     skip_reason = each_vol_test['skipReason']
 
-                time_taken = cls._time_rollover_conversion(\
-                                 each_vol_test['timeTaken'])
+                time_taken = cls._time_rollover_conversion(
+                    each_vol_test['timeTaken'])
                 table.add_row(
                     [each_vol_test['volType'], each_vol_test['testResult'],
-                     each_vol_test['timeTaken'], skip_reason])
+                     time_taken, skip_reason])
 
             cls.result = (f"{cls.result}{str(table)}\n\n")
 
@@ -291,8 +290,8 @@ class ResultHandler:
             for each_vol_test in test_results[item]:
                 result_sheet.write(row, 0, each_vol_test['volType'])
                 result_sheet.write(row, 1, each_vol_test['testResult'])
-                time_taken = cls._time_rollover_conversion(\
-                                 each_vol_test['timeTaken'])
+                time_taken = cls._time_rollover_conversion(
+                    each_vol_test['timeTaken'])
                 result_sheet.write(row, 2, time_taken)
                 if each_vol_test['testResult'] is None:
                     result_sheet.write(row, 3, each_vol_test['skipReason'])
