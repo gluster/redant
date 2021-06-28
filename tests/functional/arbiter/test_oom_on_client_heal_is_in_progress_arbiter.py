@@ -17,25 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     This test case deals with Arbiter self-heal tests.
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           bring_bricks_online,
-                                           are_bricks_offline,
-                                           get_all_bricks)
-from glustolibs.io.utils import (validate_io_procs,
-                                 list_all_files_and_dirs_mounts,
-                                 wait_for_io_to_complete)
-from glustolibs.gluster.lib_utils import list_files
-from glustolibs.misc.misc_libs import upload_scripts
-
-
-@runs_on([['arbiter'],
-          ['glusterfs', 'nfs', 'cifs']])
-
 """
 
 # disruptive;arb
@@ -45,6 +26,30 @@ from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def _brick_operations(self, bricks_to_bring_offline: list):
+        """
+        brings the list of bricks offline and
+        back online
+        """
+        self.redant.bring_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline)
+
+        if not self.redant.are_bricks_offline(self.vol_name,
+                                              bricks_to_bring_offline,
+                                              self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline} "
+                            f"are not offline")
+
+        self.redant.bring_bricks_online(self.vol_name,
+                                        self.server_list,
+                                        bricks_to_bring_offline)
+
+        if not self.redant.are_bricks_online(self.vol_name,
+                                             bricks_to_bring_offline,
+                                             self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline} "
+                            f"are not online")
 
     def run_test(self, redant):
         """
@@ -58,22 +63,6 @@ class TestCase(DParentTest):
         """
 
         # Creating IO on client side
-        # for mount_obj in self.mounts:
-        #     g.log.info("Generating data for %s:%s",
-        #                mount_obj.client_system, mount_obj.mountpoint)
-        #     # Create files
-        #     g.log.info('Creating files...')
-        #     command = ("/usr/bin/env python %s create_files "
-        #                "-f 1000 "
-        #                "--fixed-file-size 10k "
-        #                "%s" % (
-        #                    self.script_upload_path,
-        #                    mount_obj.mountpoint))
-
-        #     proc = g.run_async(mount_obj.client_system, command,
-        #                        user=mount_obj.user)
-        #     self.all_mounts_procs.append(proc)
-        # self.io_validation_complete = False
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.list_of_procs = []
         for mount_obj in self.mnt_list:
@@ -94,55 +83,17 @@ class TestCase(DParentTest):
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
 
-        # Bring brick 1 offline
+        # Bring brick 1 offline and then online
         bricks_to_bring_offline = [bricks_list[0]]
-        redant.bring_bricks_offline(self.vol_name,
-                                    bricks_to_bring_offline)
+        self._brick_operations(bricks_to_bring_offline)
 
-        if not redant.are_bricks_offline(self.vol_name,
-                                         bricks_to_bring_offline,
-                                         self.server_list[0]):
-            print(f"Bricks {bricks_to_bring_offline} are not offline")
+        # Bring brick 3 offline and then online
+        bricks_to_bring_offline = [bricks_list[-1]]
+        self._brick_operations(bricks_to_bring_offline)
 
-        # # Bring 1-st brick online
-        # g.log.info('Bringing bricks %s online...', bricks_to_bring_offline)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s online'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s online is successful',
-        #            bricks_to_bring_offline)
-
-        # # Bring brick 3 offline
-        # bricks_to_bring_offline = [bricks_list[-1]]
-        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-        #                 bricks_to_bring_offline)
-
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Bricks %s are not offline'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s offline is successful',
-        #            bricks_to_bring_offline)
-
-        # # Bring brick 3 online
-        # g.log.info('Bringing bricks %s online...', bricks_to_bring_offline)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s online'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s online is successful',
-        #            bricks_to_bring_offline)
-
-        # # Get file list from mountpoint
-        # g.log.info('Getting file list from mountpoints...')
-        # for mount_obj in self.mounts:
-        #     g.log.info("Getting file list for %s:%s",
-        #                mount_obj.client_system, mount_obj.mountpoint)
-        #     g.log.info('Getting file list...')
-        #     file_list = list_files(mount_obj.client_system,
-        #                            mount_obj.mountpoint)
-        #     self.assertIsNotNone(file_list)
-        # g.log.info('Getting file list from mountpoints finished successfully')
+        # Get file list from mountpoint
+        for mount_obj in self.mnt_list:
+            file_list = redant.get_dir_contents(mount_obj['mountpath'],
+                                                mount_obj['client'])
+            if file_list is None:
+                raise Exception("Empty directory")
