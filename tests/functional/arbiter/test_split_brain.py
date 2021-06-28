@@ -22,10 +22,23 @@ Description:
 
 # disruptive;arb,dist-arb
 
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.proc,
+                                                      self.mnt_list[0])
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _perform_io(self, passed: bool):
         # Write IO's
