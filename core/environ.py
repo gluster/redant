@@ -15,7 +15,8 @@ class environ:
     the setup and the cleanup.
     """
 
-    def __init__(self, param_obj, es, log_path: str, log_level: str):
+    def __init__(self, param_obj, es, error_handler,
+                 log_path: str, log_level: str):
         """
         Redant mixin obj to be used for server setup and teardown operations
         has to be created.
@@ -27,31 +28,25 @@ class environ:
         try:
             self.redant.establish_connection()
         except paramiko.ssh_exception.NoValidConnectionsError as e:
-            print(f'''
+            error_handler(e, '''
             It seems one of the nodes is down.
-            Message: {e}.
+            Message: {exc}.
             Check and run again.
             ''')
-            sys.exit(0)
         except paramiko.ssh_exception.AuthenticationException as e:
-            print(f"""
+            error_handler(e, """
             Authentication failed.
-            Message: {e}
+            Message: {exc}
             Check and run again.
             """)
-
-            sys.exit(0)
         except timeout as e:
-            print(f"""
+            error_handler(e, """
             Oops! There was a timeout connecting the servers.
-            Message:{e}
+            Message: {exc}
             Check and run again.
             """)
-
-            sys.exit(0)
         except Exception as e:
-            print(e)
-            sys.exit(0)
+            error_handler(e)
 
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()

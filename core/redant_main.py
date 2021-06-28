@@ -4,6 +4,7 @@ This module takes care of:
 2) Tests-to-run list preparation (by test_list_builder).
 3) Invocation of the test_runner.
 """
+import os
 import sys
 import time
 import datetime
@@ -49,6 +50,9 @@ def pars_args():
     parser.add_argument("-xls", "--excel-sheet",
                         help="Spreadsheet for result. Default value is NULL",
                         dest="excel_sheet", default=None, type=str)
+    parser.add_argument("--show-backtrace",
+                        help="Show full backtrace on error",
+                        dest="show_backtrace", action='store_true')
     return parser.parse_args()
 
 
@@ -64,14 +68,23 @@ def main():
     start = time.time()
     args = pars_args()
 
+    if args.show_backtrace:
+        def errer(exc, msg=None):
+            raise exc
+    else:
+        def errer(exc, msg=None):
+            if not msg:
+                msg = "error: {exc}"
+            print(msg.format(exc=exc), file=sys.stderr)
+            sys.exit(1)
+
     spinner = Halo(spinner='dots')
     spinner.start("Starting param handling")
     try:
         param_obj = ParamsHandler(args.config_file)
-    except IOError:
-        print("Error: can't find config file or read data.")
-        spinner.fail("IOError in param handling")
-        return
+    except OSError as e:
+        spinner.fail("error in param handling")
+        errer(e, "Error on loading config file: {exc}")
     spinner.succeed("Param Handling Success.")
 
     spinner.start("Building test list")
@@ -82,16 +95,21 @@ def main():
     try:
         TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
                                          spec_test)
-    except FileNotFoundError:
-        print("Error: Can't find the file\n")
+    except FileNotFoundError as e:
         spinner.fail("FileNotFoundError in test list builder")
-        return
+        errer(e, "Error: Can't find the file")
     spinner.succeed("Test List built")
 
     spinner.start("Creating log dirs")
     # Creating log dirs.
-    args.log_dir = f'{args.log_dir}/{datetime.datetime.now()}'
-    Logger.log_dir_creation(args.log_dir, TestListBuilder.get_test_path_list())
+    current_time_rep = str(datetime.datetime.now())
+    log_dir_current = f"{args.log_dir}/{current_time_rep}"
+    Logger.log_dir_creation(
+        log_dir_current, TestListBuilder.get_test_path_list())
+    latest = 'latest'
+    tmplink = f"{args.log_dir}/{latest}.{current_time_rep}"
+    os.symlink(current_time_rep, tmplink)
+    os.rename(tmplink, f"{args.log_dir}/{latest}")
     spinner.succeed("Log dir creation successful.")
 
     # Framework Environment datastructure.
@@ -99,12 +117,12 @@ def main():
     env_obj.init_ds()
 
     # Environment setup.
-    env_set = environ(param_obj, env_obj, f"{args.log_dir}/main.log",
+    env_set = environ(param_obj, env_obj, errer, f"{log_dir_current}/main.log",
                       args.log_level)
     env_set.setup_env()
 
     # invoke the test_runner.
-    TestRunner.init(TestListBuilder, param_obj, env_set, args.log_dir,
+    TestRunner.init(TestListBuilder, param_obj, env_set, log_dir_current,
                     args.log_level, args.concur_count, spec_test)
     result_queue = TestRunner.run_tests(env_obj)
 

@@ -13,21 +13,6 @@ class Parser:
     """
 
     @staticmethod
-    def file_accessible(path, mode='r'):
-        """
-        Check if the file or directory at `path` can
-        be accessed by the program using `mode` open flags.
-        Args:
-
-        """
-        try:
-            f = open(path, mode)
-            f.close()
-        except IOError:
-            return False
-        return True
-
-    @staticmethod
     def generate_config_hashmap(filepath: str) -> dict:
         """
         Function to generate hashmap
@@ -35,11 +20,7 @@ class Parser:
             filepath (str): Path for the config file.
         Rerturns:
             dict: Hashmap for config file as a dictionary.
-            None: None on failure.
         """
-        if not Parser.file_accessible(filepath):
-            raise IOError
-        configfd = open(filepath, 'r')
-        config_hashmap = yaml.load(configfd, Loader=yaml.FullLoader)
-        configfd.close()
+        with open(filepath, 'r') as configfd:
+            config_hashmap = yaml.load(configfd, Loader=yaml.SafeLoader)
         return config_hashmap
