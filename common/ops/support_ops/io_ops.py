@@ -187,10 +187,34 @@ class IoOps(AbstractOps):
         ret_val['msg'] = stat_res
         return ret_val
 
+    def create_files(self, fix_fil_size: str, path: str, node: str,
+                     num_files: int = 1,
+                     base_file_name: str = "testfile",
+                     file_type: str = "txt") -> dict:
+        """
+        Create files with fixed size. This function encapsulates the
+        operation of the file_dir_ops script present in the client machines.
+        Args:
+            fix_fil_size (str): Size of the file
+            path (str) : Path wherein this io is to be done.
+            node (str): Node on which command has to execute
+            num_files (int): Number of files to be created recursively
+                             under 'dir'
+            base_file_name (str): Base file name
+            file_type (str): Type of file to create
+        Returns:
+            async_object
+        """
+        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
+               f"-f {num_files} --fixed-file-size {fix_fil_size} "
+               f"--base-file-name {base_file_name} "
+               f"--file-types {file_type} {path}")
+        return self.execute_command_async(cmd, node)
+
     def create_deep_dirs_with_files(self, path: str, dir_start_no: int,
                                     dir_depth: int, dir_length: int,
                                     max_no_dirs: int, no_files: int,
-                                    node: str):
+                                    node: str) -> dict:
         """
         Create deep directories and files. This function encapsulates the
         operation of the file_dir_ops script present in the client machines.
