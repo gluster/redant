@@ -46,7 +46,7 @@ class TestCase(DParentTest):
                                           volname, conf_dict,
                                           self.server_list[:3],
                                           self.brick_roots,
-                                          create_only=True)
+                                          create_only=True, excep=False)
         if not ret:
             raise Exception("Failed to create volumes")
         redant.set_volume_options('all',

@@ -62,8 +62,8 @@ class VolumeOps(AbstractOps):
         if create_only:
             return ret
 
-        # Allow sleep before volume start
-        sleep(2)
+        if not excep and ret['error_code'] != 0:
+            return ret
 
         # Start volume
         ret = self.volume_start(volname, node, excep)
@@ -1072,7 +1072,8 @@ class VolumeOps(AbstractOps):
                              server_list: list, brick_roots: dict,
                              vol_prefix="mult_vol_",
                              force: bool = False,
-                             create_only: bool = False):
+                             create_only: bool = False,
+                             excep: bool = True):
         """
         Creates the number of volumes user has specified.
 
@@ -1091,6 +1092,8 @@ class VolumeOps(AbstractOps):
                             False, will do volume create, start, set operation
                             if any provided in the volume_config.
                             By default, value is set to False.
+        excep (bool): True. Flag to indicate whether the exception handling
+                      will kick in the abstract ops or will it be disabled.
 
         Returns: (bool)
         True if all the volumes were created, false otherwise.
@@ -1104,8 +1107,8 @@ class VolumeOps(AbstractOps):
             ret = self.setup_volume(bulkvolname, node,
                                     conf_hash, server_list,
                                     brick_roots, force,
-                                    create_only, False)
-            if ret['error_code'] != 0:
+                                    create_only, excep)
+            if not excep and ret['error_code'] != 0:
                 self.logger.error("Volume creation failed for the"
                                   f" volume {volname}")
                 return False

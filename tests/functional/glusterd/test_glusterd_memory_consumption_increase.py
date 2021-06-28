@@ -35,9 +35,6 @@ class TestCase(DParentTest):
                                                self.server_list,
                                                self.brick_roots)
 
-        if not ret:
-            raise Exception("Failed to create volumes")
-
         # Stop 100 volumes in loop
         for i in range(100):
             volname = f"mult_vol_{self.test_name}{index}{i}"
