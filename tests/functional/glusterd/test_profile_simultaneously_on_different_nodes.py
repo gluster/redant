@@ -19,6 +19,7 @@ Description:
 TC to check profile operations simultaneously on different nodes
 """
 
+from time import sleep
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -103,7 +104,18 @@ class TestCase(DParentTest):
 
         # Check profile on one of the other node
         cmd = f"gluster v profile {self.volume_name1} info"
-        redant.execute_abstract_op_node(cmd, self.server_list[0])
+        count = 0
+        while count < 20:
+            ret = redant.execute_abstract_op_node(cmd, self.server_list[0],
+                                                  False)
+            if ret['error_code'] == 0:
+                break
+            sleep(2)
+            count += 1
+
+        if ret['error_code'] != 0:
+            raise Exception(f"Failed to get profile for volume "
+                            f"{self.volume_name1}.Error: {ret['error_msg']}")
 
         # Run volume profile info on one of the other node in loop
         cmd = (f"for i in `seq 1 100`;do gluster v profile "

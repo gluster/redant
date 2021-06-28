@@ -60,15 +60,7 @@ class TestCase(DParentTest):
         if not redant.wait_for_glusterd_to_start(self.server_list):
             raise Exception(f"Failed to start glusterd on {self.server_list}")
 
-        failure_key = True
-        try:
-            redant.remove_brick(self.server_list[0], self.vol_name,
-                                remove_brick_list, 'commit', 3)
-            failure_key = False
-        except:
-            redant.logger.info("Expected behavior, Commit had to fail.")
-            redant.remove_brick(self.server_list[0], self.vol_name,
-                                remove_brick_list, 'stop', 3)
-
-        if not failure_key:
-            raise Exception("Brick commit should've failed!")
+        ret = redant.remove_brick(self.server_list[0], self.vol_name,
+                                  remove_brick_list, 'commit', 3, False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Brick commit should've failed!")

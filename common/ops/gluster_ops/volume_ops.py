@@ -614,6 +614,9 @@ class VolumeOps(AbstractOps):
         if volume_list_count != 0:
             volume_list = ret['msg']['volList']['volume']
 
+        if not isinstance(volume_list, list):
+            volume_list = [volume_list]
+
         return volume_list
 
     def volume_reset(self, volname: str, node: str = None,
