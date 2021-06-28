@@ -30,13 +30,10 @@ class TestCase(DParentTest):
         # Create and start 100 volumes in a loop
         volname = f"{self.test_name}{index}"
         conf_dict = self.vol_type_inf[self.conv_dict['dist-rep']]
-        ret = self.redant.bulk_volume_creation(self.server_list[0], 100,
-                                               volname, conf_dict,
-                                               self.server_list,
-                                               self.brick_roots)
-
-        if not ret:
-            raise Exception("Failed to create volumes")
+        self.redant.bulk_volume_creation(self.server_list[0], 100,
+                                         volname, conf_dict,
+                                         self.server_list,
+                                         self.brick_roots)
 
         # Stop 100 volumes in loop
         for i in range(100):
