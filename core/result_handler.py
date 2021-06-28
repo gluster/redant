@@ -85,7 +85,7 @@ class ResultHandler:
                        0 if ndcount == 0 else (ndpass/ndcount)*100])
         table.add_row(['Disruptive', dtest,
                        0 if dcount == 0 else (dpass/dcount)*100])
-        table.add_row(['Skipped', skipCount, 'NA'])
+        table.add_row(['Skipped', skipCount, 0])
         table.add_row(['Total', ndtest+dtest,
                        (0 if (ndcount + dcount == 0)
                         else ((ndpass + dpass)/(ndcount + dcount))*100)])
@@ -197,7 +197,7 @@ class ResultHandler:
         row += 1
         result_sheet.write(row, 0, 'Skipped')
         result_sheet.write(row, 1, skipCount)
-        result_sheet.write(row, 2, 'NA')
+        result_sheet.write(row, 2, 0)
 
         row += 1
         result_sheet.write(row, 0, 'Total')
