@@ -77,7 +77,7 @@ class TestCase(DParentTest):
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.proc = redant.create_files(num_files=1,
                                         fix_fil_size="1k",
-                                        path=mount_obj['mountpath'],
+                                        path=self.mnt_list[0]['mountpath'],
                                         node=self.mnt_list[0]['client'],
                                         base_file_name="test_file")
         # Validate IO
