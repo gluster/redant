@@ -32,7 +32,12 @@ optional arguments:
                         Spreadsheet for result. Default value is NULL
 ```
 
+## Tested and Supported Distros
 
+ | Distro | Redant | Gluster Server | Gluster Client |
+ | :----: | :----: | :------------: | :-------------:|
+ |Fedora 32| :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+ |RHEL 7.9| :heavy_multiplication_x: | :heavy_check_mark: | :heavy_check_mark:|
 
 The architects of any project won't be there forever with it 
 ( not everyone has the luxury to be a BDFL ), hence it is important to have 

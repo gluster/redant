@@ -65,9 +65,10 @@ TCs.
 2. Do add a docstring specifying what the test case does. This will not only 
 help anyone else to understand what the test is meant for but will also help 
 you in case you visit this test case later. Also, it saves time :watch: to understand the operation. 
-```js
+
 test_start_stop_glusterd.py
 ============================
+```python
 """
 This file contains a test-case which tests glusterd
 starting and stopping of glusterd service.
@@ -79,7 +80,7 @@ So as you can see from the first few lines itself we understand what the test is
 3. Add the test type(disruptive or non-disruptive) and volume type as well. This helps the framework to understand what kind of test is this and on which volumes this has to be tested on. This is done with the help of [Comment Parser](https://pypi.org/project/comment-parser/#:~:text=Python%20module%20used%20to%20extract,code%20files%20of%20various%20types.)
 
 In the [Test List Builder](https://github.com/srijan-sivakumar/redant/blob/main/core/test_list_builder.py), these comments are extracted and then passed on to the next component of the framework in the form of a dictionary.
-```js
+```python
     flags = str(extract_comments(tc_path, mime="text/x-python")[0])
     tc_flags = {}
     tc_flags["tcNature"] = flags.split(';')[0]
@@ -90,9 +91,14 @@ For reference:
 
 **Test type**
 
-```js
-Disruptive: `#disruptive`
-Non-disruptive: `#nonDisruptive`
+For disruptive test cases
+```python
+#disruptive
+```
+
+For non disruptive test cases
+```python
+#nonDisruptive
 ```
 
 **Volume type:**
@@ -120,22 +126,22 @@ The functions that it has:
 * parent_run_test() : This function takes care of the exception handling for each and every test case and also calls the run_test function.
 * terminate() : This function takes care of the tasks that need to be done in the end of each test case like closing the connections etc.
 
-```js
+```python
 from tests.abstract_test import AbstractTest
 ```
 
 5. Create a class that extends the `AbstractTest`. This is important as we already know that all the tests need to follow a certain set of functionalities to be performed and rules to be followed to run them and these are all in the AbstractTest. Without this statement, you cannot override the run_test() function in your test.
-```js
+```python
 class TestCase(AbstractTest):
 ```
 
 6. Make a function `run_test`. This function basically overrides the run_test() function(as mentioned earlier) from the [AbstractTest](https://github.com/srijan-sivakumar/redant/blob/main/tests/abstract_test.py). Whatever, operation you want to perform needs to be a part of this function. You don't need to take care of the exception handling part as this is already taken care of by the AbstractTest -> parent_run_test() function and hence all you need is call the ops and execute the functionalities. Moreover, remember to add `redant` as one of the arguments as it won't be able to override the run_test() function and you won't be able to call the ops without the redant object.
 
-```js
+```python
 def run_test(self, redant):
 ```
 7. To test the operation you need to call the ops. For example, you need to test the start and stop glusterd operations.
-```js
+```python
     redant.start_glusterd(self.server_list)
     redant.stop_glusterd(self.server_list)
 ```
