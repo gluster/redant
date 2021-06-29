@@ -22,14 +22,15 @@ class TestCase(NdParentTest):
         if self.volume_type == "dist-disp":
             force = True
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
-                                   self.server_list, self.brick_roots)
+                                   self.server_list, self.brick_roots,
+                                   force)
         if not ret:
             raise Exception("Failed to expand volume")
 
         kwargs = {'distribute_count': 1}
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
                                    self.server_list, self.brick_roots,
-                                   **kwargs)
+                                   force, **kwargs)
         if not ret:
             raise Exception("Failed to expand volume")
 
