@@ -21,11 +21,29 @@ Description:
 
 # disruptive;arb,dist-arb
 
+import traceback
 from random import sample
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def terminate(self):
+        """
+        In case the test fails midway then wait for IO to comlete before
+        calling the terminate function of DParentTest
+        """
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _bring_bricks_online_heal(self, node: str, volname: str,
                                   bricks_list: list):
@@ -119,6 +137,7 @@ class TestCase(DParentTest):
                            f"{self.mnt_list[1]['client']}")
         proc2 = redant.execute_command_async(cmd,
                                              self.mnt_list[1]['client'])
+        self.list_of_procs = [proc1, proc2]
 
         # Bring brick offline
         bricks_to_bring_offline = sample(bricks_list, 2)
@@ -133,7 +152,7 @@ class TestCase(DParentTest):
                             "not offline")
 
         # Validating IO's
-        for proc, mount in zip([proc1, proc2], self.mnt_list):
+        for proc, mount in zip(self.list_of_procs, self.mnt_list):
             if not redant.validate_io_procs(proc, mount):
                 raise Exception("IO failed on some of the clients")
 
