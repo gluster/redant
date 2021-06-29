@@ -77,8 +77,9 @@ class TestCase(DParentTest):
         _, br_cmd = redant.form_brick_cmd(self.server_list,
                                           self.brick_roots,
                                           self.vol_name, mul_factor, True)
+        kwargs = {'replica_count': 3}
         redant.add_brick(self.vol_name, br_cmd, self.server_list[0],
-                         replica_count=3)
+                         False, True, **kwargs)
 
         # Trigger rebalance on the volume
         redant.rebalance_start(self.vol_name, self.server_list[0])

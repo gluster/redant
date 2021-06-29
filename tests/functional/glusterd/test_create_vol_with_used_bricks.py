@@ -70,9 +70,10 @@ class TestCase(NdParentTest):
                                           self.brick_roots,
                                           self.volume_name1,
                                           mul_factor, True)
+        kwargs = {'replica_count': 3}
         redant.add_brick(self.volume_name1,
                          br_cmd, self.server_list[0],
-                         replica_count=3)
+                         False, True, **kwargs)
 
         mountpoint = f"/mnt/{self.volume_name1}"
         redant.execute_abstract_op_node(f"mkdir -p {mountpoint}",

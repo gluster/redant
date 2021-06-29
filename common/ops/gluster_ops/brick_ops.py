@@ -13,8 +13,8 @@ class BrickOps(AbstractOps):
     """
 
     def add_brick(self, volname: str, brick_str: str, node: str,
-                  force: bool = False, replica_count: int = None,
-                  arbiter_count: int = None, excep: bool = True) -> dict:
+                  force: bool = False, excep: bool = True,
+                  **kwargs) -> dict:
         """
         # TODO: Function has to designed for dispersed, distributed-dispersed,
                 arbiter and distributed-arbiter.
@@ -33,6 +33,13 @@ class BrickOps(AbstractOps):
                           add brick command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
+        Kwargs:
+            **kwargs
+                The keys, values in kwargs are:
+                    - replica_count : (int)|None.
+                        Updated replica count
+                    - arbiter_count : (int)|None
+                        Updated arbiter count
         Returns:
             ret: A dictionary consisting
                     - Flag : Flag to check if connection failed
@@ -43,10 +50,10 @@ class BrickOps(AbstractOps):
                     - node : node on which the command got executed
         """
         replica = arbiter = ''
-        if replica_count is not None:
-            replica = (f"replica {replica_count}")
-            if arbiter_count is not None:
-                arbiter = (f"arbiter {arbiter_count}")
+        if 'replica_count' in kwargs:
+            replica = (f"replica {kwargs['replica_count']}")
+            if 'arbiter_count' in kwargs:
+                arbiter = (f"arbiter {kwargs['arbiter_count']}")
 
         cmd = (f"gluster vol add-brick {volname} {replica} {arbiter}"
                f" {brick_str} --mode=script --xml")

@@ -84,8 +84,9 @@ class TestCase(DParentTest):
                                               self.brick_roots,
                                               self.vol_name, mul_factor, True)
             # add brick
+            kwargs = {'replica_count': 3}
             redant.add_brick(self.vol_name, br_cmd, self.server_list[0],
-                             replica_count=3)
+                             False, True, **kwargs)
         else:
             mul_factor = 1
 

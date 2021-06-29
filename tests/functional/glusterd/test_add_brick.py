@@ -67,10 +67,10 @@ class TestCase(DParentTest):
         bricks_to_add[random_index] += "/non_existing_brick"
 
         br_cmd = " ".join(bricks_to_add)
+        kwargs = {'replica_count': rep_count}
         ret = redant.add_brick(self.vol_name,
                                br_cmd, self.server_list[0],
-                               replica_count=rep_count,
-                               excep=False)
+                               excep=False, **kwargs)
         if ret['msg']['opRet'] == 0:
             raise Exception("Adding a non-existing brick to "
                             "a volume should fail")
@@ -86,10 +86,10 @@ class TestCase(DParentTest):
         bricks_to_add[random_index] = ":".join(brick_to_change)
 
         br_cmd = " ".join(bricks_to_add)
+        kwargs = {'replica_count': rep_count}
         ret = redant.add_brick(self.vol_name,
                                br_cmd, self.server_list[0],
-                               replica_count=rep_count,
-                               excep=False)
+                               excep=False, **kwargs)
         if ret['msg']['opRet'] == 0:
             raise Exception("Adding a brick from a node which is not "
                             "part of the cluster should fail")
@@ -99,9 +99,10 @@ class TestCase(DParentTest):
         bricks_to_add = self.bricks_list[(2 * rep_count) + 1:
                                          (3 * rep_count) + 1]
         br_cmd = " ".join(bricks_to_add)
+        kwargs = {'replica_count': rep_count}
         redant.add_brick(self.vol_name,
                          br_cmd, self.server_list[0],
-                         replica_count=rep_count)
+                         False, True, **kwargs)
 
         # Perform rebalance start operation
         redant.rebalance_start(self.vol_name, self.server_list[0])

@@ -459,7 +459,7 @@ class VolumeOps(AbstractOps):
             return False
 
         if 'replica_count' in kwargs:
-            replica_count = int(kwargs['replica_count'])
+            replica_count = kwargs['replica_count']
 
             # Get replica count info.
             current_replica_count = self.get_replica_count(node, volname)
@@ -468,7 +468,7 @@ class VolumeOps(AbstractOps):
         # Add bricks to the volume
         self.logger.info(f"Adding bricks to the volume: {volname}")
         ret = self.add_brick(volname, bricks_cmd, node, force,
-                             kwargs['replica_count'], excep=False)
+                             False, **kwargs)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to add bricks to the volume:"
                               f" {ret['msg']['opErrstr']}")

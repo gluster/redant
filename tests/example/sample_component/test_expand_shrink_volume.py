@@ -18,13 +18,14 @@ class TestCase(NdParentTest):
         """
         In the testcase:
         """
-        ret = redant.expand_volume(self.server_list[0], self.server_list,
-                                   self.brick_roots)
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots)
         if not ret:
             raise Exception("Failed to expand volume")
 
         kwargs = {'distribute_count': 1}
-        ret = redant.expand_volume(self.server_list[0], self.server_list,
-                                   self.brick_roots, **kwargs)
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots,
+                                   **kwargs)
         if not ret:
             raise Exception("Failed to expand volume")
