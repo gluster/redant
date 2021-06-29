@@ -52,10 +52,15 @@ class TestCase(NdParentTest):
         * Check heal info for split brain
         * Check if volume in split brain.
         """
-        redant.disable_self_heal_daemon(self.vol_name,
-                                        self.server_list[0])
-        redant.enable_self_heal_daemon(self.vol_name,
-                                       self.server_list[0])
+        if not (redant.
+                disable_self_heal_daemon(self.vol_name,
+                                         self.server_list[0])):
+            raise Exception("Failed to disable the self-heal daemon")
+        if not (redant.
+                enable_self_heal_daemon(self.vol_name,
+                                        self.server_list[0])):
+            raise Exception("Failed to enable the self-heal daemon")
+
         self._perform_simple_io()
         if self.heal_info is None:
             raise Exception("Failed to get heal info")
