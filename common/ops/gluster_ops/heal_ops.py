@@ -517,7 +517,8 @@ class HealOps:
 
     def do_bricks_exist_in_shd_volfile(self, volname: str,
                                        brick_list: list,
-                                       node: str) -> bool:
+                                       node: str,
+                                       path: str = None) -> bool:
         """
         Checks whether the given brick list is present in glustershd
         server volume file
@@ -527,10 +528,52 @@ class HealOps:
             brick_list (list): brick list of a volume which needs to
                                compare in glustershd server volume file
             node (str): Node on which commands will be executed.
+            path (str): Dynamic path to check the shd file. Default
+                        is None.
 
         Returns:
             bool : True if brick exists in glustershd server volume file.
                    False Otherwise
         """
         GLUSTERSHD = "/var/lib/glusterd/glustershd/glustershd-server.vol"
+        if not self.path_exists(node, GLUSTERSHD):
+            if not self.path_exists(node, path):
+                self.logger.error("Can't find shd file")
+            else:
+                GLUSTERSHD = path
 
+        brick_list_server_vol = []
+        volume_clients = f"volume {volname}-client-"
+        host = brick = None
+        parse = False
+
+        cmd = f"cat {GLUSTERSHD}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+
+        if ret['error_code'] != 0:
+            self.logger.error("Unable to cat the GLUSTERSHD file")
+            return False
+
+        fd = ''.join(ret['msg']).split('\n')
+        for each_line in fd:
+            each_line = each_line.strip()
+            if volume_clients in each_line:
+                parse = True
+            elif "end-volume" in each_line:
+                if parse:
+                    brick_list_server_vol.append(f"{host}:{brick}")
+                parse = False
+            elif parse:
+                if "option remote-subvolume" in each_line:
+                    brick = each_line.split(" ")[2]
+                if "option remote-host" in each_line:
+                    host = each_line.split(" ")[2]
+
+        self.logger.info(f"Brick List from volume "
+                         f"info: {brick_list}")
+        self.logger.info("Brick List from glustershd server volume "
+                         f"file: {brick_list_server_vol}")
+
+        if set(brick_list) != set(brick_list_server_vol):
+            return False
+        return True

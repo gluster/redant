@@ -34,26 +34,40 @@ class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
-        1. Add 100 directories in client mountpoint
-        2. Bring one brick offline
-        3. Delete those directories
-        4. Add another 100 directories in the client
-           mountpoint
-        5. Bring the brick online
-        6. Check the heal info
-        7. Check if file attribute exist in heal info
-        8. Check is shd is daemonized
-        9. Check if shd daemon is running
-        10. Get the heal info summary
-        11. Monitor heal completion
-        12. Check if heal is completed
-        13. Check heal info for split brain
-        14. Check if volume in split brain.
+        * Disable self heal daemon
+        * Re-enable self heal daemon
+        * Add 100 directories in client mountpoint
+        * Bring one brick offline
+        * Delete those directories
+        * Add another 100 directories in the client
+        * mountpoint
+        * Bring the brick online
+        * Check the heal info
+        * Check if file attribute exist in heal info
+        * Check is shd is daemonized
+        * Check if shd daemon is running
+        * Get the heal info summary
+        * Monitor heal completion
+        * Check if heal is completed
+        * Check heal info for split brain
+        * Check if volume in split brain.
         """
+        redant.disable_self_heal_daemon(self.vol_name,
+                                        self.server_list[0])
+        redant.enable_self_heal_daemon(self.vol_name,
+                                       self.server_list[0])
         self._perform_simple_io()
         if self.heal_info is None:
             raise Exception("Failed to get heal info")
 
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        path = (f"/var/lib/glusterd/vols/{self.vol_name}/"
+                f"{self.vol_name}-shd.vol")
+        redant.do_bricks_exist_in_shd_volfile(self.vol_name,
+                                              bricks_list,
+                                              self.server_list[0],
+                                              path)
         if 'file' not in self.heal_info[0]:
             raise Exception("File not in heal info")
 
