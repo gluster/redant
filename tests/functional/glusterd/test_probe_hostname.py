@@ -115,7 +115,7 @@ class TestCase(DParentTest):
 
         # Create a volume
         redant.volume_create("test-vol", self.server_list[0],
-                             self.vol_type_inf[self.conv_dict['dist']],
+                             self.vol_type_inf['dist'],
                              self.server_list, self.brick_roots, True)
 
         redant.logger.info("Volume: test-vol created successfully")

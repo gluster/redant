@@ -37,7 +37,7 @@ class TestCase(DParentTest):
            part of the cluster.
         """
         # form bricks list to test add brick functionality
-        rep_count = self.vol_type_inf[self.conv_dict['rep']]
+        rep_count = self.vol_type_inf['rep']
         rep_count = rep_count['replica_count']
         num_of_bricks = 4 * rep_count
 

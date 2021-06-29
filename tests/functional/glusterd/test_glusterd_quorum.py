@@ -78,7 +78,7 @@ class TestCase(DParentTest):
                                          self.server_list[0])
 
         # Create a volume using the first 3 nodes
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        conf_dict = self.vol_type_inf[self.volume_type]
         redant.setup_volume(self.vol_name, self.server_list[0],
                             conf_dict, self.server_list[:3],
                             self.brick_roots)
@@ -86,7 +86,7 @@ class TestCase(DParentTest):
         # Creating another volume and stopping it
         self.volume_type1 = 'dist'
         self.volume_name1 = f"{self.test_name}-1"
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+        conf_dict = self.vol_type_inf[self.volume_type1]
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, self.server_list[:3],
                             self.brick_roots)

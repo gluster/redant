@@ -113,7 +113,7 @@ class TestChangeReservcelimit(NdParentTest):
         # volume creation for setting reserve limit to higher value.
         self.volume_type1 = 'dist-rep'
         self.volume_name1 = f"{self.test_name}-1"
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+        conf_dict = self.vol_type_inf[self.volume_type1]
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, self.server_list,
                             self.brick_roots, True)

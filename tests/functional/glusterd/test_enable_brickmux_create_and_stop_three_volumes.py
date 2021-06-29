@@ -50,7 +50,7 @@ class TestCase(DParentTest):
         # Create and start 3 volume
         for number in range(1, 4):
             self.volname = f"test_volume_{number}"
-            conf_dict = self.vol_type_inf[self.conv_dict["rep"]]
+            conf_dict = self.vol_type_inf["rep"]
             redant.setup_volume(self.volname,
                                 self.server_list[0],
                                 conf_dict, self.server_list,

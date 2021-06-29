@@ -101,7 +101,7 @@ class TestCase(DParentTest):
         volume_type = 'dist'
         self.volume_name = f"{self.test_name}-{volume_type}-1"
         redant.setup_volume(self.volume_name, self.server_list[0],
-                            self.vol_type_inf[self.conv_dict[volume_type]],
+                            self.vol_type_inf[volume_type],
                             self.server_list, self.brick_roots)
 
         # Peer detach one node which contains the bricks of the volume created

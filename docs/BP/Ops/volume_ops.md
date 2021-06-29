@@ -21,7 +21,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_mount(self.server_list[0], self.vol_name, self.mountpoint, self.client_list[0])
+		```
 
 2) **volume_unmount**<br>
     Unmounts the gluster volume from its client.
@@ -41,7 +43,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_unmount(self.vol_name, self.mountpoint, self.client_list[0])
+		```
 
 3) **volume_create**<br>
     Create the gluster volume with specified configuration
@@ -65,11 +69,13 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_type1 = 'dist'
             volume_name1 = f"{self.test_name}-{volume_type1}-1"
             volume_create(volume_name1, self.server_list[0],
-                          self.vol_type_inf[self.conv_dict[volume_type1]],
+                          self.vol_type_inf[volume_type1],
                           self.server_list, self.brick_roots, True)
+		```
 
 4) **volume_start**<br>
     Starts the gluster volume
@@ -91,7 +97,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_start(self.vol_name,self.server_list[0])
+		```
 
 5) **volume_stop**<br>
     Stops the gluster volume
@@ -112,7 +120,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_stop(self.vol_name, self.server_list[0], True)
+		```
 
 6) **volume_delete**<br>
     Deletes the gluster volume if given volume exists in gluster.
@@ -130,7 +140,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_delete(self.vol_name, self.server_list[0])
+		```
 
 7) **volume_delete_and_brick_cleanup**<br>
     Deletes the gluster volume if given volume exists in gluster.
@@ -148,7 +160,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_delete_and_brick_cleanup(self.vol_name, self.server_list[0])
+		```
 
 8) **get_volume_info**<br>
     Gives volume information.
@@ -159,8 +173,11 @@
         Returns:
             dict: a dictionary with volume information.
         Example:
+			```python
             get_volume_info(server)
-            >>>{'test-vol1': {
+			```
+			```json
+               {'test-vol1': {
                                'id': '6c0053a5-d11c-4ba0-ae5e-f5d5e43a4116',
                                'status': '0',
                                'statusStr': 'Created',
@@ -202,6 +219,7 @@
                                            }
                              }
                }
+			```
 
 9) **get_volume_list**<br>
     Fetches the volume names in the gluster.
@@ -212,8 +230,9 @@
         Returns:
             list: List of volume names
         Example:
+		```python
             get_volume_list(server)
-            >>>['testvol1', 'testvol2']
+		```
 
 10) **volume_reset**<br>
     Resets the gluster volume of all the reconfigured options.
@@ -234,7 +253,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+		```python
             volume_reset(self.vol_name,self.server_list[0])
+		```
 
 11) **get_volume_status**<br>
     Gets the status of all or the specified volume
@@ -256,8 +277,11 @@
             dict: volume status in dict of dictionary format
             None: In case no volumes are present
         Example:
+			```python
             get_volume_status("test-vol1",self.server_list[0])
-            >>>{ 'test-vol1': {
+			```
+			```json
+               { 'test-vol1': {
                                 'nodeCount': '2',
                                 'node': [{
                                            'hostname': 'server-vm1',
@@ -284,6 +308,7 @@
                                 'tasks': None
                               }
                }
+			```
 
 12) **get_volume_options**<br>
      Gets the option values for a given volume.
@@ -299,8 +324,11 @@
             dict: value for the given volume option in dict format, on success
             NoneType: on failure
         Example:
+			```python
             get_volume_options(self.server_list[0])
-            >>>{ 
+			```
+			```json
+               { 
                  'cluster.server-quorum-ratio': '51 (DEFAULT)',
                  'cluster.enable-shared-storage': 'disable (DEFAULT)',
                  'cluster.op-version': '100000',
@@ -312,6 +340,7 @@
                  'cluster.daemon-log-level': 'INFO (DEFAULT)',
                  'cluster.brick-graceful-cleanup': 'disable (DEFAULT)'
                }
+			```
 
 13) **set_volume_options**<br>
      Sets the option values for the given volume.
@@ -322,8 +351,10 @@
         Kwargs:
             node (str): Node on which cmd has to be executed. Default - None
         Example:
+			```python
             options = {"user.cifs":"enable","user.smb":"enable"}
             set_volume_options("test-vol1", options, self.server_list[0])
+			```
 
 14) **validate_volume_option**<br>
      Validate the volume options
@@ -336,8 +367,10 @@
         Returns:
             No value if success or else ValueError will be raised.
         Example:
+			```python
             options = {"user.cifs":"enable","user.smb":"enable"}
             validate_volume_option(sel.vol_name, options)
+			```
             
 
 15) **reset_volume_option**<br>
@@ -353,7 +386,9 @@
                 then reset volume will get executed without force option.
                 Default - False
         Example:
+			```python
             reset_volume_option("test-vol1", "option", server)
+			```
 
         Returns:
             ret: A dictionary consisting
@@ -386,7 +421,9 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
          Example:
+			```python
             volume_sync(hostname,self.server_list[0])
+			```
 
 17) **is_volume_started**<br>
 		Function to check whether a said volume is in started state.
@@ -397,7 +434,9 @@
 		Returns:
 			True if in Started state else False
 		Example:
+			```python
 			self.is_volume_started(self.vol_name, self.server_list[0])
+			```
 
 18) **wait_for_vol_to_go_offline**<br>
 		Function to wait till the said volume goes offline.
@@ -409,7 +448,9 @@
 		Returns:
 			True if it goes offline, else False
 		Example:
+			```python
 			self.wait_for_vol_to_go_offline(self.vol_name, self.server_list[0])
+			```
 
 18) **wait_for_vol_to_come_online**<br>
 		Function to wait till the said volume comes online.
@@ -421,7 +462,9 @@
 		Returns:
 			True if it comes online, else False
 		Example:
+			```python
 			self.wait_for_vol_to_come_online(self.vol_name, self.server_list[0])
+			```
 
 19) **setup_volume**<br>
         Function to setup the gluster volume with the specified configuration.
@@ -452,11 +495,13 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+			```python
             self.volume_type1 = 'dist'
             self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
-            conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+            conf_dict = self.vol_type_inf[self.volume_type1]
             conf_dict['dist_count'] = 1
             redant.setup_volume(self.volume_name1, self.server_list[0], conf_dict,[self.server_list[0]], self.brick_roots, True)
+			```
 
 20) **volume_create_with_custom_bricks**<br>
         This function helps in creating a gluster volume with custom brick configuration.
@@ -485,9 +530,10 @@
                 - cmd : command that got executed
                 - node : node on which the command got executed
         Example:
+			```python
             self.volume_type1 = 'dist'
             self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
-            conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+            conf_dict = self.vol_type_inf[self.volume_type1]
             brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
                                                         self.brick_roots,
                                                         self.volume_name1, 4)
@@ -495,6 +541,7 @@
                                                     self.server_list[0],
                                                     conf_dict, brick_cmd,
                                                     brick_dict)
+			```
             
 21) **sanitize_volume**<br>
         This function helps in getting the volume ready for the next test case to be used. Generally, non-disruptive tests will require this function but even some strange scenario can be dealt with this in a test case.
@@ -508,10 +555,12 @@
             5. vol_param (dict) : Raw recipe for creating volume
 
         Example:
-                vol_param = self.vol_type_inf[self.conv_dict[self.volume_type]]
+			```python
+                vol_param = self.vol_type_inf[self.volume_type]
                 self.redant.sanitize_volume(self.vol_name, self.server_list,
                                             self.client_list, self.brick_roots,
                                             vol_param)
+			```
 
 22) **cleanup_volume**<br>
         This function comes handy in cleanup operations. Basically, it deletes the volume and its mountpoints.
@@ -521,7 +570,9 @@
             2. node (str) : Node on which the commands are run.
 
         Example:
+			```python
             self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+			```
 
  23) **is_distribute_volume**<br>
         This function checks if a volume is a plain distributed volume.
@@ -533,7 +584,9 @@
             NoneType: None if volume does not exist.
         
         Example:
+			```python
             self.is_distribute_volume(volname)
+			```
 
 24) **wait_for_volume_process_to_be_online**<br>
         This function waits for the volume's processes to be online until timeout
@@ -552,8 +605,10 @@
                   False otherwise
         
         Example:
+			```python
             self.redant.wait_for_volume_process_to_be_online(self.vol_name,
                self.server_list[0], self.server_list, timeout=600)
+			```
 
 25) **get_subvols**<br>
         This function helps in getting the subvolumes in the given volume.
@@ -568,4 +623,6 @@
                   to that subvol in node:brick_path format.
 
         Example:
+			```python
             ret = redant.get_subvols(self.vol_name, self.server_list[0])
+			```

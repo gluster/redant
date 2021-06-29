@@ -51,8 +51,8 @@ class TestCase(DParentTest):
         # Create a distributed volume on Node1
         volume_type1 = 'dist'
         volume_name1 = f"{self.test_name}-{volume_type1}-1"
-        self.vol_type_inf[self.conv_dict[volume_type1]]['dist-count'] = 1
-        vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type1]]
+        self.vol_type_inf[volume_type1]['dist-count'] = 1
+        vol_params_dict = self.vol_type_inf[volume_type1]
         ret = redant.volume_create(volume_name1, self.server_list[0],
                                    vol_params_dict, self.server_list[0],
                                    self.brick_roots, True)
@@ -60,8 +60,8 @@ class TestCase(DParentTest):
         # Create a replicate volume on Node2 without force should fail
         volume_type2 = 'rep'
         volume_name2 = f"{self.test_name}-{volume_type2}-2"
-        self.vol_type_inf[self.conv_dict[volume_type2]]['replica_count'] = 2
-        vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type2]]
+        self.vol_type_inf[volume_type2]['replica_count'] = 2
+        vol_params_dict = self.vol_type_inf[volume_type2]
         ret = redant.volume_create(volume_name2, self.server_list[1],
                                    vol_params_dict, self.server_list[1],
                                    self.brick_roots, excep=False)
@@ -73,8 +73,8 @@ class TestCase(DParentTest):
         # Create a replica volume on Node2 with force should succeed
         volume_type3 = 'rep'
         volume_name3 = f"{self.test_name}-{volume_type3}-3"
-        self.vol_type_inf[self.conv_dict[volume_type3]]['replica-count'] = 3
-        vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type3]]
+        self.vol_type_inf[volume_type3]['replica-count'] = 3
+        vol_params_dict = self.vol_type_inf[volume_type3]
         ret = redant.volume_create(volume_name3, self.server_list[1],
                                    vol_params_dict, self.server_list[1],
                                    self.brick_roots, True)
@@ -119,8 +119,8 @@ class TestCase(DParentTest):
         # Create a replica volume on N1 and N2 with force
         volume_type4 = 'rep'
         volume_name4 = f"{self.test_name}-{volume_type4}-4"
-        self.vol_type_inf[self.conv_dict[volume_type4]]['replica-count'] = 2
-        vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type4]]
+        self.vol_type_inf[volume_type4]['replica-count'] = 2
+        vol_params_dict = self.vol_type_inf[volume_type4]
         ret = redant.volume_create(volume_name4, self.server_list[0],
                                    vol_params_dict, self.server_list[0:2],
                                    self.brick_roots, True)
@@ -151,8 +151,8 @@ class TestCase(DParentTest):
         # Create a replica volume on N1, N2 and N3 with force
         volume_type5 = 'rep'
         volume_name5 = f"{self.test_name}-{volume_type5}-5"
-        self.vol_type_inf[self.conv_dict[volume_type5]]['replica-count'] = 3
-        vol_params_dict = self.vol_type_inf[self.conv_dict[volume_type5]]
+        self.vol_type_inf[volume_type5]['replica-count'] = 3
+        vol_params_dict = self.vol_type_inf[volume_type5]
         ret = redant.volume_create(volume_name5, self.server_list[0],
                                    vol_params_dict, self.server_list,
                                    self.brick_roots, True)

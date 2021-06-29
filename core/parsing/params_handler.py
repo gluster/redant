@@ -91,36 +91,36 @@ class ParamsHandler:
                                 }
                }
                volume_types: {
-                                "distributed": {
+                                "dist": {
                                     "dist_count": "4"
                                     "transport": "tcp"
                                 }
-                                "replicated": {
+                                "rep": {
                                     "replica_count": "3"
                                     "transport": "tcp"
                                 }
-                                "distributed-replicated": {
+                                "dist-rep": {
                                     "dist_count": "2"
                                     "replica_count": "3"
                                     "transport": "tcp"
                                 }
-                                "dispersed": {
+                                "disp": {
                                     "disperse_count": "6"
                                     "redundancy_count": "2"
                                     "transport": "tcp"
                                 }
-                                "distributed-dispersed": {
+                                "dist-disp": {
                                     "dist_count": "2"
                                     "disperse_count": "6"
                                     "redundancy_count": "2"
                                     "transport": "tcp"
                                 }
-                                "arbiter": {
+                                "arb": {
                                     "replica_count": "3"
                                     "arbiter_count": "1"
                                     "transport": "tcp"
                                 }
-                                "distributed-arbiter": {
+                                "dist-arb": {
                                     "dist_count": "2"
                                     "replica_count": "3"
                                     "arbiter_count": "1"
@@ -130,7 +130,6 @@ class ParamsHandler:
 
             }
         """
-
         return self.config_hashmap
 
     def get_brick_root_list(self, server_ip: str) -> list:
@@ -166,5 +165,4 @@ class ParamsHandler:
         Returns:
             list : list of exluded tests
         """
-
         return self.config_hashmap.get("excluded_tests", [])

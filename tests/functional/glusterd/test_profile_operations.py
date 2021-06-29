@@ -125,7 +125,7 @@ class TestCase(DParentTest):
         volume_type1 = 'dist'
         self.volume_name1 = f"{self.test_name}-{volume_type1}-1"
         redant.setup_volume(self.volume_name1, self.server_list[0],
-                            self.vol_type_inf[self.conv_dict[volume_type1]],
+                            self.vol_type_inf[volume_type1],
                             self.server_list, self.brick_roots)
 
         # Stop volume
