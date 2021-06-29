@@ -67,13 +67,10 @@ class TestCase(NdParentTest):
 
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
-        path = (f"/var/lib/glusterd/vols/{self.vol_name}/"
-                f"{self.vol_name}-shd.vol")
         if not (redant.
                 do_bricks_exist_in_shd_volfile(self.vol_name,
                                                bricks_list,
-                                               self.server_list[0],
-                                               path)):
+                                               self.server_list[0])):
             raise Exception("Bricks do not exist in shd volfile")
         if 'file' not in self.heal_info[0]:
             raise Exception("File not in heal info")

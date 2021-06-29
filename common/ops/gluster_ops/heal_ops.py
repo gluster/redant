@@ -517,8 +517,7 @@ class HealOps:
 
     def do_bricks_exist_in_shd_volfile(self, volname: str,
                                        brick_list: list,
-                                       node: str,
-                                       path: str = None) -> bool:
+                                       node: str) -> bool:
         """
         Checks whether the given brick list is present in glustershd
         server volume file
@@ -528,14 +527,13 @@ class HealOps:
             brick_list (list): brick list of a volume which needs to
                                compare in glustershd server volume file
             node (str): Node on which commands will be executed.
-            path (str): Dynamic path to check the shd file. Default
-                        is None.
 
         Returns:
             bool : True if brick exists in glustershd server volume file.
                    False Otherwise
         """
         GLUSTERSHD = "/var/lib/glusterd/glustershd/glustershd-server.vol"
+        path = f"/var/lib/glusterd/vols/{volname}/{volname}-shd.vol"
         if not self.path_exists(node, GLUSTERSHD):
             if not self.path_exists(node, path):
                 self.logger.error("Can't find shd file")
