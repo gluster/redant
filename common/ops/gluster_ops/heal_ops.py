@@ -567,10 +567,10 @@ class HealOps:
                 if "option remote-host" in each_line:
                     host = each_line.split(" ")[2]
 
-        self.logger.info(f"Brick List from volume "
-                         f"info: {brick_list}")
-        self.logger.info("Brick List from glustershd server volume "
-                         f"file: {brick_list_server_vol}")
+        self.logger.debug(f"Brick List from volume "
+                          f"info: {brick_list}")
+        self.logger.debug("Brick List from glustershd server volume "
+                          f"file: {brick_list_server_vol}")
 
         if set(brick_list) != set(brick_list_server_vol):
             return False
