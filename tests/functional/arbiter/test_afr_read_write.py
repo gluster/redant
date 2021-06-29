@@ -29,34 +29,37 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    # def _bring_bricks_online_heal(self, mnode, volname, bricks_list):
-    #     """
-    #     Bring bricks online and monitor heal completion
-    #     """
-    #     # Bring bricks online
-    #     ret = bring_bricks_online(
-    #         mnode, volname, bricks_list,
-    #         bring_bricks_online_methods=['volume_start_force'])
-    #     self.assertTrue(ret, 'Failed to bring bricks online')
+    def _bring_bricks_online_heal(self, node: str, volname: str,
+                                  bricks_list: list):
+        """
+        Bring bricks online and monitor heal completion
+        """
+        # Bring bricks online
+        self.redant.bring_bricks_online(volname, self.server_list,
+                                        bricks_list)
+        if not self.redant.are_bricks_online(volname, bricks_list,
+                                             node):
+            raise Exception(f"Bricks {bricks_list} not online")
 
-    #     # Wait for volume processes to be online
-    #     ret = wait_for_volume_process_to_be_online(mnode, volname)
-    #     self.assertTrue(ret, ("Failed to wait for volume {} processes to "
-    #                           "be online".format(volname)))
+        # Wait for volume processes to be online
+        if not (self.redant.
+                wait_for_volume_process_to_be_online(volname, node,
+                                                     self.server_list)):
+            raise Exception(f"Failed to wait for volume {volname}"
+                            " processes to be online")
 
-    #     # Verify volume's all process are online
-    #     ret = verify_all_process_of_volume_are_online(mnode, volname)
-    #     self.assertTrue(ret, ("Volume {} : All process are not online".format
-    #                           (volname)))
-    #     g.log.info("Volume %s : All process are online", volname)
+        # Verify volume's all process are online
+        if not (self.redant.
+                verify_all_process_of_volume_are_online(volname, node)):
+            raise Exception(f"Volume {volname} : All process are not online")
 
-    #     # Monitor heal completion
-    #     ret = monitor_heal_completion(mnode, volname)
-    #     self.assertTrue(ret, 'Heal has not yet completed')
+        # Monitor heal completion
+        if not self.redant.monitor_heal_completion(node, volname):
+            raise Exception('Heal has not yet completed')
 
-    #     # Check for split-brain
-    #     ret = is_volume_in_split_brain(mnode, volname)
-    #     self.assertFalse(ret, 'Volume is in split-brain state')
+        # Check for split-brain
+        if self.redant.is_volume_in_split_brain(node, volname):
+            raise Exception('Volume is in split-brain state')
 
     def run_test(self, redant):
         """
@@ -92,71 +95,73 @@ class TestCase(DParentTest):
                                             self.server_list[0])
         if bricks_list is None:
             raise Exception("Empty bricks list")
-        print(bricks_list)
-        # # Creating directory test_write_and_read_file
-        # ret = mkdir(self.mounts[0].client_system,
-        #             "{}/test_write_and_read_file"
-        #             .format(self.mounts[0].mountpoint))
-        # self.assertTrue(ret, "Failed to create directory")
-        # g.log.info("Directory 'test_write_and_read_file' on %s created "
-        #            "successfully", self.mounts[0])
 
-        # # Write from 1st client
-        # cmd_to_write = (
-        #     'cd %s/test_write_and_read_file ; for i in `seq 1 5000` ;'
-        #     'do echo -e "Date:`date`\n" >> test_file ;echo -e "'
-        #     '`cal`\n" >> test_file ; done ; cd ..'
-        #     % self.mounts[0].mountpoint)
-        # proc1 = g.run_async(self.mounts[0].client_system,
-        #                     cmd_to_write)
+        # Creating directory test_write_and_read_file
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        redant.create_dir(self.mnt_list[0]['mountpath'],
+                          "test_write_and_read_file",
+                          self.mnt_list[0]['client'])
 
-        # # Read from 2nd client
-        # cmd = ('cd %s/ ;for i in {1..30};'
-        #        'do cat test_write_and_read_file/test_file;done'
-        #        % self.mounts[1].mountpoint)
-        # proc2 = g.run_async(self.mounts[1].client_system, cmd)
+        # Write from 1st client
+        cmd_to_write = (f'cd {self.mnt_list[0]["mountpath"]}/'
+                        'test_write_and_read_file ; for i in '
+                        '`seq 1 5000` ;do echo -e "Date:`date`\n'
+                        '" >> test_file ;echo -e "`cal`\n" >> test_file ;'
+                        ' done ; cd ..')
+        redant.logger.info(f"Executing {cmd_to_write} on "
+                           f"{self.mnt_list[0]['client']}")
+        proc1 = redant.execute_command_async(cmd_to_write,
+                                             self.mnt_list[0]['client'])
 
-        # # Bring brick offline
-        # bricks_to_bring_offline = sample(bricks_list, 2)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline[0])
-        # self.assertTrue(ret, 'Failed to bring bricks {} offline'.
-        #                 format(bricks_to_bring_offline))
+        # Read from 2nd client
+        cmd = (f'cd {self.mnt_list[1]["mountpath"]}/ ;'
+               'for i in {1..30};do cat test_write_and_read_file/'
+               'test_file;done')
+        redant.logger.info(f"Executing {cmd} on "
+                           f"{self.mnt_list[1]['client']}")
+        proc2 = redant.execute_command_async(cmd,
+                                             self.mnt_list[1]['client'])
 
-        # # Check brick is offline
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          [bricks_to_bring_offline[0]])
-        # self.assertTrue(ret, 'Bricks {} are not offline'.
-        #                 format(bricks_to_bring_offline[0]))
+        # Bring brick offline
+        bricks_to_bring_offline = sample(bricks_list, 2)
+        redant.bring_bricks_offline(self.vol_name,
+                                    bricks_to_bring_offline[0])
 
-        # # Validating IO's
-        # for proc, mount in zip([proc1, proc2], self.mounts):
-        #     ret = validate_io_procs([proc], mount)
-        #     self.assertTrue(ret, "IO failed on client")
-        # g.log.info("Successfully validated all IO's")
+        # Check brick is offline
+        if not redant.are_bricks_offline(self.vol_name,
+                                         [bricks_to_bring_offline[0]],
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline[0]} are "
+                            "not offline")
 
-        # self._bring_bricks_online_heal(self.mnode, self.volname, bricks_list)
+        # Validating IO's
+        for proc, mount in zip([proc1, proc2], self.mnt_list):
+            if not redant.validate_io_procs(proc, mount):
+                raise Exception("IO failed on some of the clients")
 
-        # # Bring down second brick
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline[1])
-        # self.assertTrue(ret, 'Failed to bring bricks {} offline'.
-        #                 format(bricks_to_bring_offline[1]))
+        self._bring_bricks_online_heal(self.server_list[0],
+                                       self.vol_name, bricks_list)
 
-        # # Check if brick is offline
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          [bricks_to_bring_offline[1]])
-        # self.assertTrue(ret, 'Bricks {} are not offline'.
-        #                 format(bricks_to_bring_offline[1]))
+        # Bring down second brick
+        redant.bring_bricks_offline(self.vol_name,
+                                    bricks_to_bring_offline[1])
 
-        # # Write from 1st client
-        # ret, _, _ = g.run(self.mounts[0].client_system, cmd_to_write)
-        # self.assertEqual(ret, 0, "Failed to write to file")
-        # g.log.info("Successfully written to file")
+        # Check if brick is offline
+        if not redant.are_bricks_offline(self.vol_name,
+                                         [bricks_to_bring_offline[1]],
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline[1]} are "
+                            "not offline")
 
-        # # Read from 2nd client
-        # cmd = ('cd %s/ ;cat test_write_and_read_file/test_file'
-        #        % self.mounts[0].mountpoint)
-        # ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        # self.assertEqual(ret, 0, "Failed to read file on mountpoint")
-        # g.log.info("Successfully read file on mountpoint")
+        # Write from 1st client
+        redant.execute_abstract_op_node(cmd_to_write,
+                                        self.mnt_list[0]['client'])
+        # Read from 2nd client
+        cmd = (f'cd {self.mnt_list[1]["mountpath"]}/'
+               ' ;cat test_write_and_read_file/test_file')
 
-        # self._bring_bricks_online_heal(self.mnode, self.volname, bricks_list)
+        redant.execute_abstract_op_node(cmd,
+                                        self.mnt_list[1]['client'])
+
+        self._bring_bricks_online_heal(self.server_list[0],
+                                       self.vol_name, bricks_list)

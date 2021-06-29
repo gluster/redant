@@ -1203,8 +1203,8 @@ class VolumeOps(AbstractOps):
 
         # Verify all self-heal-daemons are running for non-distribute volumes.
         if not self.is_distribute_volume(volname):
-            if not self.are_all_self_heal_daemons_are_online(volname,
-                                                             node):
+            if not self.are_all_self_heal_daemons_online(volname,
+                                                         node):
                 return False
 
         return True
