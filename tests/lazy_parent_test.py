@@ -13,16 +13,6 @@ class LazyParentTest(metaclass=abc.ABCMeta):
     TEST_RES: states the result of the test case
     """
 
-    conv_dict = {
-        "dist": "distributed",
-        "rep": "replicated",
-        "dist-rep": "distributed-replicated",
-                    "disp": "dispersed",
-                    "dist-disp": "distributed-dispersed",
-                    "arb": "arbiter",
-                    "dist-arb": "distributed-arbiter"
-    }
-
     def __init__(self, mname: str, param_obj, volume_type: str,
                  env_obj, log_path: str, log_level: str = 'I'):
         """

@@ -13,16 +13,6 @@ class DParentTest(metaclass=abc.ABCMeta):
 
     """
 
-    conv_dict = {
-        "dist": "distributed",
-        "rep": "replicated",
-        "dist-rep": "distributed-replicated",
-                    "disp": "dispersed",
-                    "dist-disp": "distributed-dispersed",
-                    "arb": "arbiter",
-                    "dist-arb": "distributed-arbiter"
-    }
-
     def __init__(self, mname: str, param_obj, volume_type: str,
                  env_obj, log_path: str, log_level: str = 'I'):
         """
@@ -76,7 +66,7 @@ class DParentTest(metaclass=abc.ABCMeta):
             if not self.setup_done and self.volume_type != "Generic":
                 self.redant.volume_create(
                     self.vol_name, self.server_list[0],
-                    self.vol_type_inf[self.conv_dict[self.volume_type]],
+                    self.vol_type_inf[self.volume_type],
                     self.server_list, self.brick_roots, True)
                 self.redant.volume_start(self.vol_name, self.server_list[0])
                 self.mountpoint = (f"/mnt/{self.vol_name}")

@@ -29,7 +29,7 @@ class VolCreate(LazyParentTest):
         This child is responsible for the creation of a volume
         of said type so that tests can use it.
         """
-        vol_param = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        vol_param = self.vol_type_inf[self.volume_type]
         redant.volume_create(self.vol_name, self.server_list[0], vol_param,
                              self.server_list, self.brick_roots, True)
         redant.volume_start(self.vol_name, self.server_list[0])

@@ -29,7 +29,7 @@ class TestCase(DParentTest):
         """ Create, start, stop and delete 100 volumes in a loop """
         # Create and start 100 volumes in a loop
         volname = f"{self.test_name}{index}"
-        conf_dict = self.vol_type_inf[self.conv_dict['dist-rep']]
+        conf_dict = self.vol_type_inf['dist-rep']
         self.redant.bulk_volume_creation(self.server_list[0], 100,
                                          volname, conf_dict,
                                          self.server_list,

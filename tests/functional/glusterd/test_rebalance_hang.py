@@ -66,8 +66,8 @@ class TestCase(DParentTest):
         redant.create_cluster(self.server_list[:2])
         redant.wait_till_all_peers_connected(self.server_list[:2])
 
-        self.vol_type_inf[self.conv_dict['dist']]['dist-count'] = 2
-        vol_params_dict = self.vol_type_inf[self.conv_dict['dist']]
+        self.vol_type_inf['dist']['dist-count'] = 2
+        vol_params_dict = self.vol_type_inf['dist']
         redant.volume_create(self.vol_name, self.server_list[0],
                              vol_params_dict, self.server_list[:2],
                              self.brick_roots, True)

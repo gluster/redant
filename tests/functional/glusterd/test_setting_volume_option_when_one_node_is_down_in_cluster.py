@@ -40,7 +40,7 @@ class TestCase(DParentTest):
     def run_test(self, redant):
 
         # create a 2x3 volume
-        conf_hash = self.vol_type_inf[self.conv_dict['dist-rep']]
+        conf_hash = self.vol_type_inf['dist-rep']
         redant.setup_volume(self.vol_name, self.server_list[0],
                             conf_hash, self.server_list[:-1],
                             self.brick_roots, False, True)

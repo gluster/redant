@@ -58,7 +58,7 @@ class TestCase(DParentTest):
 
         self.volume_type1 = 'rep'
         self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+        conf_dict = self.vol_type_inf[self.volume_type1]
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, self.server_list,
                             self.brick_roots, True)

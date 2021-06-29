@@ -39,7 +39,7 @@ class TestCase(DParentTest):
         redant.delete_cluster(self.server_list)
 
         redant.create_cluster(self.server_list[:3])
-        conf_dict = self.vol_type_inf[self.conv_dict["rep"]]
+        conf_dict = self.vol_type_inf["rep"]
         volname = f"{self.test_name}"
         # Volume Creation
         ret = redant.bulk_volume_creation(self.server_list[0], 3,

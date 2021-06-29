@@ -73,9 +73,9 @@ class TestPeerStatus(DParentTest):
                             f"{self.server_list[1]}")
 
         # create a distributed volume with 2 bricks
-        self.vol_type_inf[self.conv_dict['dist']]['dist_count'] = 2
+        self.vol_type_inf['dist']['dist_count'] = 2
         redant.setup_volume(self.vol_name, self.server_list[0],
-                            self.vol_type_inf[self.conv_dict['dist']],
+                            self.vol_type_inf['dist'],
                             self.server_list[0:2], self.brick_roots,
                             True)
 

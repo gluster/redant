@@ -32,7 +32,7 @@ class TestCase(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         self.setup_done = True
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        conf_dict = self.vol_type_inf[self.volume_type]
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_dict, self.server_list,
                                  self.brick_roots, False, True)
@@ -88,7 +88,7 @@ class TestCase(DParentTest):
         # Create another volume
         self.volume_name1 = 'second_volume'
         self.volume_type1 = 'dist'
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type1]]
+        conf_dict = self.vol_type_inf[self.volume_type1]
 
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, node_list,

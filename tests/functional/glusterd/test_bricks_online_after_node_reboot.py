@@ -67,7 +67,7 @@ class TestCase(DParentTest):
         for iteration, volume in enumerate(all_volumes):
             volname = f"{self.test_name}-{volume}-{iteration}"
             self.volume_names.append(volname)
-            conf_dict = self.vol_type_inf[self.conv_dict[volume]]
+            conf_dict = self.vol_type_inf[volume]
             redant.setup_volume(volname, self.server_list[0],
                                 conf_dict, self.server_list,
                                 self.brick_roots, True)

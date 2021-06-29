@@ -21,32 +21,32 @@ clients_info:
 #volume_types - Indivudual volume type information and minimum servers for
 #               each volume type
 volume_types:
-    distributed:
+    dist:
         dist_count: 4
         replica_count: 1
         transport: tcp
-    replicated:
+    rep:
         dist_count: 1
         replica_count: 3
         transport: tcp
-    distributed-replicated:
+    dist-rep:
         dist_count: 2
         replica_count: 3
         transport: tcp
-    dispersed:
+    disp:
         disperse_count: 3
         redundancy_count: 1
         transport: tcp
-    distributed-dispersed:
+    dist-disp:
         dist_count: 2
         disperse_count: 3
         redundancy_count: 1
         transport: tcp
-    arbiter:
+    arb:
         replica_count: 2
         arbiter_count: 1
         transport: tcp
-    distributed-arbiter:
+    dist-arb:
         dist_count: 2
         replica_count: 2
         arbiter_count: 1

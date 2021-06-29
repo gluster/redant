@@ -13,16 +13,6 @@ class NdParentTest(metaclass=abc.ABCMeta):
 
     """
 
-    conv_dict = {
-        "dist": "distributed",
-        "rep": "replicated",
-        "dist-rep": "distributed-replicated",
-                    "disp": "dispersed",
-                    "dist-disp": "distributed-dispersed",
-                    "arb": "arbiter",
-                    "dist-arb": "distributed-arbiter"
-    }
-
     def __init__(self, mname: str, param_obj, volume_type: str,
                  env_obj, log_path: str, log_level: str = 'I'):
         """
@@ -99,7 +89,7 @@ class NdParentTest(metaclass=abc.ABCMeta):
         if self.volume_type != "Generic":
             try:
                 # Volume started state.
-                vol_param = self.vol_type_inf[self.conv_dict[self.volume_type]]
+                vol_param = self.vol_type_inf[self.volume_type]
                 self.redant.sanitize_volume(self.vol_name, self.server_list,
                                             self.client_list, self.brick_roots,
                                             vol_param)

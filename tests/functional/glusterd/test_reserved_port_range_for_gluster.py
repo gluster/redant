@@ -78,7 +78,7 @@ class TestCase(DParentTest):
         for i in range(1, 51):
             volname = f"{self.vol_name}-volume-{i}"
             redant.volume_create(volname, self.server_list[0],
-                                 self.vol_type_inf[self.conv_dict['dist']],
+                                 self.vol_type_inf['dist'],
                                  self.server_list, self.brick_roots, True)
 
         # Try to start 50 volumes in loop

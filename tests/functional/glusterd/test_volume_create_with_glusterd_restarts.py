@@ -94,7 +94,7 @@ class TestCase(DParentTest):
         # Creating volumes using 3 servers
         self.volume_type = "dist"
         self.vol_name = (f"{self.test_name}-{self.volume_type}")
-        conf_hash = self.vol_type_inf[self.conv_dict[self.volume_type]]
+        conf_hash = self.vol_type_inf[self.volume_type]
         redant.volume_create(self.vol_name, self.server_list[0], conf_hash,
                              list_of_three_servers, self.brick_roots)
         # check if process ended

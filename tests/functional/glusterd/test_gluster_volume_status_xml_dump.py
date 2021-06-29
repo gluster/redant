@@ -53,12 +53,12 @@ class TestCase(NdParentTest):
         volume_type = 'dist-arb'
         self.volume_name = f"{self.test_name}-{volume_type}-1"
         redant.setup_volume(self.volume_name, self.server_list[0],
-                            self.vol_type_inf[self.conv_dict[volume_type]],
+                            self.vol_type_inf[volume_type],
                             self.server_list, self.brick_roots, True)
         volume_type1 = 'dist'
         self.volume_name1 = f"{self.test_name}-{volume_type1}-1"
         redant.setup_volume(self.volume_name1, self.server_list[0],
-                            self.vol_type_inf[self.conv_dict[volume_type1]],
+                            self.vol_type_inf[volume_type1],
                             self.server_list, self.brick_roots, True)
         redant.volume_stop(self.volume_name, self.server_list[0], force=True)
         sleep(2)
