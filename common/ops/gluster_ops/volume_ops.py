@@ -358,7 +358,7 @@ class VolumeOps(AbstractOps):
             # A test case is for sure doing what it isn't supposed to..
             # But the framework here takes the higher ground and handles
             # things for the betterment of all TCs.
-            self.setup_volume(volname, node, vol_param, server_list,
+            self.setup_volume(volname, server_list[0], vol_param, server_list,
                               brick_root, force=True)
 
         # Check if the volume is started.
