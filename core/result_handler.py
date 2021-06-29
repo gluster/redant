@@ -305,9 +305,10 @@ class ResultHandler:
                     each_vol_test['timeTaken'])
                 result_sheet.write(row, 2, time_taken)
                 if each_vol_test['testResult'] is None:
-                    result_sheet.write(row, 3, each_vol_test['skipReason'])
+                    skip_reason = str(each_vol_test['skipReason'])
                 else:
-                    result_sheet.write(row, 3, "NA")
+                    skip_reason = "NA"
+                result_sheet.write(row, 3, skip_reason)
                 row += 1
 
             row += 2
