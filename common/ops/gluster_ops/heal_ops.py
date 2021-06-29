@@ -496,7 +496,7 @@ class HealOps:
         return True
 
     def disable_self_heal_daemon(self, volname: str, node: str) -> bool:
-    """
+        """
         Disables self-heal-daemon on a volume by setting volume option
         'self-heal-daemon' to value 'off'
 
@@ -533,4 +533,4 @@ class HealOps:
                    False Otherwise
         """
         GLUSTERSHD = "/var/lib/glusterd/glustershd/glustershd-server.vol"
-        
+
