@@ -1,4 +1,3 @@
-from common.mixin import RedantMixin
 import os
 import sys
 from socket import timeout
@@ -6,6 +5,7 @@ import copy
 import traceback
 import paramiko
 from halo import Halo
+from common.mixin import RedantMixin
 sys.path.insert(1, ".")
 
 
