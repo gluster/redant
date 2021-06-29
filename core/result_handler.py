@@ -5,10 +5,10 @@ results in two ways:
 1. display on the CLI
 2. store in a file
 """
+from colorama import Fore, Style
 import xlwt
 from xlwt import Workbook
 from prettytable import PrettyTable
-from colorama import Fore, Style
 
 
 class ResultHandler:
@@ -29,7 +29,8 @@ class ResultHandler:
         return f"{data}"
 
     @classmethod
-    def _time_rollover_conversion(cls, time_in_sec: float) -> str:
+    def _time_rollover_conversion(cls, time_in_sec: float,
+                                  expanded_f: bool = False) -> str:
         """
         The function takes in input in raw seconds and converts
         it to the format of x HH:MM:SS, wherein the x can be
@@ -37,8 +38,12 @@ class ResultHandler:
 
         Args:
             time_in_sec (float): as name suggests time run in seconds.
+            expanded_f (bool): By default False. This converts the result
+                               into an expanded form of,
+                               w days x hours y minutes z seconds.
         Returns:
-            str in the form of HH:MM:SS or y days HH:MM:SS
+            str in the form of HH:MM:SS or y days HH:MM:SS or in the form of
+            w days x hours y minutes z seconds in expanded form.
         """
         days = 0
         hours = 0
@@ -70,8 +75,14 @@ class ResultHandler:
         hours = cls._sanitize_time_format(hours)
 
         if days != 0:
-            return f"{days} days {hours}:{minutes}:{seconds}"
-        return f"{hours}:{minutes}:{seconds}"
+            if not expanded_f:
+                return f"{days} days {hours}:{minutes}:{seconds}"
+            else:
+                return (f"{days} days {hours} hours {minutes} minutes"
+                        f" {seconds} seconds")
+        if not expanded_f:
+            return f"{hours}:{minutes}:{seconds}"
+        return f"{hours} hours {minutes} minutes {seconds} seconds"
 
     @classmethod
     def _get_output(cls, test_results: dict, colorify: bool,
@@ -155,7 +166,7 @@ class ResultHandler:
 
         cls.result = (f"Summary:\n{str(table)}\n{cls.result}\n")
 
-        time_taken = cls._time_rollover_conversion(total_time)
+        time_taken = cls._time_rollover_conversion(total_time, True)
         cls.result = (f"{cls.result}\nFramework runtime : {time_taken}\n")
 
     @classmethod
@@ -274,7 +285,7 @@ class ResultHandler:
         row += 2
 
         result_sheet.write(row, 0, 'Total time taken (HH:MM:SS)', style)
-        time_taken = cls._time_rollover_conversion(total_time)
+        time_taken = cls._time_rollover_conversion(total_time, True)
         result_sheet.write(row, 1, time_taken)
         row += 2
 
