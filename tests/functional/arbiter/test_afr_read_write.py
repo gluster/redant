@@ -17,11 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     Arbiter test writes and reads from a file
-
-,dist-arb
 """
 
-# disruptive;arb
+# disruptive;arb,dist-arb
 
 from random import sample
 from tests.d_parent_test import DParentTest
