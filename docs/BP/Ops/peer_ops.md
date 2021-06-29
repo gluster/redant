@@ -19,9 +19,11 @@ Returns:
         - error_code: error code returned
         - cmd : command that got executed
         - node : node on which the command got executed
+```
 
 Example:
-    self.peer_probe(server, self.server_list[0])
+```python
+self.peer_probe(server, self.server_list[0])
 ```
 
 ## 2. peer_detach()
@@ -49,9 +51,9 @@ It returns a dictionary `ret` which includes the following:
     node : node on which the command got executed
 ```
 
-```js
 Example:
-    self.peer_detach(server, self.server_list[0])
+```python
+self.peer_detach(server, self.server_list[0])
 ```
 
 ## 3. get_peer_status()
@@ -77,9 +79,9 @@ Returns:
                         returned
 ```
 
-```js
 Example:
-    self.get_peer_status(self.server_list[0])
+```python
+self.get_peer_status(self.server_list[0])
 ```
 
 ## 4. nodes_from_pool_list():
@@ -87,7 +89,7 @@ Example:
 This functions provides a list of servers in the `gluster pool list`.
 
 Just for reference 
-```m
+```console
 [root@server1 tmp]# gluster pool list
 UUID                           Hostname        State
 xxxxxx-xxxxx-xxxxxx-xxxxxxx    server2         Connected 
@@ -106,9 +108,9 @@ Returns:
     None on failure
 ```
 
-```js
 Example:
-    self.nodes_from_pool_list(self.server_list[0])
+```python
+self.nodes_from_pool_list(self.server_list[0])
 ```
 
 ## 5. get_pool_list()
@@ -123,9 +125,9 @@ Returns:
     list : list of dicts on success.
 ```
 
-```js
 Example:
-    self.get_pool_list(self.server_list[0])
+```python
+self.get_pool_list(self.server_list[0])
 ```
 
 ## 6. convert_hosts_to_ip()
@@ -149,9 +151,8 @@ Returns:
     list : list of converted IPs
 ```
 
-```js
 Example:
-
+```python
 self.convert_host_to_op(self.server_list, self.server_list[0])
 ```
 
@@ -175,9 +176,9 @@ Returns:
     or passed.
 ```
 
-```js
 Example:
-    self.create_cluster(self.server_list)
+```python
+self.create_cluster(self.server_list)
 ```
 
 ## 8. delete_cluster()
@@ -192,9 +193,10 @@ Args:
 ```
 This node_list contains the nodes that are a part of the cluster.
 These nodes are detached one by one from the cluster.
-```js
+
 Example:
-    self.delete_cluster(self.server_list)
+```python
+self.delete_cluster(self.server_list)
 ```
 ## 9. is_peer_connected()
 
@@ -213,9 +215,9 @@ Returns
             failure.
 ```
 
-```js
 Example:
-    self.is_peer_connected(self.server_list, self.server_list[0])
+```python
+self.is_peer_connected(self.server_list, self.server_list[0])
 ```
 
 ## 10. wait_for_peers_to_connect()
@@ -237,9 +239,9 @@ Returns:
            False otherwise.
 ```
 
-```js
 Example:
-    self.wait_for_peers_to_connect(self.server_list, self.server_list[0])
+```python
+self.wait_for_peers_to_connect(self.server_list, self.server_list[0])
 ```
 
 ## 11. validate_peers_are_connected()
@@ -260,9 +262,9 @@ Returns (bool): True if all peers are in connected
                 False otherwise.
 ```
 
-```js
 Example:
-    self.validate_peers_are_connected(self.server_list, self.server_list[0])
+```python
+self.validate_peers_are_connected(self.server_list, self.server_list[0])
 ```
 
 It returns True if all the peers are in connected state else False.
@@ -283,9 +285,9 @@ Returns:
     bool: True on success and False on failure.
 ```
 
-```js
 Example:
-    self.peer_probe_servers(self.server_list, self.server_list[0])
+```python
+self.peer_probe_servers(self.server_list, self.server_list[0])
 ```
 
 ## 13. peer_detach_servers()
@@ -308,9 +310,9 @@ Returns:
     bool: True on success and False on failure.
 ```
 
-```js
 Example:
-    self.peer_detach_servers(self.server_list, self.server_list[0])
+```python
+self.peer_detach_servers(self.server_list, self.server_list[0])
 ```
 
 ## 14. wait_till_all_peers_are_connected()
@@ -324,7 +326,7 @@ Returns:
     bool: True if everything is perfect. Else False
 ```
 
-```js
 Example:
-    self.wait_till_all_peers_are_connected(self.server_list)
+```python
+self.wait_till_all_peers_are_connected(self.server_list)
 ```
