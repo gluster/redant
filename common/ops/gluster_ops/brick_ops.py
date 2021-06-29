@@ -55,7 +55,7 @@ class BrickOps(AbstractOps):
             cmd = (f"{cmd} force")
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        if not excep:
+        if not excep and ret['msg']['opRet'] != '0':
             return ret
 
         server_brick = {}
@@ -281,7 +281,8 @@ class BrickOps(AbstractOps):
         return ret
 
     def form_brick_cmd(self, server_list: list, brick_root: dict,
-                       volname: str, mul_fac: int, add_flag: bool = False):
+                       volname: str, mul_fac: int,
+                       add_flag: bool = False) -> tuple:
         """
         # TODO: Function has to designed for dispersed, distributed-dispersed,
                 arbiter and distributed-arbiter.
@@ -333,6 +334,96 @@ class BrickOps(AbstractOps):
         brick_cmd = brick_cmd.lstrip(" ")
 
         return (brick_dict, brick_cmd)
+
+    def form_brick_cmd_to_add_brick(self, node: str, volname: str,
+                                    server_list: list, brick_root: dict,
+                                    **kwargs) -> str:
+        """
+        Forms list of bricks to add-bricks to the volume
+
+        Args:
+            volname (str): volume name
+            server_list (list): List of servers in the storage pool.
+            brick_root (dict): Dict containing list of brick roots for
+                               each node
+        Kwargs:
+            The key, value in kwargs are:
+            - replica_count (int): Increase the current_replica_count by
+                                   replica_count
+            - ditribute_count (int): Increase the current_distribute_count
+                                     by distribute_count
+
+        Returns:
+            str: The brick cmd used to add-brick or,
+            None: In case of failure
+        """
+
+        # Check if volume exists
+        if not self.es.does_volume_exists(volname):
+            self.logger.error(f"Volume {volname} doesn't exists.")
+            return None
+
+        # Check if the volume has to be expanded by n distribute count.
+        distribute_count = None
+        if 'distribute_count' in kwargs:
+            distribute_count = int(kwargs['distribute_count'])
+
+        # Check whether we need to increase the replica count of the volume
+        replica_count = None
+        if 'replica_count' in kwargs:
+            replica_count = int(kwargs['replica_count'])
+
+        if replica_count is None and distribute_count is None:
+            distribute_count = 1
+
+        # Check if the volume has to be expanded by n distribute count.
+        num_of_distribute_bricks_to_add = 0
+        if distribute_count:
+            # Get Number of bricks per subvolume.
+            bricks_per_subvol = self.get_num_of_bricks_per_subvol(node,
+                                                                  volname)
+
+            # Get number of bricks to add.
+            if bricks_per_subvol is None:
+                self.logger.error("Number of bricks per subvol is None. "
+                                  "Something majorly went wrong on the volume"
+                                  f" {volname}")
+                return None
+
+            num_of_distribute_bricks_to_add = (bricks_per_subvol
+                                               * distribute_count)
+
+        # Check if the volume has to be expanded by n replica count.
+        num_of_replica_bricks_to_add = 0
+        if replica_count:
+            # Get Subvols
+            subvols_info = self.get_subvols(volname, node)
+            num_of_subvols = len(subvols_info)
+
+            if num_of_subvols == 0:
+                self.logger.error("No Sub-Volumes available for the volume "
+                                  f"{volname}. Hence cannot proceed with "
+                                  " add-brick")
+                return None
+
+            num_of_replica_bricks_to_add = replica_count * num_of_subvols
+
+        # Calculate total number of bricks to add
+        if (num_of_distribute_bricks_to_add != 0
+           and num_of_replica_bricks_to_add != 0):
+            num_of_bricks_to_add = (num_of_distribute_bricks_to_add
+                                    + num_of_replica_bricks_to_add
+                                    + (distribute_count * replica_count))
+        else:
+            num_of_bricks_to_add = (
+                num_of_distribute_bricks_to_add
+                + num_of_replica_bricks_to_add
+            )
+
+        # Form bricks list to add bricks to the volume.
+        _, bricks_cmd = self.form_brick_cmd(server_list, brick_root, volname,
+                                            num_of_bricks_to_add, True)
+        return bricks_cmd
 
     def cleanup_brick_dirs(self):
         """

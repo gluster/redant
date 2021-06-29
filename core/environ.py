@@ -175,6 +175,8 @@ class FrameworkEnv:
         Method checks if the said volume already exists.
         Arg:
             volname (str)
+        Returns:
+            True: If volume exists, else False
         """
         if volname in list(self.volds.keys()):
             return True

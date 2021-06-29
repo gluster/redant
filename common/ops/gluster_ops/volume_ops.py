@@ -424,6 +424,59 @@ class VolumeOps(AbstractOps):
             self.volume_stop(volname, node, True)
             self.volume_delete(volname, node)
 
+    def expand_volume(self, node: str, volname: str, server_list: list,
+                      brick_root: dict, force: bool = False,
+                      **kwargs) -> bool:
+        """Forms list of bricks to add and adds those bricks to the volume.
+
+        Args:
+            node (str): Node on which commands has to be executed
+            volname (str): volume name
+            servers (str|list): A server|List of servers in the storage pool.
+
+        Optional:
+            force (bool): If the operation should be executed with force
+            **kwargs:
+                The keys, values in kwargs are:
+                - replica_count : (int)|None.
+                    Increase the current_replica_count by replica_count
+                - distribute_count: (int)|None.
+                    Increase the current_distribute_count by distribute_count
+                - arbiter_count : (int)|None
+
+        Returns:
+            bool: True of expanding volumes is successful.
+                  False otherwise.
+
+        """
+        bricks_cmd = self.form_brick_cmd_to_add_brick(node, volname,
+                                                      server_list, brick_root,
+                                                      **kwargs)
+
+        if not bricks_cmd:
+            self.logger.error("Unable to get bricks list to add-bricks. "
+                              f"Hence unable to expand volume : {volname}")
+            return False
+
+        if 'replica_count' in kwargs:
+            replica_count = int(kwargs['replica_count'])
+
+            # Get replica count info.
+            current_replica_count = self.get_replica_count(node, volname)
+            kwargs['replica_count'] = current_replica_count + replica_count
+
+        # Add bricks to the volume
+        self.logger.info(f"Adding bricks to the volume: {volname}")
+        ret = self.add_brick(volname, bricks_cmd, node, force,
+                             kwargs['replica_count'], excep=False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to add bricks to the volume:"
+                              f" {ret['msg']['opErrstr']}")
+            return False
+
+        self.logger.info(f"Successful in expanding the volume {volname}")
+        return True
+
     def get_volume_info(self, node: str = None, volname: str = 'all',
                         excep: bool = True) -> dict:
         """
@@ -529,6 +582,77 @@ class VolumeOps(AbstractOps):
                     ret_dict[volname][key] = val
 
         return ret_dict
+
+    def get_volume_type_info(self, node: str, volname: str) -> dict:
+        """
+        Returns volume type information for the specified volume.
+
+        Args:
+            node (str): Node on which commands are executed.
+            volname (str): Name of the volume.
+
+        Returns:
+            dict : Dict containing the keys, values defining the volume type:
+                Example:
+                    volume_type_info = {
+                        'volume_type_info': {
+                            'typeStr': 'Disperse',
+                            'replicaCount': '1',
+                            'arbiterCount': '0',
+                            'stripeCount': '1',
+                            'disperseCount': '3',
+                            'redundancyCount': '1'
+                        }
+                    }
+
+                    volume_type_info = {
+                        'volume_type_info': {}
+
+            NoneType: None if volume does not exist or any other key errors.
+        """
+        volinfo = self.get_volume_info(node, volname, False)
+        if not volinfo and 'msg' in volinfo.keys():
+            return None
+
+        volume_type_info = {'volume_type_info': {}}
+        all_volume_type_info = {
+            'typeStr': '',
+            'replicaCount': '',
+            'arbiterCount': '',
+            'stripeCount': '',
+            'disperseCount': '',
+            'redundancyCount': ''
+        }
+        for key in all_volume_type_info.keys():
+            if key in volinfo[volname]:
+                all_volume_type_info[key] = volinfo[volname][key]
+            else:
+                self.logger.error(f"Unable to find key {key} in the volume"
+                                  f" info for the volume {volname}")
+                all_volume_type_info[key] = None
+
+        volume_type_info['volume_type_info'] = all_volume_type_info
+
+        return volume_type_info
+
+    def get_replica_count(self, node: str, volname: str) -> int:
+        """Get the replica count of the volume
+
+        Args:
+            node (str): Node on which commands are executed.
+            volname (str): Name of the volume.
+
+        Returns:
+            int : Replica count of the volume.
+            NoneType: None if it is parse failure.
+        """
+        vol_type_info = self.get_volume_type_info(node, volname)
+        if vol_type_info is None:
+            self.logger.error("Unable to get the replica count info for the"
+                              f" volume {volname}")
+            return None
+
+        return int(vol_type_info['volume_type_info']['replicaCount'])
 
     def is_volume_started(self, volname: str, node: str) -> bool:
         """
@@ -1050,7 +1174,7 @@ class VolumeOps(AbstractOps):
         subvols = []
 
         volinfo = self.get_volume_info(node, volname)
-        if volinfo is not None:
+        if volinfo:
             voltype = volinfo[volname]['typeStr']
             brick_list = volinfo[volname]['bricks']
             bricks = [x["name"] for x in brick_list if "name" in x]
@@ -1069,6 +1193,24 @@ class VolumeOps(AbstractOps):
                                 for i in range(0, len(bricks), disp_count)])
                 subvols = subvol_list
         return subvols
+
+    def get_num_of_bricks_per_subvol(self, node: str, volname: str) -> int:
+        """
+        Returns number of bricks per subvol
+
+        Args:
+            node (str): Node on which commands are executed.
+            volname (str): Name of the volume.
+
+        Returns:
+            int : Number of bricks per subvol
+            NoneType: None if volume does not exist.
+        """
+        subvols_list = self.get_subvols(volname, node)
+        if subvols_list:
+            return len(subvols_list[0])
+
+        return None
 
     def bulk_volume_creation(self, node: str, number_of_volumes: int,
                              volname: str, conf_hash: dict,
