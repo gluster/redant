@@ -1,3 +1,4 @@
+from common.mixin import RedantMixin
 import os
 import sys
 from socket import timeout
@@ -6,7 +7,6 @@ import traceback
 import paramiko
 from halo import Halo
 sys.path.insert(1, ".")
-from common.mixin import RedantMixin
 
 
 class environ:
@@ -265,7 +265,7 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         if len(pre_voltype.keys()) !=\
-            len(self.volds[volname]['voltype'].keys()):
+                len(self.volds[volname]['voltype'].keys()):
             return True
         for (pre_voltk, pre_voltv) in list(pre_voltype.items()):
             if pre_voltk == "transport":
