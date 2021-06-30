@@ -509,6 +509,189 @@ class VolumeOps(AbstractOps):
         self.logger.info(f"Successful in expanding the volume {volname}")
         return True
 
+    def shrink_volume(self, node: str, volname: str, subvol_num: list = None,
+                      replica_num: list = None, force: bool = False,
+                      rebal_timeout: int = 300, delete_bricks: bool = True,
+                      **kwargs) -> bool:
+        """
+        Remove bricks from the volume.
+
+        Args:
+            node (str): Node on which commands has to be executed
+            volname (str): volume name
+
+        Optional:
+            subvol_num (int|list): int|List of sub volumes number to remove.
+                For example: If subvol_num = [2, 5], Then we will be removing
+                bricks from 2nd and 5th sub-volume of the given volume.
+                The sub-volume number starts from 0.
+
+            replica_num (int|list): int|List of replica leg to remove.
+                If replica_num = 0, then 1st brick from each subvolume is
+                removed the replica_num starts from 0.
+
+            force (bool): If this option is set to True, then remove-brick
+                command will get executed with force option. If it is set to
+                False, then remove-brick is executed with 'start' and 'commit'
+                when the remove-brick 'status' becomes completed.
+
+            rebalance_timeout (int): Wait time for remove-brick to complete in
+                seconds. Default is 5 minutes.
+
+            delete_bricks (bool): After remove-brick delete the removed bricks.
+
+        Kwargs:
+            **kwargs: The keys, values in kwargs are:
+                    - replica_count : (int)|None. Specify the replica count to
+                        reduce
+                    - distribute_count: (int)|None. Specify the distribute
+                        count to reduce.
+
+        Returns:
+            bool: True if removing bricks from the volume is successful.
+                False otherwise.
+
+        """
+        # pylint: disable=too-many-return-statements
+        # Form bricks list to remove-bricks
+        bricks_list_to_remove = (self.form_bricks_list_to_remove_brick(node,
+                                 volname, subvol_num, replica_num,
+                                 **kwargs))
+
+        if bricks_list_to_remove is None:
+            self.logger.error("Failed to form bricks list to remove-brick. "
+                              f"Hence unable to shrink volume {volname}")
+            return False
+
+        if replica_num is not None or 'replica_count' in kwargs:
+            if 'replica_count' in kwargs:
+                replica_count = int(kwargs['replica_count'])
+            if replica_num is not None:
+                if isinstance(replica_num, int):
+                    replica_count = 1
+                else:
+                    replica_count = len(replica_num)
+
+            # Get replica count info.
+            current_replica_count = self.get_replica_count(node, volname)
+
+            kwargs['replica_count'] = current_replica_count - replica_count
+
+            if subvol_num is not None or 'distribute_count' in kwargs:
+                force = False
+            else:
+                force = True
+        else:
+            kwargs['replica_count'] = None
+
+        # If force, then remove-bricks with force option
+        if force:
+
+            self.logger.info(f"Removing bricks {bricks_list_to_remove} from "
+                             f"volume {volname} with force option")
+            ret = self.remove_brick(node, volname, bricks_list_to_remove,
+                                    "force", kwargs['replica_count'],
+                                    False)
+            if ret['msg']['opRet'] != '0':
+                self.logger.error("Failed to remove bricks "
+                                  f"{bricks_list_to_remove} from the volume "
+                                  f"{volname} with force option")
+                return False
+
+            self.logger.info("Successfully removed bricks "
+                             f"{bricks_list_to_remove} from the volume "
+                             f"{volname} with force option")
+            return True
+
+        # remove-brick start
+        self.logger.info(f"Start Removing bricks {bricks_list_to_remove} from"
+                         f" the volume {volname}")
+        ret = self.remove_brick(node, volname, bricks_list_to_remove,
+                                "start", kwargs['replica_count'],
+                                False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to start remove brick of bricks "
+                              f"{bricks_list_to_remove} on the volume "
+                              f"{volname}")
+            return False
+        self.logger.info("Successfully started removal of bricks "
+                         f"{bricks_list_to_remove} from the volume {volname}")
+
+        # remove-brick status
+        self.logger.info("Logging remove-brick status of bricks "
+                         f"{bricks_list_to_remove} on the volume {volname}")
+        self.remove_brick(node, volname, bricks_list_to_remove,
+                          "status", kwargs['replica_count'], False)
+
+        # Wait for rebalance started by remove-brick to complete
+        _rc = False
+        while rebal_timeout > 0:
+            ret = self.remove_brick(node, volname, bricks_list_to_remove,
+                                    "status", kwargs['replica_count'], False)
+            if ret['msg']['opRet'] != '0':
+                self.logger.error("Failed to get remove-brick status of "
+                                  f"bricks {bricks_list_to_remove} on volume"
+                                  f"{volname}")
+                return False
+
+            status = ""
+            if ret['msg']['volRemoveBrick'] is not None:
+                status = ret['msg']['volRemoveBrick']['aggregate']['statusStr']
+
+            if status == "completed":
+                _rc = True
+            elif status == "in progress":
+                rebal_timeout = rebal_timeout - 30
+                sleep(30)
+            else:
+                self.logger.error("Invalid status string in remove brick"
+                                  " status")
+                return False
+
+            if _rc:
+                break
+
+        if not _rc:
+            self.logger.error("Rebalance started by remove-brick is not yet "
+                              f"complete on the volume {volname}")
+            return False
+
+        self.logger.info("Rebalance started by remove-brick is successfully "
+                         f"complete on the volume {volname}")
+
+        # remove-brick status after rebalance is complete
+        self.logger.info("Checking remove-brick status of bricks "
+                         f"{bricks_list_to_remove} on the volume {volname}"
+                         "after rebalance is complete")
+
+        ret = self.remove_brick(node, volname, bricks_list_to_remove,
+                                "status", kwargs['replica_count'], False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to get remove-brick status of "
+                              f"bricks {bricks_list_to_remove} on volume"
+                              f"{volname} after rebalance is complete")
+            return False
+
+        # Commit remove-brick
+        self.logger.info("Commit remove-brick of bricks "
+                         f"{bricks_list_to_remove} on volume {volname}")
+        ret = self.remove_brick(node, volname, bricks_list_to_remove,
+                                "commit", kwargs['replica_count'], False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to commit remove-brick of bricks "
+                              f"{bricks_list_to_remove} on volume {volname}")
+            return False
+        self.logger.info("Successfully committed remove-bricks of bricks "
+                         f"{bricks_list_to_remove} on volume {volname}")
+
+        # Delete the removed bricks
+        if delete_bricks:
+            ret = self.delete_bricks(bricks_list_to_remove)
+            if not ret:
+                return False
+
+        return True
+
     def get_volume_info(self, node: str = None, volname: str = 'all',
                         excep: bool = True) -> dict:
         """
