@@ -502,7 +502,7 @@ class VolumeOps(AbstractOps):
             rep_count = int(kwargs['replica_count'])
             self.es.set_vol_type_param(volname, 'replica_count', rep_count)
 
-        if dist_count is None and replica_count is None:
+        if dist_count is None and rep_count is None:
             dist_count = 1
             self.es.set_vol_type_param(volname, 'dist_count', dist_count)
 
