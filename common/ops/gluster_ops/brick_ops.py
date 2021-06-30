@@ -324,7 +324,11 @@ class BrickOps(AbstractOps):
 
         iter_add = 0
         if add_flag:
-            iter_add = len(self.get_all_bricks(volname, server_list[0]))
+            brick_list = self.get_all_bricks(volname, server_list[0])
+            last_brick_num = int(brick_list[-1].split('-')[-1])
+            iter_add = len(brick_list)
+            if last_brick_num >= iter_add:
+                iter_add += 1
 
         for iteration in range(mul_fac):
             if server_iter == len(server_list):

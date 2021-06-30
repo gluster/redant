@@ -689,6 +689,9 @@ class VolumeOps(AbstractOps):
             ret = self.delete_bricks(bricks_list_to_remove)
             if not ret:
                 return False
+            for brick in bricks_list_to_remove:
+                node, brick_dir = brick.split(':')
+                self.es.remove_val_from_cleands(node, brick_dir)
 
         return True
 
