@@ -67,17 +67,15 @@ class TestCase(DParentTest):
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
         print(bricks_list)
-        # # validate the bricks present in volume info with
-        # # glustershd server volume file
-        # g.log.info("Starting parsing file %s on "
-        #            "node %s", self.glustershd, self.mnode)
-        # ret = do_bricks_exist_in_shd_volfile(self.mnode, self.volname,
-        #                                      bricks_list)
-        # self.assertTrue(ret, ("Brick List from volume info is different "
-        #                       "from glustershd server volume file. "
-        #                       "Please check log file for details"))
-        # g.log.info("Successfully parsed %s file", self.glustershd)
-
+        # validate the bricks present in volume info with
+        # glustershd server volume file
+        if not (redant.
+                do_bricks_exist_in_shd_volfile(self.vol_name,
+                                               bricks_list,
+                                               self.server_list[0])):
+            raise Exception("Brick List from volume info is different "
+                            "from glustershd server volume file. "
+                            "Please check log file for details")
         # # get the subvolumes
         # g.log.info("Starting to get sub-volumes for volume %s", self.volname)
         # subvols_dict = get_subvols(self.mnode, self.volname)
