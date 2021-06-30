@@ -389,6 +389,7 @@ class VolumeOps(AbstractOps):
             # It seems like something has gone awry, so do a volume
             # cleanup followed by setup volume.
             self.cleanup_volume(volname, server_list[0])
+            self.cleanup_brick_dirs()
             self.setup_volume(volname, server_list[0], vol_param, server_list,
                               brick_root, force=True)
 
@@ -501,7 +502,7 @@ class VolumeOps(AbstractOps):
             rep_count = int(kwargs['replica_count'])
             self.es.set_vol_type_param(volname, 'replica_count', rep_count)
 
-        if dist_count is None and dist_count is None:
+        if dist_count is None and replica_count is None:
             dist_count = 1
             self.es.set_vol_type_param(volname, 'dist_count', dist_count)
 
