@@ -488,9 +488,9 @@ class HealOps:
             bool : True if setting self_heal_daemon option to
                    'on' is successful. False otherwise.
         """
-        cmd = f"gluster volume set {volname} self-heal-daemon on"
+        cmd = f"gluster volume set {volname} self-heal-daemon on --xml"
         ret = self.execute_abstract_op_node(cmd, node, False)
-        if ret['error_code'] != 0:
+        if ret['msg']['opRet'] != '0':
             return False
 
         return True
@@ -508,9 +508,9 @@ class HealOps:
             bool : True if setting self_heal_daemon option to
                    'off' is successful. False otherwise.
         """
-        cmd = f"gluster volume set {volname} self-heal-daemon off"
+        cmd = f"gluster volume set {volname} self-heal-daemon off --xml"
         ret = self.execute_abstract_op_node(cmd, node, False)
-        if ret['error_code'] != 0:
+        if ret['msg']['opRet'] != '0':
             return False
 
         return True
