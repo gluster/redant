@@ -9,8 +9,6 @@ sys.path.insert(1, ".")
 from common.mixin import RedantMixin
 
 
-
-
 class environ:
     """
     Framework level control on the gluster environment. Controlling both
