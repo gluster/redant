@@ -106,16 +106,18 @@ class TestCase(DParentTest):
                              self.server_list[0])
         redant.es.set_vol_type_param(self.vol_name, 'dist_count', 1)
 
+        rep_count = redant.es.get_vol_type_param(self.vol_name,
+                                                 'replica_count')
         # Remove brick operation.
         self.brick_list = redant.get_all_bricks(self.vol_name,
                                                 self.server_list[0])
         if self.volume_type != 'dist':
             ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                       self.brick_list[-3:],
-                                      'force', 3)
+                                      'force', rep_count)
         else:
             ret = redant.remove_brick(self.server_list[0], self.vol_name,
-                                      self.brick_list[-1:], 'force')
+                                      self.brick_list[-1:], 'force', rep_count)
         redant.es.set_vol_type_param(self.vol_name, 'dist_count', -1)
 
         self.brick_list = redant.get_all_bricks(self.vol_name,

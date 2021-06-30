@@ -358,8 +358,8 @@ class VolumeOps(AbstractOps):
             # A test case is for sure doing what it isn't supposed to..
             # But the framework here takes the higher ground and handles
             # things for the betterment of all TCs.
-            self.volume_create(volname, server_list[0], vol_param,
-                               server_list, brick_root, True)
+            self.setup_volume(volname, server_list[0], vol_param, server_list,
+                              brick_root, force=True)
 
         # Check if the volume is started.
         if not self.es.get_volume_start_status(volname):
@@ -382,6 +382,24 @@ class VolumeOps(AbstractOps):
         for mntd in mount_list:
             self.execute_abstract_op_node(f"rm -rf {mntd['mountpath']}/*",
                                           mntd['client'])
+
+        # Check if the post test volume is same as that of pre test volume.
+        ret = self.es.get_vol_type_changes(volname, vol_param)
+        if ret:
+            # It seems like something has gone awry, so do a volume
+            # cleanup followed by setup volume.
+            self.cleanup_volume(volname, server_list[0])
+            self.cleanup_brick_dirs()
+            self.setup_volume(volname, server_list[0], vol_param, server_list,
+                              brick_root, force=True)
+
+            # Check if the volume is mounted on a client.
+            if self.es.get_mnt_pts_dict_in_list(volname) == []:
+                # Check if mount dir exists in the node.
+                mountdir = f"/mnt/{volname}"
+                for node in client_list:
+                    self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
+                    self.volume_mount(server_list[0], volname, mountdir, node)
 
     def cleanup_volume(self, volname: str, node: str):
         """
@@ -473,6 +491,20 @@ class VolumeOps(AbstractOps):
             self.logger.error("Failed to add bricks to the volume:"
                               f" {ret['msg']['opErrstr']}")
             return False
+
+        dist_count = None
+        if 'distribute_count' in kwargs:
+            dist_count = int(kwargs['distribute_count'])
+            self.es.set_vol_type_param(volname, 'dist_count', dist_count)
+
+        rep_count = None
+        if 'replica_count' in kwargs:
+            rep_count = int(kwargs['replica_count'])
+            self.es.set_vol_type_param(volname, 'replica_count', rep_count)
+
+        if dist_count is None and rep_count is None:
+            dist_count = 1
+            self.es.set_vol_type_param(volname, 'dist_count', dist_count)
 
         self.logger.info(f"Successful in expanding the volume {volname}")
         return True

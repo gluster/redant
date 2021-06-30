@@ -255,23 +255,24 @@ class FrameworkEnv:
 
     def get_vol_type_changes(self, volname: str, pre_voltype: dict) -> dict:
         """
-        Method to identify the difference between a pre-test voltype dictionary
-        and a post test run voltype dicitonary.
+        Method to identify if there are any changes to the volume type
+        counts
         Args:
             volname (str)
             pre_voltype (dict)
         Returns:
-            A dictionary which contains the factor by which counts vary.
-            The final result will be calculated by pre minus post values.
+            True if there are changes, else False.
         """
         self._validate_volname(volname)
-        change_volt = {}
+        if len(pre_voltype.keys()) !=\
+                len(self.volds[volname]['voltype'].keys()):
+            return True
         for (pre_voltk, pre_voltv) in list(pre_voltype.items()):
             if pre_voltk == "transport":
                 continue
-            change_volt[pre_voltk] = pre_voltv - \
-                self.volds[volname]['voltype'][pre_voltk]
-        return change_volt
+            if pre_voltv != self.volds[volname]['voltype'][pre_voltk]:
+                return True
+        return False
 
     def add_new_mountpath(self, volname: str, node: str, path: str):
         """
