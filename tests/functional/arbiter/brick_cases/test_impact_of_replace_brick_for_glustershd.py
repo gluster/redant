@@ -17,20 +17,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     Test Cases in this module tests the self heal daemon process.
+,dist-arb
 """
 
 
-# disruptive;arb,dist-arb
+# disruptive;arb
 # TODO: nfs
 
 from tests.d_parent_test import DParentTest
 
 
-class TestCase(GlusterBaseClass):
-    """
-    ClientSideQuorumTests contains tests which verifies the
-    client side quorum Test Cases
-    """
+class TestCase(DParentTest):
 
     # @classmethod
     # def setUpClass(cls):
@@ -57,25 +54,19 @@ class TestCase(GlusterBaseClass):
     #     g.log.info("Successful in Setup Volume and Mount Volume")
 
     def run_test(self, redant):
-        # nodes = self.volume['servers']
-        # replaced_bricks = []
 
-        # # check the self-heal daemon process
-        # g.log.info("Starting to get self-heal daemon process on "
-        #            "nodes %s", nodes)
-        # ret, pids = get_self_heal_daemon_pid(nodes)
-        # self.assertTrue(ret, ("Either No self heal daemon process found or "
-        #                       "more than One self heal daemon process "
-        #                       "found : %s" % pids))
-        # g.log.info("Successful in getting Single self heal daemon process"
-        #            " on all nodes %s", nodes)
-        # glustershd_pids = pids
-
-        # # get the bricks for the volume
-        # g.log.info("Fetching bricks for the volume : %s", self.volname)
-        # bricks_list = get_all_bricks(self.mnode, self.volname)
-        # g.log.info("Brick List : %s", bricks_list)
-
+        replaced_bricks = []
+        ret, pids = redant.get_self_heal_daemon_pid(self.server_list)
+        if not ret:
+            print("Either No self heal daemon process found or "
+                  "more than One self heal daemon process "
+                  f"found : {pids}")
+        glustershd_pids = pids
+        print(glustershd_pids)
+        # get the bricks for the volume
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        print(bricks_list)
         # # validate the bricks present in volume info with
         # # glustershd server volume file
         # g.log.info("Starting parsing file %s on "

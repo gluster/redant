@@ -374,10 +374,10 @@ class HealOps:
 
         if not isinstance(nodes, list):
             nodes = [nodes]
-        cmd = r"pgrep -f glustershd | grep -v ^$$\$"
+        # cmd = r"pgrep -f glustershd | grep -v ^$$\$"
+        cmd = "ps aux | grep 'process-name glustershd' | grep -v grep | awk '{print $2}'"
         self.logger.info(f"Running {cmd} on nodes {nodes}")
         results = self.execute_abstract_op_multinode(cmd, nodes, False)
-
         for result in results:
             if result['error_code'] == 0:
                 if len(result['msg']) == 1:
