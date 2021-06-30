@@ -1322,3 +1322,31 @@ class VolumeOps(AbstractOps):
             if ret['error_code'] != 0:
                 return False
         return True
+
+    def verify_all_process_of_volume_are_online(self, volname: str,
+                                                node: str) -> bool:
+        """
+        Verifies whether all the processes of volume are online
+
+        Args:
+            volname (str): volume name
+            node (str): Node on which cmd has to be executed.
+
+        Returns:
+            bool: Returns True if all the processes of volume are online.
+                  False Otherwise.
+        """
+        bricks_list = self.get_all_bricks(volname, node)
+        if bricks_list is None:
+            return False
+
+        if not self.are_bricks_online(volname, bricks_list, node):
+            return False
+
+        # Verify all self-heal-daemons are running for non-distribute volumes.
+        if not self.is_distribute_volume(volname):
+            if not self.are_all_self_heal_daemons_online(volname,
+                                                         node):
+                return False
+
+        return True

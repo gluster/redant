@@ -70,11 +70,13 @@ class DParentTest(metaclass=abc.ABCMeta):
                     self.server_list, self.brick_roots, True)
                 self.redant.volume_start(self.vol_name, self.server_list[0])
                 self.mountpoint = (f"/mnt/{self.vol_name}")
-                self.redant.execute_abstract_op_node(f"mkdir -p "
-                                                     f"{self.mountpoint}",
-                                                     self.client_list[0])
-                self.redant.volume_mount(self.server_list[0], self.vol_name,
-                                         self.mountpoint, self.client_list[0])
+                for client in self.client_list:
+                    self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                         f"{self.mountpoint}",
+                                                         client)
+                    self.redant.volume_mount(self.server_list[0],
+                                             self.vol_name,
+                                             self.mountpoint, client)
             self.run_test(self.redant)
 
         except Exception as error:
