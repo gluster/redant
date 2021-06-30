@@ -73,6 +73,9 @@ class TestCase(DParentTest):
         # Killing bricks in cyclic order
         bricks_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
 
+        if bricks_list is None:
+            raise Exception("Failed to get the bricks list")
+
         # Total number of cyclic brick-down cycles to be executed
         number_of_cycles = 0
         while number_of_cycles < 3:
