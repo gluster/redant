@@ -104,6 +104,8 @@ class TestCase(DParentTest):
         - Monitor heal completion
         - Check for split-brain
         """
+
+        self.list_of_procs = []
         # Get the bricks from the volume
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
