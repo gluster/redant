@@ -30,7 +30,7 @@ class TestCase(DParentTest):
 
     def terminate(self):
         """
-        In case the test fails midway then wait for IO to comlete before
+        In case the test fails midway then wait for IO to complete before
         calling the terminate function of DParentTest
         """
         try:
@@ -103,8 +103,6 @@ class TestCase(DParentTest):
         - Verify volume's all process are online
         - Monitor heal completion
         - Check for split-brain
-
-        - Get arequal after getting bricks online
         """
         # Get the bricks from the volume
         bricks_list = redant.get_all_bricks(self.vol_name,
