@@ -22,7 +22,7 @@ clients_info:
 #               each volume type
 volume_types:
     dist:
-        dist_count: 4
+        dist_count: 3
         replica_count: 1
         transport: tcp
     rep:
