@@ -39,7 +39,7 @@ class MountOps(AbstractOps):
 
         """
 
-        cmd = f"mount -t glusterfs {server}:/{volname} {path}"
+        cmd = f"mount.glusterfs {server}:/{volname} {path}"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
         self.es.add_new_mountpath(volname, node, path)
