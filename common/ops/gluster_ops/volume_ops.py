@@ -563,6 +563,8 @@ class VolumeOps(AbstractOps):
                               f"Hence unable to shrink volume {volname}")
             return False
 
+        replica_count = None
+        current_replica_count = None
         if replica_num is not None or 'replica_count' in kwargs:
             if 'replica_count' in kwargs:
                 replica_count = int(kwargs['replica_count'])
@@ -575,14 +577,12 @@ class VolumeOps(AbstractOps):
             # Get replica count info.
             current_replica_count = self.get_replica_count(node, volname)
 
-            kwargs['replica_count'] = current_replica_count - replica_count
+            replica_count = current_replica_count - replica_count
 
             if subvol_num is not None or 'distribute_count' in kwargs:
                 force = False
             else:
                 force = True
-        else:
-            kwargs['replica_count'] = None
 
         # If force, then remove-bricks with force option
         if force:
@@ -590,8 +590,7 @@ class VolumeOps(AbstractOps):
             self.logger.info(f"Removing bricks {bricks_list_to_remove} from "
                              f"volume {volname} with force option")
             ret = self.remove_brick(node, volname, bricks_list_to_remove,
-                                    "force", kwargs['replica_count'],
-                                    False)
+                                    "force", replica_count, False)
             if ret['msg']['opRet'] != '0':
                 self.logger.error("Failed to remove bricks "
                                   f"{bricks_list_to_remove} from the volume "
@@ -607,8 +606,7 @@ class VolumeOps(AbstractOps):
         self.logger.info(f"Start Removing bricks {bricks_list_to_remove} from"
                          f" the volume {volname}")
         ret = self.remove_brick(node, volname, bricks_list_to_remove,
-                                "start", kwargs['replica_count'],
-                                False)
+                                "start", replica_count, False)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to start remove brick of bricks "
                               f"{bricks_list_to_remove} on the volume "
@@ -621,13 +619,13 @@ class VolumeOps(AbstractOps):
         self.logger.info("Logging remove-brick status of bricks "
                          f"{bricks_list_to_remove} on the volume {volname}")
         self.remove_brick(node, volname, bricks_list_to_remove,
-                          "status", kwargs['replica_count'], False)
+                          "status", replica_count, False)
 
         # Wait for rebalance started by remove-brick to complete
         _rc = False
         while rebal_timeout > 0:
             ret = self.remove_brick(node, volname, bricks_list_to_remove,
-                                    "status", kwargs['replica_count'], False)
+                                    "status", replica_count, False)
             if ret['msg']['opRet'] != '0':
                 self.logger.error("Failed to get remove-brick status of "
                                   f"bricks {bricks_list_to_remove} on volume"
@@ -665,7 +663,7 @@ class VolumeOps(AbstractOps):
                          "after rebalance is complete")
 
         ret = self.remove_brick(node, volname, bricks_list_to_remove,
-                                "status", kwargs['replica_count'], False)
+                                "status", replica_count, False)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to get remove-brick status of "
                               f"bricks {bricks_list_to_remove} on volume"
@@ -676,7 +674,7 @@ class VolumeOps(AbstractOps):
         self.logger.info("Commit remove-brick of bricks "
                          f"{bricks_list_to_remove} on volume {volname}")
         ret = self.remove_brick(node, volname, bricks_list_to_remove,
-                                "commit", kwargs['replica_count'], False)
+                                "commit", replica_count, False)
         if ret['msg']['opRet'] != '0':
             self.logger.error("Failed to commit remove-brick of bricks "
                               f"{bricks_list_to_remove} on volume {volname}")
@@ -692,6 +690,20 @@ class VolumeOps(AbstractOps):
             for brick in bricks_list_to_remove:
                 node, brick_dir = brick.split(':')
                 self.es.remove_val_from_cleands(node, brick_dir)
+
+        dist_count = None
+        if 'distribute_count' in kwargs:
+            dist_count = int(kwargs['distribute_count'])
+            self.es.set_vol_type_param(volname, 'dist_count', -dist_count)
+
+        rep_count = None
+        if replica_count is not None:
+            rep_count = current_replica_count - replica_count
+            self.es.set_vol_type_param(volname, 'replica_count', -rep_count)
+
+        if dist_count is None and rep_count is None:
+            dist_count = 1
+            self.es.set_vol_type_param(volname, 'dist_count', -dist_count)
 
         return True
 
