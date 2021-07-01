@@ -2,12 +2,12 @@
 This file contains a test-case which tests
 the creation of different volume types.
 """
-# nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
+# disruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
     """
     The test case contains one function to test
     for the creation of different types of files and
