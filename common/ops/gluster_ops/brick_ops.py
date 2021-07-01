@@ -211,7 +211,7 @@ class BrickOps(AbstractOps):
 
         if not src_brick:
             # Randomly select a brick to replace
-            src_brick = (choice(choice(subvols_list)))
+            src_brick = (random.choice(random.choice(subvols_list)))
 
         # Bring src brick offline
         if not self.bring_bricks_offline(volname, src_brick):
