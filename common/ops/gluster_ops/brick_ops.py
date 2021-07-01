@@ -199,8 +199,8 @@ class BrickOps(AbstractOps):
             self.logger.error(f"Volume {volname} does not exist")
             return False
 
-        # TODO: Update when we have get_subvols function
-        # subvols_info = self.get_subvols(volname, node)
+        # Get subvols
+        subvols_list = self.get_subvols(volname, node)
 
         if not dst_brick:
             _, dst_brick = self.form_brick_cmd(servers, self.brick_roots,
@@ -209,11 +209,9 @@ class BrickOps(AbstractOps):
             if not dst_brick:
                 self.logger.error("Failed to get a new brick to replace")
 
-        # TODO: Update when we have get_subvols function
-        # if not src_brick:
-        #     # Randomly select a brick to replace
-        #     subvols_list = subvols_info['volume_subvols']
-        #     src_brick = (choice(choice(subvols_list)))
+        if not src_brick:
+            # Randomly select a brick to replace
+            src_brick = (choice(choice(subvols_list)))
 
         # Bring src brick offline
         if not self.bring_bricks_offline(volname, src_brick):
