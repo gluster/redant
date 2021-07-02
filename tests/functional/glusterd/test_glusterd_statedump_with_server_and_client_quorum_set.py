@@ -23,6 +23,7 @@
 
 import traceback
 from time import sleep
+import socket
 from tests.d_parent_test import DParentTest
 
 
@@ -92,7 +93,8 @@ class TestGlusterdStatedumpWhenQuorumSetOnVolumes(DParentTest):
 
         for host in hosts_list:
             found = False
-            if host.rstrip('\n') in self.server_list:
+            host_ip = socket.gethostbyname(host.rstrip('\n'))
+            if host_ip in self.server_list:
                 found = True
             if not found:
                 raise Exception(f"Unexpected: Peer {host} not present in"
