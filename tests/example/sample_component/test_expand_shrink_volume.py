@@ -2,12 +2,12 @@
 This file contains a test-case which tests
 the creation of different volume types.
 """
-# nonDisruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
+# disruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
     """
     The test case contains one function to test
     for the creation of different types of files and
@@ -27,12 +27,20 @@ class TestCase(NdParentTest):
         if not ret:
             raise Exception("Failed to expand volume")
 
+        ret = redant.shrink_volume(self.server_list[0], self.vol_name)
+        if not ret:
+            raise Exception("Failed to shrink volume")
+
         kwargs = {'distribute_count': 1}
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
                                    self.server_list, self.brick_roots,
                                    force, **kwargs)
         if not ret:
             raise Exception("Failed to expand volume")
+
+        ret = redant.shrink_volume(self.server_list[0], self.vol_name)
+        if not ret:
+            raise Exception("Failed to shrink volume")
 
         redant.get_volume_info(self.server_list[0], self.vol_name)
         redant.get_volume_status(self.vol_name, self.server_list[0])

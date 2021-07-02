@@ -1,6 +1,7 @@
 """
 Brick ops module deals with the functions related to brick related operations.
 """
+# pylint: disable=too-many-lines
 
 from time import sleep
 import random
@@ -198,8 +199,8 @@ class BrickOps(AbstractOps):
             self.logger.error(f"Volume {volname} does not exist")
             return False
 
-        # TODO: Update when we have get_subvols function
-        # subvols_info = self.get_subvols(volname, node)
+        # Get subvols
+        subvols_list = self.get_subvols(volname, node)
 
         if not dst_brick:
             _, dst_brick = self.form_brick_cmd(servers, self.brick_roots,
@@ -208,11 +209,9 @@ class BrickOps(AbstractOps):
             if not dst_brick:
                 self.logger.error("Failed to get a new brick to replace")
 
-        # TODO: Update when we have get_subvols function
-        # if not src_brick:
-        #     # Randomly select a brick to replace
-        #     subvols_list = subvols_info['volume_subvols']
-        #     src_brick = (choice(choice(subvols_list)))
+        if not src_brick:
+            # Randomly select a brick to replace
+            src_brick = (random.choice(random.choice(subvols_list)))
 
         # Bring src brick offline
         if not self.bring_bricks_offline(volname, src_brick):
@@ -323,7 +322,11 @@ class BrickOps(AbstractOps):
 
         iter_add = 0
         if add_flag:
-            iter_add = len(self.get_all_bricks(volname, server_list[0]))
+            brick_list = self.get_all_bricks(volname, server_list[0])
+            last_brick_num = int(brick_list[-1].split('-')[-1])
+            iter_add = len(brick_list)
+            if last_brick_num >= iter_add:
+                iter_add += 1
 
         for iteration in range(mul_fac):
             if server_iter == len(server_list):
@@ -431,6 +434,161 @@ class BrickOps(AbstractOps):
         _, bricks_cmd = self.form_brick_cmd(server_list, brick_root, volname,
                                             num_of_bricks_to_add, True)
         return bricks_cmd
+
+    def form_bricks_list_to_remove_brick(self, node: str, volname: str,
+                                         subvol_num: list = None,
+                                         replica_num: int = None,
+                                         **kwargs) -> str:
+        """
+        Form bricks list for removing the bricks.
+
+        Args:
+            node (str): Node on which commands has to be executed
+            volname (str): volume name
+
+        Optional:
+            subvol_num (int|list): int|List of sub volumes number to remove.
+                For example: If subvol_num = [2, 5], Then we will be removing
+                bricks from 2nd and 5th sub-volume of the given volume.
+                The sub-volume number starts from 0.
+
+            replica_num (int): Specify which replica brick to remove.
+                If replica_num = 0, then 1st brick from each subvolume is
+                removed. the replica_num starts from 0.
+
+        Kwargs:
+            **kwargs: The keys, values in kwargs are:
+                    - replica_count : (int)|None. Specify the number of
+                        replicas reduce
+                    - distribute_count: (int)|None. Specify the distribute
+                        count to reduce.
+
+        Returns:
+            str: String having the bricks to remove from the volume.
+            NoneType: None if volume doesn't exists or any other failure.
+        """
+        # pylint: disable=too-many-return-statements
+        # Check if volume exists
+        if not self.es.does_volume_exists(volname):
+            self.logger.error(f"Volume {volname} doesn't exists.")
+            return None
+
+        # If distribute_count, replica_count or replica_leg , subvol_num is
+        # not specified, then default shrink_volume to randomly pick
+        # a subvolume to remove
+        if ('distribute_count' not in kwargs
+           and 'replica_count' not in kwargs
+           and replica_num is None
+           and subvol_num is None):
+            kwargs['distribute_count'] = 1
+
+        # Get Subvols
+        subvols_list = self.get_subvols(volname, node)
+        if not subvols_list:
+            self.logger.error("No Sub-Volumes available for the volume "
+                              f"{volname}")
+            return None
+
+        # Initialize bricks to remove
+        bricks_list_to_remove = []
+
+        # remove bricks by reducing replica count of the volume
+        if replica_num is not None or 'replica_count' in kwargs:
+            # Get replica count info.
+            current_replica_count = self.get_replica_count(node, volname)
+
+            # Get volume type info
+            vol_type_info = self.get_volume_type_info(node, volname)
+            if vol_type_info is None:
+                self.logger.error("Unable to get the replica count info for "
+                                  f"the volume {volname}")
+                return None
+
+            # Set is_arbiter to False
+            is_arbiter = False
+
+            # Calculate bricks to remove
+            arbiter_count = int(vol_type_info['volume_type_info']
+                                ['arbiterCount'])
+            if arbiter_count == 1:
+                is_arbiter = True
+
+            # If replica_num is specified select the bricks of that replica
+            # number from all the subvolumes.
+            if replica_num is not None:
+                if isinstance(replica_num, int):
+                    replica_num = [replica_num]
+
+                for each_replica_num in replica_num:
+                    try:
+                        bricks_list_to_remove.extend(
+                            [subvol[each_replica_num]
+                             for subvol in subvols_list])
+                    except IndexError:
+                        self.logger.error("Provided replica number "
+                                          f"{replica_num} is greater than or"
+                                          " equal to the existing replica "
+                                          f"count {current_replica_count} of"
+                                          f" the volume {volname}. Hence "
+                                          "cannot proceed with forming bricks"
+                                          " for remove-brick")
+                        return None
+
+            # If arbiter_volume, always remove the 3rd brick (arbiter brick)
+            elif is_arbiter:
+                bricks_list_to_remove.extend([subvol[-1]
+                                              for subvol in subvols_list])
+
+            # If replica_num is not specified nor it is arbiter volume,
+            # randomly select the bricks to remove.
+            else:
+                replica_count = int(kwargs['replica_count'])
+
+                if replica_count >= current_replica_count:
+                    self.logger.error(f"Provided replica number {replica_num}"
+                                      " is greater than or equal to the "
+                                      "existing replica count "
+                                      f"{current_replica_count} of the volume"
+                                      f" {volname}. Hence cannot proceed with"
+                                      " forming bricks for remove-brick")
+                    return None
+
+                sample = ([random.sample(subvol, replica_count)
+                           for subvol in subvols_list])
+                for item in sample:
+                    bricks_list_to_remove.extend(item)
+
+        # remove bricks from sub-volumes
+        if subvol_num is not None or 'distribute_count' in kwargs:
+            # select bricks of subvol_num specified
+            if subvol_num is not None:
+                if isinstance(subvol_num, int):
+                    subvol_num = [subvol_num]
+                for each_subvol_num in subvol_num:
+                    try:
+                        bricks_list_to_remove.extend(
+                            subvols_list[each_subvol_num])
+
+                    except IndexError:
+                        self.logger.error("Invalid sub volume number: "
+                                          f"{subvol_num} specified for "
+                                          "removing the subvolume from the "
+                                          f"volume: {volname}")
+                        return None
+
+            # select bricks from multiple subvols with number of
+            # subvolumes specified as distribute_count argument.
+            elif 'distribute_count' in kwargs:
+                distribute_count = int(kwargs['distribute_count'])
+                sample = random.sample(subvols_list, distribute_count)
+                for item in sample:
+                    bricks_list_to_remove.extend(item)
+
+            # randomly choose a subvolume to remove-bricks from.
+            else:
+                bricks_list_to_remove.extend(random.choice(subvols_list))
+
+        return list(set(bricks_list_to_remove))
 
     def cleanup_brick_dirs(self):
         """
