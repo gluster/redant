@@ -12,14 +12,14 @@ class SnapshotOps(AbstractOps):
     the features.uss option, check for snapd process.
     """
 
-    def enable_uss(self, node: str, volname: str,
+    def enable_uss(self, volname: str, node: str,
                    excep: bool = True) -> dict:
         """
         Enables uss on the specified volume
 
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            node (str): Node on which cmd has to be executed.
         Optional:
             excep (bool): exception flag to bypass the exception if the
                           enable uss command fails. If set to False
@@ -39,14 +39,14 @@ class SnapshotOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node, excep)
         return ret
 
-    def disable_uss(self, node: str, volname: str,
+    def disable_uss(self, volname: str, node: str,
                     excep: bool = True) -> dict:
         """
         Disable uss on the specified volume
 
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            node (str): Node on which cmd has to be executed.
         Optional:
             excep (bool): exception flag to bypass the exception if the
                           disable uss command fails. If set to False
@@ -67,13 +67,13 @@ class SnapshotOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node, excep)
         return ret
 
-    def is_uss_enabled(self, node: str, volname: str) -> bool:
+    def is_uss_enabled(self, volname: str, node: str) -> bool:
         """
         Check if uss is Enabled on the specified volume
 
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            node (str): Node on which cmd has to be executed.
 
         Returns:
             bool : True if successfully enabled uss on the volume.
@@ -90,13 +90,13 @@ class SnapshotOps(AbstractOps):
 
         return False
 
-    def is_uss_disabled(self, node: str, volname: str) -> bool:
+    def is_uss_disabled(self, volname: str, node: str) -> bool:
         """
         Check if uss is Disabled on the specified volume
 
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            node (str): Node on which cmd has to be executed.
 
         Returns:
             bool : True if successfully enabled uss on the volume.
@@ -113,13 +113,13 @@ class SnapshotOps(AbstractOps):
 
         return False
 
-    def is_snapd_running(self, node: str, volname: str) -> bool:
+    def is_snapd_running(self, volname: str, node: str) -> bool:
         """
         Checks if snapd is running on the given node
 
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): volume name
+            node (str): Node on which cmd has to be executed.
 
         Returns:
             bool: True on success, False otherwise
