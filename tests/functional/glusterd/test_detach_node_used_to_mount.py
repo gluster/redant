@@ -32,7 +32,8 @@ class TestCase(DParentTest):
 
     def terminate(self):
         try:
-            ret = self.redant.rebalance_stop(self.vol_name, self.server_list[0])
+            ret = self.redant.rebalance_stop(self.vol_name,
+                                             self.server_list[0])
             if not ret:
                 raise Exception("Rebalance operation failed to stop")
 
