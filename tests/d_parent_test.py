@@ -46,6 +46,13 @@ class DParentTest(metaclass=abc.ABCMeta):
     def setup_test(self):
         pass
 
+    @classmethod
+    def setup_custom_enable(cls, fun):
+        def inner(self, *args, **kwargs):
+            self.setup_done = True
+            return fun(self, *args, **kwargs)
+        return inner
+
     @abc.abstractmethod
     def run_test(self, redant):
         pass
