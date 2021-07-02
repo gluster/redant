@@ -165,7 +165,7 @@ class BitrotOps(AbstractOps):
             return False
         return True
 
-    def is_scrub_process_running(self, node: str, volname: str) -> bool:
+    def is_scrub_process_running(self, volname: str, node: str) -> bool:
         """
         Checks if scrub process is running on the given node
 
