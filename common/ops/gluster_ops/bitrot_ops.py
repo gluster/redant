@@ -147,7 +147,7 @@ class BitrotOps(AbstractOps):
             return False
 
         is_enabled = False
-        online_status = False
+        online_status = True
         if 'node' in vol_status[volname]:
             for brick in vol_status[volname]['node']:
                 if (brick['hostname'] == "Bitrot Daemon"
@@ -165,7 +165,7 @@ class BitrotOps(AbstractOps):
             return False
         return True
 
-    def is_scrub_process_running(self, node: str, volname: str) -> bool:
+    def is_scrub_process_running(self, volname: str, node: str) -> bool:
         """
         Checks if scrub process is running on the given node
 
@@ -183,7 +183,7 @@ class BitrotOps(AbstractOps):
             return False
 
         is_enabled = False
-        online_status = False
+        online_status = True
         if 'node' in vol_status[volname]:
             for brick in vol_status[volname]['node']:
                 if (brick['hostname'] == "Scrubber Daemon"

@@ -900,6 +900,8 @@ class VolumeOps(AbstractOps):
                                 for p_key, p_val in n_val.items():
                                     port_info[p_key] = p_val
                                 node_info[n_key] = port_info
+                            elif n_key == 'path' and n_val == 'localhost':
+                                node_info[n_key] = node
                             else:
                                 node_info[n_key] = n_val
                         ret_dict[volname]['node'].append(node_info)
