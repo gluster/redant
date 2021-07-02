@@ -26,12 +26,13 @@ from random import randint
 from tests.d_parent_test import DParentTest
 
 
-# disruptive;
+# disruptive;rep
+
 class TestCase(DParentTest):
 
     def terminate(self):
         try:
-            ret = self.rebalance_stop(self.vol_name, self.server_list[0])
+            ret = self.redant.rebalance_stop(self.vol_name, self.server_list[0])
             if not ret:
                 raise Exception("Rebalance operation failed to stop")
 
@@ -61,18 +62,6 @@ class TestCase(DParentTest):
         # Check if servers are sufficient to run the test case.
         if len(self.server_list) < 4:
             raise Exception("Servers are not sufficient to run the test")
-
-        self.volume_type = 'rep'
-        self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
-        conf_dict = self.vol_type_inf[self.conv_dict[self.volume_type]]
-
-        # Setup Volume
-        redant.setup_volume(self.volume_name1, self.server_list[0], conf_dict,
-                            self.server_list, self.brick_roots)
-
-        # Mount volume onto client
-        redant.volume_mount(self.server_list[3], self.volume_name1,
-                            self.mountpoint, self.client_list[0])
 
         # Creating 100 files.
         command = ('for number in `seq 1 100`;do touch '
@@ -105,13 +94,13 @@ class TestCase(DParentTest):
 
         # Creating 100 files.
         command = ('for number in `seq 201 300`;do touch '
-                   + self.mounts[0].mountpoint + '/file$number; done')
+                   + self.mountpoint + '/file$number; done')
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Forming brivk list of added bricks
         brick_list = []
         for server in brick_dict:
-            brick_list += brick_dict[server]
+            brick_list.append(f"{server}:{brick_dict[server][0]}")
 
         # Check for files on bricks.
         attempts = 10

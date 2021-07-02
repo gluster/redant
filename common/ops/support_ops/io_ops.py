@@ -822,7 +822,8 @@ class IoOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         xattr_list = {}
-        for xattr_string in ret['msg'].strip().split('\n'):
+        ret_val = "".join(ret['msg'])
+        for xattr_string in ret_val.strip().split('\n'):
             xattr = xattr_string.split('=', 1)
             if len(xattr) > 1:
                 key, value = xattr
