@@ -194,9 +194,6 @@ class TestGlusterdStatedumpWhenQuorumSetOnVolumes(DParentTest):
                             conf_hash, self.server_list[3:],
                             self.brick_roots)
 
-        self.assertTrue(ret, "Failed to create and start the volume: %s"
-                        % self.volume_config['name'])
-
         # Get the list of bricks in volume
         all_bricks = redant.get_all_bricks(self.volname, self.server_list[0])
         if all_bricks is None:
