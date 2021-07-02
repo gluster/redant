@@ -65,10 +65,11 @@ class TestCase(DParentTest):
                                        base_file_name=bs_fil)
             self.list_of_procs.append(proc)
 
-        # Validate IO
-        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
-        if not ret:
-            raise Exception("IO validation failed")
+        # verify IO is going on
+        redant.logger.info("Check the IO processes if running or not")
+        for process in self.list_of_procs:
+            if redant.check_async_command_status(process):
+                raise Exception("IO has either finished or failed")
 
         # Killing bricks in cyclic order
         bricks_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
