@@ -132,7 +132,7 @@ class SnapshotOps(AbstractOps):
             return False
 
         is_enabled = False
-        online_status = False
+        online_status = True
         if 'node' in vol_status[volname]:
             for brick in vol_status[volname]['node']:
                 if (brick['hostname'] == "Snapshot Daemon"

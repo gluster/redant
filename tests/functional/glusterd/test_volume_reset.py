@@ -19,11 +19,11 @@
     Test volume reset validations
 """
 
-# disruptive;dist,rep,disp,dist-rep,disp,dist-disp
+# nonDisruptive;dist,rep,disp,dist-rep,dist-disp
 from tests.nd_parent_test import NdParentTest
 
 
-class GlusterdVolumeReset(NdParentTest):
+class TestGlusterdVolumeReset(NdParentTest):
 
     def run_test(self, redant):
         """
