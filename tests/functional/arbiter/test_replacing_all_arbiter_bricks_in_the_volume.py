@@ -18,39 +18,29 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Arbiter Test cases related to
     healing in default configuration of the volume
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.volume_libs import (
-    verify_all_process_of_volume_are_online,
-    wait_for_volume_process_to_be_online,
-    get_subvols)
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.brick_ops import replace_brick
-from glustolibs.gluster.heal_libs import (monitor_heal_completion,
-                                          is_heal_complete,
-                                          is_volume_in_split_brain,
-                                          is_shd_daemonized)
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (validate_io_procs,
-                                 list_all_files_and_dirs_mounts,
-                                 wait_for_io_to_complete)
-
-
-@runs_on([['distributed-arbiter'],
-          ['glusterfs']])
 """
 
 # disruptive;dist-arb
 
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
 
-    def test_replacing_all_arbiters(self):
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
+    def run_test(self, redant):
         """
         - Create an arbiter volume 4(2+1) distributed replicate
         - Start writing IO
@@ -67,93 +57,87 @@ class TestCase(DParentTest):
         if bricks_list is None:
             raise Exception("Bricks list is none")
 
-        # # Clear all brick folders. Its need to prevent healing with old files
-        # for brick in bricks_list:
-        #     g.log.info('Clearing brick %s', brick)
-        #     node, brick_path = brick.split(':')
-        #     ret, _, err = g.run(node, 'cd %s/ ; rm -rf *' % brick_path)
-        #     self.assertFalse(ret, err)
-        #     g.log.info('Clearing brick %s is successful', brick)
-        # g.log.info('Clearing for all brick is successful')
+        # Clear all brick folders. Its need to prevent healing with old files
+        for brick in bricks_list:
+            redant.logger.info(f'Clearing brick {brick}')
+            node, brick_path = brick.split(':')
+            redant.execute_abstract_op_node(f'cd {brick_path}/ ; rm -rf *',
+                                            node)
 
-        # # Creating files on client side
-        # for mount_obj in self.mounts:
-        #     g.log.info("Generating data for %s:%s",
-        #                mount_obj.client_system, mount_obj.mountpoint)
-        #     # Create dirs with file
-        #     g.log.info('Creating dirs with file...')
-        #     command = ("/usr/bin/env python %s create_deep_dirs_with_files "
-        #                "-d 3 -l 3 -n 3 -f 20 %s"
-        #                % (self.script_upload_path, mount_obj.mountpoint))
+        # Creating files on client side
+        self.mounts = (redant.es.
+                       get_mnt_pts_dict_in_list(self.vol_name))
+        counter = 1
 
-        #     proc = g.run_async(mount_obj.client_system, command,
-        #                        user=mount_obj.user)
-        #     self.all_mounts_procs.append(proc)
-        # self.io_validation_complete = False
+        for mount in self.mounts:
+            redant.logger.info(f"Starting IO on {mount['client']}:"
+                               f"{mount['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                      counter, 3, 3, 3, 20,
+                                                      mount['client'])
+            self.all_mounts_procs.append(proc)
+            counter = counter + 20
 
-        # # replace bricks
-        # subvols = get_subvols(self.mnode, self.volname)['volume_subvols']
-        # for subvol in subvols:
-        #     g.log.info('Replacing arbiter brick for %s', subvol)
-        #     brick_to_replace = subvol[-1]
-        #     self.bricks_to_clean.append(brick_to_replace)
-        #     new_brick = brick_to_replace + 'new'
-        #     g.log.info("Replacing the brick %s for the volume: %s",
-        #                brick_to_replace, self.volname)
-        #     ret, _, err = replace_brick(self.mnode, self.volname,
-        #                                 brick_to_replace, new_brick)
-        #     self.assertFalse(ret, err)
-        #     g.log.info('Replaced brick %s to %s successfully',
-        #                brick_to_replace, new_brick)
+        # replace bricks
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        for subvol in subvols:
+            redant.logger.info(f'Replacing arbiter brick for {subvol}')
+            brick_to_replace = subvol[-1]
+            new_brick = brick_to_replace + 'new'
+            redant.logger.info(f"Replacing the brick {brick_to_replace} "
+                               f"for the volume: {self.vol_name}")
+            redant.replace_brick(self.server_list[0],
+                                 self.vol_name,
+                                 brick_to_replace, new_brick)
+            self.bricks_to_clean.append(brick_to_replace)
 
-        # # check replaced bricks
-        # subvols = get_subvols(self.mnode, self.volname)['volume_subvols']
-        # index = 0
-        # for subvol in subvols:
-        #     expected_brick_path = self.bricks_to_clean[index]+'new'
-        #     brick_to_check = subvol[-1]
-        #     self.assertEqual(expected_brick_path, brick_to_check,
-        #                      'Brick %s is not replaced brick'
-        #                      % brick_to_check)
-        #     index += 1
+        # check replaced bricks
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        index = 0
+        for subvol in subvols:
+            expected_brick_path = self.bricks_to_clean[index]+'new'
+            brick_to_check = subvol[-1]
+            if expected_brick_path == brick_to_check:
+                raise Exception(f"Brick {brick_to_check} is not"
+                                " replaced brick")
+            index += 1
 
-        # # Wait for volume processes to be online
-        # g.log.info("Wait for volume processes to be online")
-        # ret = wait_for_volume_process_to_be_online(self.mnode, self.volname)
-        # self.assertTrue(ret, ("Failed to wait for volume %s processes to "
-        #                       "be online", self.volname))
-        # g.log.info("Successful in waiting for volume %s processes to be "
-        #            "online", self.volname)
+        # Wait for volume processes to be online
+        if not (redant.
+                wait_for_volume_process_to_be_online(self.vol_name,
+                                                     self.server_list[0],
+                                                     self.server_list)):
+            raise Exception(f"Failed to wait for volume {self.vol_name} "
+                            "processes to be online")
 
-        # # Verify volume's all process are online
-        # g.log.info("Verifying volume's all process are online")
-        # ret = verify_all_process_of_volume_are_online(self.mnode,
-        #                                               self.volname)
-        # self.assertTrue(ret, ("Volume %s : All process are not online"
-        #                       % self.volname))
-        # g.log.info("Volume %s: All process are online", self.volname)
+        # Verify volume's all process are online
+        if not (redant.
+                verify_all_process_of_volume_are_online(self.mnode,
+                                                        self.volname)):
+            raise Exception(f"Volume {self.vol_name}: All process"
+                            " are not online")
 
-        # # Wait for self-heal-daemons to be online
-        # g.log.info("Waiting for self-heal-daemons to be online")
-        # ret = is_shd_daemonized(self.all_servers)
-        # self.assertTrue(ret, "Either No self heal daemon process found")
-        # g.log.info("All self-heal-daemons are online")
+        # Wait for self-heal-daemons to be online
+        if not redant.is_shd_daemonized(self.server_list):
+            raise Exception("Either No self heal daemon process found")
 
-        # # Monitor heal completion
-        # ret = monitor_heal_completion(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal has not yet completed')
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception('Heal has not yet completed')
 
-        # # Check if heal is completed
-        # ret = is_heal_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not complete')
-        # g.log.info('Heal is completed successfully')
+        # Check if heal is completed
+        if not redant.is_heal_complete(self.server_list[0],
+                                       self.vol_name):
+            raise Exception("Heal is not complete")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        # Check for split-brain
+        if not redant.is_volume_in_split_brain(self.server_list[0],
+                                               self.vol_name):
+            raise Exception('Volume is in split-brain state')
 
-        # # Validate IO
-        # ret = validate_io_procs(self.all_mounts_procs, self.mounts)
-        # self.assertTrue(ret, "IO failed on some of the clients")
-        # self.io_validation_complete = True
+        # Validate IO
+        ret = redant.validate_io_procs(self.all_mounts_procs,
+                                       self.mounts)
+        if not ret:
+            raise Exception("IO validation failed")
