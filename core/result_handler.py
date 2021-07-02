@@ -54,15 +54,15 @@ class ResultHandler:
         if time_in_sec >= 60:
             seconds = time_in_sec % 60
             time_in_sec -= seconds
-            time_in_min = time_in_sec / 60
+            time_in_min = int(time_in_sec / 60)
             if time_in_min >= 60:
                 minutes = time_in_min % 60
                 time_in_min -= minutes
-                time_in_hour = time_in_min / 60
+                time_in_hour = int(time_in_min / 60)
                 if time_in_hour >= 24:
                     hours = time_in_hour % 24
                     time_in_hour -= hours
-                    days = time_in_hour / 24
+                    days = int(time_in_hour / 24)
                 else:
                     hours = int(time_in_hour)
             else:
@@ -126,6 +126,8 @@ class ResultHandler:
             elif test_results[item][0]['tcNature'] == 'nonDisruptive' and\
                     test_results[item][0]['testResult'] is not None:
                 ndtest += 1
+            else:
+                skipCount += 1
 
             for each_vol_test in test_results[item]:
 
@@ -140,7 +142,6 @@ class ResultHandler:
                         if each_vol_test['testResult'] == 'PASS':
                             ndpass += 1
                 elif each_vol_test['testResult'] is None:
-                    skipCount += 1
                     skip_reason = each_vol_test['skipReason']
 
                 time_taken = cls._time_rollover_conversion(
@@ -233,12 +234,12 @@ class ResultHandler:
             elif test_results[item][0]['tcNature'] == 'nonDisruptive' and\
                     test_results[item][0]['testResult'] is not None:
                 ndtest += 1
+            else:
+                skipCount += 1
 
             for each_vol_test in test_results[item]:
 
-                if each_vol_test['testResult'] is None:
-                    skipCount += 1
-                else:
+                if each_vol_test['testResult'] is not None:
                     if each_vol_test['tcNature'] == 'disruptive':
                         dcount += 1
                         if each_vol_test['testResult'] == 'PASS':
