@@ -213,7 +213,7 @@ class TestGlusterdStatedumpWhenQuorumSetOnVolumes(DParentTest):
 
         # Enable server-side quorum on volume
         option = {"cluster.server-quorum-type": "server"}
-        self.set_volume_options(self.volname, option, self.server_list[0])
+        redant.set_volume_options(self.volname, option, self.server_list[0])
 
         # Get the statedump of glusterd process
         self.dump_count += 1
