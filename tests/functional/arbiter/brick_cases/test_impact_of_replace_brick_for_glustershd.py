@@ -62,11 +62,9 @@ class TestCase(DParentTest):
                   "more than One self heal daemon process "
                   f"found : {pids}")
         glustershd_pids = pids
-        print(glustershd_pids)
         # get the bricks for the volume
         bricks_list = redant.get_all_bricks(self.vol_name,
                                             self.server_list[0])
-        print(bricks_list)
         # validate the bricks present in volume info with
         # glustershd server volume file
         if not (redant.
@@ -76,15 +74,14 @@ class TestCase(DParentTest):
             raise Exception("Brick List from volume info is different "
                             "from glustershd server volume file. "
                             "Please check log file for details")
-        # # get the subvolumes
-        # g.log.info("Starting to get sub-volumes for volume %s", self.volname)
-        # subvols_dict = get_subvols(self.mnode, self.volname)
-        # num_subvols = len(subvols_dict['volume_subvols'])
-        # g.log.info("Number of subvolumes in volume %s:", num_subvols)
+        # get the subvolumes
+        subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
+        num_subvols = len(subvols_list)
+        print(num_subvols)
 
         # # replace brick from each sub-vol
         # for i in range(0, num_subvols):
-        #     subvol_brick_list = subvols_dict['volume_subvols'][i]
+        #     subvol_brick_list = subvols_list[i]
         #     g.log.info("sub-volume %s brick list : %s", i, subvol_brick_list)
         #     brick_to_replace = subvol_brick_list[-1]
         #     new_brick = brick_to_replace + 'new'
