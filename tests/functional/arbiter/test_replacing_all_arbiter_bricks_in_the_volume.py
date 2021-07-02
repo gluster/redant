@@ -97,7 +97,7 @@ class TestCase(DParentTest):
         for subvol in subvols:
             expected_brick_path = self.bricks_to_clean[index]+'new'
             brick_to_check = subvol[-1]
-            if expected_brick_path == brick_to_check:
+            if expected_brick_path != brick_to_check:
                 raise Exception(f"Brick {brick_to_check} is not"
                                 " replaced brick")
             index += 1
@@ -112,8 +112,8 @@ class TestCase(DParentTest):
 
         # Verify volume's all process are online
         if not (redant.
-                verify_all_process_of_volume_are_online(self.mnode,
-                                                        self.volname)):
+                verify_all_process_of_volume_are_online(self.vol_name,
+                                                        self.server_list[0])):
             raise Exception(f"Volume {self.vol_name}: All process"
                             " are not online")
 
@@ -132,8 +132,8 @@ class TestCase(DParentTest):
             raise Exception("Heal is not complete")
 
         # Check for split-brain
-        if not redant.is_volume_in_split_brain(self.server_list[0],
-                                               self.vol_name):
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
             raise Exception('Volume is in split-brain state')
 
         # Validate IO
