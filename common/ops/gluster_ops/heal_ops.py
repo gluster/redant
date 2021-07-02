@@ -374,7 +374,6 @@ class HealOps:
 
         if not isinstance(nodes, list):
             nodes = [nodes]
-        # cmd = r"pgrep -f glustershd | grep -v ^$$\$"
         cmd = ("ps aux | grep 'process-name glustershd' |"
                " grep -v grep | awk '{print $2}'")
         self.logger.info(f"Running {cmd} on nodes {nodes}")

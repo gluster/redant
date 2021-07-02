@@ -29,7 +29,18 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def run_test(self, redant):
-
+        """
+        1. Get the self head daemon pids.
+        2. Get all the brivks for the volume
+        3. Check if the bricks exist in the shd volfile
+        4. Get the sub volumes for the volume type
+        5. Replace a brick in all the subvols.
+        6. Check for the volume process to be online.
+        7. Get the selh heal daemon pids and compare the same
+           with the previous ones.
+        8. Get the bricks list after replace brick
+        9. Check if bricks exist in shd volfile
+        """
         replaced_bricks = []
         ret, pids = redant.get_self_heal_daemon_pid(self.server_list)
         if not ret:
