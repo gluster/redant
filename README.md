@@ -37,6 +37,7 @@ optional arguments:
  | Distro | Redant | Gluster Server | Gluster Client |
  | :----: | :----: | :------------: | :-------------:|
  |Fedora 32| :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+ |Fedora 34|:heavy_check_mark: | :heavy_multiplication_x: | ✖️ |
  |RHEL 7.9| :heavy_multiplication_x: | :heavy_check_mark: | :heavy_check_mark:|
 
 The architects of any project won't be there forever with it 
