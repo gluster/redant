@@ -27,11 +27,12 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
     def setup_test(self):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        self.setup_done = True
+        pass
 
     def run_test(self, redant):
         '''
