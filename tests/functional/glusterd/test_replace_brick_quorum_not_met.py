@@ -32,7 +32,6 @@ class TestCase(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        pass
 
     def run_test(self, redant):
         '''
