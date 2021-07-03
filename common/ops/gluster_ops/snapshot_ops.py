@@ -184,6 +184,8 @@ class SnapshotOps(AbstractOps):
         """
         if description is not None:
             description = (f"description {description}")
+        else:
+            description = ''
 
         tstamp = ''
         if not timestamp:
@@ -312,13 +314,10 @@ class SnapshotOps(AbstractOps):
         """
         if snapname and volname in [None]:
             raise Exception("Provide either snapname or volume name.")
-        elif snapname and volname not in [None]:
-            cmd = (f"gluster snapshot status {volname} {snapname}"
-                   " --mode")
+        elif snapname is not None:
+            cmd = (f"gluster snapshot status {snapname} --mode")
         elif volname is not None:
-            cmd = (f"gluster snapshot status {volname} --mode=script --xml")
-        else:
-            cmd = (f"gluster snapshost status {snapname} --mode=script --xml")
+            cmd = (f"gluster snapshot status volume {volname} --mode=script --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def get_snap_status(self, node: str) -> list:
@@ -403,13 +402,10 @@ class SnapshotOps(AbstractOps):
         """
         if snapname and volname in [None]:
             raise Exception("Provide either snapname or volname.")
-        elif snapname and volname not in [None]:
-            cmd = (f"gluster snapshot info {snapname} {volname}"
-                   " --mode=script --xml")
+        elif snapname is not None:
+            cmd = (f"gluster snapshot info {snapname} --mode=script --xml")
         elif volname is not None:
-            cmd = (f"gluster snapshot info {volname} --xml --mode=script")
-        else:
-            cmd = (f"gluster snapshot info {snapname} --xml --mode=script")
+            cmd = (f"gluster snapshot info volume {volname} --xml --mode=script")
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def get_snap_info(self, node: str, excep: bool=True) -> dict:
