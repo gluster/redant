@@ -1080,3 +1080,16 @@ class BrickOps(AbstractOps):
                 return True
 
         return False
+
+    def umount_snap_brick_from_servers(self, nodes: list):
+        """
+        Method to umount the snap bricks in the servers.
+
+        Args:
+            nodes (list): List of nodes for which the snap brick has
+            to be un-mounted.
+        """
+        cmd = ("for mnt in `mount | grep 'run/gluster/snaps' |"
+               "awk '{print $3}'`;do umount $mnt; done")
+        for node in nodes:
+            self.execute_abstract_op_node(cmd, node)

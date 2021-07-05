@@ -85,7 +85,7 @@ class SnapshotOps(AbstractOps):
             return False
 
         if ('features.uss' in option_dict
-           and option_dict['features.uss'] == 'enable'):
+                and option_dict['features.uss'] == 'enable'):
             return True
 
         return False
@@ -108,7 +108,7 @@ class SnapshotOps(AbstractOps):
             return False
 
         if ('features.uss' in option_dict
-           and option_dict['features.uss'] == 'disable'):
+                and option_dict['features.uss'] == 'disable'):
             return True
 
         return False
@@ -136,7 +136,7 @@ class SnapshotOps(AbstractOps):
         if 'node' in vol_status[volname]:
             for brick in vol_status[volname]['node']:
                 if (brick['hostname'] == "Snapshot Daemon"
-                   and brick['path'] == node):
+                        and brick['path'] == node):
                     is_enabled = True
                     if brick['status'] != '1':
                         online_status = False
@@ -153,8 +153,8 @@ class SnapshotOps(AbstractOps):
         return True
 
     def snap_create(self, volname: str, snapname: str, node: str,
-                    timestamp: bool=False, description: str=None,
-                    force: bool=False, excep: bool=True) -> dict:
+                    timestamp: bool = False, description: str = None,
+                    force: bool = False, excep: bool = True) -> dict:
         """
         Function for snapshot creation.
 
@@ -200,9 +200,8 @@ class SnapshotOps(AbstractOps):
 
         return self.execute_abstract_op_node(cmd, node, excep)
 
-
     def snap_clone(self, snapname: str, clonename: str, node: str,
-                   excep: bool=True) -> dict:
+                   excep: bool = True) -> dict:
         """
         Method to clone a snapshot
 
@@ -231,7 +230,7 @@ class SnapshotOps(AbstractOps):
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def snap_restore(self, snapname: str, node: str,
-                     excep: bool=True) -> bool:
+                     excep: bool = True) -> bool:
         """
         Method to restore the snapshot.
 
@@ -257,7 +256,7 @@ class SnapshotOps(AbstractOps):
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def snap_restore_complete(self, volname: str, snapname: str,
-                              node: str, excep: bool=True) -> bool:
+                              node: str, excep: bool = True) -> bool:
         """
         Method restore the snapshot and that is done when volume is stopped.
         Post snap restore, the volume is started again.
@@ -288,8 +287,8 @@ class SnapshotOps(AbstractOps):
 
         return True
 
-    def snap_status(self, node, snapname: str=None, volname: str=None,
-                    excep: bool=True) -> dict:
+    def snap_status(self, node, snapname: str = None, volname: str = None,
+                    excep: bool = True) -> dict:
         """
         Method for obtaining the snapshot status.
 
@@ -312,12 +311,13 @@ class SnapshotOps(AbstractOps):
                 - cmd : command that got executed
                 - node : node on which the command got executed
         """
-        if snapname and volname in [None]:
+        if snapname is None and volname is None:
             raise Exception("Provide either snapname or volume name.")
         elif snapname is not None:
-            cmd = (f"gluster snapshot status {snapname} --mode")
+            cmd = (f"gluster snapshot status {snapname} --mode=script --xml")
         elif volname is not None:
-            cmd = (f"gluster snapshot status volume {volname} --mode=script --xml")
+            cmd = (f"gluster snapshot status volume {volname} --mode=script"
+                   " --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def get_snap_status(self, node: str) -> list:
@@ -334,7 +334,7 @@ class SnapshotOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
 
         snap_status_list = []
-        #TODO parsing logic for snap status.
+        # TODO parsing logic for snap status.
 
         return snap_status_list
 
@@ -373,11 +373,11 @@ class SnapshotOps(AbstractOps):
 
         vol_snap_status_list = []
 
-        #TODO parsing logic to be added.
+        # TODO parsing logic to be added.
         return vol_snap_status_list
 
-    def snap_info(self, node: str, snapname: str=None, volname: str=None,
-                  excep: bool=True) -> dict:
+    def snap_info(self, node: str, snapname: str = None, volname: str = None,
+                  excep: bool = True) -> dict:
         """
         Method to obtain the snap info.
 
@@ -400,15 +400,16 @@ class SnapshotOps(AbstractOps):
                 - cmd : command that got executed
                 - node : node on which the command got executed
         """
-        if snapname and volname in [None]:
+        if snapname is None and volname is None:
             raise Exception("Provide either snapname or volname.")
         elif snapname is not None:
             cmd = (f"gluster snapshot info {snapname} --mode=script --xml")
         elif volname is not None:
-            cmd = (f"gluster snapshot info volume {volname} --xml --mode=script")
+            cmd = (
+                f"gluster snapshot info volume {volname} --xml --mode=script")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def get_snap_info(self, node: str, excep: bool=True) -> dict:
+    def get_snap_info(self, node: str, excep: bool = True) -> dict:
         """
         Method to obtain the snap status command output when run in a node
 
@@ -436,7 +437,7 @@ class SnapshotOps(AbstractOps):
             return None
 
         snap_info_list = []
-        #TODO add snap info parsing here.
+        # TODO add snap info parsing here.
         return snap_info_list
 
     def get_snap_info_by_snapname(self, snapname: str, node: str) -> dict:
@@ -469,10 +470,10 @@ class SnapshotOps(AbstractOps):
             dictionary of the snap status or Nonetype object.
         """
         snap_info_list = self.get_snap_info(node)
-        #TODO add logic for volume level parsing.
+        # TODO add logic for volume level parsing.
         return None
-    
-    def snap_list(self, node: str, excep: bool=True) -> dict:
+
+    def snap_list(self, node: str, excep: bool = True) -> dict:
         """
         Method to list the snapshots in a node.
 
@@ -496,8 +497,8 @@ class SnapshotOps(AbstractOps):
         cmd = "gluster snapshot list --mode=script --xml"
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def get_snap_list(self, node: str, volname: str=None,
-                      excep: bool=True) -> list:
+    def get_snap_list(self, node: str, volname: str = None,
+                      excep: bool = True) -> list:
         if volname is None:
             cmd = "gluster snapshot list --xml --mode=script"
         else:
@@ -510,7 +511,7 @@ class SnapshotOps(AbstractOps):
         return ret
 
     def snap_delete(self, snapname: str, node: str,
-                    excep: bool=True) -> dict:
+                    excep: bool = True) -> dict:
         """
         Method to delete snapshot.
 
@@ -535,9 +536,8 @@ class SnapshotOps(AbstractOps):
         cmd = (f"gluster snapshot delete {snapname} --xml --mode=script")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-
     def snap_delete_by_volumename(self, volname: str, node: str,
-                                  excep: bool=True) -> dict:
+                                  excep: bool = True) -> dict:
         """
         Method to delete a snapshot by volumename.
 
@@ -562,8 +562,7 @@ class SnapshotOps(AbstractOps):
         cmd = (f"gluster snapshot volume {volname} --xml --mode=script")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-
-    def snap_delete_all(self, node: str, excep: bool=True) -> dict:
+    def snap_delete_all(self, node: str, excep: bool = True) -> dict:
         """
         Method to delete all snapshots in the cluster.
 
