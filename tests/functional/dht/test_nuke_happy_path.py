@@ -17,10 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     This test case deals with testing nuke path.
-# nonDisruptive;dist-rep,dist-arb,dist-disp,dist
 """
 
-# nonDisruptive;dist-disp
+# nonDisruptive;dist-rep,dist-arb,dist-disp,dist
 
 from tests.nd_parent_test import NdParentTest
 
