@@ -50,7 +50,7 @@ class TestCase(DParentTest):
                 raise Exception("Servers are not in peer probed state")
 
             # stopping the volume and Cleaning up the volume
-            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+            self.redant.cleanup_volumes(self.server_list[0], self.volume_name1)
 
         except Exception as error:
             tb = traceback.format_exc()

@@ -387,7 +387,7 @@ class VolumeOps(AbstractOps):
         if ret:
             # It seems like something has gone awry, so do a volume
             # cleanup followed by setup volume.
-            self.cleanup_volume(volname, server_list[0])
+            self.cleanup_volumes(server_list[0])
             self.setup_volume(volname, server_list[0], vol_param, server_list,
                               brick_root, force=True)
 
@@ -399,14 +399,19 @@ class VolumeOps(AbstractOps):
                     self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
                     self.volume_mount(server_list[0], volname, mountdir, node)
 
-    def cleanup_volumes(self, node: str):
+    def cleanup_volumes(self, node: str, volname: list=None):
         """
         Cleanup volume will delete the snaps and volumes.
 
         Args:
             nodes (list): List of all nodes ( servers )
         """
-        volnames = self.es.get_volnames()
+        if isinstance(volname, list):
+            volnames = volname
+        elif volname is None:
+            volnames = self.es.get_volnames()
+        else:
+            volnames = [volname]
         for volname in volnames:
             vol_nodes = self.es.get_volume_nodes(volname)
             # Check if the volume exists.

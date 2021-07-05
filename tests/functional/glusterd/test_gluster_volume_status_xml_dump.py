@@ -34,8 +34,8 @@ class TestCase(NdParentTest):
         destroyed
         """
         try:
-            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
-            self.redant.cleanup_volume(self.volume_name, self.server_list[0])
+            vol_list = [self.volume_name1, self.volume_name]
+            self.redant.cleanup_volumes(self.server_list[0], vol_list)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

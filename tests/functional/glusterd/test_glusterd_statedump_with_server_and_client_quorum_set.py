@@ -175,7 +175,7 @@ class TestGlusterdStatedumpWhenQuorumSetOnVolumes(DParentTest):
         self._get_statedump_of_glusterd(self.dump_count)
 
         # Delete the volume
-        redant.cleanup_volume(self.vol_name, self.server_list[0])
+        redant.cleanup_volumes(self.server_list[0], self.vol_name)
 
         # Peer detach two nodes
         ret = redant.peer_detach_servers(self.server_list[1:3],
