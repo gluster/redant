@@ -3,8 +3,8 @@ This file contains one class - SnapshotOps wich holds
 operations on the enable, disable the features.uss option,
 check for snapd process.
 """
-from common.ops.abstract_ops import AbstractOps
 import copy
+from common.ops.abstract_ops import AbstractOps
 
 
 class SnapshotOps(AbstractOps):
