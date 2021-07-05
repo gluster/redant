@@ -172,7 +172,8 @@ class BrickOps(AbstractOps):
     def replace_brick_from_volume(self, volname: str, node: str,
                                   servers: list, src_brick: str = None,
                                   dst_brick: str = None,
-                                  delete_brick: bool = True) -> bool:
+                                  delete_brick: bool = True,
+                                  brick_roots: list = None) -> bool:
         """
         Replace faulty brick from a volume
 
@@ -203,8 +204,8 @@ class BrickOps(AbstractOps):
         subvols_list = self.get_subvols(volname, node)
 
         if not dst_brick:
-            _, dst_brick = self.form_brick_cmd(servers, self.brick_roots,
-                                               self.vol_name, 1)
+            _, dst_brick = self.form_brick_cmd(servers, brick_roots,
+                                               volname, 1, True)
 
             if not dst_brick:
                 self.logger.error("Failed to get a new brick to replace")
@@ -231,8 +232,9 @@ class BrickOps(AbstractOps):
 
         # Perform replace brick
         ret = self.replace_brick(node, volname, src_brick, dst_brick, False)
-        if ret['msg']['opRet'] != 0:
+        if ret['msg']['opRet'] != '0':
             self.logger.error(f"Failed to replace brick: {src_brick}")
+            return False
 
         # Delete old brick
         if delete_brick:
@@ -323,10 +325,11 @@ class BrickOps(AbstractOps):
         iter_add = 0
         if add_flag:
             brick_list = self.get_all_bricks(volname, server_list[0])
-            last_brick_num = int(brick_list[-1].split('-')[-1])
-            iter_add = len(brick_list)
-            if last_brick_num >= iter_add:
-                iter_add += 1
+            for brick in brick_list:
+                brick_num = int(brick.split('-')[-1])
+                if iter_add < brick_num:
+                    iter_add = brick_num
+            iter_add = iter_add + 1
 
         for iteration in range(mul_fac):
             if server_iter == len(server_list):
