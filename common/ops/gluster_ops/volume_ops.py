@@ -399,19 +399,19 @@ class VolumeOps(AbstractOps):
                     self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
                     self.volume_mount(server_list[0], volname, mountdir, node)
 
-    def cleanup_volumes(self, node: str, volname: list = None):
+    def cleanup_volumes(self, node: str, vol_name: list = None):
         """
         Cleanup volume will delete the snaps and volumes.
 
         Args:
             nodes (list): List of all nodes ( servers )
         """
-        if isinstance(volname, list):
-            volnames = volname
-        elif volname is None:
+        if isinstance(vol_name, list):
+            volnames = vol_name
+        elif vol_name is None:
             volnames = self.es.get_volnames()
         else:
-            volnames = [volname]
+            volnames = [vol_name]
         for volname in volnames:
             vol_nodes = self.es.get_volume_nodes(volname)
             # Check if the volume exists.
