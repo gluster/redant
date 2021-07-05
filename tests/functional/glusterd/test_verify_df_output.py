@@ -56,20 +56,21 @@ class TestCase(DParentTest):
         if existing_bricks is None:
             raise Exception("Failed to get the bricks list")
         print(existing_bricks)
-        # for brick_to_replace in existing_bricks:
-        #     ret = replace_brick_from_volume(self.mnode, self.volname,
-        #                                     self.servers,
-        #                                     self.all_servers_info,
-        #                                     src_brick=brick_to_replace)
-        #     self.assertTrue(ret,
-        #                     "Replace of %s failed" % brick_to_replace)
-        #     g.log.info("Replace of brick %s successful for volume %s",
-        #                brick_to_replace, self.volname)
+        for brick_to_replace in existing_bricks:
+            ret = (self.redant.
+                   replace_brick_from_volume(self.vol_name,
+                                             self.server_list[0],
+                                             self.server_list,
+                                             src_brick=brick_to_replace,
+                                             brick_roots=self.brick_roots))
+            if not ret:
+                raise Exception(f"Replace of {brick_to_replace} failed")
 
-        #     # Monitor heal completion
-        #     ret = monitor_heal_completion(self.mnode, self.volname)
-        #     self.assertTrue(ret, 'Heal has not yet completed')
-        #     g.log.info('Heal has completed successfully')
+            # Monitor heal completion
+            if not (self.redant.
+                    monitor_heal_completion(self.server_list[0],
+                                            self.vol_name)):
+                raise Exception("Heal has not yet completed")
 
     def _get_mount_size_from_df_h_output(self):
         """ Extracts the mount size from the df -h output"""
@@ -100,36 +101,38 @@ class TestCase(DParentTest):
         # Replace all the bricks and wait till the heal completes
         self._replace_bricks_and_wait_for_heal_completion()
 
-        # # Get df -h output after brick replace
-        # mount_size_after_replace = self._get_mount_size_from_df_h_output()
+        # Get df -h output after brick replace
+        mount_size_after_replace = self._get_mount_size_from_df_h_output()
+        print(initial_mount_size, " ", mount_size_after_replace)
+        # Verify the mount point size remains the same after brick replace
+        if initial_mount_size != mount_size_after_replace:
+            print("The mount sizes before and after replace bricks "
+                            "are not same")
 
-        # # Verify the mount point size remains the same after brick replace
-        # self.assertEqual(initial_mount_size, mount_size_after_replace,
-        #                  "The mount sizes before and after replace bricks "
-        #                  "are not same")
+        # Add bricks
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots, True)
+        if not ret:
+            print("Failed to expand volume")
 
-        # # Add bricks
-        # ret = expand_volume(self.mnode, self.volname, self.servers,
-        #                     self.all_servers_info, force=True)
-        # self.assertTrue(ret, "Failed to add-brick to volume")
+        # Get df -h output after volume expand
+        mount_size_after_expand = self._get_mount_size_from_df_h_output()
 
-        # # Get df -h output after volume expand
-        # mount_size_after_expand = self._get_mount_size_from_df_h_output()
+        # Verify df -h output returns greater value
+        print(mount_size_after_expand," ", initial_mount_size)
+        if mount_size_after_expand <= initial_mount_size:
+            print("The mount size has not increased after expanding")
 
-        # # Verify df -h output returns greater value
-        # self.assertGreater(mount_size_after_expand, initial_mount_size,
-        #                    "The mount size has not increased after expanding")
+        # Remove bricks
+        ret = redant.shrink_volume(self.server_list[0], self.vol_name,
+                                   force=True)
+        if not ret:
+            print("Failed to shrink volume")
 
-        # # Remove bricks
-        # ret = shrink_volume(self.mnode, self.volname, force=True)
-        # self.assertTrue(ret, ("Remove brick operation failed on "
-        #                       "%s", self.volname))
-        # g.log.info("Remove brick operation is successful on "
-        #            "volume %s", self.volname)
+        # Get df -h output after volume shrink
+        mount_size_after_shrink = self._get_mount_size_from_df_h_output()
 
-        # # Get df -h output after volume shrink
-        # mount_size_after_shrink = self._get_mount_size_from_df_h_output()
-
-        # # Verify the df -h output returns smaller value
-        # self.assertGreater(mount_size_after_expand, mount_size_after_shrink,
-        #                    "The mount size has not reduced after shrinking")
+        # Verify the df -h output returns smaller value
+        print(mount_size_after_shrink, " ", mount_size_after_expand)
+        if mount_size_after_expand <= mount_size_after_shrink:
+            print("The mount size has not reduced after shrinking")
