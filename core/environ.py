@@ -143,20 +143,6 @@ class FrameworkEnv:
         if volname not in self.volds.keys():
             raise Exception(f"No such volume called {volname}")
 
-    def _validate_volname_snapname(self, volname: str,
-                                   snapname: str):
-        """
-        A helper function to validate incoming volume name
-        and snapname
-        Arg:
-            volname (str)
-            snapname (str)
-        """
-        self._validate_volname(volname)
-        if snapname not in self.volds[volname]['snap'].keys():
-            raise Exception(f"No such snapshot called {snapname}"
-                            f" for volume {volname}")
-
     def set_new_volume(self, volname: str, brickdata: dict):
         """
         Add a new volume when created to volds.

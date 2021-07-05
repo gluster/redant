@@ -183,8 +183,8 @@ class MachineOps(AbstractOps):
             post_test_lv_dict = self.get_lv_paths_from_servers(server_list)
             diff_dict = {}
             for node in server_list:
-                diff_list = list(set(post_test_lv_dict[node]) ^
-                                 set(pre_test_lv_dict[node]))
+                diff_list = list(set(post_test_lv_dict[node])
+                                 ^ set(pre_test_lv_dict[node]))
                 diff_dict[node] = diff_list
             self.remove_lv_paths_from_servers(diff_dict)
 

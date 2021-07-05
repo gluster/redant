@@ -35,7 +35,8 @@ class DParentTest(metaclass=abc.ABCMeta):
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
-        self.pre_test_lv_paths = self.redant.get_lv_paths_from_servers(self.server_list)
+        self.pre_test_lv_paths = self.redant.get_lv_paths_from_servers(
+            self.server_list)
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, env_obj, log_path: str,

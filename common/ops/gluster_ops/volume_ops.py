@@ -428,16 +428,18 @@ class VolumeOps(AbstractOps):
                         # Transport endpoint error too. But we can just unmount
                         # and remove the values in that scenario.
                         cmd = (f"stat {mount}")
-                        ret = self.execute_abstract_op_node(cmd, mntd['client'],
+                        ret = self.execute_abstract_op_node(cmd,
+                                                            mntd['client'],
                                                             False)
                         transport_error = "Transport endpoint is not connected"
                         if ret['error_code'] != 0:
                             if transport_error not in ret['error_msg']:
                                 continue
-                        # One more scenario we have here is when the directory
-                        # was unmount but the data structure isn't updated. Hence
-                        # the unmout shouldn't be a strict check.
-                        self.volume_unmount(volname, mount, mntd['client'], False)
+                        # One more scenario we have here is when the dir
+                        # was unmount but the data structure isn't updated.
+                        # Hence the unmout shouldn't be a strict check.
+                        self.volume_unmount(
+                            volname, mount, mntd['client'], False)
                         self.execute_abstract_op_node(f"rm -rf {mount}",
                                                       mntd['client'])
 
@@ -564,9 +566,8 @@ class VolumeOps(AbstractOps):
         """
         # pylint: disable=too-many-return-statements
         # Form bricks list to remove-bricks
-        bricks_list_to_remove = (self.form_bricks_list_to_remove_brick(node,
-                                 volname, subvol_num, replica_num,
-                                 **kwargs))
+        bricks_list_to_remove = (self.form_bricks_list_to_remove_brick(
+            node, volname, subvol_num, replica_num, **kwargs))
 
         if bricks_list_to_remove is None:
             self.logger.error("Failed to form bricks list to remove-brick. "

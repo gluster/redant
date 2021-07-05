@@ -282,8 +282,7 @@ class SnapshotOps(AbstractOps):
 
         if ret['msg']['opRet'] != 0:
             return False
-
-         # Start the volume
+# Start the volume
         self.volume_start(volname, node, force=True)
 
         return True
@@ -462,7 +461,7 @@ class SnapshotOps(AbstractOps):
         snap_vol_dict = {}
         for snap in snap_info_dict:
             if snap_info_dict[snap]['snapVolume']['originVolume']['name'] ==\
-                 volname:
+                    volname:
                 temp_dict = copy.deepcopy(snap_info_dict[snap])
                 del temp_dict['snapVolume']['originVolume']
                 snap_vol_dict[snap] = copy.deepcopy(temp_dict)
@@ -584,7 +583,7 @@ class SnapshotOps(AbstractOps):
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def snap_activate(self, snapname: str, node: str, force=False,
-                      excep: bool=True) -> dict:
+                      excep: bool = True) -> dict:
         """
         Method to activate the snapshot.
 
@@ -616,7 +615,7 @@ class SnapshotOps(AbstractOps):
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def snap_deactivate(self, snapname: str, node: str,
-                        excep: bool=True):
+                        excep: bool = True):
         """
         Method to deactivate a given snaphot.
 
@@ -641,7 +640,7 @@ class SnapshotOps(AbstractOps):
         """
         cmd = "ps aux | grep -v grep | grep snapd | awk '{print $2}'"
         ret = self.execute_abstract_op_node(cmd, node, True)
-        snapd_pid = [ pid.strip() for pid in ret['msg']]
+        snapd_pid = [pid.strip() for pid in ret['msg']]
         for pid in snapd_pid:
             cmd = f"kill -9 {pid}"
             self.execute_abstract_op_node(cmd, node)
