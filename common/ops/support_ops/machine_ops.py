@@ -124,7 +124,7 @@ class MachineOps(AbstractOps):
         return False
 
     def hard_terminate(self, server_list: list, client_list: list,
-                       brick_root: dict, pre_test_lv_dict: dict=None):
+                       brick_root: dict, pre_test_lv_dict: dict = None):
         """
         hard terminate is inconsiderate. It will clear out the env
         completely and is to be used with caution. Don't use it inside the
@@ -183,8 +183,8 @@ class MachineOps(AbstractOps):
             post_test_lv_dict = self.get_lv_paths_from_servers(server_list)
             diff_dict = {}
             for node in server_list:
-                diff_list = list(set(post_test_lv_dict[node])^\
-                    set(pre_test_lv_dict[node]))
+                diff_list = list(set(post_test_lv_dict[node]) ^
+                                 set(pre_test_lv_dict[node]))
                 diff_dict[node] = diff_list
             self.remove_lv_paths_from_servers(diff_dict)
 
@@ -332,7 +332,7 @@ class MachineOps(AbstractOps):
 
         for node in nodes:
             ret = self.execute_abstract_op_node(cmd, node)
-            server_path = [ path.strip() for path in ret['msg'] ]
+            server_path = [path.strip() for path in ret['msg']]
             lv_paths[node] = server_path
         return lv_paths
 

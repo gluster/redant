@@ -124,6 +124,7 @@ class DParentTest(metaclass=abc.ABCMeta):
             for (opt, _) in self.redant.es.get_vol_options_all().items():
                 self.redant.reset_volume_option('all', opt,
                                                 self.server_list[0])
+            self.redant.cleanup_volumes(self.server_list[0])
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

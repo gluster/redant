@@ -4,6 +4,7 @@ operations on the enable, disable the features.uss option,
 check for snapd process.
 """
 from common.ops.abstract_ops import AbstractOps
+import copy
 
 
 class SnapshotOps(AbstractOps):
@@ -411,7 +412,8 @@ class SnapshotOps(AbstractOps):
 
     def get_snap_info(self, node: str, excep: bool = True) -> dict:
         """
-        Method to obtain the snap status command output when run in a node
+        Method to obtain the snap status command output when run in a node,
+        and to access the result by snapnames.
 
         Args:
             node (str): Node wherein the command is to be run.
@@ -422,13 +424,7 @@ class SnapshotOps(AbstractOps):
             it isn't.
 
         Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
+            ret: A dictionary consisting of snap info.
         """
         cmd = "gluster snapshot info --xml --mode=script"
         ret = self.execute_abstract_op_node(cmd, node, excep)
@@ -436,9 +432,17 @@ class SnapshotOps(AbstractOps):
         if not excep and ret['msg']['opRet'] != '0':
             return None
 
-        snap_info_list = []
-        # TODO add snap info parsing here.
-        return snap_info_list
+        snap_info_dict = {}
+        snap_info = ret['msg']['snapInfo']['snapshots']['snapshot']
+        if not isinstance(snap_info, list):
+            snap_info_data = [snap_info]
+        else:
+            snap_info_data = snap_info
+        for snap in snap_info_data:
+            temp_name = snap['name']
+            del snap['name']
+            snap_info_dict[temp_name] = copy.deepcopy(snap)
+        return snap_info_dict
 
     def get_snap_info_by_snapname(self, snapname: str, node: str) -> dict:
         """
@@ -451,12 +455,10 @@ class SnapshotOps(AbstractOps):
         Returns:
             dictionary of the snap status or Nonetype object.
         """
-        snap_info_list = self.get_snap_info(node)
-        for snap_info in snap_info_list:
-            if "name" in snap_info:
-                if snap_info["name"] == snapname:
-                    return snap_info
-        return None
+        snap_info_dict = self.get_snap_info(node)
+        if snapname in snap_info_dict.keys():
+            return snap_info_dict[snapname]
+        return {}
 
     def get_snap_info_by_volname(self, volname: str, node: str) -> dict:
         """
@@ -469,9 +471,15 @@ class SnapshotOps(AbstractOps):
         Returns:
             dictionary of the snap status or Nonetype object.
         """
-        snap_info_list = self.get_snap_info(node)
-        # TODO add logic for volume level parsing.
-        return None
+        snap_info_dict = self.get_snap_info(node)
+        snap_vol_dict = {}
+        for snap in snap_info_dict:
+            if snap_info_dict[snap]['snapVolume']['originVolume']['name'] ==\
+                 volname:
+                temp_dict = copy.deepcopy(snap_info_dict[snap])
+                del temp_dict['snapVolume']['originVolume']
+                snap_vol_dict[snap] = copy.deepcopy(temp_dict)
+        return snap_vol_dict
 
     def snap_list(self, node: str, excep: bool = True) -> dict:
         """
@@ -587,3 +595,66 @@ class SnapshotOps(AbstractOps):
         """
         cmd = "gluster snapshot delete all --mode=script --xml"
         return self.execute_abstract_op_node(cmd, node, excep)
+
+    def snap_activate(self, snapname: str, node: str, force=False,
+                      excep: bool=True) -> dict:
+        """
+        Method to activate the snapshot.
+
+        Args:
+            snapname (str): Name of the snapshot to be activated.
+            node (str): Node wherein the command is to be run.
+
+        Optional:
+            force (bool): Default value is False.
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else it
+            isn't.
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        """
+        frce = ''
+        if force:
+            frce = 'force'
+
+        cmd = (f"gluster snapshot activate {snapname} {frce}"
+               " --mode=script --xml")
+        return self.execute_abstract_op_node(cmd, node, excep)
+
+    def snap_deactivate(self, snapname: str, node: str,
+                        excep: bool=True):
+        """
+        Method to deactivate a given snaphot.
+
+        Args:
+            snapname (str): Name of the snapshot to be activated.
+            node (str): Node wherein the command is to be run.
+
+        Optional:
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else it
+            isn't.
+        """
+        cmd = (f"gluster snapshot deactivate {snapname} --mode=script --xml")
+        return self.execute_abstract_op_node(cmd, node, excep)
+
+    def terminate_snapds_on_node(self, node: str) -> dict:
+        """
+        Method to stop snapd processes on the specified node.
+
+        Args:
+            node (str): node wherein the snapd processes have to be stopped
+        """
+        cmd = "ps aux | grep -v grep | grep snapd | awk '{print $2}'"
+        ret = self.execute_abstract_op_node(cmd, node, True)
+        snapd_pid = [ pid.strip() for pid in ret['msg']]
+        for pid in snapd_pid:
+            cmd = f"kill -9 {pid}"
+            self.execute_abstract_op_node(cmd, node)
