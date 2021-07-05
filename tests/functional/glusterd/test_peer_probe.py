@@ -19,8 +19,6 @@
   Validating various cases of peer probe between nodes with
   volume creation on different nodes.
 """
-
-from common.ops.gluster_ops.volume_ops import VolumeOps
 from time import sleep
 from tests.d_parent_test import DParentTest
 

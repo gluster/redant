@@ -399,7 +399,7 @@ class VolumeOps(AbstractOps):
                     self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
                     self.volume_mount(server_list[0], volname, mountdir, node)
 
-    def cleanup_volumes(self, node: str, volname: list=None):
+    def cleanup_volumes(self, node: str, volname: list = None):
         """
         Cleanup volume will delete the snaps and volumes.
 
