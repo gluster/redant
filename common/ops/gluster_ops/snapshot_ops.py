@@ -321,7 +321,7 @@ class SnapshotOps(AbstractOps):
                    " --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def get_snap_status(self, node: str) -> list:
+    def get_snap_status(self, node: str) -> dict:
         """
         Method to get and parse the snapshot status.
 
@@ -329,15 +329,22 @@ class SnapshotOps(AbstractOps):
             node (str): node wherein the command will be run.
 
         Returns:
-            List of snapshot statuses.
+            Dict of snapshot statuses.
         """
-        cmd = "gluster vol snapshot status --xml --mode=script"
+        cmd = "gluster snapshot status --xml --mode=script"
         ret = self.execute_abstract_op_node(cmd, node)
-
-        snap_status_list = []
-        # TODO parsing logic for snap status.
-
-        return snap_status_list
+        ret = ret['msg']['snapStatus']['snapshots']['snapshot']
+        if not isinstance(ret, list):
+            snap_status = [ret]
+        else:
+            snap_status = ret
+        snap_status_dict = {}
+        for snap in snap_status:
+            snap_status_dict[snap['name']] = {}
+            temp_dict = copy.deepcopy(snap)
+            del temp_dict['name']
+            snap_status_dict[snap['name']] = temp_dict
+        return snap_status_dict
 
     def get_snap_status_by_snapname(self, snapname: str, node: str) -> dict:
         """
@@ -351,31 +358,11 @@ class SnapshotOps(AbstractOps):
             Dictionary of the snap status for the said snapshot or Nonetype
             object.
         """
-        snap_status_list = self.get_snap_status(node)
+        snap_status_dict = self.get_snap_status(node)
 
-        for snap_status in snap_status_list:
-            if "name" in snap_status:
-                if snap_status["name"] == snapname:
-                    return snap_status
-        return None
-
-    def get_snap_status_by_volname(self, volname: str, node: str) -> list:
-        """
-        Method to get the snap status for given volume
-
-        Args:
-            volname (str): name of the volume.
-            node (str): node wherein the command is to be executed.
-
-        Returns:
-            List of snapshot status dictionaries.
-        """
-        snap_status_list = self.get_snap_status(node)
-
-        vol_snap_status_list = []
-
-        # TODO parsing logic to be added.
-        return vol_snap_status_list
+        if snapname in snap_status_dict.keys():
+            return snap_status_dict[snapname]
+        return {}
 
     def snap_info(self, node: str, snapname: str = None, volname: str = None,
                   excep: bool = True) -> dict:

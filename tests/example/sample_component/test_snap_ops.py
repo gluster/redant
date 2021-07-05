@@ -43,10 +43,14 @@ class TestCase(DParentTest):
         redant.logger.info(f"Snapd run status : {snap_running_status}")
         redant.snap_activate(self.snap_name, self.server_list[0],
                              force=True)
+        redant.logger.info(redant.snap_list(self.server_list[0]))
+        redant.logger.info(redant.get_snap_status(self.server_list[0]))
         snap_running_status = redant.is_snapd_running(self.vol_name,
                                                       self.server_list[0])
         redant.logger.info(f"Snapd run status : {snap_running_status}")
         redant.snap_deactivate(self.snap_name, self.server_list[0])
+        redant.logger.info(redant.get_snap_status_by_snapname(\
+            self.snap_name, self.server_list[0]))
         redant.disable_uss(self.vol_name, self.server_list[0])
         snap_running_status = redant.is_snapd_running(self.vol_name,
                                                       self.server_list[0])

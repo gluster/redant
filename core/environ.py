@@ -173,8 +173,13 @@ class FrameworkEnv:
                                            "disperse_count": 0,
                                            "arbiter_count": 0,
                                            "redundancy_count": 0,
-                                           "transport": ""},
-                                "snap" : {}}
+                                           "transport": ""}}
+
+    def reset_volds(self):
+        """
+        Method to reset volds to an empty dictionary.
+        """
+        self.volds = {}
 
     def get_volnames(self) -> list:
         """
@@ -475,63 +480,6 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         return self.volds[volname]['started']
-
-    def set_new_snap(self, volname: str, snapname: str):
-        """
-        Method to set a new snap data into the volds.
-
-        Args:
-            volname (str)
-            snapname (str)
-        """
-        self._validate_volname(volname)
-        if snapname not in self.volds[volname]['snap'].keys():
-            self.volds[volname]['snap'][snapname] = {}
-            self.volds[volname]['snap'][snapname]['status'] =\
-                False
-
-    def set_snap_status(self, volname: str, snapname: str,
-                        status: bool):
-        """
-        Method to set the status of snap.
-
-        Args:
-            volname (str)
-            snapname (str)
-            status (bool): If True then status is set to
-            activated. Else Deactivated.
-        """
-        self._validate_volname_snapname(volname, snapname)
-        self.volds[volname]['snap'][snapname]['status'] = status
-
-    def get_snap_status(self, volname: str,
-                        snapname: str) -> bool:
-        """
-        Method to obtain the status of snapshot.
-
-        Args:
-            volname (str)
-            snapname (str)
-
-        Returns:
-            bool value representing snap status.
-        """
-        self._validate_volname_snapname(volname, snapname)
-        return self.volds[volname]['snap'][snapname]['status']
-
-    def remove_snap_data(self, volname: str, snapname: str):
-        """
-        Method to delete a snap data from the snap dict in volds.
-
-        Args:
-            volname (str)
-            snapname (str)
-        """
-        self._validate_volname_snapname(volname, snapname)
-        if len(self.volds[volname]['snaps'].keys()) == 1:
-            self.volds[volname]['snaps'] = {}
-        else:
-            del self.volds[volname]['snaps'][snapname]
 
     def set_vol_option(self, volname: str, options_dict: dict):
         """
