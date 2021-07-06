@@ -5,6 +5,7 @@ systemd changes or maybe a node reboot itself.
 """
 import time
 import os
+import socket
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -269,3 +270,24 @@ class MachineOps(AbstractOps):
             self.logger.error("Failed to reload the daemon")
             return False
         return True
+
+    def convert_fqdn_into_ip(self, dest_node: str, node: str) -> str:
+        """
+        Method to check if the given dest_node is FQDN or IP. If FQDN,
+        it is converted to IP and pushed back.
+
+        Args:
+            dest_node (str): The node whose addressing has to be checked.
+            node (str): A reference node.
+
+        Returns:
+            string value representing the IP of the dest_node.
+        """
+        if dest_node == 'localhost' or dest_node == node:
+            return node
+        else:
+            if not dest_node.replace('.', '').isnumeric():
+                ip_val = socket.gethostbyname(dest_node)
+                return ip_val
+            else:
+                return dest_node
