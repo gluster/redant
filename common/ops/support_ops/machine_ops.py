@@ -5,6 +5,7 @@ systemd changes or maybe a node reboot itself.
 """
 import time
 import os
+import socket
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -269,3 +270,30 @@ class MachineOps(AbstractOps):
             self.logger.error("Failed to reload the daemon")
             return False
         return True
+
+    def convert_hosts_to_ip(self, node_list: list, node: str = None) -> list:
+        """
+        Redant framework works with IP addresses ( especially rexe )
+        hence it makes sense to have a function to handle the conversion
+        a node_list containing hostnames to ip addresses and if there's
+        a localhost term, that is replaced by the node value.
+        Args:
+            node_list (list): List of nodes obtained wherein the node can
+                              be represented by ip or hostname.
+            node (str): The node which is represented by localhost. Has to
+                        be replaced by corresponding IP.
+        Returns:
+            list : list of converted IPs
+        """
+        if not isinstance(node_list, list):
+            node_list = [node_list]
+
+        if 'localhost' in node_list:
+            node_list.remove('localhost')
+            node_list.append(node)
+        for value in node_list:
+            if not value.replace('.', '').isnumeric():
+                ip_val = socket.gethostbyname(value)
+                node_list.remove(value)
+                node_list.append(ip_val)
+        return node_list
