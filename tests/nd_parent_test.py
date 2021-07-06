@@ -97,5 +97,4 @@ class NdParentTest(metaclass=abc.ABCMeta):
                 tb = traceback.format_exc()
                 self.redant.logger.error(e)
                 self.redant.logger.error(tb)
-        self.redant.cleanup_brick_dirs()
         self.redant.deconstruct_connection()

@@ -333,7 +333,6 @@ class VolumeOps(AbstractOps):
 
         # Delete volume for volds only if the command succeded
         if ret['msg']['opRet'] == '0':
-            self.es.add_data_to_cleands(self.es.get_brickdata(volname))
             self.es.remove_volume_data(volname)
 
         return ret
@@ -389,7 +388,6 @@ class VolumeOps(AbstractOps):
             # It seems like something has gone awry, so do a volume
             # cleanup followed by setup volume.
             self.cleanup_volume(volname, server_list[0])
-            self.cleanup_brick_dirs()
             self.setup_volume(volname, server_list[0], vol_param, server_list,
                               brick_root, force=True)
 
@@ -440,7 +438,15 @@ class VolumeOps(AbstractOps):
                     self.execute_abstract_op_node(f"rm -rf {mount}",
                                                   mntd['client'])
             self.volume_stop(volname, node, True)
+
+            # Get the brick list of the volume to delete them
+            brick_list = self.get_all_bricks(volname, node)
+
+            # Delete the volume
             self.volume_delete(volname, node)
+
+            # Delete the bricks
+            self.delete_bricks(brick_list)
 
     def expand_volume(self, node: str, volname: str, server_list: list,
                       brick_root: dict, force: bool = False,
@@ -687,9 +693,6 @@ class VolumeOps(AbstractOps):
             ret = self.delete_bricks(bricks_list_to_remove)
             if not ret:
                 return False
-            for brick in bricks_list_to_remove:
-                node, brick_dir = brick.split(':')
-                self.es.remove_val_from_cleands(node, brick_dir)
 
         dist_count = None
         if 'distribute_count' in kwargs:
