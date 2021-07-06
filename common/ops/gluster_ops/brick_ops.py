@@ -1088,3 +1088,28 @@ class BrickOps(AbstractOps):
                 return True
 
         return False
+
+    def select_volume_bricks_to_bring_offline(self,
+                                              volname: str,
+                                              node: str) -> list:
+        """
+        Randomly selects bricks to bring offline without affecting the cluster
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node on which commands will be executed.
+
+        Returns:
+            list: On success returns a list of bricks bring offline.
+                  If volume doesn't exist returns empty list
+        """
+        volume_bricks_to_bring_offline = []
+
+        # get volume type
+        volume_type_info = self.get_volume_type_info(node, volname)
+        print(volume_type_info)
+        volume_type = volume_type_info['volume_type_info']['typeStr']
+
+        # get subvols
+        subvols_dict = get_subvols(mnode, volname)
+        volume_subvols = subvols_dict['volume_subvols']
