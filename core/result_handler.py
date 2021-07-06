@@ -7,6 +7,7 @@ results in two ways:
 """
 from colorama import Fore, Style
 import xlwt
+import copy
 from xlwt import Workbook
 from prettytable import PrettyTable
 
@@ -333,8 +334,27 @@ class ResultHandler:
         excel_sheet: stores the path of the excel sheet
         """
         test_results = {}
-
         while not result_queue.empty():
+            test_dict = result_queue.get()
+            print(test_dict)
+            tName = list(test_dict.keys())[0]
+            component = test_dict[tName]['component']
+            if component not in test_results.keys():
+                test_results[component] = {}
+            tcNature = test_dict[tName]['tcNature']
+            if tcNature not in test_results[component].keys():
+                test_results[component][tcNature] = {}
+            if tName not in test_results[component][tcNature].keys():
+                test_results[component][tcNature][tName] = {}
+            tVolT = test_dict[tName]['volType']
+            temp_dict = {}
+            temp_dict['testResult'] = test_dict[tName]['testResult']
+            temp_dict['timeTaken'] = test_dict[tName]['timeTaken']
+            test_results[component][tcNature][tName][tVolT] = copy.deepcopy(
+                temp_dict)
+
+        print(test_results)
+        """while not result_queue.empty():
 
             curr_item = result_queue.get()
             key = list(curr_item.keys())[0]
@@ -352,4 +372,4 @@ class ResultHandler:
 
         if excel_sheet is not None:
             cls.store_results_in_excelsheet(
-                excel_sheet, test_results, total_time)
+                excel_sheet, test_results, total_time)"""
