@@ -1096,7 +1096,8 @@ class VolumeOps(AbstractOps):
                         for n_key, n_val in node_i.items():
                             if n_key == 'hostname' and\
                                 n_val in ['Snapshot Daemon', 'Bitrot Daemon',
-                                          'Scrubber Daemon']:
+                                          'Scrubber Daemon',
+                                          'Self-heal Daemon']:
                                 check_flag = True
                             if n_key == 'ports':
                                 port_info = {}
@@ -1107,9 +1108,9 @@ class VolumeOps(AbstractOps):
                                 node_info[n_key] = node
                             elif check_flag and n_key == 'path':
 
-                                ip_val = self.convert_fqdn_into_ip(n_val,
-                                                                   node)
-                                node_info[n_key] = ip_val
+                                ip_val = self.convert_hosts_to_ip(n_val,
+                                                                  node)
+                                node_info[n_key] = ip_val[0]
                                 check_flag = False
                             else:
                                 node_info[n_key] = n_val

@@ -271,23 +271,29 @@ class MachineOps(AbstractOps):
             return False
         return True
 
-    def convert_fqdn_into_ip(self, dest_node: str, node: str) -> str:
+    def convert_hosts_to_ip(self, node_list: list, node: str = None) -> list:
         """
-        Method to check if the given dest_node is FQDN or IP. If FQDN,
-        it is converted to IP and pushed back.
-
+        Redant framework works with IP addresses ( especially rexe )
+        hence it makes sense to have a function to handle the conversion
+        a node_list containing hostnames to ip addresses and if there's
+        a localhost term, that is replaced by the node value.
         Args:
-            dest_node (str): The node whose addressing has to be checked.
-            node (str): A reference node.
-
+            node_list (list): List of nodes obtained wherein the node can
+                              be represented by ip or hostname.
+            node (str): The node which is represented by localhost. Has to
+                        be replaced by corresponding IP.
         Returns:
-            string value representing the IP of the dest_node.
+            list : list of converted IPs
         """
-        if dest_node in ['localhost', node]:
-            return node
-        else:
-            if not dest_node.replace('.', '').isnumeric():
-                ip_val = socket.gethostbyname(dest_node)
-                return ip_val
-            else:
-                return dest_node
+        if not isinstance(node_list, list):
+            node_list = [node_list]
+
+        if 'localhost' in node_list:
+            node_list.remove('localhost')
+            node_list.append(node)
+        for value in node_list:
+            if not value.replace('.', '').isnumeric():
+                ip_val = socket.gethostbyname(value)
+                node_list.remove(value)
+                node_list.append(ip_val)
+        return node_list
