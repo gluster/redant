@@ -1614,10 +1614,10 @@ class VolumeOps(AbstractOps):
             }
         """
         client_quorum_dict = {
-        'volume_quorum_info': {
-            'is_quorum_applicable': False,
-            'quorum_type': None,
-            'quorum_count': None
+            'volume_quorum_info': {
+                'is_quorum_applicable': False,
+                'quorum_type': None,
+                'quorum_count': None
             }
         }
 
@@ -1645,11 +1645,11 @@ class VolumeOps(AbstractOps):
         volume_type_info = self.get_volume_type_info(node, volname)
         volume_type = volume_type_info['volume_type_info']['typeStr']
 
-        if (volume_type == 'Replicate' or
-                volume_type == 'Distributed-Replicate'):
+        if volume_type in ['Replicate', 'Distributed-Replicate']:
             (client_quorum_dict['volume_quorum_info']
                 ['is_quorum_applicable']) = True
-            replica_count = (volume_type_info['volume_type_info']['replicaCount'])
+            replica_count = (volume_type_info['volume_type_info']
+                             ['replicaCount'])
 
             # Case1: Replica 2
             if int(replica_count) == 2:
@@ -1667,13 +1667,12 @@ class VolumeOps(AbstractOps):
                 if quorum_type == 'none':
                     (client_quorum_dict['volume_quorum_info']
                         ['quorum_type']) = 'auto'
-                    quorum_type == 'auto'
-                else:
-                    (client_quorum_dict['volume_quorum_info']
-                        ['quorum_type']) = quorum_type
-                if quorum_type == 'fixed':
+                elif quorum_type == 'fixed':
                     if not quorum_count == '(null)':
                         (client_quorum_dict['volume_quorum_info']
                             ['quorum_count']) = quorum_count
+                else:
+                    (client_quorum_dict['volume_quorum_info']
+                        ['quorum_type']) = quorum_type
 
         return client_quorum_dict

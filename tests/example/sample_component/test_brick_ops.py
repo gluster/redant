@@ -25,8 +25,9 @@ class TestCase(DParentTest):
         10. Get offline bricks list
         """
         brick_list = (redant.
-                      select_volume_bricks_to_bring_offline(self.vol_name,
-                                                            self.server_list[0]))
+                      select_volume_bricks_to_bring_offline(
+                          self.vol_name,
+                          self.server_list[0]))
         ret = redant.bring_bricks_offline(self.vol_name, brick_list)
         if not ret:
             raise Exception(f"{brick_list} still online.")
