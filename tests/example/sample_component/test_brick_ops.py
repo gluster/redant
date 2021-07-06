@@ -4,7 +4,7 @@ get_all_bricks_online
 get_all_bricks_offline
 """
 
-# disruptive;dist-rep,dist,rep
+# disruptive;dist-rep,rep
 
 from tests.d_parent_test import DParentTest
 
@@ -87,6 +87,21 @@ class TestCase(DParentTest):
         if not redant.wait_for_vol_to_come_online(self.vol_name,
                                                   self.server_list[0]):
             raise Exception(f"Volume {self.vol_name} couldn't be started.")
+
+        existing_bricks = redant.get_all_bricks(self.vol_name,
+                                                self.server_list[0])
+        if existing_bricks is None:
+            raise Exception("Failed to get the bricks list")
+
+        for brick_to_replace in existing_bricks:
+            ret = (redant.
+                   replace_brick_from_volume(self.vol_name,
+                                             self.server_list[0],
+                                             self.server_list,
+                                             src_brick=brick_to_replace,
+                                             brick_roots=self.brick_roots))
+            if not ret:
+                raise Exception(f"Replace of {brick_to_replace} failed")
 
         # Brick additions
         if self.volume_type != 'dist':
