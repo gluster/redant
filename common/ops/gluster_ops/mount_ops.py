@@ -42,6 +42,9 @@ class MountOps(AbstractOps):
         cmd = f"mount.glusterfs {server}:/{volname} {path}"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
+        if not excep and ret['error_code'] != 0:
+            return ret
+
         self.es.add_new_mountpath(volname, node, path)
         return ret
 
