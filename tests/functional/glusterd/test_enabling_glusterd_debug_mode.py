@@ -37,7 +37,7 @@ class TestCase(DParentTest):
 
         # Reverting log level in /usr/lib/systemd/system/glusterd.service
         # to INFO
-        glusterd_file = "/usr/local/lib/systemd/system/glusterd.service"
+        glusterd_file = "/usr/lib/systemd/system/glusterd.service"
         ret = self.redant.find_and_replace_in_file(self.server_list[0],
                                                    'LOG_LEVEL=DEBUG',
                                                    'LOG_LEVEL=INFO',
@@ -77,7 +77,7 @@ class TestCase(DParentTest):
         Testcase:
         1. Stop glusterd.
         2. Change log level to DEBUG in
-           /usr/local/lib/systemd/system/glusterd.service.
+           /usr/lib/systemd/system/glusterd.service.
         3. Remove glusterd log
         4. Start glusterd
         5. Issue some gluster commands
@@ -86,9 +86,9 @@ class TestCase(DParentTest):
         # Stop glusterd
         redant.stop_glusterd(self.server_list[0])
 
-        # Change log level in /usr/local/lib/systemd/system/glusterd.service
+        # Change log level in /usr/lib/systemd/system/glusterd.service
         # to DEBUG
-        glusterd_file = "/usr/local/lib/systemd/system/glusterd.service"
+        glusterd_file = "/usr/lib/systemd/system/glusterd.service"
         ret = redant.find_and_replace_in_file(self.server_list[0],
                                               'LOG_LEVEL=INFO',
                                               'LOG_LEVEL=DEBUG',
