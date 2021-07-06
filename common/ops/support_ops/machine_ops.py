@@ -283,7 +283,7 @@ class MachineOps(AbstractOps):
         Returns:
             string value representing the IP of the dest_node.
         """
-        if dest_node == 'localhost' or dest_node == node:
+        if dest_node in ['localhost', node]:
             return node
         else:
             if not dest_node.replace('.', '').isnumeric():
