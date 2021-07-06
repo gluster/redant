@@ -130,6 +130,8 @@ class DParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-        self.redant.hard_terminate(self.server_list, self.client_list,
-                                   self.brick_roots, self.pre_test_lv_paths)
-        self.redant.deconstruct_connection()
+            self.redant.hard_terminate(self.server_list, self.client_list,
+                                       self.brick_roots,
+                                       self.pre_test_lv_paths)
+        finally:
+            self.redant.deconstruct_connection()

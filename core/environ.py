@@ -161,11 +161,13 @@ class FrameworkEnv:
                                            "redundancy_count": 0,
                                            "transport": ""}}
 
-    def reset_volds(self):
+    def reset_ds(self):
         """
-        Method to reset volds to an empty dictionary.
+        Method to reset the DSs.
         """
         self.volds = {}
+        self.cleands = {}
+        self.clusteropt = {}
 
     def get_volnames(self) -> list:
         """
