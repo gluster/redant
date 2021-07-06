@@ -193,6 +193,8 @@ class MachineOps(AbstractOps):
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
+        self.es.reset_volds()
+
     def check_os(self, os_name: str, os_version: str, nodes: str):
         """
         Checks the os release and compares the
