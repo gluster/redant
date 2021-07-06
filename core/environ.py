@@ -131,7 +131,6 @@ class FrameworkEnv:
         current state of the environment used to run the framework.
         """
         self.volds = {}
-        self.cleands = {}
         self.clusteropt = {}
 
     def _validate_volname(self, volname: str):
@@ -387,14 +386,12 @@ class FrameworkEnv:
 
     def remove_bricks_from_brickdata(self, volname: str, brick_data: dict):
         """
-        Method to remove the brick brickdata and add it to the cleands
-        dictionary.
+        Method to remove the brick brickdata
         """
         self._validate_volname(volname)
         for node in brick_data:
             for brick in brick_data[node]:
                 self.volds[volname]["brickdata"][node].remove(brick)
-        self.add_data_to_cleands(brick_data)
 
     def get_brickdata(self, volname: str) -> dict:
         """
@@ -555,50 +552,6 @@ class FrameworkEnv:
         elif self.volds[volname]['options'] != {} and \
                 option in self.volds[volname]['options']:
             del self.volds[volname]['options'][option]
-
-    def add_data_to_cleands(self, brickdata: dict):
-        """
-        Method to store the bricks to be cleaned up per node. This
-        is to be accessed when the TC ends.
-        Arg:
-            brickdata (dict) : A dictionary containing keys of node IPs
-                               and the corresponding values being list of
-                               brick paths.
-        """
-        for node in brickdata:
-            if node not in list(self.cleands):
-                self.cleands[node] = []
-            self.cleands[node] += brickdata[node]
-
-    def remove_val_from_cleands(self, node: str, brick_dir: str):
-        """
-        remove a specific brick_dir from the node list.
-        Args:
-            node (str)
-            brick_dir (str)
-        """
-        if len(self.cleands[node]) == 1:
-            del self.cleands[node]
-        else:
-            self.cleands[node].remove(brick_dir)
-
-    def get_cleands_data(self, node: list = None) -> dict:
-        """
-        Method to obtain the cleands values pertaining to a node
-        or all nodes.
-        Arg:
-            node (list) : Can be None or list of nodes.
-        Returns:
-            A dictionary of bricks to be cleaned for a node.
-        """
-        if node is None:
-            return copy.deepcopy(self.cleands)
-        ret_val = {}
-        for n in node:
-            if n not in self.cleands.keys():
-                raise Exception(f"No data for node {n}")
-            ret_val[n] = self.cleands[n]
-        return ret_val
 
     def get_volume_nodes(self, volname: str):
         """

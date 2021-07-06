@@ -99,17 +99,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.form_brick_cmd(self.server_list, self.brick_root, self.vol_name, mul_factor, True)
 
-6) **cleanup_brick_dirs**<br>
-		Function for clearing out all the directory paths present in the cleands data structure.
-
-		Args:
-			None
-		Returns:
-			None
-		Example:
-			self.cleanup_brick_dirs()
-
-7) **are_bricks_offline**<br>
+6) **are_bricks_offline**<br>
 		This function checks if the given list of bricks are offline.
 
 		Args:
@@ -122,7 +112,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			redant.are_bricks_offline(self.vol_name, bricks_list, self.server_list[0])
 
-8) **check_if_bricks_list_changed**<br>
+7) **check_if_bricks_list_changed**<br>
 		Function checks if the bricks list changed. Basically, compares the bricks list with the bricks attained from volume info.
 
  		Args:
@@ -135,7 +125,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			redant.check_if_bricks_list_changed(bricks_list, self.vol_name, self.server_list[0])
 
-9) **get_all_bricks**<br>
+8) **get_all_bricks**<br>
 		Function to get the list of all the bricks of the specified volume.
 
 		Args:
@@ -146,7 +136,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.get_all_bricks(self.vol_name, self.server_list[0])
 
-10) **get_online_bricks_list**<br>
+9) **get_online_bricks_list**<br>
 		Function to get the list of all bricks which are online.
 
 		Args:
@@ -157,7 +147,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			online_list = self.get_online_bricks_list(self.vol_name, self.server_list[2])
 
-11) **get_offline_bricks_list**<br>
+10) **get_offline_bricks_list**<br>
 		Function to get the list of all bricks which are offline.
 
 		Args:
@@ -168,7 +158,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			offline_list = self.get_offline_bricks_list(self.vol_name, self.server_list[2])
 
-12) **bring_bricks_offline**<br>
+11) **bring_bricks_offline**<br>
 		Function to bring the given seet of bricks offline.
 
 		Args:
@@ -180,7 +170,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.bring_bricks_offline(self.volname, self.brick_list[2:4])
 
-13) **bring_bricks_online**<br>
+12) **bring_bricks_online**<br>
 		Function to bring the given seet of bricks online.
 
 		Args:
@@ -192,7 +182,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.bring_bricks_offline(self.volname, self.brick_list[2:4])
 
-14) **wait_for_bricks_to_go_offline**<br>
+13) **wait_for_bricks_to_go_offline**<br>
 		Function to wait till a given set of bricks go offline
 
 		Args:
@@ -204,7 +194,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.wait_for_bricks_to_go_offline(self.vol_name, self.brick_list, timeout)
 
-15) **wait_for_bricks_to_come_online**<br>
+14) **wait_for_bricks_to_come_online**<br>
 		Function to wait till a given set of bricks come online
 
 		Args:
@@ -217,7 +207,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			self.wait_for_bricks_to_come_online(self.volname, self.server_list, self.brick_list, timeout)
 
-16) **replace_brick_from_volume**<br>
+15) **replace_brick_from_volume**<br>
 		Function to replace a faulty brick from a volume.
 
 		Args:
@@ -241,7 +231,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 											 brick_to_replace,
 											 new_brick_to_replace)
 
-17) **are_bricks_online**<br>
+16) **are_bricks_online**<br>
 		Function to check if the given list of bricks are online.
 
 		Args:
@@ -256,7 +246,7 @@ Remove brick does the opposite of add_brick operation and that is it removes exi
 		Example:
 			redant.are_bricks_online(self.vol_name, bricks_list, self.server_list[0])
 
-18) **get_brick_processes_count**<br>
+17) **get_brick_processes_count**<br>
 		This function helps in getting the brick process count for a given node.
 
         Args:

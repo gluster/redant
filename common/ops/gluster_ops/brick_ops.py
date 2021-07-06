@@ -238,9 +238,9 @@ class BrickOps(AbstractOps):
 
         # Delete old brick
         if delete_brick:
-            brick_node, brick_path = src_brick.split(':')
-            brick_dict_remove = {brick_node: [brick_path]}
-            self.es.add_data_to_cleands(brick_dict_remove)
+            ret = self.delete_bricks(src_brick)
+            if not ret:
+                return False
 
         return True
 
@@ -592,17 +592,6 @@ class BrickOps(AbstractOps):
                 bricks_list_to_remove.extend(random.choice(subvols_list))
 
         return list(set(bricks_list_to_remove))
-
-    def cleanup_brick_dirs(self):
-        """
-        This function requests for the cleands and clears the brick dirs which
-        have been populated in it.
-        """
-        cleands_val = list(self.es.get_cleands_data().items())
-        for (node, b_dir_l) in cleands_val:
-            for b_dir in b_dir_l:
-                self.execute_abstract_op_node(f"rm -rf {b_dir}", node)
-                self.es.remove_val_from_cleands(node, b_dir)
 
     def are_bricks_offline(self, volname: str,
                            bricks_list: list, node: str,
@@ -1045,6 +1034,9 @@ class BrickOps(AbstractOps):
             bool : True if all the bricks are deleted. False, otherwise.
 
         """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
         _rc = True
         for brick in bricks_list:
             brick_node, brick_path = brick.split(":")

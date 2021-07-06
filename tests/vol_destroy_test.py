@@ -31,4 +31,3 @@ class VolDestroy(LazyParentTest):
         """
         volume_nodes = self.redant.es.get_volume_nodes(self.vol_name)
         self.redant.cleanup_volume(self.vol_name, volume_nodes[0])
-        redant.cleanup_brick_dirs()
