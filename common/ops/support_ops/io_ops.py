@@ -1065,3 +1065,23 @@ class IoOps(AbstractOps):
                                   f"on {result['node']}")
                 return False
         return True
+
+    def get_pathinfo(self, fqpath: str, node: str) -> dict:
+        """
+        Get pathinfo for a remote file.
+
+        Args:
+            fqpath (str): The fully-qualified path to the file.
+            node (str): The hostname/ip of the remote system.
+
+        Returns:
+            A dictionary of pathinfo data for a remote file. None on fail.
+        """
+        pathinfo = {}
+        pathinfo['raw'] = self.get_fattr(fqpath,
+                                         'trusted.glusterfs.pathinfo',
+                                         node, encode="text")
+        pathinfo['brickdir_paths'] = re.findall(r".*?POSIX.*?:(\S+)\>",
+                                                pathinfo['raw'])
+
+        return pathinfo
