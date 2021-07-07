@@ -1644,7 +1644,7 @@ class VolumeOps(AbstractOps):
         # set the quorum info
         volume_type_info = self.get_volume_type_info(node, volname)
 
-        if volume_type_info == None:
+        if volume_type_info is None:
             return client_quorum_dict
 
         volume_type = volume_type_info['volume_type_info']['typeStr']

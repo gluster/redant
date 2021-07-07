@@ -1212,7 +1212,7 @@ class BrickOps(AbstractOps):
 
         # get volume type
         volume_type_info = self.get_volume_type_info(node, volname)
-        if volume_type_info == None:
+        if volume_type_info is None:
             return None
         volume_type = volume_type_info['volume_type_info']['typeStr']
 
