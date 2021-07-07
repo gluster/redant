@@ -1080,8 +1080,7 @@ class IoOps(AbstractOps):
         pathinfo = {}
         pathinfo['raw'] = self.get_fattr(fqpath,
                                          'trusted.glusterfs.pathinfo',
-                                         node,
-                                         encode="text")
+                                         node, encode="text")
         pathinfo['brickdir_paths'] = re.findall(r".*?POSIX.*?:(\S+)\>",
                                                 pathinfo['raw'])
 
