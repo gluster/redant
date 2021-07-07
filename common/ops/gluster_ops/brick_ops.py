@@ -1128,7 +1128,7 @@ class BrickOps(AbstractOps):
                     self.logger.error("Quorum type is 'fixed' for"
                                       " the volume. But Quorum "
                                       "count not specified. Invalid Quorum")
-                    return list_of_bricks_to_bring_offline
+                    return None
                 else:
                     offline_bricks_limit = (
                         int(replica_count) - int(quorum_count))
@@ -1140,8 +1140,8 @@ class BrickOps(AbstractOps):
                 offline_bricks_limit = int(replica_count) - 1
 
             else:
-                self.logger.errorf(f"Invalid Quorum Type : {quorum_type}")
-                return list_of_bricks_to_bring_offline
+                self.logger.error(f"Invalid Quorum Type : {quorum_type}")
+                return None
 
             for subvol in subvols_list:
                 random.shuffle(subvol)
@@ -1173,7 +1173,7 @@ class BrickOps(AbstractOps):
 
         Returns:
             list: List of bricks that can be brought offline without
-                  affecting the cluster.On any failure return empty list.
+                  affecting the cluster.On any failure return None.
         """
         list_of_bricks_to_bring_offline = []
         for subvol in subvols_list:
@@ -1187,6 +1187,9 @@ class BrickOps(AbstractOps):
 
             # Append the list with selected bricks to bring offline.
             list_of_bricks_to_bring_offline.extend(bricks_to_bring_offline)
+
+            if list_of_bricks_to_bring_offline == []:
+                return None
 
         return list_of_bricks_to_bring_offline
 

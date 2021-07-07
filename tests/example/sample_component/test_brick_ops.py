@@ -28,13 +28,16 @@ class TestCase(DParentTest):
                       select_volume_bricks_to_bring_offline(
                           self.vol_name,
                           self.server_list[0]))
+        if brick_list is None:
+            raise Exception("Failed to select volume bricks to"
+                            " bring offline")
         ret = redant.bring_bricks_offline(self.vol_name, brick_list)
         if not ret:
             raise Exception(f"{brick_list} still online.")
 
-        ret = redant.get_online_bricks_list(self.vol_name,
-                                            self.server_list[0])
-        redant.logger.info(f"Online bricks:{ret}")
+        if not redant.are_bricks_offline(self.vol_name,
+                                         brick_list, self.server_list[0]):
+            raise Exception(f"{brick_list} is not offline.")
 
         ret = redant.bring_bricks_online(self.vol_name, self.server_list,
                                          brick_list)
@@ -77,7 +80,6 @@ class TestCase(DParentTest):
         redant.start_glusterd(self.server_list[1])
 
         if not redant.wait_for_glusterd_to_start(self.server_list[1]):
-            # if not redant.is_glusterd_running(self.server_list[1]):
             raise Exception(f"Glusterd not started on {self.server_list[1]}")
 
         redant.logger.info(f"Started glusterd on {self.server_list[1]}")
