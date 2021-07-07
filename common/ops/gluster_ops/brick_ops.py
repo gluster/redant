@@ -1206,12 +1206,14 @@ class BrickOps(AbstractOps):
 
         Returns:
             list: On success returns a list of bricks bring offline.
-                  If volume doesn't exist returns empty list
+                  If volume doesn't exist returns None.
         """
         volume_bricks_to_bring_offline = []
 
         # get volume type
         volume_type_info = self.get_volume_type_info(node, volname)
+        if volume_type_info == None:
+            return None
         volume_type = volume_type_info['volume_type_info']['typeStr']
 
         # get subvols
@@ -1249,4 +1251,6 @@ class BrickOps(AbstractOps):
                 self.get_bricks_to_bring_offline_from_disperse_volume(
                     volume_subvols, volume_redundancy_count))
 
+        if volume_bricks_to_bring_offline == []:
+            return None
         return volume_bricks_to_bring_offline
