@@ -55,10 +55,11 @@ class TestCase(DParentTest):
         if ret['error_msg'] != f'Volume {self.vol_name} is not started\n':
             raise Exception("Volume status erraneous")
 
-        try:
-            redant.get_volume_status(self.vol_name, self.server_list[0])
-        except:
-            redant.logger.info("Volume hasn't started hence no status for it.")
+        ret = redant.get_volume_status(self.vol_name, self.server_list[0],
+                                       excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Volume status should have failed as"
+                            " the volume is not started")
 
         # Start the volume
         redant.volume_start(self.vol_name, self.server_list[0])

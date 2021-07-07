@@ -92,17 +92,25 @@ class TestCase(DParentTest):
         if not ret:
             raise Exception("Unexpected: Server quorum is met, "
                             "Few bricks are up")
-        try:
-            mul_factor = 1
-            _, br_cmd = redant.form_brick_cmd(self.server_list,
-                                              self.brick_roots, self.vol_name,
-                                              mul_factor, True)
-            redant.add_brick(self.vol_name, br_cmd, self.server_list)
-        except Exception as error:
-            redant.logger.info(f"Add brick failed as expected: {error}")
 
+        # try add brick operation, which should fail
+        mul_factor = 1
+        _, br_cmd = redant.form_brick_cmd(self.server_list,
+                                          self.brick_roots, self.vol_name,
+                                          mul_factor, True)
+        ret = redant.add_brick(self.vol_name, br_cmd, self.server_list[0],
+                               excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Add brick should have failed")
+
+        # confirm that, newly added brick is not part of volume
         ret = redant.check_if_bricks_list_changed(all_bricks, self.vol_name,
                                                   self.server_list[0])
 
         if ret:
             raise Exception("Unexpected: Bricks were added.")
+
+        # set cluster.server-quorum-type as none
+        redant.set_volume_options(self.vol_name,
+                                  {'cluster.server-quorum-type': 'none'},
+                                  self.server_list[0])

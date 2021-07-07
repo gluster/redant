@@ -48,15 +48,16 @@ class TestCase(DParentTest):
                                   mount_det[0]['client'])
 
         # Mounting a volume
-        try:
-            redant.volume_mount(self.server_list[0], self.vol_name,
-                                mount_det[0]['mountpath'],
-                                mount_det[0]['client'])
-        except Exception as error:
-            if is_allowed:
-                raise Exception from error
-            else:
-                redant.logger.info(f"Expected: {error}")
+        ret = redant.volume_mount(self.server_list[0], self.vol_name,
+                                  mount_det[0]['mountpath'],
+                                  mount_det[0]['client'], False)
+
+        if is_allowed and ret['error_code'] != 0:
+            raise Exception("Unexpected: Volume mount failed. "
+                            f"Error: {ret['error_msg']}")
+
+        elif not is_allowed and ret['error_code'] == 0:
+            raise Exception("Unexpected: Volume mount should have failed")
 
     def _check_validate_test(self, redant):
         """
