@@ -71,7 +71,7 @@ class TestCase(DParentTest):
         new_servers = self.server_list[:]
         new_servers.remove(node_on_glusterd_to_stop)
 
-        ret = redant.profile_start(self.vol_name, choice(new_servers))
+        ret = redant.profile_start(self.vol_name, choice(new_servers), False)
         if ret['error_code'] == 0:
             raise Exception("Unexpected: Profile start should have failed")
 
