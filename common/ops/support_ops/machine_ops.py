@@ -266,7 +266,7 @@ class MachineOps(AbstractOps):
         network_status = self.execute_command_async("sh test.sh", node)
         return network_status
 
-    def reload_glusterd_service(self, node):
+    def reload_glusterd_service(self, node: str) -> bool:
         """
         Reload the Daemons when unit files are changed.
 
@@ -329,8 +329,8 @@ class MachineOps(AbstractOps):
         cmd = "lvs --noheadings -o lv_path | awk '{if ($1) print $1}'"
         lv_paths = {}
 
-        if not isinstance(node, list):
-            node = [node]
+        if not isinstance(nodes, list):
+            nodes = [nodes]
 
         for node in nodes:
             ret = self.execute_abstract_op_node(cmd, node)
@@ -350,4 +350,3 @@ class MachineOps(AbstractOps):
             for lv_path in lv_dict[node]:
                 cmd = (f"lvremove {lv_path} --force")
                 self.execute_abstract_op_node(cmd, node)
-

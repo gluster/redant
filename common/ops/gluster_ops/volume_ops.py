@@ -405,6 +405,10 @@ class VolumeOps(AbstractOps):
 
         Args:
             nodes (list): List of all nodes ( servers )
+
+        Optional:
+            vol_name (list): List of volumes for which cleanup
+            will be performed. By default it is None.
         """
         if isinstance(vol_name, list):
             volnames = vol_name

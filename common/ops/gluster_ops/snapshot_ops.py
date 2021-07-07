@@ -282,7 +282,8 @@ class SnapshotOps(AbstractOps):
 
         if ret['msg']['opRet'] != 0:
             return False
-# Start the volume
+
+        # Start the volume
         self.volume_start(volname, node, force=True)
 
         return True
