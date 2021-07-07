@@ -5,7 +5,6 @@ Brick ops module deals with the functions related to brick related operations.
 
 from time import sleep
 import random
-from math import floor
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -1109,7 +1108,7 @@ class BrickOps(AbstractOps):
                               - is_quorum_applicable, quorum_type, quorum_count
         Returns:
             list: List of bricks that can be brought offline without
-                  affecting the cluster. On any failure return empty list.
+                  affecting the cluster. On any failure returns None.
         """
         list_of_bricks_to_bring_offline = []
         try:
@@ -1119,7 +1118,7 @@ class BrickOps(AbstractOps):
         except KeyError:
             self.logger.error("Unable to get the proper quorum data "
                               f"from quorum info:{quorum_info}")
-            return list_of_bricks_to_bring_offline
+            return None
 
         # offline_bricks_limit: Maximum Number of bricks that can be offline
         # without affecting the cluster
@@ -1135,7 +1134,7 @@ class BrickOps(AbstractOps):
                         int(replica_count) - int(quorum_count))
 
             elif 'auto' in quorum_type:
-                offline_bricks_limit = floor(int(replica_count) // 2)
+                offline_bricks_limit = int(replica_count) // 2
 
             elif quorum_type is None:
                 offline_bricks_limit = int(replica_count) - 1
