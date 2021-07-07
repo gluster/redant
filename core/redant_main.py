@@ -15,7 +15,7 @@ from environ import environ, FrameworkEnv
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
-from result_handler import ResultHandler
+from result_handler import ResultHandler, handle_results
 from common.relog import Logger
 sys.path.insert(1, ".")
 sys.path.insert(1, "./common")
@@ -128,9 +128,13 @@ def main():
 
     # Environment cleanup. TBD.
     total_time = time.time() - start
-    ResultHandler.handle_results(
-        result_queue, args.result_path, total_time, args.excel_sheet)
+    #ResultHandler.handle_results(
+    #    result_queue, args.result_path, total_time, args.excel_sheet)
 
+    if args.excel_sheet is None:
+        handle_results(result_queue, total_time)
+    else:
+        handle_results(result_queue, total_time, args.excel_sheet)
     env_set.teardown_env()
 
 
