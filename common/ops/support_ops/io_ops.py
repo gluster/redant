@@ -1112,27 +1112,36 @@ class IoOps(AbstractOps):
 
         return True
 
-    def remove_file(self, fqpath: str, node: str, force: bool = False) -> bool:
-        """Removes a file.
+    def list_files(self, node: str, dir_path: str, parse_str: str = "",
+                   user: str = "root") -> list:
+        """
+        This module list files from the given file path
+
+        Example:
+            list_files("/root/dir1/")
 
         Args:
-            fqpath (str): The fully-qualified path to the file.
-            node (str): The hostname/ip of the remote system.
+            node (str): Node on which cmd has to be executed.
+            dir_path (str): directory path name
 
         Optional:
-            force (bool): Remove directory with recursive file delete.
+            parse_str (str): sub string of the filename to be fetched
+            user (str): username. Defaults to 'root' user.
+
         Returns:
-            True on success. False on failure.
+            list: files with absolute name
+            NoneType: None if command execution fails, parse errors.
         """
-        command_list = ['rm']
-        if force:
-            command_list.append('-f')
-        command_list.append(fqpath)
-        ret = self.execute_abstract_op_node(' '.join(command_list),
-                                            node, False)
+        if parse_str == "":
+            cmd = f"find {dir_path} -type f"
+        else:
+            cmd = f"find {dir_path} -type f | grep {parse_str}"
 
+        # TODO: add user as currently it defaults to root in the
+        # framework
+        ret = self.execute_abstract_op_node(cmd, node)
         if ret['error_code'] != 0:
-            self.logger.error("File remove failed")
-            return False
-
-        return True
+            self.logger.error("Unable to get the list of files on path "
+                              f"{dir_path} on node {node} for user {user}")
+            return None
+        return ret['msg']
