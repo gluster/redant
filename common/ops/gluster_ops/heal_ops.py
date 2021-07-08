@@ -576,7 +576,7 @@ class HealOps:
             return False
         return True
 
-    def trigger_heal_full(self, volname: str, node: str):
+    def trigger_heal_full(self, volname: str, node: str) -> bool:
         """Triggers heal 'full' on the volume.
 
         Args:
@@ -590,11 +590,13 @@ class HealOps:
         ret = self.execute_abstract_op_node(cmd, node, False)
 
         if ret['error_code'] != 0:
+            self.logger.error("Unable to trigger heal full"
+                              f" on volume {volname}")
             return False
 
         return True
 
-    def heal_info_heal_failed(self, volname: str, node: str):
+    def heal_info_heal_failed(self, volname: str, node: str) -> dict:
         """Get entries on which heal failed for the volume by executing:
             'gluster volume heal <volname> info heal-failed'
 
@@ -604,17 +606,17 @@ class HealOps:
 
         Returns:
             ret: A dictionary consisting
-                    - Flag : Flag to check if connection failed
-                    - msg : message
-                    - error_msg: error message
-                    - error_code: error code returned
-                    - cmd : command that got executed
-                    - node : node on which the command got executed
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
         """
         cmd = f"gluster volume heal {volname} info heal-failed"
         return self.execute_abstract_op_node(cmd, node)
 
-    def heal_info_healed(self, volname: str, node: str):
+    def heal_info_healed(self, volname: str, node: str) -> dict:
         """
         Get healed entries information for the volume by executing:
         'gluster volume heal <volname> info healed'
@@ -625,12 +627,97 @@ class HealOps:
 
         Returns:
         ret: A dictionary consisting
-                    - Flag : Flag to check if connection failed
-                    - msg : message
-                    - error_msg: error message
-                    - error_code: error code returned
-                    - cmd : command that got executed
-                    - node : node on which the command got executed
+            - Flag : Flag to check if connection failed
+            - msg : message
+            - error_msg: error message
+            - error_code: error code returned
+            - cmd : command that got executed
+            - node : node on which the command got executed
         """
         cmd = f"gluster volume heal {volname} info healed"
         return self.execute_abstract_op_node(cmd, node)
+
+    def enable_granular_heal(self, volname: str, node: str) -> bool:
+        """Enable granular heal on a given volume
+
+        Args:
+        volname(str): Name of the volume on which granular
+                      heal is to be enabled
+        node(str): Node on which command has to be exectued
+
+        Returns:
+        bool: True if granular heal is enabled
+              successfully else False.
+        """
+        cmd = (f"gluster volume heal {volname}"
+               " granular-entry-heal enable")
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Unable to enable granular-entry-heal"
+                              f"on volume {volname}")
+            return False
+        return True
+
+    def disable_granular_heal(self, volname: str,
+                              node: str) -> bool:
+        """
+        Diable granular heal on a given volume
+
+        Args:
+        volname(str): Name of the volume on which granular heal
+                      is to be disabled
+        node(str): Node on which command will be exectued
+
+        Returns:
+        bool: True if granular heal is disabled
+              successfully else False.
+        """
+        cmd = f"gluster volume heal {volname} granular-entry-heal disable"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret:
+            self.logger.error("Unable to disable granular-entry-heal"
+                              f"on volume {volname}")
+            return False
+        return True
+
+    def bring_self_heal_daemon_process_offline(self, nodes: str):
+        """
+        Bring the self-heal daemon process offline for the nodes
+
+        Args:
+            nodes ( str|list ) : Node/Nodes of the cluster to bring
+                                self-heal daemon process offline
+
+        Returns:
+            bool : True on successfully bringing self-heal daemon
+                   process offline. False otherwise
+        """
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        failed_nodes = []
+
+        self.logger.info("Starting to get self heal daemon"
+                         f"process on nodes {nodes}")
+        ret, pids = self.get_self_heal_daemon_pid(nodes)
+        if not ret:
+            self.logger.error("Either no self heal daemon process "
+                              "found or more than one self heal"
+                              f"daemon process found : {pids}")
+            return False
+
+        for node in pids:
+            pid = pids[node]
+            kill_cmd = f"kill -SIGKILL {pid}"
+            ret = self.execute_abstract_op_node(kill_cmd, node)
+            if ret['error_code'] != 0:
+                self.logger.error("Unable to kill the self heal daemon "
+                                  f"process on {node}")
+                failed_nodes.append(node)
+
+        if failed_nodes:
+            self.logger.info("Unable to kill the self heal daemon "
+                             f"process on nodes {nodes}")
+            return False
+
+        return True

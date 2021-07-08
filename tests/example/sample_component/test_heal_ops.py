@@ -34,6 +34,8 @@ class TestCase(NdParentTest):
 
     def run_test(self, redant):
         """
+        * Trigger full heal
+        * Bring self heal daemon process offline
         * Disable self heal daemon
         * Re-enable self heal daemon
         * Add 100 directories in client mountpoint
@@ -52,6 +54,8 @@ class TestCase(NdParentTest):
         * Check heal info for split brain
         * Check if volume in split brain.
         """
+        redant.trigger_heal_full(self.vol_name, self.server_list[0])
+        redant.bring_self_heal_daemon_process_offline(self.server_list)
         if not (redant.
                 disable_self_heal_daemon(self.vol_name,
                                          self.server_list[0])):
