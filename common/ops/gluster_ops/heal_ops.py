@@ -575,3 +575,62 @@ class HealOps:
         if set(brick_list) != set(brick_list_server_vol):
             return False
         return True
+
+    def trigger_heal_full(self, volname: str, node: str):
+        """Triggers heal 'full' on the volume.
+
+        Args:
+            volname (str): Name of the volume
+            node (str): Node on which commands are executed
+
+        Returns:
+            bool : True if heal is triggered successfully. False otherwise.
+        """
+        cmd = f"gluster volume heal {volname} full"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+
+        if ret['error_code'] != 0:
+            return False
+
+        return True
+
+    def heal_info_heal_failed(self, volname: str, node: str):
+        """Get entries on which heal failed for the volume by executing:
+            'gluster volume heal <volname> info heal-failed'
+
+        Args:
+            volname (str): Name of the volume
+            node (str): Node on which commands are executed.
+
+        Returns:
+            ret: A dictionary consisting
+                    - Flag : Flag to check if connection failed
+                    - msg : message
+                    - error_msg: error message
+                    - error_code: error code returned
+                    - cmd : command that got executed
+                    - node : node on which the command got executed
+        """
+        cmd = f"gluster volume heal {volname} info heal-failed"
+        return self.execute_abstract_op_node(cmd, node)
+
+    def heal_info_healed(self, volname: str, node: str):
+        """
+        Get healed entries information for the volume by executing:
+        'gluster volume heal <volname> info healed'
+
+        Args:
+            volname (str): Name of the volume
+            node (str): Node on which commands are executed.
+
+        Returns:
+        ret: A dictionary consisting
+                    - Flag : Flag to check if connection failed
+                    - msg : message
+                    - error_msg: error message
+                    - error_code: error code returned
+                    - cmd : command that got executed
+                    - node : node on which the command got executed
+        """
+        cmd = f"gluster volume heal {volname} info healed"
+        return self.execute_abstract_op_node(cmd, node)
