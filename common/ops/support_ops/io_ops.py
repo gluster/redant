@@ -1086,8 +1086,8 @@ class IoOps(AbstractOps):
 
         return pathinfo
 
-    def rmdir(self, fpath: str, node: str, force: bool = False) -> bool:
-        """Remove a directory.
+    def rmdir(self, fqpath: str, node: str, force: bool = False) -> bool:
+        """Removes a directory.
 
         Args:
             fqpath (str): The fully-qualified path to the file.
@@ -1112,3 +1112,27 @@ class IoOps(AbstractOps):
 
         return True
 
+    def remove_file(self, fqpath: str, node: str, force: bool = False) -> bool:
+        """Removes a file.
+
+        Args:
+            fqpath (str): The fully-qualified path to the file.
+            node (str): The hostname/ip of the remote system.
+
+        Optional:
+            force (bool): Remove directory with recursive file delete.
+        Returns:
+            True on success. False on failure.
+        """
+        command_list = ['rm']
+        if force:
+            command_list.append('-f')
+        command_list.append(fqpath)
+        ret = self.execute_abstract_op_node(' '.join(command_list),
+                                            node, False)
+
+        if ret['error_code'] != 0:
+            self.logger.error("File remove failed")
+            return False
+
+        return True
