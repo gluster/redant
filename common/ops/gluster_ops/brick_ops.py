@@ -1081,6 +1081,7 @@ class BrickOps(AbstractOps):
 
         return False
 
+
     def umount_snap_brick_from_servers(self, nodes: list):
         """
         Method to umount the snap bricks in the servers.
@@ -1093,3 +1094,169 @@ class BrickOps(AbstractOps):
                "awk '{print $3}'`;do umount $mnt; done")
         for node in nodes:
             self.execute_abstract_op_node(cmd, node)
+
+    def get_bricks_to_bring_offline_from_replicated_volume(
+        self,
+        subvols_list: list,
+        replica_count: int,
+        quorum_info: dict
+    ) -> list:
+        """
+        Randomly selects bricks to bring offline without affecting the cluster
+        for a replicated volume.
+
+        Args:
+            subvols_list (list): list of subvols.
+            replica_count (int): Replica count of a Replicate or
+                                 Distributed-Replicate volume.
+            quorum_info (dict): dict containing quorum info of the volume.
+                                The dict should have the following info:
+                              - is_quorum_applicable, quorum_type, quorum_count
+        Returns:
+            list: List of bricks that can be brought offline without
+                  affecting the cluster. On any failure returns None.
+        """
+        list_of_bricks_to_bring_offline = []
+        try:
+            is_quorum_applicable = quorum_info['is_quorum_applicable']
+            quorum_type = quorum_info['quorum_type']
+            quorum_count = quorum_info['quorum_count']
+        except KeyError:
+            self.logger.error("Unable to get the proper quorum data "
+                              f"from quorum info:{quorum_info}")
+            return None
+
+        # offline_bricks_limit: Maximum Number of bricks that can be offline
+        # without affecting the cluster
+        if is_quorum_applicable:
+            if 'fixed' in quorum_type:
+                if quorum_count is None:
+                    self.logger.error("Quorum type is 'fixed' for"
+                                      " the volume. But Quorum "
+                                      "count not specified. Invalid Quorum")
+                    return None
+                else:
+                    offline_bricks_limit = (
+                        int(replica_count) - int(quorum_count))
+
+            elif 'auto' in quorum_type:
+                offline_bricks_limit = int(replica_count) // 2
+
+            elif quorum_type is None:
+                offline_bricks_limit = int(replica_count) - 1
+
+            else:
+                self.logger.error(f"Invalid Quorum Type : {quorum_type}")
+                return None
+
+            for subvol in subvols_list:
+                random.shuffle(subvol)
+
+                # select a random count.
+                random_count = random.randint(1, offline_bricks_limit)
+
+                # select random bricks.
+                bricks_to_bring_offline = random.sample(subvol, random_count)
+
+                # Append the list with selected bricks to bring offline.
+                list_of_bricks_to_bring_offline.extend(bricks_to_bring_offline)
+
+        return list_of_bricks_to_bring_offline
+
+    def get_bricks_to_bring_offline_from_disperse_volume(
+        self,
+        subvols_list: list,
+        redundancy_count: int
+    ) -> list:
+        """
+        Randomly selects bricks to bring offline without
+        affecting the cluster for a disperse volume.
+
+        Args:
+            subvols_list: list of subvols.
+            redundancy_count: Redundancy count of a Disperse or
+                              Distributed-Disperse volume.
+
+        Returns:
+            list: List of bricks that can be brought offline without
+                  affecting the cluster.On any failure return None.
+        """
+        list_of_bricks_to_bring_offline = []
+        for subvol in subvols_list:
+            random.shuffle(subvol)
+
+            # select a random value from 1 to redundancy_count.
+            random_count = random.randint(1, int(redundancy_count))
+
+            # select random bricks.
+            bricks_to_bring_offline = random.sample(subvol, random_count)
+
+            # Append the list with selected bricks to bring offline.
+            list_of_bricks_to_bring_offline.extend(bricks_to_bring_offline)
+
+            if list_of_bricks_to_bring_offline == []:
+                return None
+
+        return list_of_bricks_to_bring_offline
+
+    def select_volume_bricks_to_bring_offline(self,
+                                              volname: str,
+                                              node: str) -> list:
+        """
+        Randomly selects bricks to bring offline without
+        affecting the cluster
+
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node on which commands will be executed.
+
+        Returns:
+            list: On success returns a list of bricks bring offline.
+                  If volume doesn't exist returns None.
+        """
+        volume_bricks_to_bring_offline = []
+
+        # get volume type
+        volume_type_info = self.get_volume_type_info(node, volname)
+        if volume_type_info is None:
+            return None
+        volume_type = volume_type_info['volume_type_info']['typeStr']
+
+        # get subvols
+        volume_subvols = self.get_subvols(volname, node)
+
+        # select bricks from distribute volume
+        if volume_type == 'Distribute':
+            volume_bricks_to_bring_offline = []
+
+        # select bricks from replicated, distributed-replicated volume
+        elif volume_type in ['Replicate', 'Distributed-Replicate']:
+            # Get replica count
+            volume_replica_count = (volume_type_info['volume_type_info']
+                                    ['replicaCount'])
+
+            # Get quorum info
+            quorum_info = self.get_client_quorum_info(volname, node)
+            volume_quorum_info = quorum_info['volume_quorum_info']
+
+            # Get list of bricks to bring offline
+            volume_bricks_to_bring_offline = (
+                self.get_bricks_to_bring_offline_from_replicated_volume(
+                    volume_subvols,
+                    volume_replica_count,
+                    volume_quorum_info))
+
+        # select bricks from Disperse, Distribured-Disperse volume
+        elif volume_type in ['Disperse', 'Distributed-Disperse']:
+            # Get redundancy count
+            volume_redundancy_count = (volume_type_info['volume_type_info']
+                                       ['redundancyCount'])
+
+            # Get list of bricks to bring offline
+            volume_bricks_to_bring_offline = (
+                self.get_bricks_to_bring_offline_from_disperse_volume(
+                    volume_subvols, volume_redundancy_count))
+
+        if volume_bricks_to_bring_offline == []:
+            return None
+        return volume_bricks_to_bring_offline

@@ -261,8 +261,10 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        if ret['msg']['opRet'] == '0':
-            self.es.set_volume_start_status(volname, True)
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
+
+        self.es.set_volume_start_status(volname, True)
 
         return ret
 
@@ -1611,3 +1613,89 @@ class VolumeOps(AbstractOps):
                 return False
 
         return True
+
+    def get_client_quorum_info(self, volname: str, node: str) -> dict:
+        """
+        Get the client quorum information. i.e the quorum type,
+        quorum count.
+        Args:
+            volname (str): Name of the volume.
+            node (str): Node on which commands are executed.
+
+        Returns:
+            dict: client quorum information for the volume.
+                client_quorum_dict = {
+                    'volume_quorum_info':{
+                        'is_quorum_applicable': False,
+                        'quorum_type': None,
+                        'quorum_count': None
+                        }
+            }
+        """
+        client_quorum_dict = {
+            'volume_quorum_info': {
+                'is_quorum_applicable': False,
+                'quorum_type': None,
+                'quorum_count': None
+            }
+        }
+
+        # get quorum-type
+        volume_option = self.get_volume_options(volname,
+                                                'cluster.quorum-type',
+                                                node)
+        if volume_option is None:
+            self.logger.error("Unable to get the volume option "
+                              f"'cluster.quorum-type' for volume {volname}")
+            return client_quorum_dict
+        quorum_type = volume_option['cluster.quorum-type']
+
+        # get quorum-count
+        volume_option = self.get_volume_options(volname,
+                                                'cluster.quorum-count',
+                                                node)
+        if volume_option is None:
+            self.logger.error("Unable to get the volume option "
+                              f"'cluster.quorum-count' for volume {volname}")
+            return client_quorum_dict
+        quorum_count = volume_option['cluster.quorum-count']
+
+        # set the quorum info
+        volume_type_info = self.get_volume_type_info(node, volname)
+
+        if volume_type_info is None:
+            return client_quorum_dict
+
+        volume_type = volume_type_info['volume_type_info']['typeStr']
+
+        if volume_type in ['Replicate', 'Distributed-Replicate']:
+            (client_quorum_dict['volume_quorum_info']
+                ['is_quorum_applicable']) = True
+            replica_count = (volume_type_info['volume_type_info']
+                             ['replicaCount'])
+
+            # Case1: Replica 2
+            if int(replica_count) == 2:
+                if 'none' not in quorum_type:
+                    (client_quorum_dict['volume_quorum_info']
+                        ['quorum_type']) = quorum_type
+
+                    if quorum_type == 'fixed':
+                        if not quorum_count == '(null)':
+                            (client_quorum_dict['volume_quorum_info']
+                                ['quorum_count']) = quorum_count
+
+            # Case2: Replica > 2
+            if int(replica_count) > 2:
+                if quorum_type == 'none':
+                    (client_quorum_dict['volume_quorum_info']
+                        ['quorum_type']) = 'auto'
+                elif quorum_type == 'fixed':
+                    if not quorum_count == '(null)':
+                        (client_quorum_dict['volume_quorum_info']
+                            ['quorum_count']) = quorum_count
+                else:
+                    (client_quorum_dict['volume_quorum_info']
+                        ['quorum_type']) = quorum_type
+
+        return client_quorum_dict
