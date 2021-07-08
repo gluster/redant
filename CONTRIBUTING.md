@@ -7,7 +7,7 @@
 One time effort -
 1. Fork the repository.
 2. Clone it in your local system.
-3. Add an upstream remote to fetch latest changes. `git remote add upstream git@github.com:srijan-sivakumar/redant.git`
+3. Add an upstream remote to fetch latest changes. `git remote add upstream git@github.com:gluster/redant.git`
 4. Fetch the latest changes. `git fetch upstream`.
 5. Rebase it to the local clone. `git rebase upstream/main`
 
@@ -20,7 +20,7 @@ The following steps are to be done every time a new PR is being acted upon.
 3. Checkout to a new branch for making changes. `git checkout -b issueXYZ origin/main`
 4. Do the changes.
 5. Run the command
-```js
+```console
 autopep8 -i <PATH_TO_THE_FILE>/<filename>.py
 ```
 ---
@@ -31,13 +31,13 @@ To execute the same:
 
 ### Using script:
 You can run the following command
-```js
+```console
 tools/linting.sh -p PATH/TO/FILE -l -f
 ```
-To know more about the script, go [here](https://github.com/srijan-sivakumar/redant/blob/main/tools/README.md).
+To know more about the script, go [here](./tools/README.md).
 
 ### Manually
-```js
+```console
 flake8 <PATH_TO_THE_FILE>/<filename>.py
 pylint -j 4 --rcfile=.pylintrc <PATH_TO_THE_FILE>/<filename>.py
 
