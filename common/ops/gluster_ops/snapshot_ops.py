@@ -7,6 +7,8 @@ import copy
 from common.ops.abstract_ops import AbstractOps
 
 
+# pylint: disable=assignment-from-none,unsubscriptable-object,not-an-iterable
+
 class SnapshotOps(AbstractOps):
     """
     SnapshotOps class provides APIs to enable, disable
@@ -457,7 +459,8 @@ class SnapshotOps(AbstractOps):
             return None
         if snapname in snap_info_dict.keys():
             return snap_info_dict[snapname]
-        return None
+        else:
+            return None
 
     def get_snap_info_by_volname(self, volname: str, node: str) -> dict:
         """
