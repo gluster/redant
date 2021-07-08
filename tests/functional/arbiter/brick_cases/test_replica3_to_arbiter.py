@@ -25,23 +25,28 @@ Test desciption:
 # disruptive;rep
 # TODO: nfs and cifs to be added
 
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
 
-    # def _wait_for_untar_completion(self):
-    #     """Wait for untar to complete"""
-    #     has_process_stopped = []
-    #     for proc in self.io_process:
-    #         try:
-    #             ret, _, _ = proc.async_communicate()
-    #             if not ret:
-    #                 has_process_stopped.append(False)
-    #             has_process_stopped.append(True)
-    #         except ValueError:
-    #             has_process_stopped.append(True)
-    #     return all(has_process_stopped)
+    def terminate(self):
+        """
+        In case the test fails midway then wait for IO to complete before
+        calling the terminate function
+        """
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.io_process,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _convert_replicated_to_arbiter_volume(self):
         """
@@ -110,46 +115,50 @@ class TestCase(DParentTest):
         8) Heal should be completed with no files in split-brain.
         """
 
-        # pylint: disable=too-many-statements
+        self.io_process = []
         self.subvols = redant.get_subvols(self.vol_name,
                                           self.server_list[0])
-        self._convert_replicated_to_arbiter_volume()
-        # # Create a dir to start untar
-        # self.linux_untar_dir = "{}/{}".format(self.mounts[0].mountpoint,
-        #                                       "linuxuntar")
-        # ret = mkdir(self.clients[0], self.linux_untar_dir)
-        # self.assertTrue(ret, "Failed to create dir linuxuntar for untar")
-
-        # # Start linux untar on dir linuxuntar
-        # self.io_process = run_linux_untar(self.clients[0],
-        #                                   self.mounts[0].mountpoint,
-        #                                   dirs=tuple(['linuxuntar']))
-        # self.is_io_running = True
-
-        # # Convert relicated to arbiter volume
         # self._convert_replicated_to_arbiter_volume()
 
-        # # Wait for IO to complete.
-        # ret = self._wait_for_untar_completion()
-        # self.assertFalse(ret, "IO didn't complete or failed on client")
-        # self.is_io_running = False
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        # Create a dir to start untar
+        redant.create_dir(self.mounts[0]['mountpath'], "linuxuntar",
+                          self.server_list[0])
 
-        # # Start healing
-        # ret = trigger_heal(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not started')
-        # g.log.info('Healing is started')
+        # Start linux untar on dir linuxuntar
+        # self.io_process = redant.run_linux_untar(self.client_list[0],
+        #                                          self.mounts[0]['mountpath'],
+        #                                          dirs=tuple(['linuxuntar']))
 
-        # # Monitor heal completion
-        # ret = monitor_heal_completion(self.mnode, self.volname,
-        #                               timeout_period=3600)
-        # self.assertTrue(ret, 'Heal has not yet completed')
+        # Convert relicated to arbiter volume
+        self._convert_replicated_to_arbiter_volume()
 
-        # # Check if heal is completed
-        # ret = is_heal_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not complete')
-        # g.log.info('Heal is completed successfully')
+        # Wait for IO to complete.
+        ret = redant.wait_for_io_to_complete(self.io_process,
+                                             self.mounts)
+        if not ret:
+            raise Exception("IO failed on some of the clients")
+        # ret = redant.validate_io_procs(self.io_process, self.mounts[0])
+        # if not ret:
+        #     raise Exception("IO validation failed")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        # Start healing
+        if not redant.trigger_heal(self.vol_name,
+                                   self.server_list[0]):
+            raise Exception("Heal did not trigger")
+
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name,
+                                              timeout_period=3600):
+            raise Exception("Heal is not yet finished")
+
+        # Check if heal is completed
+        if not redant.is_heal_complete(self.server_list[0],
+                                       self.vol_name):
+            raise Exception("Heal not yet finished")
+
+        # Check for split-brain
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume is in split-brain")
