@@ -1109,3 +1109,63 @@ class IoOps(AbstractOps):
                                                 pathinfo['raw'])
 
         return pathinfo
+
+    def rmdir(self, fqpath: str, node: str, force: bool = False) -> bool:
+        """Removes a directory.
+
+        Args:
+            fqpath (str): The fully-qualified path to the file.
+            node (str): The hostname/ip of the remote system.
+
+        Optional:
+            force (bool): Remove directory with recursive file delete.
+        Returns:
+            True on success. False on failure.
+        """
+        command_list = ['rmdir']
+        if force:
+            command_list = ["rm"]
+            command_list.append('-rf')
+        command_list.append(fqpath)
+        ret = self.execute_abstract_op_node(' '.join(command_list),
+                                            node, False)
+
+        if ret['error_code'] != 0:
+            self.logger.error("Directory remove failed")
+            return False
+
+        return True
+
+    def list_files(self, node: str, dir_path: str, parse_str: str = "",
+                   user: str = "root") -> list:
+        """
+        This module list files from the given file path
+
+        Example:
+            list_files("/root/dir1/")
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            dir_path (str): directory path name
+
+        Optional:
+            parse_str (str): sub string of the filename to be fetched
+            user (str): username. Defaults to 'root' user.
+
+        Returns:
+            list: files with absolute name
+            NoneType: None if command execution fails, parse errors.
+        """
+        if parse_str == "":
+            cmd = f"find {dir_path} -type f"
+        else:
+            cmd = f"find {dir_path} -type f | grep {parse_str}"
+
+        # TODO: add user as currently it defaults to root in the
+        # framework
+        ret = self.execute_abstract_op_node(cmd, node)
+        if ret['error_code'] != 0:
+            self.logger.error("Unable to get the list of files on path "
+                              f"{dir_path} on node {node} for user {user}")
+            return None
+        return ret['msg']
