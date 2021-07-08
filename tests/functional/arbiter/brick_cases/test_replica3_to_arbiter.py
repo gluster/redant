@@ -126,21 +126,18 @@ class TestCase(DParentTest):
                           self.server_list[0])
 
         # Start linux untar on dir linuxuntar
-        # self.io_process = redant.run_linux_untar(self.client_list[0],
-        #                                          self.mounts[0]['mountpath'],
-        #                                          dirs=tuple(['linuxuntar']))
+        self.io_process = redant.run_linux_untar(self.client_list[0],
+                                                 self.mounts[0]['mountpath'],
+                                                 dirs=tuple(['linuxuntar']))
 
         # Convert relicated to arbiter volume
         self._convert_replicated_to_arbiter_volume()
 
         # Wait for IO to complete.
         ret = redant.wait_for_io_to_complete(self.io_process,
-                                             self.mounts)
+                                             self.mounts[0])
         if not ret:
             raise Exception("IO failed on some of the clients")
-        # ret = redant.validate_io_procs(self.io_process, self.mounts[0])
-        # if not ret:
-        #     raise Exception("IO validation failed")
 
         # Start healing
         if not redant.trigger_heal(self.vol_name,
