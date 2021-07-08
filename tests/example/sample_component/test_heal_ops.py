@@ -36,6 +36,8 @@ class TestCase(NdParentTest):
         """
         * Trigger full heal
         * Bring self heal daemon process offline
+        * Enable granular heal
+        * Disable granular heal
         * Disable self heal daemon
         * Re-enable self heal daemon
         * Add 100 directories in client mountpoint
