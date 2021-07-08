@@ -1122,13 +1122,13 @@ class IoOps(AbstractOps):
         Returns:
             True on success. False on failure.
         """
-        command_list = ['rmdir']
+        cmd = "rmdir"
         if force:
-            command_list = ["rm"]
-            command_list.append('-rf')
-        command_list.append(fqpath)
-        ret = self.execute_abstract_op_node(' '.join(command_list),
-                                            node, False)
+            cmd = "rm"
+            cmd += " -rf"
+
+        cmd += f" {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
 
         if ret['error_code'] != 0:
             self.logger.error("Directory remove failed")
