@@ -18,11 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Test desciption:
     Testing Volume Type Change from replicated to
     Arbitered volume
-@runs_on([['replicated', 'distributed-replicated'],
-          ['glusterfs', 'nfs', 'cifs']])
 """
 
-# disruptive;rep
+# disruptive;rep,dist-rep
 # TODO: nfs and cifs to be added
 
 import traceback
