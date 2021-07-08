@@ -56,6 +56,15 @@ class TestCase(NdParentTest):
         """
         redant.trigger_heal_full(self.vol_name, self.server_list[0])
         redant.bring_self_heal_daemon_process_offline(self.server_list)
+
+        if not redant.enable_granular_heal(self.vol_name,
+                                           self.server_list[0]):
+            raise Exception("Failed to enable granular-entry-heal")
+
+        if not redant.disable_granular_heal(self.vol_name,
+                                            self.server_list[0]):
+            raise Exception("Failed to disable granular-entry-heal")
+
         if not (redant.
                 disable_self_heal_daemon(self.vol_name,
                                          self.server_list[0])):

@@ -674,7 +674,7 @@ class HealOps:
         """
         cmd = f"gluster volume heal {volname} granular-entry-heal disable"
         ret = self.execute_abstract_op_node(cmd, node, False)
-        if ret:
+        if ret['error_code'] != 0:
             self.logger.error("Unable to disable granular-entry-heal"
                               f"on volume {volname}")
             return False
