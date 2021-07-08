@@ -1125,9 +1125,9 @@ class IoOps(AbstractOps):
         cmd = "rmdir"
         if force:
             cmd = "rm"
-            cmd += " -rf"
+            cmd = f"{cmd} -rf"
 
-        cmd += f" {fqpath}"
+        cmd = f"{cmd} {fqpath}"
         ret = self.execute_abstract_op_node(cmd, node, False)
 
         if ret['error_code'] != 0:
