@@ -278,7 +278,9 @@ class SnapshotOps(AbstractOps):
             bool: True if restore is a success or False.
         """
         # Stop the volume.
-        self.volume_stop(volname, node, force=True)
+        ret = self.volume_stop(volname, node, force=True, excep=excep)
+        if not excep and ret['msg']['opRet'] != 0:
+            return False
 
         ret = self.snap_restore(volname, snapname, node, excep)
 
@@ -286,7 +288,9 @@ class SnapshotOps(AbstractOps):
             return False
 
         # Start the volume
-        self.volume_start(volname, node, force=True)
+        ret = self.volume_start(volname, node, force=True, excep=excep)
+        if not excep and ret['msg']['opRet'] != 0:
+            return False
 
         return True
 
