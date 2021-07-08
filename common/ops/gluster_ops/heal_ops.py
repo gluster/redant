@@ -646,8 +646,8 @@ class HealOps:
         node(str): Node on which command has to be exectued
 
         Returns:
-        bool: True if granular heal is enabled
-              successfully else False.
+            bool: True if granular heal is enabled
+                successfully else False.
         """
         cmd = (f"gluster volume heal {volname}"
                " granular-entry-heal enable")
@@ -669,8 +669,8 @@ class HealOps:
         node(str): Node on which command will be exectued
 
         Returns:
-        bool: True if granular heal is disabled
-              successfully else False.
+            bool: True if granular heal is disabled
+                successfully else False.
         """
         cmd = f"gluster volume heal {volname} granular-entry-heal disable"
         ret = self.execute_abstract_op_node(cmd, node, False)
@@ -680,7 +680,7 @@ class HealOps:
             return False
         return True
 
-    def bring_self_heal_daemon_process_offline(self, nodes: str):
+    def bring_self_heal_daemon_process_offline(self, nodes: str) -> bool:
         """
         Bring the self-heal daemon process offline for the nodes
 
