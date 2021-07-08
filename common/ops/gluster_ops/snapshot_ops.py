@@ -321,7 +321,7 @@ class SnapshotOps(AbstractOps):
                    " --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def get_snap_status(self, node: str, excep: bool=True) -> dict:
+    def get_snap_status(self, node: str, excep: bool = True) -> dict:
         """
         Method to get and parse the snapshot status.
 
