@@ -166,7 +166,6 @@ class FrameworkEnv:
         Method to reset the DSs.
         """
         self.volds = {}
-        self.cleands = {}
         self.clusteropt = {}
 
     def get_volnames(self) -> list:
