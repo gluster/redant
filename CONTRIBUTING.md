@@ -20,7 +20,7 @@ The following steps are to be done every time a new PR is being acted upon.
 3. Checkout to a new branch for making changes. `git checkout -b issueXYZ origin/main`
 4. Do the changes.
 5. Run the command
-```js
+```console
 autopep8 -i <PATH_TO_THE_FILE>/<filename>.py
 ```
 ---
@@ -31,13 +31,13 @@ To execute the same:
 
 ### Using script:
 You can run the following command
-```js
+```console
 tools/linting.sh -p PATH/TO/FILE -l -f
 ```
 To know more about the script, go [here](./tools/README.md).
 
 ### Manually
-```js
+```console
 flake8 <PATH_TO_THE_FILE>/<filename>.py
 pylint -j 4 --rcfile=.pylintrc <PATH_TO_THE_FILE>/<filename>.py
 
