@@ -25,6 +25,12 @@ class PeerOps(AbstractOps):
             server (str): The server to probe
             node (str): The node in the cluster where peer probe is to be run
 
+        Optional:
+            excep (bool): exception flag to bypass the exception if the
+                          peer probe command fails. If set to False
+                          the exception is bypassed and value from remote
+                          executioner is returned. Defaults to True
+
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed

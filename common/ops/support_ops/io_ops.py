@@ -35,6 +35,30 @@ class IoOps(AbstractOps):
             return False
         return True
 
+    def remove_file(self, host: str, fqpath: str,
+                    force: bool = False) -> bool:
+        """
+        Removes a remote file.
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            True on success. False on fail.
+        """
+        cmd = "rm"
+        if force:
+            cmd += " -f"
+
+        cmd += f" {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, host, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Failed to remove file: {ret['error_msg']}")
+            return False
+
+        return True
+
     def create_dir(self, path: str, dirname: str, node: str,
                    excep: bool = True) -> dict:
         """
