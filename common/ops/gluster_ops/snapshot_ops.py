@@ -280,7 +280,7 @@ class SnapshotOps(AbstractOps):
 
         ret = self.snap_restore(volname, snapname, node, excep)
 
-        if ret['msg']['opRet'] != 0:
+        if not excep and ret['msg']['opRet'] != 0:
             return False
 
         # Start the volume
@@ -321,19 +321,29 @@ class SnapshotOps(AbstractOps):
                    " --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def get_snap_status(self, node: str) -> dict:
+    def get_snap_status(self, node: str, excep: bool=True) -> dict:
         """
         Method to get and parse the snapshot status.
 
         Args:
             node (str): node wherein the command will be run.
 
+        Optional:
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else
+            it isn't.
+
         Returns:
-            Dict of snapshot statuses.
+            Dict of snapshot statuses parsed and packaged properly and
+            in case of excep being false, the raw response.
         """
         cmd = "gluster snapshot status --xml --mode=script"
         ret = self.execute_abstract_op_node(cmd, node)
         ret = ret['msg']['snapStatus']['snapshots']['snapshot']
+
+        if not excep:
+            return ret
+
         if not isinstance(ret, list):
             snap_status = [ret]
         else:
@@ -362,7 +372,7 @@ class SnapshotOps(AbstractOps):
 
         if snapname in snap_status_dict.keys():
             return snap_status_dict[snapname]
-        return {}
+        return None
 
     def snap_info(self, node: str, snapname: str = None, volname: str = None,
                   excep: bool = True) -> dict:
@@ -411,7 +421,7 @@ class SnapshotOps(AbstractOps):
             it isn't.
 
         Returns:
-            ret: A dictionary consisting of snap info.
+            ret: A dict in case of valid data or else NoneType value.
         """
         cmd = "gluster snapshot info --xml --mode=script"
         ret = self.execute_abstract_op_node(cmd, node, excep)
@@ -429,7 +439,7 @@ class SnapshotOps(AbstractOps):
             temp_name = snap['name']
             del snap['name']
             snap_info_dict[temp_name] = copy.deepcopy(snap)
-        return snap_info_dict
+        return None
 
     def get_snap_info_by_snapname(self, snapname: str, node: str) -> dict:
         """
@@ -443,9 +453,11 @@ class SnapshotOps(AbstractOps):
             dictionary of the snap status or Nonetype object.
         """
         snap_info_dict = self.get_snap_info(node)
+        if snap_info_dict is None:
+            return None
         if snapname in snap_info_dict.keys():
             return snap_info_dict[snapname]
-        return {}
+        return None
 
     def get_snap_info_by_volname(self, volname: str, node: str) -> dict:
         """
@@ -459,6 +471,8 @@ class SnapshotOps(AbstractOps):
             dictionary of the snap status or Nonetype object.
         """
         snap_info_dict = self.get_snap_info(node)
+        if snap_info_dict is None:
+            return None
         snap_vol_dict = {}
         for snap in snap_info_dict:
             if snap_info_dict[snap]['snapVolume']['originVolume']['name'] ==\
@@ -466,7 +480,7 @@ class SnapshotOps(AbstractOps):
                 temp_dict = copy.deepcopy(snap_info_dict[snap])
                 del temp_dict['snapVolume']['originVolume']
                 snap_vol_dict[snap] = copy.deepcopy(temp_dict)
-        return snap_vol_dict
+        return None
 
     def snap_list(self, node: str, excep: bool = True) -> dict:
         """
