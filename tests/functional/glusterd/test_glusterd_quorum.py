@@ -43,10 +43,6 @@ class TestCase(DParentTest):
             if not self.redant.wait_for_glusterd_to_start(self.server_list):
                 raise Exception("Failed to start glusterd on all nodes")
 
-            if self.vol_exist:
-                self.redant.cleanup_volume(self.volume_name1,
-                                           self.server_list[0])
-
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

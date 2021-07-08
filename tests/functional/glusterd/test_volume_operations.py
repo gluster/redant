@@ -91,7 +91,7 @@ class TestVolumeCreate(DParentTest):
                             " online")
 
         # Delete the volume
-        redant.cleanup_volume(self.vol_name, self.server_list[0])
+        redant.cleanup_volumes(self.server_list[0], self.vol_name)
 
         # Merged TC test_volume_create_on_brick_root
 

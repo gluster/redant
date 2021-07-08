@@ -119,8 +119,7 @@ class TestCase(DParentTest):
         if len(vol_list) == 0:
             raise Exception("Failed to get the volume list")
 
-        for volume in vol_list:
-            redant.cleanup_volume(volume, self.server_list[0])
+        redant.cleanup_volumes(self.server_list[0], vol_list)
 
         # peer detach all servers
         redant.delete_cluster(self.server_list)

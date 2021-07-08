@@ -37,7 +37,6 @@ class TestCase(DParentTest):
             if not self.redant.wait_for_glusterd_to_start(self.server_list[1]):
                 raise Exception("Failed to start glusterd on node "
                                 f" {self.server_list[1]}")
-            self.redant.cleanup_volume(self.vol_name, self.server_list[0])
             if self.list_of_procs != []:
                 if not self.redant.wait_for_io_to_complete(self.list_of_procs,
                                                            self.mnt_list):

@@ -124,7 +124,7 @@ class MachineOps(AbstractOps):
         return False
 
     def hard_terminate(self, server_list: list, client_list: list,
-                       brick_root: dict):
+                       brick_root: dict, pre_test_lv_dict: dict = None):
         """
         hard terminate is inconsiderate. It will clear out the env
         completely and is to be used with caution. Don't use it inside the
@@ -133,6 +133,8 @@ class MachineOps(AbstractOps):
             server_list (list): List of gluster server machines
             client_list (list): List of gluster client machines
             brick_root (dict): Dictionary of brick roots and nodes.
+            pre_test_lv_dict (dict): Node -> lv path list mapping. An
+            optional parameter with default value None.
         """
         # Wait for nodes to power up.
         for server in server_list:
@@ -159,7 +161,7 @@ class MachineOps(AbstractOps):
 
         # Clear out the vol and peer file on the servers.
         cmd = ("rm -rf /var/lib/glusterd/vols/*; rm -rf /var/lib/glusterd"
-               "/peers/*")
+               "/peers/*; rm -rf /var/lib/glusterd/snaps/*")
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
@@ -173,10 +175,25 @@ class MachineOps(AbstractOps):
         for node in client_list:
             self.execute_abstract_op_node(cmd, node, False)
 
+        # Unmount snap bricks.
+        self.umount_snap_brick_from_servers(server_list)
+
+        # Check for stray LVs and delete them.
+        if pre_test_lv_dict is not None:
+            post_test_lv_dict = self.get_lv_paths_from_servers(server_list)
+            diff_dict = {}
+            for node in server_list:
+                diff_list = list(set(post_test_lv_dict[node])
+                                 ^ set(pre_test_lv_dict[node]))
+                diff_dict[node] = diff_list
+            self.remove_lv_paths_from_servers(diff_dict)
+
         # Flush the IP tables
         cmd = "iptables --flush"
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
+
+        self.es.reset_ds()
 
     def check_os(self, os_name: str, os_version: str, nodes: str):
         """
@@ -249,8 +266,9 @@ class MachineOps(AbstractOps):
         network_status = self.execute_command_async("sh test.sh", node)
         return network_status
 
-    def reload_glusterd_service(self, node):
-        """Reload the Daemons when unit files are changed.
+    def reload_glusterd_service(self, node: str) -> bool:
+        """
+        Reload the Daemons when unit files are changed.
 
         Args:
             node (str): Node on which daemon has to be reloaded.
@@ -297,3 +315,38 @@ class MachineOps(AbstractOps):
                 node_list.remove(value)
                 node_list.append(ip_val)
         return node_list
+
+    def get_lv_paths_from_servers(self, nodes: list) -> list:
+        """
+        Method to obtain the LV Paths in the machine.
+
+        Args:
+            node (str|list): Node whose LV path detail is required.
+
+        Returns:
+            List of paths.
+        """
+        cmd = "lvs --noheadings -o lv_path | awk '{if ($1) print $1}'"
+        lv_paths = {}
+
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        for node in nodes:
+            ret = self.execute_abstract_op_node(cmd, node)
+            server_path = [path.strip() for path in ret['msg']]
+            lv_paths[node] = server_path
+        return lv_paths
+
+    def remove_lv_paths_from_servers(self, lv_dict: dict):
+        """
+        Method to remove LV paths.
+
+        Args:
+            lv_dict (dict): It is a dictionary wherein the key is the node
+            and the value being the list of LVs corresponding to that node.
+        """
+        for node in lv_dict:
+            for lv_path in lv_dict[node]:
+                cmd = (f"lvremove {lv_path} --force")
+                self.execute_abstract_op_node(cmd, node)

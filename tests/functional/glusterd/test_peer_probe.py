@@ -19,7 +19,6 @@
   Validating various cases of peer probe between nodes with
   volume creation on different nodes.
 """
-
 from time import sleep
 from tests.d_parent_test import DParentTest
 
@@ -89,9 +88,7 @@ class TestCase(DParentTest):
 
         # clean up all volumes
         volnames = redant.es.get_volnames()
-        for volname in volnames:
-            volume_nodes = self.redant.es.get_volume_nodes(volname)
-            redant.cleanup_volume(volname, volume_nodes[0])
+        redant.cleanup_volumes(self.server_list[0], volnames)
 
         # Perform peer probe from N1 to N2 should success
         redant.peer_probe(self.server_list[1], self.server_list[0])

@@ -423,7 +423,7 @@ class BrickOps(AbstractOps):
 
         # Calculate total number of bricks to add
         if (num_of_distribute_bricks_to_add != 0
-           and num_of_replica_bricks_to_add != 0):
+                and num_of_replica_bricks_to_add != 0):
             num_of_bricks_to_add = (num_of_distribute_bricks_to_add
                                     + num_of_replica_bricks_to_add
                                     + (distribute_count * replica_count))
@@ -480,9 +480,9 @@ class BrickOps(AbstractOps):
         # not specified, then default shrink_volume to randomly pick
         # a subvolume to remove
         if ('distribute_count' not in kwargs
-           and 'replica_count' not in kwargs
-           and replica_num is None
-           and subvol_num is None):
+            and 'replica_count' not in kwargs
+            and replica_num is None
+                and subvol_num is None):
             kwargs['distribute_count'] = 1
 
         # Get Subvols
@@ -1080,6 +1080,19 @@ class BrickOps(AbstractOps):
                 return True
 
         return False
+
+    def umount_snap_brick_from_servers(self, nodes: list):
+        """
+        Method to umount the snap bricks in the servers.
+
+        Args:
+            nodes (list): List of nodes for which the snap brick has
+            to be un-mounted.
+        """
+        cmd = ("for mnt in `mount | grep 'run/gluster/snaps' |"
+               "awk '{print $3}'`;do umount $mnt; done")
+        for node in nodes:
+            self.execute_abstract_op_node(cmd, node)
 
     def get_bricks_to_bring_offline_from_replicated_volume(
         self,

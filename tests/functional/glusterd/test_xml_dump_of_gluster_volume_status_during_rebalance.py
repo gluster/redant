@@ -37,7 +37,6 @@ class TestCase(DParentTest):
                                                       self.mounts)
             if not ret:
                 raise Exception("IO failed on some of the clients")
-            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

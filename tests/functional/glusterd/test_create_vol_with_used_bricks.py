@@ -35,8 +35,8 @@ class TestCase(NdParentTest):
                                                       self.mounts)
             if not ret:
                 raise Exception("IO failed on some of the clients")
-            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
-            self.redant.cleanup_volume(self.volname, self.server_list[0])
+            vol_list = [self.volume_name1, self.volname]
+            self.redant.cleanup_volumes(self.server_list[0], vol_list)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

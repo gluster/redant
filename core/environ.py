@@ -161,6 +161,13 @@ class FrameworkEnv:
                                            "redundancy_count": 0,
                                            "transport": ""}}
 
+    def reset_ds(self):
+        """
+        Method to reset the DSs.
+        """
+        self.volds = {}
+        self.clusteropt = {}
+
     def get_volnames(self) -> list:
         """
         Method returns a list of existing volume names
