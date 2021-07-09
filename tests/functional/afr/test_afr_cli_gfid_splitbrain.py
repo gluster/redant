@@ -73,6 +73,7 @@ class TestCase(DParentTest):
         7. try heal from CLI and check if it gets completed
         """
         self.proc = []
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         if not (redant.
                 disable_self_heal_daemon(self.vol_name, self.server_list[0])):
@@ -86,7 +87,6 @@ class TestCase(DParentTest):
         if not redant.bring_bricks_offline(self.vol_name, all_bricks[0]):
             raise Exception(f"unable to bring {all_bricks[0]} offline")
 
-        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.proc = (self.redant.
                      create_files(num_files=1,
                                   fix_fil_size="1k",
