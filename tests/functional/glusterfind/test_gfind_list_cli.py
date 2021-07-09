@@ -1,63 +1,53 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.glusterfind_ops import (gfind_list, gfind_create,
-                                                gfind_delete)
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along`
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check glusterfind list operation
+"""
+
+# disruptive;dist,rep,disp,dist-rep,arb,dist-arb,dist-disp
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-replicated', 'distributed-arbiter',
-           'distributed-dispersed', 'distributed', 'arbiter',
-           'dispersed', 'replicated'], ['glusterfs']])
-class TestGlusterFindListCLI(GlusterBaseClass):
+class TestGlusterFindListCLI(DParentTest):
 
-    def setUp(self):
+    def terminate(self):
+        # Cleanup glusterfind session
+        try:
+            self.redant.gfind_delete(self.server_list[0], self.vol_name,
+                                     self.session)
 
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        if not self.setup_volume():
-            raise ExecutionError("Failed to Setup_Volume %s" % self.volname)
-
-    def tearDown(self):
-
-        # Cleanup glusterfind session and volume
-        ret, _, _ = gfind_delete(self.mnode, self.volname, self.session)
-        if ret:
-            raise ExecutionError("Failed to delete session '%s'"
-                                 % self.session)
-
-        if not self.cleanup_volume():
-            raise ExecutionError("Failed to Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _check_glusterfind_list_output(self, out):
         """Check if glusterfind list output is proper or not."""
-        out = list(
-            filter(None, list(filter(None, out.split("\n")))[2].split(" ")))
-        self.assertEqual(out[0], self.session,
-                         "Unexpected: Session name not poper in output")
-        self.assertEqual(out[1], self.volname,
-                         "Unecpected: Volume name not proper in output")
+        out = out[2].split()
+        if out[0] != self.session:
+            raise Exception("Unexpected: Session name not proper in output")
 
-    def test_gfind_list_cli(self):
+        if out[1] != self.vol_name:
+            raise Exception("Unecpected: Volume name not proper in output")
+
+    def run_test(self, redant):
         """
         Verifying the glusterfind list command functionality with valid
         and invalid values for the required and optional parameters.
@@ -73,39 +63,34 @@ class TestGlusterFindListCLI(GlusterBaseClass):
         """
         # Creating a glusterfind session
         self.session = "session1"
-        ret, _, _ = gfind_create(self.mnode, self.volname, self.session)
-        self.assertEqual(ret, 0, "Glusterfind session creation for the "
-                                 "volume %s failed" % self.volname)
+        redant.gfind_create(self.server_list[0], self.vol_name, self.session)
 
         # Checking output of glusterfind list
-        ret, out, _ = gfind_list(self.mnode)
-        self.assertEqual(ret, 0, "Glusterfind list failed")
-        self._check_glusterfind_list_output(out)
-        g.log.info("glusterfind list cmd validation without any param passed")
+        ret = redant.gfind_list(self.server_list[0], self.vol_name,
+                                self.session)
+
+        self._check_glusterfind_list_output(ret['msg'])
 
         # Check output for glusterfind list with valid and invalid volume name
-        for volume, expected_value, validation in ((self.volname, 0, 'valid'),
+        for volume, expected_value, validation in ((self.vol_name, 0, 'valid'),
                                                    ("abc", 1, 'invalid')):
-            ret, out, _ = gfind_list(self.mnode, volname=volume)
-            self.assertEqual(ret, expected_value,
-                             "Glusterfind list --volume check with %s "
-                             "parameter failed" % validation)
-            if not ret:
-                self._check_glusterfind_list_output(out)
-        g.log.info("glusterind list cmd check with --volume param passed")
+            ret = redant.gfind_list(self.server_list[0], volume, excep=False)
+            if ret['error_code'] != expected_value:
+                raise Exception("Glusterfind list --volume check with "
+                                f"{validation} parameter failed")
+            if ret['error_code'] == 0:
+                self._check_glusterfind_list_output(ret['msg'])
 
         # Check output for glusterfind list with valid and invalid session name
         for session, expected_value, validation in ((self.session, 0, 'valid'),
                                                     ("abc", 1, 'invalid')):
-            ret, out, _ = gfind_list(self.mnode, sessname=session)
-            self.assertEqual(ret, expected_value,
-                             "Glusterfind list --session check with %s "
-                             "parameter failed" % validation)
-            if not ret:
-                self._check_glusterfind_list_output(out)
-        g.log.info("glusterfind list cmd check with --session param passed")
+            ret = redant.gfind_list(self.server_list[0], sessname=session,
+                                    excep=False)
+            if ret['error_code'] != expected_value:
+                raise Exception("Glusterfind list --session check with "
+                                f"{validation} parameter failed")
+            if ret['error_code'] == 0:
+                self._check_glusterfind_list_output(ret['msg'])
 
         # Check output of glusterind list with debug parameter
-        ret, _, _ = gfind_list(self.mnode, debug=True)
-        self.assertEqual(ret, 0, "Glusterfind list --debug parameter failed")
-        g.log.info("glusterfind list cmd check with --debug param passed")
+        redant.gfind_list(self.server_list[0], debug=True)
