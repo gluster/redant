@@ -252,7 +252,7 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
         {'dPass': 'Disruptive Tests Pass Percentage'},
         {'ndPass': 'Non Disruptive Tests Pass Percentage'},
         {'Pass': 'Total Pass Percentage'}]
-    topicList = ['S. No.', 'Test Name', 'Nature', 'Volume Type',
+    topicList = ['Test Name', 'Nature', 'Volume Type',
                  'Result', 'Time (hh:mm:ss)', 'Skip Reason']
     # Create a workbook.
     wb = Workbook()
@@ -287,21 +287,18 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
             col += 1
 
         row += 1
-        s_no = 1
         for nature in resultDict[component]:
             testsDict = resultDict[component][nature]
             for test in testsDict:
                 for volType in testsDict[test]:
                     volData = testsDict[test][volType]
-                    tR.write(row, 0, s_no)
-                    tR.write(row, 1, test)
-                    tR.write(row, 2, nature)
-                    tR.write(row, 3, volType)
-                    tR.write(row, 4, volData['testResult'])
+                    tR.write(row, 0, test)
+                    tR.write(row, 1, nature)
+                    tR.write(row, 2, volType)
+                    tR.write(row, 3, volData['testResult'])
                     timeVal = _time_rollover_conversion(volData['timeTaken'])
-                    tR.write(row, 5, timeVal)
-                    tR.write(row, 6, volData['skipReason'])
-                    s_no += 1
+                    tR.write(row, 4, timeVal)
+                    tR.write(row, 5, volData['skipReason'])
                     row += 1
 
     # Push the changes to the file.
