@@ -1169,3 +1169,40 @@ class IoOps(AbstractOps):
                               f"{dir_path} on node {node} for user {user}")
             return None
         return ret['msg']
+
+    def create_link_file(self, node: str, sfile: str, link: str,
+                         soft: bool = False) -> bool:
+        """
+        Create hard or soft link for an exisiting file
+
+        Args:
+            node(str): Host on which the command is executed.
+            sfile(str): Path to the source file.
+            link(str): Path to the link file.
+
+        Optional:
+            soft(bool): Create soft link if True else create
+                        hard link.
+
+        Returns:
+            (bool): True if command successful else False.
+
+        Example:
+            >>> create_link_file('XX.YY.30.40', '/mnt/mp/file.txt',
+                                '/mnt/mp/link')
+            True
+        """
+        cmd = f"ln {sfile} {link}"
+        if soft:
+            cmd = f"{cmd} -s"
+
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            if soft:
+                self.logger.error('Failed to create soft link on '
+                                  f'{node} for file {sfile}')
+            else:
+                self.logger.error('Failed to create hard link on '
+                                  f'{node} for file {sfile}')
+            return False
+        return True
