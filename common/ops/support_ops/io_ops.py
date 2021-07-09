@@ -1170,42 +1170,6 @@ class IoOps(AbstractOps):
             return None
         return ret['msg']
 
-    def git_clone_and_compile(self, nodes: str, link: str, dir_name: str,
-                              compile_option: bool = 'False') -> bool:
-        """
-        Clone and compile a repo.
-
-        Args:
-            nodes (list|str): List of nodes where the repo needs to be cloned.
-            link (str): Link to the repo that needs to be cloned.
-            dir_name (str): Directory where the repo is to be cloned.
-
-        Optional:
-            compile_option (bool): If this option is set to True then the
-                                   cloned repo will be compiled otherwise
-                                   the repo is only cloned on the nodes.
-
-        Returns:
-            bool : True on successfull cloning (and compilation)
-                   False otherwise.
-        """
-        if not isinstance(nodes, list):
-            nodes = [nodes]
-
-        cmd = f"cd /root; git clone {link} {dir_name};"
-        if compile_option:
-            cmd = f"{cmd}cd /root/{dir_name}; make"
-
-        for node in nodes:
-            ret = self.execute_abstract_op_node(cmd, node, False)
-            if ret['error_code'] != 0:
-                self.logger.error(f"Cloning/Compiling repo failed on {node}")
-                return False
-            else:
-                self.logger.info("Successfully cloned/compiled"
-                                 f" repo on {node}")
-        return True
-
     def create_link_file(self, node: str, sfile: str, link: str,
                          soft: bool = False) -> bool:
         """
