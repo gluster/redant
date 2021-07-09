@@ -30,24 +30,25 @@ from tests.nd_parent_test import NdParentTest
 
 class TestCase(NdParentTest):
 
-    # def verify_gfid_and_retun_gfid(self, dirname):
-    #     dir_gfids = dict()
-    #     bricks_list = get_all_bricks(self.mnode, self.volname)
-    #     for brick in bricks_list:
-    #         brick_node, brick_path = brick.split(":")
+    def verify_gfid_and_retun_gfid(self, dirname):
+        dir_gfids = dict()
+        for brick in self.bricks_list:
+            brick_node, brick_path = brick.split(":")
 
-    #         ret = get_fattr(brick_node, '%s/%s' % (brick_path, dirname),
-    #                         'trusted.gfid')
-    #         if ret is not None:
-    #             self.assertIsNotNone(ret, "trusted.gfid is not present on"
-    #                                  "%s/%s" % (brick, dirname))
-    #             dir_gfids.setdefault(dirname, []).append(ret)
-    #             for key in dir_gfids:
-    #                 self.assertTrue(all(value == dir_gfids[key][0]
-    #                                     for value in dir_gfids[key]),
-    #                                 "gfid mismatch for %s" % dirname)
-    #                 dir_gfid = dir_gfids.values()[0]
-    #     return dir_gfid
+            ret = self.redant.get_fattr(f'{brick_path}/{dirname}',
+                                        'trusted.gfid', brick_node)
+            if ret is not None:
+                dir_gfids.setdefault(dirname, []).append(ret)
+            else:
+                raise Exception("trusted.gfid is not present on"
+                                f"{brick}/{dirname}")
+
+        # for value in dir_gfids[dirname]:
+        if not (all(value[1] == dir_gfids[dirname][0][1]
+                for value in dir_gfids[dirname])):
+            raise Exception("gfid mismatched")
+
+        return dir_gfids[dirname][0][1]
 
     def run_test(self, redant):
         """
@@ -59,21 +60,17 @@ class TestCase(NdParentTest):
         - Check whether all the bricks have the same gfid assigned.
         """
 
-        # # Create a directory on the mount
-        # cmd = ("/usr/bin/env python %s create_deep_dir -d 0 -l 0 "
-        #        "%s/dir1" % (self.script_upload_path,
-        #                     self.mounts[0].mountpoint))
-        # ret, _, _ = g.run(self.clients[0], cmd)
-        # self.assertEqual(ret, 0, "Failed to create directory on mountpoint")
-        # g.log.info("Directory created successfully on mountpoint")
+        # Create a directory on the mount
         redant.create_dir(self.mountpoint, "dir1", self.client_list[0])
 
-        # # Verify gfids are same on all the bricks and get dir1 gfid
-        # bricks_list = get_all_bricks(self.mnode, self.volname)[1:]
-        # dir_gfid = self.verify_gfid_and_retun_gfid("dir1")
+        # Verify gfids are same on all the bricks and get dir1 gfid
+        self.bricks_list = redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
+        dir_gfid = self.verify_gfid_and_retun_gfid("dir1")
 
+        print(dir_gfid)
         # # Delete gfid attr from all but one backend bricks
-        # for brick in bricks_list:
+        # for brick in self.bricks_list[1:]:
         #     brick_node, brick_path = brick.split(":")
         #     ret = delete_fattr(brick_node, '%s/dir1' % (brick_path),
         #                        'trusted.gfid')
@@ -82,7 +79,7 @@ class TestCase(NdParentTest):
         #     g.log.info("Successfully deleted gfid xattr for %s:%s/dir1",
         #                brick_node, brick_path)
         # g.log.info("Successfully deleted gfid xattr for dir1 on the "
-        #            "following bricks %s", str(bricks_list[1:]))
+        #            "following bricks %s", str(self.bricks_list[1:]))
 
         # # Trigger heal from mount point
         # sleep(10)
