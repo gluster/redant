@@ -9,8 +9,7 @@
                                          
 
 usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-l LOG_DIR]
-                      [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-rf RESULT_PATH]
-                      [-xls EXCEL_SHEET]
+                      [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-xls EXCEL_SHEET][--show-backtrace]
 
 Redant test framework main script.
 
