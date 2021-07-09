@@ -60,3 +60,10 @@ class TestCase(NdParentTest):
         if ret['error_code'] == 0:
             raise Exception("Permission obtained for non existant file "
                             f" /mmnntt on {self.client_list[0]}")
+
+        redant.create_file(self.mountpoint, "source_file.txt",
+                           self.client_list[0])
+        if not redant.create_link_file(self.client_list[0],
+                                       f"{self.mountpoint}/source_file.txt",
+                                       f"{self.mountpoint}/link_file.txt"):
+            raise Exception("Failed to create link")
