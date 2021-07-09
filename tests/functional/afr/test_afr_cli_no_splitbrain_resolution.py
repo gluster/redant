@@ -53,10 +53,11 @@ class TestCase(DParentTest):
 
     def terminate(self):
         try:
-            ret = self.redant.wait_for_io_to_complete(self.proc,
-                                                      self.mnt_list)
-            if not ret:
-                raise Exception("IO failed on some of the clients")
+            if len(self.proc) != 0:
+                ret = self.redant.wait_for_io_to_complete(self.proc,
+                                                        self.mnt_list)
+                if not ret:
+                    raise Exception("IO failed on some of the clients")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
