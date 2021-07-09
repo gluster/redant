@@ -66,6 +66,7 @@ class TestCase(NdParentTest):
         # ret, _, _ = g.run(self.clients[0], cmd)
         # self.assertEqual(ret, 0, "Failed to create directory on mountpoint")
         # g.log.info("Directory created successfully on mountpoint")
+        redant.create_dir(self.mountpoint, "dir1", self.client_list[0])
 
         # # Verify gfids are same on all the bricks and get dir1 gfid
         # bricks_list = get_all_bricks(self.mnode, self.volname)[1:]
