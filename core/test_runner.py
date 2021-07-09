@@ -215,9 +215,10 @@ class TestRunner:
             spinner.fail(f"{mname}-{volume_type} Failed")
         else:
             result_text += " SKIP"
-            test_stats['testResult'] = None
+            test_stats['testResult'] = "SKIP"
             spinner = Halo(spinner='dots', text_color='cyan')
             spinner.info(f"{mname}-{volume_type} SKIP")
+        test_stats['component'] = tc_log_path.split('/')[-4]
 
         result_value = {test_dict["moduleName"][:-3]: test_stats}
         cls.job_result_queue.put(result_value)

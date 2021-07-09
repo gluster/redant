@@ -1,6 +1,6 @@
 # redant
 
-```
+```console
     ____  __________  ___    _   ________
    / __ \/ ____/ __ \/   |  / | / /_  __/
   / /_/ / __/ / / / / /| | /  |/ / / /   
@@ -9,8 +9,7 @@
                                          
 
 usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-l LOG_DIR]
-                      [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-rf RESULT_PATH]
-                      [-xls EXCEL_SHEET]
+                      [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-xls EXCEL_SHEET][--show-backtrace]
 
 Redant test framework main script.
 
@@ -26,10 +25,9 @@ optional arguments:
                         The log level. Default log level is Info
   -cc CONCUR_COUNT, --concurrency-count CONCUR_COUNT
                         Number of concurrent test runs. Default is 2.
-  -rf RESULT_PATH, --result-file RESULT_PATH
-                        Result file. Default value is None
   -xls EXCEL_SHEET, --excel-sheet EXCEL_SHEET
                         Spreadsheet for result. Default value is NULL
+  --show-backtrace      Show full backtrace on error
 ```
 
 ## Tested and Supported Distros
