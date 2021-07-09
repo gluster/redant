@@ -55,7 +55,7 @@ class TestCase(DParentTest):
         try:
             if len(self.proc) != 0:
                 ret = self.redant.wait_for_io_to_complete(self.proc,
-                                                        self.mnt_list)
+                                                          self.mnt_list)
                 if not ret:
                     raise Exception("IO failed on some of the clients")
         except Exception as error:
