@@ -15,7 +15,7 @@ from environ import environ, FrameworkEnv
 from parsing.params_handler import ParamsHandler
 from test_list_builder import TestListBuilder
 from test_runner import TestRunner
-from result_handler import ResultHandler, handle_results
+from result_handler import handle_results
 from common.relog import Logger
 sys.path.insert(1, ".")
 sys.path.insert(1, "./common")
@@ -44,9 +44,6 @@ def pars_args():
     parser.add_argument("-cc", "--concurrency-count",
                         help="Number of concurrent test runs. Default is 2.",
                         dest="concur_count", default=2, type=int)
-    parser.add_argument("-rf", "--result-file",
-                        help="Result file. Default value is None",
-                        dest="result_path", default=None, type=str)
     parser.add_argument("-xls", "--excel-sheet",
                         help="Spreadsheet for result. Default value is NULL",
                         dest="excel_sheet", default=None, type=str)
@@ -128,8 +125,6 @@ def main():
 
     # Environment cleanup. TBD.
     total_time = time.time() - start
-    #ResultHandler.handle_results(
-    #    result_queue, args.result_path, total_time, args.excel_sheet)
 
     if args.excel_sheet is None:
         handle_results(result_queue, total_time)

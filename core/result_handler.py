@@ -3,32 +3,13 @@ This component handles the
 results in two ways:
 
 1. display on the CLI
-2. store in a file
+2. store in a spreadsheet
 """
-from os import stat
 import copy
-from colorama import Fore, Style
 import xlwt
 from xlwt import Workbook
 from prettytable import PrettyTable
 
-
-class ResultHandler:
-
-    @classmethod
-    def _sanitize_time_format(cls, data: int) -> str:
-        """
-        The function formats the values to 0X or XY
-        format.
-
-        Args:
-            data (int): The time data.
-        Returns:
-            str
-        """
-        if len(str(data)) != 2:
-            return f"0{data}"
-        return f"{data}"
 
 def _sanitize_time_format(data: int) -> str:
     """
@@ -43,6 +24,7 @@ def _sanitize_time_format(data: int) -> str:
     if len(str(data)) != 2:
         return f"0{data}"
     return f"{data}"
+
 
 def _time_rollover_conversion(time_in_sec: float,
                               expanded_f: bool = False) -> str:
@@ -99,6 +81,7 @@ def _time_rollover_conversion(time_in_sec: float,
         return f"{hours}:{minutes}:{seconds}"
     return f"{hours} hours {minutes} minutes {seconds} seconds"
 
+
 def _transform_queue_to_dict(resultQueue) -> dict:
     """
     Function to transform the queue to a dictionary.
@@ -135,6 +118,7 @@ def _transform_queue_to_dict(resultQueue) -> dict:
         testResults[component][tcNature][tName][tVolT] = copy.deepcopy(
             tempDict)
     return testResults
+
 
 def _obtain_stat(resultDict: dict) -> dict:
     """
@@ -177,7 +161,7 @@ def _obtain_stat(resultDict: dict) -> dict:
                         dPass += 1
                     elif disCrDict[test][volT]['testResult'] == "SKIP":
                         dSkipCount += 1
-        elif "nonDisruptive" in crDict.keys():
+        if "nonDisruptive" in crDict.keys():
             ndisCrDict = crDict['nonDisruptive']
             ndCount += len(list(ndisCrDict.keys()))
             for test in ndisCrDict:
@@ -206,38 +190,15 @@ def _obtain_stat(resultDict: dict) -> dict:
         statDict[component] = copy.deepcopy(tempDict)
 
     # Aggregating the component results in Total component.
-    statDict['Total'] = {}
-    statDict['Total']['dCount'] = 0
-    statDict['Total']['ndCount'] = 0
-    statDict['Total']['ndRuns'] = 0
-    statDict['Total']['dRuns'] = 0
-    statDict['Total']['dSkipCount'] = 0
-    statDict['Total']['ndSkipCount'] = 0
-    statDict['Total']['dPass'] = 0
-    statDict['Total']['ndPass'] = 0
+    tempDict = {}
     for component in statDict:
-        if component == 'Total':
-            continue
-        statDict['Total']['dCount'] += statDict[component]['dCount']
-        statDict['Total']['ndCount'] += statDict[component]['ndCount']
-        statDict['Total']['dSkipCount'] += statDict[component]['dSkipCount']
-        statDict['Total']['ndSkipCount'] += statDict[component]['ndSkipCount']
-        statDict['Total']['dPass'] += statDict[component]['dPass']
-        statDict['Total']['ndPass'] += statDict[component]['ndPass']
-        statDict['Total']['dRuns'] += statDict[component]['ndRuns']
-        statDict['Total']['dRuns'] += statDict[component]['dRuns']
-    statDict['Total']['totalCount'] = statDict['Total']['dCount'] +\
-        statDict['Total']['ndCount']
-    statDict['Total']['skipCount'] = statDict['Total']['dSkipCount'] +\
-        statDict['Total']['ndSkipCount']
-    statDict['Total']['totalRuns'] = statDict['Total']['dRuns'] +\
-        statDict['Total']['ndRuns']
-    statDict['Total']['Pass'] = statDict['Total']['dPass'] +\
-        statDict['Total']['ndPass']
-    statDict['Total']['runCount'] = statDict['Total']['totalCount'] -\
-        statDict['Total']['skipCount']
-
+        for key, val in statDict[component].items():
+            if key not in tempDict.keys():
+                tempDict[key] = 0
+            tempDict[key] += val
+    statDict['Total'] = copy.deepcopy(tempDict)
     return statDict
+
 
 def _transform_to_percent(statDict: dict) -> dict:
     """
@@ -251,22 +212,21 @@ def _transform_to_percent(statDict: dict) -> dict:
     """
     # Go component-wise and transform the counts to percentage.
     tStatDict = copy.deepcopy(statDict)
-
     for component in statDict:
-        if statDict[component]['ndRuns'] -\
-            statDict[component]['ndSkipCount'] != 0:
-            tStatDict[component]['ndPass'] = ((statDict[component]['ndPass'])/\
-                (statDict[component]['ndRuns'] -\
-                    statDict[component]['ndSkipCount']))*100
-        if statDict[component]['dRuns'] -\
-            statDict[component]['dSkipCount'] != 0:
-            tStatDict[component]['dPass'] = ((statDict[component]['dPass'])/\
-                (statDict[component]['dRuns'] -\
-                    statDict[component]['dSkipCount']))*100
+        if statDict[component]['ndRuns'] != 0:
+            tStatDict[component]['ndPass'] =\
+                (statDict[component]['ndPass']*100) /\
+                (statDict[component]['ndRuns'])
+        if statDict[component]['dRuns'] != 0:
+            tStatDict[component]['dPass'] =\
+                (statDict[component]['dPass']*100) /\
+                (statDict[component]['dRuns'])
         if statDict[component]['totalRuns'] != 0:
-            tStatDict[component]['Pass'] = ((statDict[component]['Pass'])/\
-                statDict[component]['totalRuns'])*100
+            tStatDict[component]['Pass'] =\
+                (statDict[component]['Pass']*100) /\
+                (statDict[component]['totalRuns'])
     return tStatDict
+
 
 def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
                  totalRTime: str):
@@ -347,6 +307,7 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
     # Push the changes to the file.
     wb.save(filePath)
 
+
 def _data_to_pretty_tables(statDict: dict, resultDict: dict,
                            totalRTime: str):
     """
@@ -398,7 +359,8 @@ def _data_to_pretty_tables(statDict: dict, resultDict: dict,
     totalTime = _time_rollover_conversion(totalRTime, True)
     print(f"Total Time Taken : {totalTime}")
 
-def handle_results(resultQueue, totalTime: float, filePath: str=None):
+
+def handle_results(resultQueue, totalTime: float, filePath: str = None):
     """
     Function to handle the results for redant.
 
@@ -421,6 +383,5 @@ def handle_results(resultQueue, totalTime: float, filePath: str=None):
     # Output the result.
     if filePath is not None:
         _data_to_xls(statDict, resultDict, filePath, totalTime)
-        _data_to_pretty_tables(statDict, resultDict, totalTime)
     else:
         _data_to_pretty_tables(statDict, resultDict, totalTime)
