@@ -1,108 +1,51 @@
-#  Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY :or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
 
-from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import set_volume_options, volume_reset
-from glustolibs.gluster.glusterfind_ops import (gfind_create,
-                                                gfind_list,
-                                                gfind_pre,
-                                                gfind_post,
-                                                gfind_delete)
-from glustolibs.gluster.glusterfile import (file_exists, remove_file,
-                                            check_if_pattern_in_file)
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY :or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check glusterfind functionality with deleting of files
+"""
+
+# disruptive;dist,rep,dist-rep,disp,dist-disp
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed', 'distributed-dispersed'],
-          ['glusterfs']])
-class TestGlusterFindDeletes(GlusterBaseClass):
-    """
-    TestGlusterFindDeletes contains tests which verifies the
-    glusterfind functionality with renames of files.
-    """
+class TestGlusterFindDeletes(DParentTest):
 
-    def setUp(self):
+    def terminate(self):
         """
-        setup volume and mount volume
-        Initiate necessary variables
+        Delete the glusterfind session and remove the outfiles created during
+        the test
         """
+        try:
+            self.redant.gfind_delete(self.server_list[0], self.vol_name,
+                                     self.session)
+            for file in self.outfiles:
+                ret = self.redant.remove_file(self.server_list[0], file, True)
+                if not ret:
+                    raise Exception(f"Failed to remove the outfile {file}")
 
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup %s", self.volname)
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume %s" % self.volname)
-        g.log.info("Successful in Setup Volume %s", self.volname)
-        self.session = 'test-session-%s' % self.volname
-        self.outfiles = [('/tmp/test-outfile-%s-%s.txt'
-                          % (self.volname, i))for i in range(0, 2)]
-
-        # Set the changelog rollover-time to 1 second
-        g.log.info("Setting the changelog rollover-time to 1 second")
-        option = {'changelog.rollover-time': '1'}
-        ret = set_volume_options(self.mnode, self.volname, option)
-        if not ret:
-            raise ExecutionError("Failed to set the volume option %s for %s"
-                                 % (option, self.volname))
-        g.log.info("Successfully set the volume option for the volume %s",
-                   self.volname)
-
-    def tearDown(self):
-        """
-        tearDown for every test
-        Clean up and unmount the volume
-        """
-
-        ret, _, _ = gfind_delete(self.mnode, self.volname, self.session)
-        if ret != 0:
-            raise ExecutionError("Failed to delete session %s" % self.session)
-        g.log.info("Successfully deleted session %s", self.session)
-
-        g.log.info("Removing the outfiles created during 'glusterfind pre'")
-        for out in self.outfiles:
-            ret = remove_file(self.mnode, out, force=True)
-            if not ret:
-                raise ExecutionError("Failed to remove the outfile %s" % out)
-        g.log.info("Successfully removed the outfiles")
-
-        # Reset the volume
-        g.log.info("Reset the volume")
-        ret, _, _ = volume_reset(self.mnode, self.volname)
-        if ret != 0:
-            raise ExecutionError("Failed to reset the volume %s"
-                                 % self.volname)
-        g.log.info("Successfully reset the volume %s", self.volname)
-
-        # Cleanup the volume
-        g.log.info("Starting to Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Cleanup Volume")
-        g.log.info("Successful in Cleanup Volume")
-
-        # calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_gfind_deletes(self):
+    def run_test(self, redant):
         """
         Verifying the glusterfind functionality with deletion of files.
 
@@ -119,121 +62,82 @@ class TestGlusterFindDeletes(GlusterBaseClass):
           Files deleted must be listed
         """
 
-        # pylint: disable=too-many-statements
+        self.session = 'test-session-%s' % self.vol_name
+        self.outfiles = [f"/tmp/test-outfile-{self.vol_name}-{i}.txt"
+                         for i in range(0, 2)]
+
+        # Set the changelog rollover-time to 1 second
+        option = {'changelog.rollover-time': '1'}
+        redant.set_volume_options(self.vol_name, option, self.server_list[0])
+
         # Creating a session for the volume
-        g.log.info("Creating a session for the volume %s", self.volname)
-        ret, _, _ = gfind_create(self.mnode, self.volname, self.session)
-        self.assertEqual(ret, 0, ("Unexpected: Creation of a session for the "
-                                  "volume %s failed" % self.volname))
-        g.log.info("Successfully created a session for the volume %s",
-                   self.volname)
+        redant.gfind_create(self.server_list[0], self.vol_name, self.session)
 
         # Perform glusterfind list to check if session exists
-        g.log.info("Performing glusterfind list to check if the session is "
-                   "created")
-        ret, _, _ = gfind_list(self.mnode, volname=self.volname,
-                               sessname=self.session)
-        self.assertEqual(ret, 0, "Failed to list the glusterfind session")
-        g.log.info("Successfully listed the glusterfind session")
+        redant.gfind_list(self.server_list[0], self.vol_name, self.session)
 
         # Starting IO on the mounts
-        g.log.info("Creating Files on %s:%s",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
-        cmd = ("cd %s ; for i in `seq 1 10` ; "
-               "do dd if=/dev/urandom of=file$i bs=1M count=1 ; "
-               "done" % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Failed to create files on mountpoint")
-        g.log.info("Files created successfully on mountpoint")
+        redant.logger.info("Creating Files on "
+                           f"{self.mountpoint}:{self.client_list[0]}")
+        cmd = (f"cd {self.mountpoint} ; for i in `seq 1 10` ; "
+               "do dd if=/dev/urandom of=file$i bs=1M count=1;done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check if the files exist
-        g.log.info("Checking the existence of files created during IO")
         for i in range(1, 11):
-            ret = file_exists(self.mounts[0].client_system,
-                              '%s/file%s' % (self.mounts[0].mountpoint, i))
-            self.assertTrue(ret, "Unexpected: File 'file%s' does not exist"
-                            % i)
-            g.log.info("Successfully validated existence of 'file%s'", i)
-
-        sleep(5)
+            path = f"{self.mountpoint}/file{i}"
+            ret = redant.path_exists(self.client_list[0], path)
+            if not ret:
+                raise Exception("File doesn't exist")
 
         # Perform glusterfind pre for the session
-        g.log.info("Performing glusterfind pre for the session %s",
-                   self.session)
-        ret, _, _ = gfind_pre(self.mnode, self.volname, self.session,
-                              self.outfiles[0], full=True, noencode=True,
-                              debug=True)
-        self.assertEqual(ret, 0, ("Failed to perform glusterfind pre"))
-        g.log.info("Successfully performed glusterfind pre")
+        redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
+                         self.outfiles[0], full=True, noencode=True,
+                         debug=True)
 
         # Check if the outfile exists
-        g.log.info("Checking if outfile created during glusterfind pre command"
-                   " exists")
-        ret = file_exists(self.mnode, self.outfiles[0])
-        self.assertTrue(ret, "Unexpected: File '%s' does not exist"
-                        % self.outfiles[0])
-        g.log.info("Successfully validated existence of '%s'",
-                   self.outfiles[0])
+        ret = redant.path_exists(self.server_list[0], self.outfiles[0])
+        if not ret:
+            raise Exception("File doesn't exist")
 
         # Check if all the files are listed in the outfile
         for i in range(1, 11):
-            ret = check_if_pattern_in_file(self.mnode, 'file%s' % i,
-                                           self.outfiles[0])
-            self.assertEqual(ret, 0, ("File 'file%s' not listed in %s"
-                                      % (i, self.outfiles[0])))
-            g.log.info("File 'file%s' listed in %s", i, self.outfiles[0])
+            pattern = f"file{i}"
+            ret = redant.check_if_pattern_in_file(self.server_list[0],
+                                                  pattern, self.outfiles[0])
+            if ret != 0:
+                raise Exception("Pattern not found in file")
 
         # Perform glusterfind post for the session
-        g.log.info("Performing glusterfind post for the session %s",
-                   self.session)
-        ret, _, _ = gfind_post(self.mnode, self.volname, self.session)
-        self.assertEqual(ret, 0, ("Failed to perform glusterfind post"))
-        g.log.info("Successfully performed glusterfind post")
+        redant.gfind_post(self.server_list[0], self.vol_name, self.session)
 
         # Delete the files created from mount point
-        g.log.info("Deleting the Files on %s:%s",
-                   self.mounts[0].client_system, self.mounts[0].mountpoint)
         for i in range(1, 11):
-            ret = remove_file(self.mounts[0].client_system,
-                              "%s/file%s" % (self.mounts[0].mountpoint, i),
-                              force=True)
-            self.assertTrue(ret, "Failed to delete file%s" % i)
-        g.log.info("Successfully deleted all the files")
+            path = f"{self.mountpoint}/file{i}"
+            ret = redant.remove_file(self.client_list[0], path)
+            if not ret:
+                raise Exception("Failed to delete file")
 
         # Check if the files deleted exist from mount point
-        g.log.info("Checking the existence of files that were deleted "
-                   "(must not be present)")
         for i in range(1, 11):
-            ret = file_exists(self.mounts[0].client_system,
-                              '%s/file%s' % (self.mounts[0].mountpoint, i))
-            self.assertFalse(ret, "Unexpected: File 'file%s' exists even after"
-                             " being deleted" % i)
-            g.log.info("Successfully validated 'file%s' does not exist", i)
-
-        sleep(5)
+            path = f"{self.mountpoint}/file{i}"
+            ret = redant.path_exists(self.client_list[0], path)
+            if ret:
+                raise Exception("Unexpected: File still exist")
 
         # Perform glusterfind pre for the session
-        g.log.info("Performing glusterfind pre for the session %s",
-                   self.session)
-        ret, _, _ = gfind_pre(self.mnode, self.volname, self.session,
-                              self.outfiles[1], debug=True)
-        self.assertEqual(ret, 0, ("Failed to perform glusterfind pre"))
-        g.log.info("Successfully performed glusterfind pre")
+        redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
+                         self.outfiles[1], debug=True)
 
         # Check if the outfile exists
-        g.log.info("Checking if outfile created during glusterfind pre command"
-                   " exists")
-        ret = file_exists(self.mnode, self.outfiles[1])
-        self.assertTrue(ret, "Unexpected: File '%s' does not exist"
-                        % self.outfiles[1])
-        g.log.info("Successfully validated existence of '%s'",
-                   self.outfiles[1])
+        ret = redant.path_exists(self.server_list[0], self.outfiles[1])
+        if not ret:
+            raise Exception("Path doesn't exist")
 
         # Check if all the files are listed in the outfile
         for i in range(1, 11):
-            pattern = "DELETE file%s" % i
-            ret = check_if_pattern_in_file(self.mnode, pattern,
-                                           self.outfiles[1])
-            self.assertEqual(ret, 0, ("File 'file%s' not listed in %s"
-                                      % (i, self.outfiles[1])))
-            g.log.info("File 'file%s' listed in %s", i, self.outfiles[1])
+            pattern = f"DELETE file{i}"
+            ret = redant.check_if_pattern_in_file(self.server_list[0],
+                                                  pattern, self.outfiles[1])
+            if ret != 0:
+                raise Exception("Pattern not found in file")
