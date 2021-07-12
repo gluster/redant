@@ -18,11 +18,9 @@ Description:
     Test cases in this module tests whether directory with null gfid
     is getting the gfids assigned on both the subvols of a dist-rep
     volume when lookup comes on that directory from the mount point.
-@runs_on([['replicated', 'distributed-replicated', 'distributed'],
-          ['glusterfs']])
 """
 
-# nonDisruptive;rep
+# nonDisruptive;rep,dist-rep,dist
 
 from time import sleep
 from tests.nd_parent_test import NdParentTest
@@ -76,19 +74,16 @@ class TestCase(NdParentTest):
                                 brick_node)
 
         # Trigger heal from mount point
-        redant.trigger_heal(self.vol_name, self.server_list[0])
+        redant.trigger_heal_full(self.vol_name, self.server_list[0])
         if not redant.is_heal_complete(self.server_list[0], self.vol_name):
-            print("Heal not yet finished")
+            raise Exception("Heal not yet finished")
         sleep(10)
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
-        for mount_obj in self.mnt_list:
-            command = f"cd {mount_obj['mountpath']}; ls -l"
-            redant.execute_abstract_op_node(command,
-                                            mount_obj['client'])
-            sleep(10)
-
         redant.get_mounts_stat(self.mnt_list)
 
         # Verify that all gfids for dir1 are same and get the gfid
         dir_gfid_new = self.verify_gfid_and_retun_gfid("dir1")
-        print(all(gfid in dir_gfid for gfid in dir_gfid_new))
+        if not all(gfid in dir_gfid for gfid in dir_gfid_new):
+            raise Exception('Previous gfid and new gfid are not equal, '
+                            'which is not expected, previous gfid '
+                            f'{dir_gfid} and new gfid {dir_gfid_new}')
