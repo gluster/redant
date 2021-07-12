@@ -135,6 +135,33 @@ class IoOps(AbstractOps):
 
         return True
 
+    def append_string_to_file(self, node: str, filename: str, str_to_add: str,
+                              user='root') -> bool:
+        """
+        Apeends the given string in the file
+
+        Args:
+            node (str): Node on which the command has to be executed
+            filename (str): absolute file path to append the string
+            str_to_add_in_file (str): string to be added in the file,
+                    which is used as a start and stop string for parsing
+                    the file in search_pattern_in_file().
+
+        Optional:
+            user (str): username. Defaults to 'root' user.
+
+        Returns:
+            bool: True, on success, False otherwise
+        """
+        cmd = f"echo '{str_to_add}' >> {filename}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Unable to append string '{str_to_add}' "
+                              f"to file {filename} using user {user}")
+            return False
+
+        return True
+
     def get_dir_contents(self, path: str, node: str,
                          recursive: bool = False) -> list:
         """
