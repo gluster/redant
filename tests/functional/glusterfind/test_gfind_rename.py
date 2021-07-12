@@ -16,15 +16,16 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    TC to check glusterfind post operation
+    Tc to test rename operation with glusterfind"
 """
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
 import traceback
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
-class TestGlusterFindPostCLI(DParentTest):
+class TestGlusterFindRenames(DParentTest):
 
     def terminate(self):
         """
@@ -33,11 +34,10 @@ class TestGlusterFindPostCLI(DParentTest):
         try:
             self.redant.gfind_delete(self.server_list[0], self.vol_name,
                                      self.session)
-            ret = self.redant.remove_file(self.server_list[0], self.outfile,
-                                          True)
-            if not ret:
-                raise Exception("Failed to remove the outfile "
-                                f"{self.outfile}")
+            for file in self.outfiles:
+                ret = self.redant.remove_file(self.server_list[0], file, True)
+                if not ret:
+                    raise Exception(f"Failed to remove the outfile {file}")
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -47,25 +47,27 @@ class TestGlusterFindPostCLI(DParentTest):
 
     def run_test(self, redant):
         """
-        Verifying the glusterfind post command functionality with valid
-        and invalid values for the required and optional parameters.
+        Verifying the glusterfind functionality with renames of files.
 
         * Create a volume
         * Create a session on the volume
-        * Perform some I/O from the mount point
+        * Create various files from mount point
         * Perform glusterfind pre
-        * Perform glusterfind post with the following combinations:
-            - Valid values for required parameters
-            - Invalid values for required parameters
-            - Valid values for optional parameters
-            - Invalid values for optional parameters
-
-            Where
-            Required parameters: volname and sessname
-            Optional parameters: debug
+        * Perform glusterfind post
+        * Check the contents of outfile
+        * Rename the files created from mount point
+        * Perform glusterfind pre
+        * Perform glusterfind post
+        * Check the contents of outfile
+          Files renamed must be listed
         """
-        self.session = f'test-session-for-post-{self.vol_name}'
-        self.outfile = f'/tmp/test-outfile-{self.vol_name}.txt'
+        self.session = f'test-session-{self.vol_name}'
+        self.outfiles = [f"/tmp/test-outfile-{self.vol_name}-{i}.txt"
+                         for i in range(0, 2)]
+
+        # Set the changelog rollover-time to 1 second
+        option = {'changelog.rollover-time': '1'}
+        redant.set_volume_options(self.vol_name, option, self.server_list[0])
 
         # Creating a session for the volume
         redant.gfind_create(self.server_list[0], self.vol_name, self.session)
@@ -87,13 +89,16 @@ class TestGlusterFindPostCLI(DParentTest):
             if not ret:
                 raise Exception("File doesn't exist")
 
+        # Wait for changelog to get updated
+        sleep(2)
+
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
-                         self.outfile, full=True, noencode=True,
+                         self.outfiles[0], full=True, noencode=True,
                          debug=True)
 
         # Check if the outfile exists
-        ret = redant.path_exists(self.server_list[0], self.outfile)
+        ret = redant.path_exists(self.server_list[0], self.outfiles[0])
         if not ret:
             raise Exception("File doesn't exist")
 
@@ -101,31 +106,36 @@ class TestGlusterFindPostCLI(DParentTest):
         for i in range(1, 11):
             pattern = f"file{i}"
             ret = redant.check_if_pattern_in_file(self.server_list[0],
-                                                  pattern, self.outfile)
+                                                  pattern, self.outfiles[0])
             if ret != 0:
                 raise Exception("Pattern not found in file")
 
-        # Perform glusterfind post using invalid values for the rquired
-        # parameters
-        not_volume = 'invalid-volume-name'
-        not_session = 'invalid-session-name'
-        ret = redant.gfind_post(self.server_list[0], not_volume, not_session,
-                                excep=False)
-        if ret['error_code'] == 0:
-            raise Exception("Unexpected: Successfully performed glusterfind "
-                            "post with invalid values for required "
-                            "parameters")
+        # Perform glusterfind post for the session
+        redant.gfind_post(self.server_list[0], self.vol_name, self.session)
 
-        # Perform glusterfind post using the invalid values for optional
-        # parameters
-        cmd = f"glusterfind post {self.vol_name} {self.session} --dbug"
-        ret = redant.execute_abstract_op_node(cmd, self.server_list[0],
-                                              False)
-        if ret['error_code'] == 0:
-            raise Exception("Unexpected: glusterfind post Successful "
-                            "with invalid value for optional parameters")
+        # Rename the files created from mount point
+        for i in range(1, 11):
+            src_path = f"{self.mountpoint}/file{i}"
+            dst_path = f"{self.mountpoint}/renamed-file{i}"
+            ret = redant.move_file(self.client_list[0], src_path, dst_path)
+            if not ret:
+                raise Exception(f"Failed to rename file{i}")
 
-        # Performing glusterfind post with valid values for optional and
-        # required parameters
-        redant.gfind_post(self.server_list[0], self.vol_name, self.session,
-                          debug=True)
+        sleep(2)
+
+        # Perform glusterfind pre for the session
+        redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
+                         self.outfiles[1], debug=True)
+
+        # Check if the outfile exists
+        ret = redant.path_exists(self.server_list[0], self.outfiles[1])
+        if not ret:
+            raise Exception("File doesn't exist")
+
+        # Check if all the files are listed in the outfile
+        for i in range(1, 11):
+            pattern = f'RENAME file{i} renamed-file{i}'
+            ret = redant.check_if_pattern_in_file(self.server_list[0],
+                                                  pattern, self.outfiles[1])
+            if ret != 0:
+                raise Exception("Pattern not found in file")
