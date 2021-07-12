@@ -29,22 +29,24 @@ from tests.nd_parent_test import NdParentTest
 
 class TestCase(NdParentTest):
 
-    # def verify_gfid(self, dirname):
-    #     dir_gfids = dict()
-    #     bricks_list = get_all_bricks(self.mnode, self.volname)
-    #     for brick in bricks_list:
-    #         brick_node, brick_path = brick.split(":")
+    def verify_gfid(self, dirname):
+        dir_gfids = dict()
+        self.bricks_list = self.redant.get_all_bricks(self.vol_name,
+                                                      self.server_list[0])
+        for brick in self.bricks_list:
+            brick_node, brick_path = brick.split(":")
 
-    #         ret = get_fattr(brick_node, '%s/%s' % (brick_path, dirname),
-    #                         'trusted.gfid')
-    #         self.assertIsNotNone(ret, "trusted.gfid is not present on"
-    #                              "%s/%s" % (brick, dirname))
-    #         dir_gfids.setdefault(dirname, []).append(ret)
+            ret = self.redant.get_fattr(f'{brick_path}/{dirname}',
+                                        'trusted.gfid',
+                                        brick_node)
+            if ret is None:
+                raise Exception("trusted.gfid is not present on"
+                                f"{brick}/{dirname}")
+            dir_gfids.setdefault(dirname, []).append(ret)
 
-    #         for key in dir_gfids:
-    #             self.assertTrue(all(value == dir_gfids[key][0]
-    #                                 for value in dir_gfids[key]),
-    #                             "gfid mismatch for %s" % dirname)
+        for each in dir_gfids[dirname]:
+            if each[1] != dir_gfids[dirname][0][1]:
+                raise Exception("gfid mismatched")
 
     def run_test(self, redant):
         """
@@ -55,6 +57,8 @@ class TestCase(NdParentTest):
         - Do lookup from the mount.
         - Check whether all the bricks have the same gfid assigned.
         """
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
         # Enable client side healing
         options = {"metadata-self-heal": "on",
                    "entry-self-heal": "on",
@@ -62,36 +66,35 @@ class TestCase(NdParentTest):
         redant.set_volume_options(self.vol_name, options,
                                   self.server_list[0])
 
-        # # Create a directory on the mount
-        # g.log.info("Creating a directory")
-        # cmd = "/usr/bin/env python %s create_deep_dir -d 0 -l 0 %s/dir1 " % (
-        #     self.script_upload_path,
-        #     self.mounts[0].mountpoint)
-        # ret, _, _ = g.run(self.clients[0], cmd)
-        # self.assertEqual(ret, 0, "Failed to create directory on mountpoint")
-        # g.log.info("Directory created successfully on mountpoint")
+        # Create a directory on the mount
+        path_dir = f"{self.mnt_list[0]['mountpath']}/dir1"
+        redant.logger.info("Creating directory")
+        self.proc = (redant.
+                     create_deep_dirs_with_files(path_dir,
+                                                 1, 1, 0, 1, 0,
+                                                 self.mnt_list[0]['client']))
+        ret = redant.validate_io_procs([self.proc], self.mnt_list[0])
+        if not ret:
+            raise Exception("IO validation failed")
 
-        # # Verify gfids are same on all the bricks
-        # self.verify_gfid("dir1")
+        # Verify gfids are same on all the bricks
+        self.verify_gfid("dir1")
 
-        # # Create a new directory on all the bricks directly
-        # bricks_list = get_all_bricks(self.mnode, self.volname)
-        # for brick in bricks_list:
-        #     brick_node, brick_path = brick.split(":")
+        # Create a new directory on all the bricks directly
+        for brick in self.bricks_list:
+            brick_node, brick_path = brick.split(":")
 
-        #     ret, _, _ = g.run(brick_node, "mkdir %s/dir2" % (brick_path))
-        #     self.assertEqual(ret, 0, "Failed to create directory on brick %s"
-        #                      % (brick))
+            redant.execute_abstract_op_node(f"mkdir {brick_path}/dir2",
+                                            brick_node)
 
-        # # To circumvent is_fresh_file() check in glusterfs code.
-        # time.sleep(2)
+        # To circumvent is_fresh_file() check in glusterfs code.
+        time.sleep(2)
 
-        # # Do a clinet side lookup on the new directory and verify the gfid
-        # # All the bricks should have the same gfid assigned
-        # ret, _, _ = g.run(self.clients[0], "ls %s/dir2"
-        #                   % self.mounts[0].mountpoint)
-        # self.assertEqual(ret, 0, "Lookup on directory \"dir2\" failed.")
-        # g.log.info("Lookup on directory \"dir2\" successful")
+        # Do a clinet side lookup on the new directory and verify the gfid
+        # All the bricks should have the same gfid assigned
+        redant.execute_abstract_op_node((f"ls {self.mnt_list[0]['mountpath']}"
+                                         "/dir2"),
+                                        self.mnt_list[0]['client'])
 
-        # # Verify gfid is assigned on all the bricks and are same
-        # self.verify_gfid("dir2")
+        # Verify gfid is assigned on all the bricks and are same
+        self.verify_gfid("dir2")
