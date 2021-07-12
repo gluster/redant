@@ -68,39 +68,27 @@ class TestCase(NdParentTest):
                                                  self.server_list[0])
         dir_gfid = self.verify_gfid_and_retun_gfid("dir1")
 
-        print(dir_gfid)
-        # # Delete gfid attr from all but one backend bricks
-        # for brick in self.bricks_list[1:]:
-        #     brick_node, brick_path = brick.split(":")
-        #     ret = delete_fattr(brick_node, '%s/dir1' % (brick_path),
-        #                        'trusted.gfid')
-        #     self.assertTrue(ret, 'Failed to delete gfid for brick '
-        #                     'path %s:%s/dir1' % (brick_node, brick_path))
-        #     g.log.info("Successfully deleted gfid xattr for %s:%s/dir1",
-        #                brick_node, brick_path)
-        # g.log.info("Successfully deleted gfid xattr for dir1 on the "
-        #            "following bricks %s", str(self.bricks_list[1:]))
+        # Delete gfid attr from all but one backend bricks
+        for brick in self.bricks_list[1:]:
+            brick_node, brick_path = brick.split(":")
+            redant.delete_fattr(f'{brick_path}/dir1',
+                                'trusted.gfid',
+                                brick_node)
 
-        # # Trigger heal from mount point
-        # sleep(10)
-        # for mount_obj in self.mounts:
-        #     g.log.info("Triggering heal for %s:%s",
-        #                mount_obj.client_system, mount_obj.mountpoint)
-        #     command = ('cd %s; ls -l' % mount_obj.mountpoint)
-        #     ret, _, _ = g.run(mount_obj.client_system, command)
-        #     self.assertFalse(ret, 'Failed to run lookup '
-        #                      'on %s ' % mount_obj.client_system)
-        #     sleep(10)
+        # Trigger heal from mount point
+        redant.trigger_heal(self.vol_name, self.server_list[0])
+        if not redant.is_heal_complete(self.server_list[0], self.vol_name):
+            print("Heal not yet finished")
+        sleep(10)
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        for mount_obj in self.mnt_list:
+            command = f"cd {mount_obj['mountpath']}; ls -l"
+            redant.execute_abstract_op_node(command,
+                                            mount_obj['client'])
+            sleep(10)
 
-        # ret = get_mounts_stat(self.mounts)
-        # self.assertTrue(ret, "Failed to stat lookup on clients")
-        # g.log.info('stat lookup on clients succeeded')
+        redant.get_mounts_stat(self.mnt_list)
 
-        # # Verify that all gfids for dir1 are same and get the gfid
-        # dir_gfid_new = self.verify_gfid_and_retun_gfid("dir1")
-        # self.assertTrue(all(gfid in dir_gfid for gfid in dir_gfid_new),
-        #                 'Previous gfid and new gfid are not equal, '
-        #                 'which is not expected, previous gfid %s '
-        #                 'and new gfid %s' % (dir_gfid, dir_gfid_new))
-        # g.log.info('gfid heal was successful from client lookup and all '
-        #            'backend bricks have same gfid xattr, no gfid mismatch')
+        # Verify that all gfids for dir1 are same and get the gfid
+        dir_gfid_new = self.verify_gfid_and_retun_gfid("dir1")
+        print(all(gfid in dir_gfid for gfid in dir_gfid_new))
