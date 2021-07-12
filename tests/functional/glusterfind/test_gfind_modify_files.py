@@ -87,7 +87,8 @@ class TestGlusterFindModify(DParentTest):
 
         # Check if the files exist
         for filename in files:
-            ret = redant.path_exists(self.client_list[0], filename)
+            ret = redant.path_exists(self.client_list[0],
+                                     filename.rstrip('\n'))
             if not ret:
                 raise Exception(f"Unexpected: File {filename} does not exist")
 
@@ -117,16 +118,18 @@ class TestGlusterFindModify(DParentTest):
 
         # Modify the files created from mount point
         mod_string = "this is a test string\n"
-        for filenum in files:
-            ret = redant.append_string_to_file(self.client_list[0], filenum,
+        for filename in files:
+            ret = redant.append_string_to_file(self.client_list[0],
+                                               filename.rstrip('\n'),
                                                mod_string)
             if not ret:
                 raise Exception("Failed to append string to file")
 
         # Check if the files modified exist from mount point
-        for filenum in files:
+        for filename in files:
             ret = redant.check_if_pattern_in_file(self.client_list[0],
-                                                  mod_string, filenum)
+                                                  mod_string,
+                                                  filename.rstrip('\n'))
             if ret != 0:
                 raise Exception("Pattern not found in file")
 
