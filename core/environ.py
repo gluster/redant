@@ -71,6 +71,12 @@ class environ:
                 self.redant.logger.info(f'Copying file_dir_ops to {node}')
                 self.redant.transfer_file_from_local(io_script_spath,
                                                      io_script_dpath, node)
+        if not self.redant.path_exists(self.server_list,
+                                       [io_script_dpath]):
+            for node in self.server_list:
+                self.redant.logger.info(f'Copying file_dir_ops to {node}')
+                self.redant.transfer_file_from_local(io_script_spath,
+                                                     io_script_dpath, node)
 
     def setup_env(self):
         """
