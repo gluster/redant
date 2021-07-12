@@ -445,7 +445,9 @@ class SnapshotOps(AbstractOps):
             temp_name = snap['name']
             del snap['name']
             snap_info_dict[temp_name] = copy.deepcopy(snap)
-        return None
+        if snap_info_dict == {}:
+            return None
+        return snap_info_dict
 
     def get_snap_info_by_snapname(self, snapname: str, node: str) -> dict:
         """
@@ -487,7 +489,9 @@ class SnapshotOps(AbstractOps):
                 temp_dict = copy.deepcopy(snap_info_dict[snap])
                 del temp_dict['snapVolume']['originVolume']
                 snap_vol_dict[snap] = copy.deepcopy(temp_dict)
-        return None
+        if snap_vol_dict == {}:
+            return None
+        return snap_vol_dict
 
     def snap_list(self, node: str, excep: bool = True) -> dict:
         """
