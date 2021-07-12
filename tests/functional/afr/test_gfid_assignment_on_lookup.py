@@ -64,34 +64,32 @@ class TestCase(NdParentTest):
         8) heal info should show zero, and also gfid and other attributes
          must exist
         '''
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         options = {"metadata-self-heal": "on",
                    "entry-self-heal": "on",
                    "data-self-heal": "on"}
         redant.set_volume_options(self.vol_name, options,
                                   self.server_list[0])
 
-        # g.log.info("Creating directories on the backend.")
-        # bricks_list = get_all_bricks(self.mnode, self.volname)
-        # i = 0
-        # for brick in bricks_list:
-        #     i += 1
-        #     brick_node, brick_path = brick.split(":")
-        #     ret, _, _ = g.run(brick_node, "mkdir %s/dir%d" % (brick_path, i))
-        #     self.assertEqual(ret, 0, "Dir creation failed on %s" % brick_path)
-        # g.log.info("Created directories on the backend.")
+        bricks_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        i = 0
+        for brick in bricks_list:
+            i += 1
+            brick_node, brick_path = brick.split(":")
+            redant.create_dir(brick_path, f"dir{i}", brick_node)
 
-        # # To circumvent is_fresh_file() check in glusterfs code.
-        # sleep(2)
+        # To circumvent is_fresh_file() check in glusterfs code.
+        sleep(2)
 
-        # # Do named lookup on directories from mount
-        # ret, _, err = g.run(self.clients[0], "echo Hi >  %s/dir1"
-        #                     % self.mounts[0].mountpoint)
-        # errmsg = ("bash: %s/dir1: Is a directory\n"
-        #           % self.mounts[0].mountpoint)
-        # msg = "expected %s, but returned %s" % (errmsg, err)
-        # self.assertEqual(err, errmsg, msg)
-        # g.log.info("Writing a file with same name as directory \"dir1\" failed"
-        #            " as expected on mount point.")
+        # Do named lookup on directories from mount
+        cmd = f"echo Hi >  {self.mnt_list[0]['mountpath']}/dir1"
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0],
+                                              False)
+        print(ret)
+        errmsg = f"bash: {self.mnt_list[0]['mountpath']}/dir1: Is a directory"
+        if errmsg != ret['error_msg'].rstrip("\n"):
+            raise Exception("Unexpected: Writing to a directory "
+                            "was successfull")
 
         # ret, _, _ = g.run(self.clients[0], "touch %s/dir2"
         #                   % self.mounts[0].mountpoint)
