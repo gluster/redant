@@ -14,6 +14,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+    Verifying snapshot activation and deactivation functionality
+as well as snap info and status output.
 """
 
 
@@ -25,7 +29,6 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def run_test(self, redant):
-        # pylint: disable=too-many-branches, too-many-statements
         """
         Verifying Snapshot activation/deactivation functionality.
 
