@@ -33,10 +33,11 @@ class TestGlusterFindPreCLI(DParentTest):
         try:
             self.redant.gfind_delete(self.server_list[0], self.vol_name,
                                      self.session)
-            for file in self.outfiles:
-                ret = self.redant.remove_file(self.server_list[0], file, True)
-                if not ret:
-                    raise Exception(f"Failed to remove the outfile {file}")
+            ret = self.redant.remove_file(self.server_list[0], self.outfile,
+                                          True)
+            if not ret:
+                raise Exception("Failed to remove the outfile "
+                                f"{self.outfile}")
 
         except Exception as error:
             tb = traceback.format_exc()
