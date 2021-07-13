@@ -21,6 +21,7 @@
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
 import traceback
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -128,6 +129,9 @@ class TestGlusterFindDeletes(DParentTest):
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
                          self.outfiles[1], debug=True)
+
+        # Wait for outfile to reflect changes
+        sleep(2)
 
         # Check if the outfile exists
         ret = redant.path_exists(self.server_list[0], self.outfiles[1])
