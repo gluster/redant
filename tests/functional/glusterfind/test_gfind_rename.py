@@ -121,6 +121,7 @@ class TestGlusterFindRenames(DParentTest):
             if not ret:
                 raise Exception(f"Failed to rename file{i}")
 
+        # Wait for changelog to be updated
         sleep(2)
 
         # Perform glusterfind pre for the session

@@ -133,7 +133,7 @@ class TestGlusterFindModify(DParentTest):
             if ret != 0:
                 raise Exception("Pattern not found in file")
 
-        # Wait for changelog to get updated
+        # Wait for changelog to be updated
         sleep(2)
 
         # Perform glusterfind pre for the session

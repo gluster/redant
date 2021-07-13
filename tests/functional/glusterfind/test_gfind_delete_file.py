@@ -21,6 +21,7 @@
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
 import traceback
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -124,6 +125,9 @@ class TestGlusterFindDeletes(DParentTest):
             ret = redant.path_exists(self.client_list[0], path)
             if ret:
                 raise Exception("Unexpected: File still exist")
+
+        # Wait for changelog to be updated
+        sleep(2)
 
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,

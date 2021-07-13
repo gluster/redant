@@ -20,8 +20,6 @@ class MachineOps(AbstractOps):
         To reboot a given set of node(s)
         Arg:
             node(s) (str/list)
-        Returns:
-            None
         """
         if not isinstance(nodes, list):
             nodes = [nodes]
@@ -77,10 +75,6 @@ class MachineOps(AbstractOps):
         Returns:
             bool value: True if node is online or False.
         """
-        status = self.check_node_power_status(node)
-        if status[node]:
-            self.logger.info(f"{node} online.")
-            return True
         iter_v = 0
         while iter_v < timeout:
             status = self.check_node_power_status(node)
@@ -89,10 +83,7 @@ class MachineOps(AbstractOps):
                 return True
             time.sleep(1)
             iter_v += 1
-        status = self.check_node_power_status(node)
-        if status[node]:
-            self.logger.info(f"{node} online.")
-            return True
+
         self.logger.error(f"{node} still offline.")
         return False
 
@@ -102,12 +93,8 @@ class MachineOps(AbstractOps):
         Arg:
             node (str)
         Returns:
-            bool value: True if node is online or False.
+            bool value: True if node is offline or False.
         """
-        status = self.check_node_power_status(node)
-        if not status[node]:
-            self.logger.info(f"{node} offline.")
-            return True
         iter_v = 0
         while iter_v < timeout:
             status = self.check_node_power_status(node)
@@ -116,10 +103,7 @@ class MachineOps(AbstractOps):
                 return True
             time.sleep(1)
             iter_v += 1
-        status = self.check_node_power_status(node)
-        if not status[node]:
-            self.logger.info(f"{node} offline.")
-            return True
+
         self.logger.error(f"{node} still online.")
         return False
 
