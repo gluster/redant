@@ -30,9 +30,8 @@ class VolCreate(LazyParentTest):
         of said type so that tests can use it.
         """
         vol_param = self.vol_type_inf[self.volume_type]
-        redant.volume_create(self.vol_name, self.server_list[0], vol_param,
-                             self.server_list, self.brick_roots, True)
-        redant.volume_start(self.vol_name, self.server_list[0])
+        redant.setup_volume(self.vol_name, self.server_list[0], vol_param,
+                            self.server_list, self.brick_roots, force=True)
         redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
                                         self.client_list[0])
         redant.volume_mount(self.server_list[0], self.vol_name,

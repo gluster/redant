@@ -73,11 +73,10 @@ class DParentTest(metaclass=abc.ABCMeta):
             self.setup_test()
 
             if not self.setup_done and self.volume_type != "Generic":
-                self.redant.volume_create(
-                    self.vol_name, self.server_list[0],
-                    self.vol_type_inf[self.volume_type],
-                    self.server_list, self.brick_roots, True)
-                self.redant.volume_start(self.vol_name, self.server_list[0])
+                self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                         self.vol_type_inf[self.volume_type],
+                                         self.server_list, self.brick_roots,
+                                         force=True)
                 self.mountpoint = (f"/mnt/{self.vol_name}")
                 for client in self.client_list:
                     self.redant.execute_abstract_op_node(f"mkdir -p "

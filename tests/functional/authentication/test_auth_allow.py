@@ -33,8 +33,12 @@ class TestFuseAuthAllow(DParentTest):
         conf_hash = self.vol_type_inf[self.volume_type]
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
-                                 self.brick_roots)
+                                 self.brick_roots, force=True)
         self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node("mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
 
     def run_test(self, redant):
         """
@@ -50,6 +54,11 @@ class TestFuseAuthAllow(DParentTest):
         8. Repeat steps 3 to 5.
         9. Unmount the volume from client1.
         """
+        # Check for 2 clients
+        if len(self.client_list) < 2:
+            self.TEST_RES = None
+            raise Exception("The test case require 2 clients to run the test")
+
         # Setting authentication on volume for client1 using ip
         auth_dict = {'all': [self.client_list[0]]}
         if not redant.set_auth_allow(self.vol_name, self.server_list[0],
@@ -73,7 +82,7 @@ class TestFuseAuthAllow(DParentTest):
 
         # Obtain hostname of client1
         ret = redant.execute_abstract_op_node("hostname", self.client_list[0])
-        hostname_client1 = ret['msg'].rstrip('\n')
+        hostname_client1 = ret['msg'][0].rstrip('\n')
 
         # Setting authentication on volume for client1 using hostname
         auth_dict = {'all': [hostname_client1]}

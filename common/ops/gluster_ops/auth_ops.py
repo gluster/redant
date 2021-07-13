@@ -310,13 +310,13 @@ class AuthOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, client)
 
         # Command to fetch latest AUTH_FAILED event log message.
-        out = ret['msg'].rstrip('\n')
+        out = ret['msg'][0].rstrip('\n')
         cmd = f"grep AUTH_FAILED /var/log/glusterfs/{out} | tail -1"
         ret = self.execute_abstract_op_node(cmd, client)
 
         # Check whether the AUTH_FAILED log is of the latest mount failure
-        if ret['msg'].rstrip('\n') != previous_log_statement:
+        if ret['msg'][0].rstrip('\n') == previous_log_statement:
             raise Exception("Mount failure is not due to authentication "
                             "error")
 
-        return ret['msg'].rstrip('\n')
+        return ret['msg'][0].rstrip('\n')
