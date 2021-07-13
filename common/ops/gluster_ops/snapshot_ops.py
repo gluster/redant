@@ -674,8 +674,8 @@ class SnapshotOps(AbstractOps):
             cmd = f"kill -9 {pid}"
             self.execute_abstract_op_node(cmd, node)
 
-    def get_snap_config(self, node: str, volname: str=None,
-                        excep: bool=True) -> dict:
+    def get_snap_config(self, node: str, volname: str = None,
+                        excep: bool = True) -> dict:
         """
         Method to obtain the snapshot config.
 
@@ -717,8 +717,8 @@ class SnapshotOps(AbstractOps):
 
         return snap_config
 
-    def set_snap_config(self, option: dict, node: str, volname: str=None,
-                        excep: bool=True) -> dict:
+    def set_snap_config(self, option: dict, node: str, volname: str = None,
+                        excep: bool = True) -> dict:
         """
         Method to set the snapshot config.
 

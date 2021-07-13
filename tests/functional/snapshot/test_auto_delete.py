@@ -21,6 +21,7 @@ from tests.d_parent_test import DParentTest
 
 # disruptive;rep,dist-rep,disp,dist-disp,dist
 
+
 class TestCase(DParentTest):
     """
     Tests which verifies the deletion of snapshots along
@@ -54,7 +55,7 @@ class TestCase(DParentTest):
         """
 
         default_conf = redant.get_snap_config(self.server_list[0])
-        self.def_soft_lim = {"snap-max-soft-limit" : \
+        self.def_soft_lim = {"snap-max-soft-limit":
                              default_conf['systemConfig']['softLimit'][:-1]}
 
         # Enable auto-delete snapshot config option
@@ -86,7 +87,7 @@ class TestCase(DParentTest):
                             f" {config_v['volumeConfig'][0]['softLimit']} for"
                             f" when queried for volume {self.vol_name}")
 
-        self.snapshots = [ f"{self.vol_name}-snap{i}" for i in range(20) ]
+        self.snapshots = [f"{self.vol_name}-snap{i}" for i in range(20)]
 
         # Create 20 snapshots. As the count of snapshots crosses the
         # soft-limit the oldest of newly created snapshot should
@@ -103,4 +104,3 @@ class TestCase(DParentTest):
             if snapname not in snaplist:
                 raise Exception(f"{snapname} is not expected to be in the"
                                 "snap list")
-
