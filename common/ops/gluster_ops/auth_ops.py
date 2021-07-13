@@ -247,3 +247,76 @@ class AuthOps(AbstractOps):
             self.logger.info("Auth reject set and verified successfully.")
             return True
         return False
+
+    def authenticated_mount(self, volname: str, server: str,
+                            mountpoint: str, client: str):
+        """
+        Mount volume on authenticated client
+
+        Args:
+            volname (str): Volume to be mounted
+            server (str): Server to use for fetching thr volfile on client
+            mountpoint (str): Path on which the volume has to be mounted
+            client (str): Node on which mounting has to be done
+        """
+        # Mount volume
+        self.volume_mount(server, volname, mountpoint, client)
+
+        # Verify mount
+        ret = self.is_mounted(volname, mountpoint, client, server)
+        if not ret:
+            raise Exception("Unexpected: Volume is not mounted on client")
+
+    def unauthenticated_mount(self, volname: str, server: str,
+                              mountpoint: str, client: str):
+        """
+        Try to mount volume on unauthenticated client
+
+        Args:
+            volname (str): Volume to be mounted
+            server (str): Server to use for fetching thr volfile on client
+            mountpoint (str): Path on which the volume has to be mounted
+            client (str): Node on which mounting has to be done
+        """
+        # Sometimes mount returns error code as 0, even though the mount
+        # failed, so not checking the return value from volume_mount().
+        # Mount volume
+        self.volume_mount(server, volname, mountpoint, client, False)
+
+        # Verify mount
+        ret = self.is_mounted(volname, mountpoint, client, server)
+        if ret:
+            # Mount operation did not fail as expected. Cleanup the mount.
+            self.volume_unmount(volname, mountpoint, client)
+            raise Exception("Mount operation did not fail as expected")
+
+        self.logger.info("Mount operation failed as expected")
+
+    def is_auth_failure(self, client: str,
+                        previous_log_statement: str = '') -> str:
+        """
+        Check if the mount failure is due to authentication error
+        Args:
+            client(str): Client on which mount failure has to be verified.
+            previous_log_statement(str): AUTH_FAILED message of previous mount
+                failure due to auth error(if any). This is used to distinguish
+                between the current and previous message.
+
+        Return:
+            str: Latest AUTH_FAILED event log message.
+        """
+        # Command to find the failure in log file
+        cmd = "ls /var/log/glusterfs/ -1t | head -1"
+        ret = self.execute_abstract_op_node(cmd, client)
+
+        # Command to fetch latest AUTH_FAILED event log message.
+        out = ret['msg'].rstrip('\n')
+        cmd = f"grep AUTH_FAILED /var/log/glusterfs/{out} | tail -1"
+        ret = self.execute_abstract_op_node(cmd, client)
+
+        # Check whether the AUTH_FAILED log is of the latest mount failure
+        if ret['msg'].rstrip('\n') != previous_log_statement:
+            raise Exception("Mount failure is not due to authentication "
+                            "error")
+
+        return ret['msg'].rstrip('\n')
