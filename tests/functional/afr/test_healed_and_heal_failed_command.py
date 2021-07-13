@@ -22,11 +22,26 @@ Description:
 # disruptive;rep
 # TODO: nfs
 
+import traceback
 from random import choice
 from tests.d_parent_test import DParentTest
 
+
 class TestCase(DParentTest):
-    
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                      self.mnt_list)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
     def run_test(self, redant):
         """
 
@@ -39,8 +54,8 @@ class TestCase(DParentTest):
           `heal-failed` commands
         """
 
-        # client, m_point = (self.mounts[0].client_system,
-        #                    self.mounts[0].mountpoint)
+        self.list_of_procs = []
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Kill one of the bricks in the volume
         bricks_list = redant.get_online_bricks_list(self.vol_name,
@@ -54,35 +69,31 @@ class TestCase(DParentTest):
                                          self.server_list[0]):
             raise Exception(f"Brick {random_brick} is not offline.")
 
-        # # Fill IO in the mount point
-        # cmd = ('/usr/bin/env python {} '
-        #        'create_deep_dirs_with_files --dir-depth 10 '
-        #        '--fixed-file-size 1M --num-of-files 50 '
-        #        '--dirname-start-num 1 {}'.format(self.script_path, m_point))
-        # ret, _, _ = g.run(client, cmd)
-        # self.assertEqual(ret, 0, 'Not able to fill directory with IO')
+        proc = (redant.
+                create_deep_dirs_with_files(self.mnt_list[0]['mountpath'],
+                                            1, 10, 1, 1, 50,
+                                            self.mnt_list[0]['client']))
+        self.list_of_procs.append(proc)
+        ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
+        if not ret:
+            raise Exception("IO validation failed")
 
-        # # Verify `gluster volume heal <volname> info healed` results in error
-        # cmd = 'gluster volume heal <volname> info'
-        # ret, _, err = heal_info_healed(self.mnode, self.volname)
-        # self.assertNotEqual(ret, 0, '`%s healed` should result in error' % cmd)
-        # self.assertIn('Usage', err, '`%s healed` should list `Usage`' % cmd)
+        # Verify `gluster volume heal <volname> info healed` results in error
+        cmd = 'gluster volume heal <volname> info'
+        ret = redant.heal_info_healed(self.vol_name, self.server_list[0],
+                                      False)
+        if ret['error_code'] == 0:
+            raise Exception(f"{cmd} heal-failed should result in error.")
 
-        # # Verify `gluster volume heal <volname> info heal-failed` errors out
-        # ret, _, err = heal_info_heal_failed(self.mnode, self.volname)
-        # self.assertNotEqual(ret, 0,
-        #                     '`%s heal-failed` should result in error' % cmd)
-        # self.assertIn('Usage', err,
-        #               '`%s heal-failed` should list `Usage`' % cmd)
+        if 'Usage' not in ret['error_msg']:
+            raise Exception(f"{cmd} heal-failed should list 'Usage'")
 
-        # # Verify absence of `healed` nd `heal-failed` commands in `volume help`
-        # cmd = 'gluster volume help | grep -i heal'
-        # ret, rout, _ = g.run(self.mnode, cmd)
-        # self.assertEqual(
-        #     ret, 0, 'Unable to query help content from `gluster volume help`')
-        # self.assertNotIn(
-        #     'healed', rout, '`healed` string should not exist '
-        #     'in `gluster volume help` command')
-        # self.assertNotIn(
-        #     'heal-failed', rout, '`heal-failed` string should '
-        #     'not exist in `gluster volume help` command')
+        # Verify absence of `healed` nd `heal-failed` commands in `volume help`
+        cmd = 'gluster volume help | grep -i heal'
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0])
+
+        if 'healed' in ret['msg']:
+            raise Exception(f'`healed` string shoulf not exist in {cmd}')
+
+        if 'heal-failed' in ret['msg']:
+            raise Exception(f'`healed` string shoulf not exist in {cmd}')
