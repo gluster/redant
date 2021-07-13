@@ -126,12 +126,12 @@ class TestGlusterFindDeletes(DParentTest):
             if ret:
                 raise Exception("Unexpected: File still exist")
 
+        # Wait for changelog to be updated
+        sleep(2)
+
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
                          self.outfiles[1], debug=True)
-
-        # Wait for outfile to reflect changes
-        sleep(2)
 
         # Check if the outfile exists
         ret = redant.path_exists(self.server_list[0], self.outfiles[1])
