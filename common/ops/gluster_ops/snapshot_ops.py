@@ -694,7 +694,7 @@ class SnapshotOps(AbstractOps):
             output.
         """
         cmd = "gluster snapshot config --mode=script --xml"
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
         if not excep:
             return ret['msg']
@@ -746,4 +746,4 @@ class SnapshotOps(AbstractOps):
         cmd = (f"gluster snapshot config {volname} {list(option.keys())[0]}"
                f" {list(option.values())[0]} --mode=script --xml")
 
-        return self.execute_abstract_op_node(cmd, node)
+        return self.execute_abstract_op_node(cmd, node, excep)
