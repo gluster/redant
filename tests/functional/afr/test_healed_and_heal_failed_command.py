@@ -15,20 +15,20 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-@runs_on([['replicated'], ['glusterfs', 'nfs']])
+Description:
+    Validate absence of `healed` and `heal-failed` options
 """
 
 # disruptive;rep
 # TODO: nfs
 
-# from random import choice
+from random import choice
 from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
     
     def run_test(self, redant):
         """
-        Description: Validate absence of `healed` and `heal-failed` options
 
         Steps:
         - Create and mount a replicated volume
@@ -42,11 +42,17 @@ class TestCase(DParentTest):
         # client, m_point = (self.mounts[0].client_system,
         #                    self.mounts[0].mountpoint)
 
-        # # Kill one of the bricks in the volume
-        # brick_list = get_online_bricks_list(self.mnode, self.volname)
-        # self.assertIsNotNone(brick_list, 'Unable to get online bricks list')
-        # ret = bring_bricks_offline(self.volname, choice(brick_list))
-        # self.assertTrue(ret, 'Unable to kill one of the bricks in the volume')
+        # Kill one of the bricks in the volume
+        bricks_list = redant.get_online_bricks_list(self.vol_name,
+                                                    self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Unable to get the bricks list")
+
+        random_brick = choice(bricks_list)
+        redant.bring_bricks_offline(self.vol_name, random_brick)
+        if not redant.are_bricks_offline(self.vol_name, [random_brick],
+                                         self.server_list[0]):
+            raise Exception(f"Brick {random_brick} is not offline.")
 
         # # Fill IO in the mount point
         # cmd = ('/usr/bin/env python {} '
