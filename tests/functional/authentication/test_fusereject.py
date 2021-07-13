@@ -1,77 +1,47 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-""" Description
-Test Cases in this module is to validate the auth.reject volume option
-with "*" as value. FUSE Mount not allowed to the rejected client
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (get_volume_info, set_volume_options,
-                                           volume_reset)
-from glustolibs.gluster.mount_ops import (mount_volume, is_mounted,
-                                          umount_volume)
-from glustolibs.gluster.brick_libs import get_all_bricks, are_bricks_online
+ Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to validate the auth.reject volume option with "*" as value.
+    FUSE Mount not allowed to the rejected client
+"""
+
+# disruptive;rep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated'], ['glusterfs']])
-class AuthRejectVol(GlusterBaseClass):
-    """
-    Create a replicated volume and start the volume and check
-    if volume is started
-    """
+class TestAuthRejectVol(DParentTest):
 
-    def setUp(self):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        Creating a replicated volume and checking if it is started
+        Create and start the volume
         """
-        # Calling GlusterBaseClass Setup
-        self.get_super_method(self, 'setUp')()
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node("mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
 
-        ret = self.setup_volume()
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-
-        # Check if volume is started
-        volinfo = get_volume_info(self.mnode, self.volname)
-        if volinfo[self.volname]['statusStr'] != "Started":
-            raise ExecutionError("Volume has not Started")
-        g.log.info("Volume is started")
-
-    def tearDown(self):
-        """
-        Unmount Volume and Volume Cleanup
-        """
-        for client in self.clients:
-            ret, _, _ = umount_volume(client, self.mountpoint,
-                                      self.mount_type)
-            if ret != 0:
-                raise ExecutionError("Failed to unmount volume from client"
-                                     " %s" % client)
-            g.log.info("Unmounted Volume from client %s successfully", client)
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to Cleanup the "
-                                 "Volume %s" % self.volname)
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_validate_authreject_vol(self):
+    def run_test(self, redant):
         """
         -Set Authentication Reject for client1
         -Check if bricks are online
@@ -82,99 +52,78 @@ class AuthRejectVol(GlusterBaseClass):
         -Check if bricks are online
         -Mounting the vol on client1
         """
-        # pylint: disable=too-many-statements
+        # Check for 2 clients
+        if len(self.client_list) < 2:
+            self.TEST_RES = None
+            raise Exception("The test case require 2 clients to run the test")
 
         # Obtain hostname of clients
-        ret, hostname_client1, _ = g.run(self.clients[0],
-                                         "hostname")
-        self.assertEqual(ret, 0, ("Failed to obtain hostname of client %s"
-                                  % self.clients[0]))
-        g.log.info("Obtained hostname of client. IP- %s, hostname- %s",
-                   self.clients[0], hostname_client1.strip())
+        ret = redant.execute_abstract_op_node("hostname", self.client_list[0])
+        hostname_client1 = ret['msg'][0].rstrip('\n')
 
         # Set Authentication
-        option = {"auth.reject": hostname_client1.strip()}
-        ret = set_volume_options(self.mnode, self.volname,
-                                 option)
-        self.assertTrue(ret, ("Failed to set authentication with option: %s"
-                              % option))
-        g.log.info("Authentication Set successfully with option: %s", option)
+        auth_dict = {'all': [hostname_client1]}
+        if not redant.set_auth_reject(self.vol_name, self.server_list[0],
+                                      auth_dict):
+            raise Exception("Failed to set authentication")
 
         # Fetching all the bricks
-        self.mountpoint = "/mnt/testvol"
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, "Brick list is empty")
-        g.log.info("Brick List : %s", bricks_list)
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Failed to get brick list")
 
         # Check are bricks online
-        ret = are_bricks_online(self.mnode, self.volname, bricks_list)
-        self.assertTrue(ret, "All bricks are not online")
+        if not redant.are_bricks_online(self.vol_name, bricks_list,
+                                        self.server_list[0]):
+            raise Exception("All bricks are not online")
 
         # Using this way to check because of bug 1586036
         # Mounting volume
-        ret, _, _ = mount_volume(self.volname, self.mount_type,
-                                 self.mountpoint,
-                                 self.mnode,
-                                 self.clients[0])
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[0], excep=False)
 
         # Checking if volume is mounted
-        out = is_mounted(self.volname, self.mountpoint, self.mnode,
-                         self.clients[0], self.mount_type, user='root')
-        if (ret == 0) & (not out):
-            g.log.error("Mount executed successfully due to bug 1586036")
-        elif (ret == 1) & (not out):
-            g.log.info("Expected:Mounting has failed successfully")
-        else:
-            raise ExecutionError("Unexpected Mounting of Volume %s successful"
-                                 % self.volname)
+        if redant.is_mounted(self.vol_name, self.mountpoint,
+                             self.client_list[0], self.server_list[0]):
+            raise Exception("Unexpected: Mount executed successfully")
 
         # Checking client logs for authentication error
-        cmd = ("grep AUTH_FAILED /var/log/glusterfs/mnt-"
-               "testvol.log")
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "Mounting has not failed due to"
-                         "authentication error")
-        g.log.info("Mounting has failed due to authentication error")
+        cmd = (f"grep AUTH_FAILED /var/log/glusterfs/mnt-{self.vol_name}.log"
+               " | wc -l")
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
+        if ret['msg'][0].rstrip('\n') == '0':
+            raise Exception("Mounting has not failed due to"
+                            "authentication error")
 
         # Mounting the vol on client2
         # Check bricks are online
-        ret = are_bricks_online(self.mnode, self.volname, bricks_list)
-        self.assertTrue(ret, "All bricks are not online")
+        if not redant.are_bricks_online(self.vol_name, bricks_list,
+                                        self.server_list[0]):
+            raise Exception("All bricks are not online")
 
-        # Mounting Volume
-        ret, _, _ = mount_volume(self.volname, self.mount_type,
-                                 self.mountpoint, self.mnode,
-                                 self.clients[1])
-        self.assertEqual(ret, 0, "Failed to mount volume")
-        g.log.info("Mounted Successfully")
+        # Mounting volume
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[1])
 
         # Checking if volume is mounted
-        out = is_mounted(self.volname, self.mountpoint, self.mnode,
-                         self.clients[1], self.mount_type,
-                         user='root')
-        self.assertTrue(out, "Volume %s has failed to mount"
-                        % self.volname)
+        if not redant.is_mounted(self.vol_name, self.mountpoint,
+                                 self.client_list[1], self.server_list[0]):
+            raise Exception("Unexpected: Volume is not mounted")
 
         # Reset Volume
-        ret, _, _ = volume_reset(mnode=self.mnode, volname=self.volname)
-        self.assertEqual(ret, 0, "Failed to reset volume")
-        g.log.info("Volume %s reset operation is successful", self.volname)
+        redant.volume_reset(self.vol_name, self.server_list[0])
 
         # Checking if bricks are online
-        ret = are_bricks_online(self.mnode, self.volname, bricks_list)
-        self.assertTrue(ret, "All bricks are not online")
+        if not redant.are_bricks_online(self.vol_name, bricks_list,
+                                        self.server_list[0]):
+            raise Exception("All bricks are not online")
 
         # Mounting Volume
-        ret, _, _ = mount_volume(self.volname, self.mount_type,
-                                 self.mountpoint, self.mnode,
-                                 self.clients[0])
-        self.assertEqual(ret, 0, "Failed to mount volume")
-        g.log.info("Mounted Successfully")
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[0])
 
-        # Checking if Volume is mounted
-        out = is_mounted(self.volname, self.mountpoint, self.servers[0],
-                         self.clients[0], self.mount_type,
-                         user='root')
-        self.assertTrue(out, "Volume %s has failed to mount"
-                        % self.volname)
-        g.log.info("Volume is mounted successfully %s", self.volname)
+        # Checking if volume is mounted
+        if not redant.is_mounted(self.vol_name, self.mountpoint,
+                                 self.client_list[0], self.server_list[0]):
+            raise Exception("Unexpected: Volume is not mounted")
