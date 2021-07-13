@@ -34,7 +34,7 @@ class TestAuthAllowEmptyString(NdParentTest):
         option = {"auth.allow": " "}
         ret = redant.set_volume_options(self.vol_name, option,
                                         self.server_list[0], excep=False)
-        if ret['msg']['opRet'] == '0':
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Authentication set successfully "
                             f"for Volume with option: {option}")
 

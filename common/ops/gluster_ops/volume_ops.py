@@ -1261,6 +1261,9 @@ class VolumeOps(AbstractOps):
                        f"{volume_options[option]} --mode=script --xml")
 
                 ret = self.execute_abstract_op_node(cmd, node, excep)
+                if not excep and ret['error_code'] != 0:
+                    return ret
+
                 if ret['msg']['opRet'] == '0':
                     if volname != 'all':
                         self.es.set_vol_option(
