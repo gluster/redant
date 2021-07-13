@@ -927,7 +927,7 @@ class IoOps(AbstractOps):
             1: If pattern not present in file.
            -1: If command was not executed.
         """
-        cmd = f"cat {fqpath} | grep {pattern}"
+        cmd = f"cat {fqpath} | grep \"{pattern}\""
         ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
             return -1
