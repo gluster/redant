@@ -58,7 +58,7 @@ class TestGlusterFindBrickDown(DParentTest):
                f"{self.file_limit - 10}..{self.file_limit}"
                "}")
 
-        self.redant.execute_abstract_op_node(cmd, self.server_list[0])
+        self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Gather the list of files from the mount point
         files = self.redant.list_files(self.client_list[0], self.mountpoint)
