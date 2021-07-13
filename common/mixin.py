@@ -9,7 +9,7 @@ from .ops.support_ops.io_ops import IoOps
 from .ops.support_ops.machine_ops import MachineOps
 from .ops.gluster_ops.peer_ops import PeerOps
 from .ops.gluster_ops.volume_ops import VolumeOps
-from .ops.gluster_ops.gluster_ops import GlusterOps
+from .ops.gluster_ops.glusterd_ops import GlusterdOps
 from .ops.gluster_ops.brick_ops import BrickOps
 from .ops.gluster_ops.profile_ops import ProfileOps
 from .ops.gluster_ops.rebalance_ops import RebalanceOps
@@ -22,7 +22,7 @@ from .ops.gluster_ops.snapshot_ops import SnapshotOps
 from .ops.gluster_ops.glusterfind_ops import GlusterfindOps
 
 
-class RedantMixin(GlusterOps, VolumeOps, BrickOps, PeerOps,
+class RedantMixin(GlusterdOps, VolumeOps, BrickOps, PeerOps,
                   IoOps, MachineOps, MountOps, ProfileOps, RebalanceOps,
                   HealOps, SharedStorageOps, AuthOps, BitrotOps, SnapshotOps,
                   GlusterfindOps, Rexe, Logger):

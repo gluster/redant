@@ -1,5 +1,5 @@
 """
-This file contains one class - GlusterOps wich holds
+This file contains one class - GlusterdOps wich holds
 operations on the glusterd service on the server
 or the client.
 """
@@ -8,7 +8,7 @@ import configparser
 from common.ops.abstract_ops import AbstractOps
 
 
-class GlusterOps(AbstractOps):
+class GlusterdOps(AbstractOps):
     """
     GlusterOps class provides APIs to start and stop
     the glusterd service on either the client or the sever.

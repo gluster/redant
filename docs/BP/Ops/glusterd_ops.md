@@ -1,6 +1,6 @@
 # Glusterd Ops
 
-[Glusterd Ops](../../../common/ops/gluster_ops/gluster_ops.py) contains all the functions which are required for glusterd specific operations.
+[Glusterd Ops](../../../common/ops/gluster_ops/glusterd_ops.py) contains all the functions which are required for glusterd specific operations.
 
 ## Given below are all the details about all the functions implemented in the Glusterd Ops module:
 
