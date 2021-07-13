@@ -142,6 +142,6 @@ class TestCase(DParentTest):
 
         # Validate IO
         ret = redant.validate_io_procs(self.all_mounts_procs,
-                                       self.mnt_list[0])
+                                       self.mnt_list)
         if not ret:
             raise Exception("IO validation failed")
