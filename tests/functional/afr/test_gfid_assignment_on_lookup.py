@@ -85,19 +85,14 @@ class TestCase(NdParentTest):
         cmd = f"echo Hi >  {self.mnt_list[0]['mountpath']}/dir1"
         ret = redant.execute_abstract_op_node(cmd, self.client_list[0],
                                               False)
-        print(ret)
+
         errmsg = f"bash: {self.mnt_list[0]['mountpath']}/dir1: Is a directory"
         if errmsg != ret['error_msg'].rstrip("\n"):
             raise Exception("Unexpected: Writing to a directory "
                             "was successfull")
 
-        # ret, _, _ = g.run(self.clients[0], "touch %s/dir2"
-        #                   % self.mounts[0].mountpoint)
-        # self.assertEqual(ret, 0, "Touch of file with same name as directory "
-        #                  "\"dir2\" failed.")
-        # g.log.info("Touch of file with same name as directory \"dir2\" passed"
-        #            " but it will not create the file since a directory is "
-        #            "already present with the same name.")
+        redant.execute_abstract_op_node(f"touch {self.mnt_list[0]['mountpath']}/dir2",
+                                        self.client_list[0])
 
         # ret, _, err = g.run(self.clients[0], "mkdir %s/dir3"
         #                     % self.mounts[0].mountpoint)
