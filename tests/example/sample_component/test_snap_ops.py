@@ -26,6 +26,11 @@ class TestCase(DParentTest):
                            self.server_list[0])
         redant.snap_create(self.vol_name, self.snap_name2,
                            self.server_list[0])
+
+        val = redant.get_snap_config(self.server_list[0], self.vol_name)
+        redant.logger.info(f"Snap config : {val}")
+        value_set = {"auto-delete": "enable"}
+        redant.set_snap_config(value_set, self.server_list[0])
         snap_info = redant.get_snap_info_by_snapname(self.snap_name,
                                                      self.server_list[0])
         redant.logger.info(f"Snap info by snapname {self.snap_name}"

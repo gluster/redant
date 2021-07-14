@@ -186,7 +186,7 @@ class SnapshotOps(AbstractOps):
                 - node : node on which the command got executed
         """
         if description is not None:
-            description = (f"description {description}")
+            description = (f"description \"{description}\"")
         else:
             description = ''
 
@@ -501,7 +501,7 @@ class SnapshotOps(AbstractOps):
             node (str): Node wherein the command will be executed.
 
         Optional:
-            except (bool): Flag to control exception handling by the
+            excep (bool): Flag to control exception handling by the
             abstract ops. If True, the exception is handled, or else
             it isn't.
 
@@ -513,6 +513,7 @@ class SnapshotOps(AbstractOps):
                 - error_code: error code returned
                 - cmd : command that got executed
                 - node : node on which the command got executed
+               when excep is False or else we return list of snapshots.
         """
         cmd = "gluster snapshot list --mode=script --xml"
         return self.execute_abstract_op_node(cmd, node, excep)
@@ -526,9 +527,11 @@ class SnapshotOps(AbstractOps):
                    " --mode=script")
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        # TODO add the parsing logic in here.
 
-        return ret
+        if not excep:
+            return ret
+
+        return ret['msg']['snapList']['snapshot']
 
     def snap_delete(self, snapname: str, node: str,
                     excep: bool = True) -> dict:
@@ -670,3 +673,77 @@ class SnapshotOps(AbstractOps):
         for pid in snapd_pid:
             cmd = f"kill -9 {pid}"
             self.execute_abstract_op_node(cmd, node)
+
+    def get_snap_config(self, node: str, volname: str = None,
+                        excep: bool = True) -> dict:
+        """
+        Method to obtain the snapshot config.
+
+        Args:
+            node (str): The node wherein the command is executed.
+
+        Optional:
+            volname (str): Name of the volume. Default value being None.
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else it
+            isn't.
+
+        Returns:
+            Dictionary of config values. Parsing would be done only in case
+            of excep being True. Or else, it is left to user to handle the
+            output.
+        """
+        cmd = "gluster snapshot config --mode=script --xml"
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+
+        if not excep:
+            return ret['msg']
+
+        snap_config = {}
+        snap_config['systemConfig'] = ret['msg']['snapConfig']['systemConfig']
+
+        volume_config = []
+        temp_vol_conf = ret['msg']['snapConfig']['volumeConfig']['volume']
+        if not isinstance(temp_vol_conf, list):
+            temp_vol_conf = [temp_vol_conf]
+
+        for vol in temp_vol_conf:
+            if volname is not None:
+                if volname == vol["name"]:
+                    volume_config.append(vol)
+            else:
+                volume_config.append(vol)
+        snap_config['volumeConfig'] = volume_config
+
+        return snap_config
+
+    def set_snap_config(self, option: dict, node: str, volname: str = None,
+                        excep: bool = True) -> dict:
+        """
+        Method to set the snapshot config.
+
+        Args:
+            option (dict): Key value pair of the option to be set.
+            node (str): Node wherein the command is to be run.
+        Optional:
+            volname (str): Name of the volume.
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else it
+            isn't.
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        """
+        if volname is None:
+            volname = ""
+
+        cmd = (f"gluster snapshot config {volname} {list(option.keys())[0]}"
+               f" {list(option.values())[0]} --mode=script --xml")
+
+        return self.execute_abstract_op_node(cmd, node, excep)
