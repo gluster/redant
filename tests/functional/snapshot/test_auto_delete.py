@@ -14,6 +14,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description: Tests which verifies the deletion of snapshots along
+with the snapshot config option 'auto-delete'
 """
 
 import traceback
@@ -83,7 +86,7 @@ class TestCase(DParentTest):
         config_v = redant.get_snap_config(self.server_list[0],
                                           self.vol_name)
         if config_v['volumeConfig'][0]['softLimit'] != '8':
-            raise Exception("Expected softlimit of 8 but got "
+            raise Exception("Expected softlimit of 8 but got"
                             f" {config_v['volumeConfig'][0]['softLimit']} for"
                             f" when queried for volume {self.vol_name}")
 
