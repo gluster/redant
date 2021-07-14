@@ -44,7 +44,6 @@ class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
-
         Steps:
         - Create and mount a replicated volume
         - Kill one of the bricks and write IO from mount point
