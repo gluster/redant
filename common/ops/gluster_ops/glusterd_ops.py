@@ -233,7 +233,7 @@ class GlusterdOps(AbstractOps):
 
     def kill_glusterd_ungraceful(self, node: str):
         """
-        Method to kill glusterd, given its pid.
+        Method to kill glusterd, given its pid is active.
 
         Args:
             node (str|list): Node(s) on which this is to be executed.
