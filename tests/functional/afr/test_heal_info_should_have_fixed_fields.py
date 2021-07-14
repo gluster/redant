@@ -118,5 +118,5 @@ class TestCase(DParentTest):
             if heal_summ[brick]['status'] != 'Connected':
                 raise Exception(f"Status is not connected for {brick}")
 
-            if heal_summ[brick]['numerOfEntries'] != '0':
+            if heal_summ[brick]['numberOfEntries'] != '0':
                 raise Exception(f"numberOfEntries not 0 for {brick}")
