@@ -231,6 +231,24 @@ class GlusterdOps(AbstractOps):
             count += 1
         return False
 
+    def kill_glusterd_ungraceful(self, node: str):
+        """
+        Method to kill glusterd, given its pid is active.
+
+        Args:
+            node (str|list): Node(s) on which this is to be executed.
+        """
+        if not isinstance(node, list):
+            node = [node]
+        cmd1 = "pidof glusterd"
+
+        for nd in node:
+            ret = self.execute_abstract_op_node(cmd1, nd, False)
+            if ret['error_code'] == 0:
+                pid = ret['msg'][0].strip()
+                cmd2 = f"kill -9 {pid}"
+                self.execute_abstract_op_node(cmd2, nd)
+
     def wait_for_glusterd_to_stop(self, node: str, timeout: int = 80) -> bool:
         """
         Checks the glusterd has stopeed already or waits for
@@ -248,6 +266,8 @@ class GlusterdOps(AbstractOps):
             ret = self.is_glusterd_running(node)
             if ret == 0:
                 return True
+            elif ret == -1:
+                self.kill_glusterd_ungraceful(node)
             sleep(1)
             count += 1
         return False
