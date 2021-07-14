@@ -1,5 +1,7 @@
 # redant
 
+[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/gluster/redant)
+
 ```console
     ____  __________  ___    _   ________
    / __ \/ ____/ __ \/   |  / | / /_  __/
