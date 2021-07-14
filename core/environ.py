@@ -108,7 +108,7 @@ class environ:
             self.redant.hard_terminate(self.server_list, self.client_list,
                                        self.brick_root)
             self.spinner.succeed("Tearing down successful.")
-        except:
+        except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
