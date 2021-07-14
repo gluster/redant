@@ -596,14 +596,19 @@ class HealOps:
 
         return True
 
-    def heal_info_heal_failed(self, volname: str, node: str) -> dict:
+    def heal_info_heal_failed(self, volname: str, node: str,
+                              excep: bool = True) -> dict:
         """Get entries on which heal failed for the volume by executing:
             'gluster volume heal <volname> info heal-failed'
 
         Args:
             volname (str): Name of the volume
             node (str): Node on which commands are executed.
-
+        Optional:
+        excep (bool): exception flag to bypass the exception if the
+                      cmd fails. If set to False the exception is
+                      bypassed and value from remote executioner is
+                      returned. Defaults to True
         Returns:
             ret: A dictionary consisting
                 - Flag : Flag to check if connection failed
@@ -614,7 +619,7 @@ class HealOps:
                 - node : node on which the command got executed
         """
         cmd = f"gluster volume heal {volname} info heal-failed"
-        return self.execute_abstract_op_node(cmd, node)
+        return self.execute_abstract_op_node(cmd, node, excep)
 
     def heal_info_healed(self, volname: str, node: str,
                          excep: bool = True) -> dict:

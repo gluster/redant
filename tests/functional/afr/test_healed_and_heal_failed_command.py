@@ -83,10 +83,19 @@ class TestCase(DParentTest):
         ret = redant.heal_info_healed(self.vol_name, self.server_list[0],
                                       False)
         if ret['error_code'] == 0:
-            raise Exception(f"{cmd} heal-failed should result in error.")
+            raise Exception(f"`{cmd} healed` should result in error.")
 
         if 'Usage' not in ret['error_msg']:
-            raise Exception(f"{cmd} heal-failed should list 'Usage'")
+            raise Exception(f"`{cmd} healed` should list 'Usage'")
+
+        # Verify `gluster volume heal <volname> info heal-failed` errors out
+        ret = redant.heal_info_heal_failed(self.vol_name, self.server_list[0],
+                                           False)
+        if ret['error_code'] == 0:
+            raise Exception(f"`{cmd} heal-failed` should result in error.")
+
+        if 'Usage' not in ret['error_msg']:
+            raise Exception(f"`{cmd} heal-failed` should list 'Usage'")
 
         # Verify absence of `healed` nd `heal-failed` commands in `volume help`
         cmd = 'gluster volume help | grep -i heal'
