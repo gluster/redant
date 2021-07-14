@@ -244,9 +244,7 @@ class GlusterdOps(AbstractOps):
 
         for nd in node:
             ret = self.execute_abstract_op_node(cmd1, nd, False)
-            if ret['error_code'] == 1:
-                continue
-            elif ret['error_code'] == 0:
+            if ret['error_code'] == 0:
                 pid = ret['msg'][0].strip()
                 cmd2 = f"kill -9 {pid}"
                 self.execute_abstract_op_node(cmd2, nd)
