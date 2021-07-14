@@ -31,7 +31,7 @@ class RunnerThread:
             self.terminate_test_func = getattr(self.tc_obj, "terminate")
         except Exception as error:
             tb = traceback.format_exc()
-            self.logger.error(f"{self.tname : {error}")
+            self.logger.error(f"{self.tname} : {error}")
             self.logger.error(f"{self.tname}: {tb}")
             self.test_stats['testResult'] = False
             self.skip_run_thread = True
