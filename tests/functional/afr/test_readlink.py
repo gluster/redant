@@ -73,6 +73,6 @@ class TestCase(NdParentTest):
             node, path = brick.split(':')
             filepath = f"{path}/symlink.txt"
             stat_dict = redant.get_file_stat(node, filepath)['msg']
-            if stat_dict['filetype'] != 'symbolic link':
+            if stat_dict['fileType'] != 'symbolic link':
                 raise Exception("Expected symlink but found "
                                 f"{stat_dict['filetype']}")
