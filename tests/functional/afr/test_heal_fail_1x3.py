@@ -23,10 +23,24 @@ Description:
 # disruptive;rep
 # TODO: nfs, cifs
 
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -96,25 +110,25 @@ class TestCase(DParentTest):
                                        self.vol_name):
             raise Exception("Heal not yet finished")
 
-        # g.log.info("checking if the areequal checksum of all the bricks in "
-        #            "the subvol match")
-        # checksum_list = []
-        # for brick in all_bricks:
-        #     node, brick_path = brick.split(':')
-        #     command = "arequal-checksum -p " + brick_path + \
-        #               " -i .glusterfs -i .landfill"
-        #     ret, out, _ = g.run(node, command)
-        #     self.assertEqual(ret, 0, "unable to get the arequal checksum "
-        #                              "of the brick")
-        #     checksum_list.append(out)
-        #     # checking file size of healed file on each brick to verify
-        #     # correctness of choice for sink and source
-        #     stat_dict = get_file_stat(node, brick_path + '/test_file0.txt')
-        #     self.assertEqual(stat_dict['size'], '1048576',
-        #                      "file size of healed file is different "
-        #                      "than expected")
-        # flag = all(val == checksum_list[0] for val in checksum_list)
-        # self.assertTrue(flag, "the arequal checksum of all bricks is"
-        #                 "not same")
-        # g.log.info("the arequal checksum of all the bricks in the subvol "
-        #            "is same")
+        redant.logger.info("checking if the areequal checksum of all "
+                           "the bricks in the subvol match")
+        checksum_list = []
+        for brick in all_bricks:
+            node, brick_path = brick.split(':')
+            command = f"arequal-checksum {brick_path}/.glusterfs/landfill"
+            ret = redant.execute_abstract_op_node(command, node)
+
+            checksum_list.append(ret['msg'])
+
+            # checking file size of healed file on each brick to verify
+            # correctness of choice for sink and source
+            stat_dict = (redant.
+                         get_file_stat(node,
+                                       f"{brick_path}/test_file0.txt")['msg'])
+            if stat_dict['st_size'] != 1048576:
+                raise Exception("File size of healed file is different"
+                                " than expected.")
+
+        if not all(val == checksum_list[0] for val in checksum_list):
+            raise Exception("the arequal checksum of all bricks is"
+                            "not same")
