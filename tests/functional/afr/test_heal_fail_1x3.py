@@ -86,7 +86,7 @@ class TestCase(DParentTest):
                                    all_bricks[:2])
         if not redant.are_bricks_online(self.vol_name, all_bricks[:2],
                                         self.server_list[0]):
-            raise Exception(f"Bricks {all_brick_dirs[:2]} not online.")
+            raise Exception(f"Bricks {all_bricks[:2]} not online.")
 
         redant.get_file_stat(self.mounts[0]['client'],
                              f"{self.mounts[0]['mountpath']}/test_file0.txt")
