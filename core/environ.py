@@ -104,9 +104,15 @@ class environ:
         ends.
         """
         self.spinner.start("Tearing down environment.")
-        self.redant.hard_terminate(self.server_list, self.client_list,
-                                   self.brick_root)
-        self.spinner.succeed("Tearing down successful.")
+        try:
+            self.redant.hard_terminate(self.server_list, self.client_list,
+                                       self.brick_root)
+            self.spinner.succeed("Tearing down successful.")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+            self.spinner.fail("Environment Teardown failed.")
 
 
 class FrameworkEnv:
