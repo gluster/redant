@@ -65,18 +65,25 @@ class environ:
         """
         io_script_dpath = '/tmp/file_dir_ops.py'
         io_script_spath = f'{os.getcwd()}/tools/file_dir_ops.py'
-        if not self.redant.path_exists(self.client_list,
-                                       [io_script_dpath]):
-            for node in self.client_list:
-                self.redant.logger.info(f'Copying file_dir_ops to {node}')
-                self.redant.transfer_file_from_local(io_script_spath,
-                                                     io_script_dpath, node)
-        if not self.redant.path_exists(self.server_list,
-                                       [io_script_dpath]):
-            for node in self.server_list:
-                self.redant.logger.info(f'Copying file_dir_ops to {node}')
-                self.redant.transfer_file_from_local(io_script_spath,
-                                                     io_script_dpath, node)
+
+        remove = False
+        if self.redant.path_exists(self.client_list,
+                                   [io_script_dpath]):
+            remove = True
+        for node in self.client_list:
+            self.redant.logger.info(f'Copying file_dir_ops to {node}')
+            self.redant.transfer_file_from_local(io_script_spath,
+                                                 io_script_dpath, node,
+                                                 remove)
+        remove = False
+        if self.redant.path_exists(self.server_list,
+                                   [io_script_dpath]):
+            remove = True
+        for node in self.server_list:
+            self.redant.logger.info(f'Copying file_dir_ops to {node}')
+            self.redant.transfer_file_from_local(io_script_spath,
+                                                 io_script_dpath, node,
+                                                 remove)
 
     def setup_env(self):
         """

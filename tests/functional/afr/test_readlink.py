@@ -1,124 +1,78 @@
-#  Copyright (C) 2015-2016  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2015-2016  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.gluster.glusterfile import get_file_stat
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+    Test Case which tests the working of FOPS in AFR.
+"""
+
+# nonDisruptive;rep
+
+from tests.nd_parent_test import NdParentTest
 
 
-@runs_on([['replicated'],
-          ['glusterfs']])
-class AfrReadlinkTest(GlusterBaseClass):
-    """
-    Description:
-        Test Case which tests the working of FOPS in AFR.
-    """
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+class TestCase(NdParentTest):
 
-        # Override replica count to be 3
-        if cls.volume_type == "replicated":
-            cls.volume['voltype'] = {
-                'type': 'replicated',
-                'replica_count': 3,
-                'transport': 'tcp'}
+    def run_test(self, redant):
+        """
+        * Get the bricks list
+        * Create file on the mountpoint
+        * Create symlink
+        * Start symlink on mount and verify file type and permission.
+        * Readlink to verify contents
+        * Readlink to verify contents
+        * Stat symlink on bricks and verify file type and permission.
+        """
+        self.bricks_list = redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients")
+        if self.bricks_list is None:
+            raise Exception("Unable to get the bricks list")
 
-    def setUp(self):
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=False)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-        self.bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(self.bricks_list, "unable to get list of bricks")
-
-    def tearDown(self):
-        # Cleanup and umount volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass teardown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_readlink(self):
         # create file
-        g.log.info("Creating %s/file.txt", self.mounts[0].mountpoint)
-        cmd = ("echo 'hello_world' > %s/file.txt" % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "File creation failed")
-        g.log.info("Created %s/file.txt", self.mounts[0].mountpoint)
+        cmd = f"echo 'hello_world' > {self.mountpoint}/file.txt"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # create symlink
-        g.log.info("Creating %s/symlink.txt to %s/file.txt",
-                   self.mounts[0].mountpoint, self.mounts[0].mountpoint)
-        cmd = ("ln -s file.txt %s/symlink.txt" % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "symlink creation failed")
-        g.log.info("Created %s/symlink.txt to %s/file.txt",
-                   self.mounts[0].mountpoint, self.mounts[0].mountpoint)
+        cmd = f"ln -s file.txt {self.mountpoint}/symlink.txt"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # stat symlink on mount and verify file type and permission.
-        g.log.info("Checking file permissions")
-        path = ("%s/symlink.txt" % self.mounts[0].mountpoint)
-        stat_dict = get_file_stat(self.clients[0], path)
-        self.assertEqual(stat_dict['filetype'], 'symbolic link', "Expected "
-                         "symlink but found %s" % stat_dict['filetype'])
-        self.assertEqual(stat_dict['access'], '777', "Expected 777 "
-                         "but found %s" % stat_dict['access'])
-        g.log.info("File permissions for symlink.txt is 777 as expected")
+        path = f"{self.mountpoint}/symlink.txt"
+        stat_dict = redant.get_file_stat(self.client_list[0], path)['msg']
+
+        if stat_dict['fileType'] != 'symbolic link':
+            raise Exception(f"symlink but found {stat_dict['fileType']}")
+        if stat_dict['permission'] != 777:
+            raise Exception("Expected 777 access but found"
+                            f" {stat_dict['permission']}")
 
         # readlink to verify contents
-        g.log.info("Performing readlink on %s/symlink.txt",
-                   self.mounts[0].mountpoint)
-        cmd = ("readlink %s/symlink.txt" % self.mounts[0].mountpoint)
-        _, val, _ = g.run(self.clients[0], cmd)
-        content = val.strip()
-        self.assertEqual(content, "file.txt", "Readlink error:got %s"
-                         % content)
-        g.log.info("readlink returned 'file.txt' as expected")
+        cmd = f"readlink {self.mountpoint}/symlink.txt"
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
+
+        content = ret['msg'][0].rstrip("\n")
+        if content != "file.txt":
+            raise Exception(f"Readlink error: got {content}")
 
         # stat symlink on bricks and verify file type and permission.
-        g.log.info("Checking file type and permissions on bricks")
         for brick in self.bricks_list:
             node, path = brick.split(':')
-            filepath = path + "/symlink.txt"
-            stat_dict = get_file_stat(node, filepath)
-            self.assertEqual(stat_dict['filetype'], 'symbolic link', "Expected"
-                             " symlink but found %s" % stat_dict['filetype'])
-            g.log.info("file permission 777 for symlink.txt on %s", brick)
+            filepath = f"{path}/symlink.txt"
+            stat_dict = redant.get_file_stat(node, filepath)['msg']
+            if stat_dict['filetype'] != 'symbolic link':
+                raise Exception("Expected symlink but found "
+                                f"{stat_dict['filetype']}")
