@@ -100,6 +100,7 @@ class Rexe:
 
         """
         ret_dict = {}
+        retry_flag = False
 
         if not self.connect_flag:
             ret_dict['Flag'] = False
@@ -107,10 +108,16 @@ class Rexe:
         try:
             _, stdout, stderr = self.node_dict[node].exec_command(cmd)
         except Exception:
-            # Reconnection to be done.
-            self.connect_node(node)
-            # On rebooting the node
-            _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            retry_flag = True
+
+        if retry_flag:
+            try:
+                # Reconnection to be done.
+                self.connect_node(node)
+                # On rebooting the node
+                _, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            except Exception as error:
+                raise Exception(error)
 
         if stdout.channel.recv_exit_status() != 0:
             ret_dict['Flag'] = False
@@ -161,16 +168,23 @@ class Rexe:
                 - stderr : The stderr handle
         """
         async_obj = {}
+        retry_flag = False
 
         if not self.connect_flag:
             return async_obj
         try:
             stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
         except Exception:
-            # Reconnection to be done.
-            self.connect_node(node)
-            # On rebooting the node
-            stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            retry_flag = True
+
+        if retry_flag:
+            try:
+                # Reconnection to be done.
+                self.connect_node(node)
+                # On rebooting the node
+                stdin, stdout, stderr = self.node_dict[node].exec_command(cmd)
+            except Exception as error:
+                raise Exception(error)
 
         async_obj = {"cmd": cmd, "node": node, "stdout": stdout,
                      "stderr": stderr, "stdin": stdin}
