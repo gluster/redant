@@ -114,6 +114,7 @@ class environ:
             self.redant.logger.error(tb)
             self.spinner.fail("Environment Teardown failed.")
 
+
 class FrameworkEnv:
     """
     A class for handling the framework environemnt details. This won't
