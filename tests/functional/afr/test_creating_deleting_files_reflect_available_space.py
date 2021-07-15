@@ -15,15 +15,29 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-@runs_on([['replicated', 'distributed-replicated'], ['glusterfs']])
+Description:
+    Test to find the available space after creating and deleting files.    
 """
-# nonDisruptive;rep
+# disruptive;rep,dist-rep
 
-from tests.nd_parent_test import NdParentTest
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.proc,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -36,7 +50,6 @@ class TestCase(NdParentTest):
           with space before creation
         """
 
-        self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Create 1M file on client side
         self.proc = (redant.
@@ -54,14 +67,14 @@ class TestCase(NdParentTest):
                f" | grep '[0-9]'")
         ret = redant.execute_abstract_op_node(cmd,
                                               self.mounts[0]['client'])
-        print(ret,"\n")
-        # space_before_file_creation = int(out)
+        space_before_file_creation = int(ret['msg'][0].strip("\n"))
 
         # Create 1M file on client side
         self.proc = (redant.
                      create_files(num_files=1,
                                   fix_fil_size="1M",
-                                  path=self.mounts[0]['mountpath'],
+                                  path=(f"{self.mounts[0]['mountpath']}"
+                                        "/newdir"),
                                   node=self.mounts[0]['client'],
                                   base_file_name="newfile"))
         ret = self.redant.validate_io_procs(self.proc, self.mounts[0])
@@ -69,46 +82,30 @@ class TestCase(NdParentTest):
             raise Exception("IO validation failed")
 
         # Get the current available space on the mount
-        cmd = (f"df --output=avail {self.mounts[0]['mountpath']}"
-               f" | grep '[0-9]'")
         ret = redant.execute_abstract_op_node(cmd,
                                               self.mounts[0]['client'])
-        print(ret,"\n")
-        # space_after_file_creation = int(out)
+        space_after_file_creation = int(ret['msg'][0].rstrip("\n"))
 
-        # # Compare available size before creation and after creation file
-        # g.log.info('Comparing available size before creation '
-        #            'and after creation file...')
-        # space_diff = space_before_file_creation - space_after_file_creation
-        # space_diff = round(space_diff / 1024)
-        # g.log.info('Space difference is %d', space_diff)
-        # self.assertEqual(space_diff, 1.0,
-        #                  'Available size before creation and '
-        #                  'after creation file is not valid')
-        # g.log.info('Available size before creation and '
-        #            'after creation file is valid')
+        # Compare available size before creation and after creation file
+        space_diff = space_before_file_creation - space_after_file_creation
+        space_diff = round(space_diff / 1024)
 
-        # # Delete file on client side
-        # g.log.info('Deleting file on %s', self.mounts[0].mountpoint)
-        # cmd = ("/usr/bin/env python %s delete %s/newdir"
-        #        % (self.script_upload_path, self.mounts[0].mountpoint))
-        # ret, _, err = g.run(self.mounts[0].client_system, cmd)
-        # self.assertFalse(ret, err)
+        if space_diff != 1:
+            raise Exception('Available size before creation and '
+                            'after creation file is not valid')
 
-        # # Get the current available space on the mount
-        # cmd = ("df --output=avail %s | grep '[0-9]'"
-        #        % self.mounts[0].mountpoint)
-        # ret, out, err = g.run(self.mounts[0].client_system, cmd)
-        # self.assertFalse(ret, err)
-        # space_after_file_deletion = int(out)
+        # Delete file on client side
+        if not redant.rmdir(f"{self.mounts[0]['mountpath']}/newdir",
+                            self.mounts[0]['client'], True):
+            raise Exception("Failed to delete the directory")
 
-        # # Compare available size before creation and after deletion file
-        # g.log.info('Comparing available size before creation '
-        #            'and after deletion file...')
-        # space_diff = space_before_file_creation - space_after_file_deletion
-        # space_diff_comp = space_diff < 200
-        # self.assertTrue(space_diff_comp,
-        #                 'Available size before creation is not proportional '
-        #                 'to the size after deletion file')
-        # g.log.info('Available size before creation is proportional '
-        #            'to the size after deletion file')
+        # Get the current available space on the mount
+        ret = redant.execute_abstract_op_node(cmd,
+                                              self.mounts[0]['client'])
+        space_after_file_deletion = int(ret['msg'][0].rstrip("\n"))
+
+        # Compare available size before creation and after deletion file
+        space_diff = space_before_file_creation - space_after_file_deletion
+        if space_diff >= 200:
+            raise Exception('Available size before creation is not proportional '
+                            'to the size after deletion file')
