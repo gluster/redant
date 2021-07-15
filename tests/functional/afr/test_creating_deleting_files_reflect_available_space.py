@@ -29,7 +29,7 @@ class TestCase(DParentTest):
 
     def terminate(self):
         try:
-            ret = self.redant.wait_for_io_to_complete(self.proc,
+            ret = self.redant.wait_for_io_to_complete([self.proc],
                                                       self.mounts)
             if not ret:
                 raise Exception("IO failed on some of the clients")
