@@ -1,100 +1,32 @@
-#  Copyright (C) 2016-2019  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-""" Description:
-        Test Cases in this module tests the client side quorum.
 """
+Copyright (C) 2016-2019  Red Hat, Inc. <http://www.redhat.com>
 
-from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_ops import (set_volume_options,
-                                           reset_volume_option)
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.misc.misc_libs import upload_scripts
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+    Test Cases in this module tests the client side quorum.
+"""
+# disruptive;rep,dist-rep
+# TODO: nfs, cifs
+
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated'],
-          ['glusterfs', 'nfs', 'cifs']])
-class ClientSideQuorumTests(GlusterBaseClass):
-    """
-    ClientSideQuorumTests contains tests which verifies the
-    client side quorum Test Cases
-    """
-    @classmethod
-    def setUpClass(cls):
-        """
-        Upload the necessary scripts to run tests.
-        """
+class TestCase(DParentTest):
 
-        # calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients")
-
-    def setUp(self):
-        """
-        setUp method for every test
-        """
-
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume %s", self.volname)
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def tearDown(self):
-        """
-        tearDown for every test
-        """
-
-        # Reset the volume options
-        g.log.info("Resetting the volume options")
-        options = ['cluster.quorum-type', 'cluster.quorum-count']
-        for opt in options:
-            ret, _, _ = reset_volume_option(self.mnode, self.volname, opt)
-            if ret != 0:
-                raise ExecutionError("Failed to reset the volume option %s"
-                                     % opt)
-            sleep(2)
-        g.log.info("Successfully reset the volume options")
-
-        # stopping the volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_client_side_quorum_with_fixed_validate_max_bricks(self):
+    def run_test(self, redant):
         """
         Test Script with Client Side Quorum with fixed should validate
         maximum number of bricks to accept
@@ -103,41 +35,32 @@ class ClientSideQuorumTests(GlusterBaseClass):
         * set cluster.quorum-count to higher number which is greater than
           number of replicas in a sub-voulme
         * Above step should fail
-
         """
-
         # set cluster.quorum-type to fixed
         options = {"cluster.quorum-type": "fixed"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, ("Unable to set %s for volume %s"
-                              % (options, self.volname)))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
-
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
         # get the subvolumes
-        g.log.info("Starting to get sub-volumes for volume %s", self.volname)
-        subvols_dict = get_subvols(self.mnode, self.volname)
-        num_subvols = len(subvols_dict['volume_subvols'])
-        g.log.info("Number of subvolumes in volume %s is %s", self.volname,
-                   num_subvols)
+        subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
+        redant.logger.info(f"Number of subvolumes in volume {self.vol_name}"
+                           f" is {len(subvols_list)}")
 
         # get the number of bricks in replica set
-        num_bricks_in_subvol = len(subvols_dict['volume_subvols'][0])
-        g.log.info("Number of bricks in each replica set : %s",
-                   num_bricks_in_subvol)
+        num_bricks_in_subvol = len(subvols_list[0])
+        redant.logger.info("Number of bricks in each replica "
+                           f"set: {num_bricks_in_subvol}")
 
-        # set cluster.quorum-count to higher value than the number of bricks in
-        # repliac set
+        # set cluster.quorum-count to higher value than the number
+        # of bricks in replica set
         start_range = num_bricks_in_subvol + 1
         end_range = num_bricks_in_subvol + 30
         for i in range(start_range, end_range):
-            options = {"cluster.quorum-count": "%s" % i}
-            g.log.info("setting %s for the volume %s", options, self.volname)
-            ret = set_volume_options(self.mnode, self.volname, options)
-            self.assertFalse(ret, ("Able to set %s for volume %s, quorum-count"
-                                   " should not be greater than number of"
-                                   " bricks in replica set"
-                                   % (options, self.volname)))
-        g.log.info("Expected: Unable to set %s for volume %s, "
-                   "quorum-count should be less than number of bricks "
-                   "in replica set", options, self.volname)
+            options = {"cluster.quorum-count": f"{i}"}
+            ret = redant.set_volume_options(self.vol_name, options,
+                                            self.server_list[0],
+                                            excep=False)
+            if ret['msg']['opRet'] != '-1':
+                raise Exception(f"Unexpected: Able to set {options} "
+                                f"for volume {self.vol_name}, quorum-count"
+                                " should not be greater than number of"
+                                " bricks in replica set")
