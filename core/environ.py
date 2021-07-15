@@ -58,6 +58,22 @@ class environ:
         """
         return self.redant.logger
 
+    def _transfer_files_to_machines(self, machines: list, spath: str,
+                                    dpath: str):
+        """
+        Transfers files from source path to destination
+        path
+        """
+        remove = False
+        if self.redant.path_exists(machines,
+                                   [dpath]):
+            remove = True
+        for node in machines:
+            self.redant.logger.info(f'Copying file_dir_ops to {node}')
+            self.redant.transfer_file_from_local(spath,
+                                                 dpath, node,
+                                                 remove)
+
     def _check_and_copy_io_script(self):
         """
         Check if the I/O script exists in the client
@@ -66,24 +82,13 @@ class environ:
         io_script_dpath = '/tmp/file_dir_ops.py'
         io_script_spath = f'{os.getcwd()}/tools/file_dir_ops.py'
 
-        remove = False
-        if self.redant.path_exists(self.client_list,
-                                   [io_script_dpath]):
-            remove = True
-        for node in self.client_list:
-            self.redant.logger.info(f'Copying file_dir_ops to {node}')
-            self.redant.transfer_file_from_local(io_script_spath,
-                                                 io_script_dpath, node,
-                                                 remove)
-        remove = False
-        if self.redant.path_exists(self.server_list,
-                                   [io_script_dpath]):
-            remove = True
-        for node in self.server_list:
-            self.redant.logger.info(f'Copying file_dir_ops to {node}')
-            self.redant.transfer_file_from_local(io_script_spath,
-                                                 io_script_dpath, node,
-                                                 remove)
+        self._transfer_files_to_machines(self.client_list,
+                                         io_script_spath,
+                                         io_script_dpath)
+
+        self._transfer_files_to_machines(self.server_list,
+                                         io_script_spath,
+                                         io_script_dpath)
 
     def setup_env(self):
         """
