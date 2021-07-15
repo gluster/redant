@@ -59,7 +59,7 @@ class TestCase(DParentTest):
             ret = redant.set_volume_options(self.vol_name, options,
                                             self.server_list[0],
                                             excep=False)
-            if ret['msg']['opRet'] != '-1':
+            if ret['msg']['opRet'] == '0':
                 raise Exception(f"Unexpected: Able to set {options} "
                                 f"for volume {self.vol_name}, quorum-count"
                                 " should not be greater than number of"
