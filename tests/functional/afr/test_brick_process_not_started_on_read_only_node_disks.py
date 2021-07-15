@@ -21,15 +21,26 @@ Description:
 @runs_on([['replicated', 'distributed-replicated', 'dispersed',
            'distributed-dispersed'], ['glusterfs', 'nfs']])
 """
-# nonDisruptive;rep
+# disruptive;rep
 # TODO: nfs
 
+import traceback
 import calendar
 import time
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
+
+    def terminate(self):
+        for node in self.server_list:
+            try:
+                self.redant.execute_abstract_op_node('mount -a', node)
+            except Exception as err:
+                tb = traceback.format_exc()
+                self.redant.logger.error(err)
+                self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -59,7 +70,8 @@ class TestCase(NdParentTest):
         if not redant.are_bricks_offline(self.vol_name,
                                          bricks_to_bring_offline,
                                          self.server_list[0]):
-            raise Exception(f"Bricks {bricks_to_bring_offline} not yet offline")
+            raise Exception(f"Bricks {bricks_to_bring_offline} "
+                            "not yet offline")
 
         # Creating files for all volumes
         for mount_obj in self.mounts:
@@ -72,96 +84,70 @@ class TestCase(NdParentTest):
 
             self.all_mounts_procs.append(proc)
 
-        # # umount brick
-        # brick_node, volume_brick = bricks_to_bring_offline[0].split(':')
-        # node_brick = '/'.join(volume_brick.split('/')[0:3])
-        # g.log.info('Start umount brick %s...', node_brick)
-        # ret, _, _ = g.run(brick_node, 'umount -l %s' % node_brick)
-        # self.assertFalse(ret, 'Failed to umount brick %s' % node_brick)
-        # g.log.info('Successfully umounted %s', node_brick)
+        # umount brick
+        brick_node, volume_brick = bricks_to_bring_offline[0].split(':')
+        node_brick = '/'.join(volume_brick.split('/')[0:3])
+        redant.execute_abstract_op_node(f'umount -l {node_brick}', brick_node)
 
-        # # get time before remount the directory and checking logs for error
-        # g.log.info('Getting time before remount the directory and '
-        #            'checking logs for error...')
-        # _, time_before_checking_logs, _ = g.run(brick_node, 'date -u +%s')
-        # g.log.info('Time before remount the directory and checking logs - %s',
-        #            time_before_checking_logs)
+        # get time before remount the directory and checking logs for error
+        time_before_checking_logs = (redant.
+                                     execute_abstract_op_node('date -u +%s',
+                                                              brick_node))
+        time_before_checking_logs = (time_before_checking_logs['msg'][0].
+                                     rstrip("\n"))
+        redant.logger.info("Time before remount the directory and "
+                           f"checking logs - {time_before_checking_logs}")
 
-        # # remount the directory with read-only option
-        # g.log.info('Start remount brick %s with read-only option...',
-        #            node_brick)
-        # ret, _, _ = g.run(brick_node, 'mount -o ro %s' % node_brick)
-        # self.assertFalse(ret, 'Failed to remount brick %s' % node_brick)
-        # g.log.info('Successfully remounted %s with read-only option',
-        #            node_brick)
+        # remount the directory with read-only option
+        redant.execute_abstract_op_node(f'mount -o ro {node_brick}',
+                                        brick_node)
 
-        # # start volume with "force" option
-        # g.log.info('starting volume with "force" option...')
-        # ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        # self.assertFalse(ret, 'Failed to start volume %s with "force" option'
-        #                  % self.volname)
-        # g.log.info('Successfully started volume %s with "force" option',
-        #            self.volname)
+        # start volume with "force" option
+        redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
-        # # check logs for an 'initializing translator failed' error
-        # g.log.info("Checking logs for an 'initializing translator failed' "
-        #            "error for %s brick...", node_brick)
-        # error_msg = 'posix: initializing translator failed'
-        # cmd = ("cat /var/log/glusterfs/bricks/%s-%s-%s.log | "
-        #        "grep '%s'"
-        #        % (volume_brick.split('/')[-3], volume_brick.split('/')[-2],
-        #           volume_brick.split('/')[-1], error_msg))
-        # ret, log_msgs, _ = g.run(brick_node, cmd)
-        # log_msg = log_msgs.rstrip().split('\n')[-1]
+        # check logs for an 'initializing translator failed' error
 
-        # self.assertTrue(error_msg in log_msg, 'No errors in logs')
-        # g.log.info('EXPECTED: %s', error_msg)
+        error_msg = 'posix: initializing translator failed'
+        volume_brick = volume_brick.split('/')
+        cmd = ("cat /var/log/glusterfs/bricks/"
+               f"{volume_brick[-3]}-{volume_brick[-2]}-"
+               f"{volume_brick[-1]}.log | grep '{error_msg}'")
+        ret = redant.execute_abstract_op_node(cmd, brick_node)
+        log_msg = ret['msg'][0].rstrip().split('\n')[-1]
 
-        # # get time from log message
-        # log_time_msg = log_msg.split('E')[0][1:-2].split('.')[0]
-        # log_time_msg_converted = calendar.timegm(time.strptime(
-        #     log_time_msg, '%Y-%m-%d %H:%M:%S'))
-        # g.log.info('Time_msg from logs - %s ', log_time_msg)
-        # g.log.info('Time from logs - %s ', log_time_msg_converted)
+        if error_msg not in log_msg:
+            raise Exception("No errors")
 
-        # # get time after remount the directory checking logs for error
-        # g.log.info('Getting time after remount the directory and '
-        #            'checking logs for error...')
-        # _, time_after_checking_logs, _ = g.run(brick_node, 'date -u +%s')
-        # g.log.info('Time after remount the directory and checking logs - %s',
-        #            time_after_checking_logs)
+        # get time from log message
+        log_time_msg = log_msg.split('E')[0][1:-2].split('.')[0]
+        log_time_msg_converted = calendar.timegm(time.strptime(
+            log_time_msg, '%Y-%m-%d %H:%M:%S'))
+        redant.logger.info('Time_msg from logs - %s ', log_time_msg)
+        redant.logger.info('Time from logs - %s ', log_time_msg_converted)
 
-        # # check time periods
-        # g.log.info('Checking if an error is in right time period...')
-        # self.assertTrue(int(time_before_checking_logs) <=
-        #                 int(log_time_msg_converted) <=
-        #                 int(time_after_checking_logs),
-        #                 'Expected error is not in right time period')
-        # g.log.info('Expected error is in right time period')
+        # get time after remount the directory checking logs for error
+        time_after_checking_logs = (redant.
+                                    execute_abstract_op_node('date -u +%s',
+                                                             brick_node))
+        time_after_checking_logs = (time_after_checking_logs['msg'][0].
+                                    rstrip("\n"))
+        redant.logger.info("Time after remount the directory and "
+                           f"checking logs - {time_after_checking_logs}")
 
-        # # umount brick
-        # g.log.info('Start umount brick %s...', node_brick)
-        # ret, _, _ = g.run(brick_node, 'umount -l %s' % node_brick)
-        # self.assertFalse(ret, 'Failed to umount brick %s' % node_brick)
-        # g.log.info('Successfully umounted %s', node_brick)
+        # check time periods
+        if (int(time_before_checking_logs) > int(log_time_msg_converted)
+           or int(log_time_msg_converted) > int(time_after_checking_logs)):
+            raise Exception('Expected error is not in right time period')
 
-        # # remount the directory with read-write option
-        # g.log.info('Start remount brick %s with read-write option...',
-        #            node_brick)
-        # ret, _, _ = g.run(brick_node, 'mount %s' % node_brick)
-        # self.assertFalse(ret, 'Failed to remount brick %s' % node_brick)
-        # g.log.info('Successfully remounted %s with read-write option',
-        #            node_brick)
+        # umount brick
+        redant.execute_abstract_op_node(f'umount -l {node_brick}', brick_node)
 
-        # # start volume with "force" option
-        # g.log.info('starting volume with "force" option...')
-        # ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        # self.assertFalse(ret, 'Failed to start volume %s with "force" option'
-        #                  % self.volname)
-        # g.log.info('Successfully started volume %s with "force" option',
-        #            self.volname)
+        # remount the directory with read-write option
+        redant.execute_abstract_op_node(f'mount {node_brick}',
+                                        brick_node)
+        # start volume with "force" option
+        redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
         if not ret:
             raise Exception("IO validation failed")
-
