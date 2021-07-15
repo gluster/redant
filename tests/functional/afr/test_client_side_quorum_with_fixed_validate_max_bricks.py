@@ -42,13 +42,9 @@ class TestCase(DParentTest):
                                   self.server_list[0])
         # get the subvolumes
         subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
-        redant.logger.info(f"Number of subvolumes in volume {self.vol_name}"
-                           f" is {len(subvols_list)}")
 
         # get the number of bricks in replica set
         num_bricks_in_subvol = len(subvols_list[0])
-        redant.logger.info("Number of bricks in each replica "
-                           f"set: {num_bricks_in_subvol}")
 
         # set cluster.quorum-count to higher value than the number
         # of bricks in replica set
