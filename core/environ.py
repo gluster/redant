@@ -82,13 +82,10 @@ class environ:
         io_script_dpath = '/tmp/file_dir_ops.py'
         io_script_spath = f'{os.getcwd()}/tools/file_dir_ops.py'
 
-        self._transfer_files_to_machines(self.client_list,
-                                         io_script_spath,
-                                         io_script_dpath)
-
-        self._transfer_files_to_machines(self.server_list,
-                                         io_script_spath,
-                                         io_script_dpath)
+        self._transfer_files_to_machines(
+            list(set(self.client_list + self.server_list)),
+            io_script_spath,
+            io_script_dpath)
 
     def setup_env(self):
         """
