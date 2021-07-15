@@ -46,35 +46,31 @@ class TestCase(NdParentTest):
         """
         self.all_mounts_procs = []
         self.glustershd = "/var/lib/glusterd/glustershd/glustershd-server.vol"
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Select bricks to bring offline
-        # bricks_to_bring_offline_dict = (select_bricks_to_bring_offline(
-        #     self.mnode, self.volname))
-        # bricks_to_bring_offline = bricks_to_bring_offline_dict['volume_bricks']
+        bricks_to_bring_offline = (redant.
+                                   select_volume_bricks_to_bring_offline(
+                                       self.vol_name,
+                                       self.server_list[0]))
 
-        # # Bring brick offline
-        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-        #                 bricks_to_bring_offline)
+        # Bring brick offline
+        redant.bring_bricks_offline(self.vol_name,
+                                    bricks_to_bring_offline)
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline} not yet offline")
 
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Bricks %s are not offline'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s offline is successful',
-        #            bricks_to_bring_offline)
+        # Creating files for all volumes
+        for mount_obj in self.mounts:
+            proc = (redant.
+                    create_files(num_files=100,
+                                 fix_fil_size="1k",
+                                 path=f"{mount_obj['mountpath']}/test_dir",
+                                 node=mount_obj['client'],
+                                 base_file_name="test_file"))
 
-        # # Creating files for all volumes
-        # for mount_obj in self.mounts:
-        #     g.log.info("Starting IO on %s:%s",
-        #                mount_obj.client_system, mount_obj.mountpoint)
-        #     cmd = ("/usr/bin/env python %s create_files -f 100 "
-        #            "%s/%s/test_dir" % (
-        #                self.script_upload_path,
-        #                mount_obj.mountpoint, mount_obj.client_system))
-        #     proc = g.run_async(mount_obj.client_system, cmd,
-        #                        user=mount_obj.user)
-        #     self.all_mounts_procs.append(proc)
+            self.all_mounts_procs.append(proc)
 
         # # umount brick
         # brick_node, volume_brick = bricks_to_bring_offline[0].split(':')
@@ -165,11 +161,7 @@ class TestCase(NdParentTest):
         # g.log.info('Successfully started volume %s with "force" option',
         #            self.volname)
 
-        # # Validate IO
-        # g.log.info('Validating IO on all mounts')
-        # self.assertTrue(
-        #     validate_io_procs(self.all_mounts_procs, self.mounts),
-        #     "IO failed on some of the clients"
-        # )
-        # g.log.info('Successfully Validated IO on all mounts')
-        # self.io_validation_complete = True
+        ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
+        if not ret:
+            raise Exception("IO validation failed")
+
