@@ -16,7 +16,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 Description:
-    Test to find the available space after creating and deleting files.    
+    Test to find the available space after creating
+    and deleting files.
 """
 # disruptive;rep,dist-rep
 
@@ -60,7 +61,6 @@ class TestCase(DParentTest):
         ret = self.redant.validate_io_procs(self.proc, self.mounts[0])
         if not ret:
             raise Exception("IO validation failed")
-
 
         # Get the current available space on the mount
         cmd = (f"df --output=avail {self.mounts[0]['mountpath']}"
@@ -107,5 +107,5 @@ class TestCase(DParentTest):
         # Compare available size before creation and after deletion file
         space_diff = space_before_file_creation - space_after_file_deletion
         if space_diff >= 200:
-            raise Exception('Available size before creation is not proportional '
-                            'to the size after deletion file')
+            raise Exception('Available size before creation is not'
+                            ' proportional to the size after deletion file')
