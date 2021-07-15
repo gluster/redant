@@ -447,7 +447,7 @@ def _get_path_stats(path):
     file_stats = {}
 
     if platform.system() == "Linux":
-        cmd = "stat -c " + "'%A %U %G' " + path
+        cmd = "stat -c " + "'%A %U %G %a %F' " + path
         subp = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
@@ -462,6 +462,8 @@ def _get_path_stats(path):
                 file_stats['mode'] = out[0].strip()
                 file_stats['user'] = out[1].strip()
                 file_stats['group'] = out[2].strip()
+                file_stats['permission'] = out[3].strip()
+                file_stats['fileType'] = ' '.join(out[4:]).strip()
             else:
                 rc = 1
     try:

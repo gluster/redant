@@ -266,15 +266,21 @@ class Rexe:
         self.logger.info(ret_val)
         return ret_val
 
-    def transfer_file_from_local(self, source_path, dest_path, dest_node):
+    def transfer_file_from_local(self, source_path, dest_path, dest_node,
+                                 remove: bool = False):
         """
         Method to transfer a given file from the source node to the dest node.
         Args:
             source_path (str)
             dest_path (str)
             dest_node (str)
+        Optional:
+            remove (bool) : If True removes the file and then copies.
+                            Defaults to False
         """
         sftp = self.node_dict[dest_node].open_sftp()
+        if remove:
+            sftp.remove(dest_path)
         sftp.put(source_path, dest_path)
         sftp.close()
 
