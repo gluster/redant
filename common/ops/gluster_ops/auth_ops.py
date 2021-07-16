@@ -260,7 +260,8 @@ class AuthOps(AbstractOps):
             client (str): Node on which mounting has to be done
         """
         # Mount volume
-        self.volume_mount(server, volname, mountpoint, client)
+        cmd = f"mount.glusterfs {server}/{volname} {mountpoint}"
+        self.execute_abstract_op_node(cmd, client)
 
         # Verify mount
         ret = self.is_mounted(volname, mountpoint, client, server)
@@ -281,7 +282,8 @@ class AuthOps(AbstractOps):
         # Sometimes mount returns error code as 0, even though the mount
         # failed, so not checking the return value from volume_mount().
         # Mount volume
-        self.volume_mount(server, volname, mountpoint, client, False)
+        cmd = f"mount.glusterfs {server}/{volname} {mountpoint}"
+        self.execute_abstract_op_node(cmd, client, False)
 
         # Verify mount
         ret = self.is_mounted(volname, mountpoint, client, server)

@@ -21,10 +21,29 @@
 """
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestFuseAuthRejectAllow(DParentTest):
+
+    def terminate(self):
+        """
+        Unmount the volume if still mounted
+        """
+        try:
+            if self.is_vol_mounted:
+                cmd1 = f"umount {self.mountpoint}"
+                cmd2 = f"umount {self.subdir_vol}"
+                for client in self.client_list:
+                    self.redant.execute_abstract_op_node(cmd1, client, False)
+                    self.redant.execute_abstract_op_node(cmd2, client, False)
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     @DParentTest.setup_custom_enable
     def setup_test(self):
@@ -73,6 +92,7 @@ class TestFuseAuthRejectAllow(DParentTest):
         20. Set auth.allow on d1 for client2 using hostname of client2.
         21. Repeat steps 15 to 18.
         """
+        self.is_vol_mounted = False
         # Setting auth.reject on volume for client1 using ip
         auth_dict = {'all': [self.client_list[0]]}
         if not redant.set_auth_reject(self.vol_name, self.server_list[0],
@@ -95,10 +115,12 @@ class TestFuseAuthRejectAllow(DParentTest):
         # Mounting volume on client2
         redant.authenticated_mount(self.vol_name, self.server_list[0],
                                    self.mountpoint, self.client_list[1])
+        self.is_vol_mounted = True
 
         # Unmount volume from client2
         redant.volume_unmount(self.vol_name, self.mountpoint,
                               self.client_list[1])
+        self.is_vol_mounted = False
 
         # Obtain hostname of client1
         ret = redant.execute_abstract_op_node("hostname", self.client_list[0])
@@ -131,6 +153,7 @@ class TestFuseAuthRejectAllow(DParentTest):
         # Mounting volume on client2
         redant.authenticated_mount(self.vol_name, self.server_list[0],
                                    self.mountpoint, self.client_list[1])
+        self.is_vol_mounted = True
 
         # Creating sub directory d1 on mounted volume
         redant.create_dir(self.mountpoint, "d1", self.client_list[1])
@@ -138,6 +161,7 @@ class TestFuseAuthRejectAllow(DParentTest):
         # Unmount volume from client2
         redant.volume_unmount(self.vol_name, self.mountpoint,
                               self.client_list[1])
+        self.is_vol_mounted = False
 
         # Setting auth.reject on d1 for client1 using ip
         auth_dict = {'/d1': [self.client_list[0]]}
@@ -152,6 +176,7 @@ class TestFuseAuthRejectAllow(DParentTest):
             raise Exception("Failed to set authentication")
 
         # Trying to mount d1 on client1
+        self.subdir_vol = f"{self.vol_name}/d1"
         subdir_volume_client1 = f"{self.vol_name}/d1"
         redant.unauthenticated_mount(subdir_volume_client1,
                                      self.server_list[0], self.mountpoint,
@@ -165,10 +190,12 @@ class TestFuseAuthRejectAllow(DParentTest):
         subdir_volume_client2 = f"{self.vol_name}/d1"
         redant.authenticated_mount(subdir_volume_client2, self.server_list[0],
                                    self.mountpoint, self.client_list[1])
+        self.is_vol_mounted = True
 
         # Unmount d1 from client2
         redant.volume_unmount(subdir_volume_client2, self.mountpoint,
                               self.client_list[1])
+        self.is_vol_mounted = False
 
         # Setting auth.reject on d1 for client1 using hostname
         auth_dict = {'/d1': [hostname_client1]}
@@ -193,7 +220,9 @@ class TestFuseAuthRejectAllow(DParentTest):
         # Mounting d1 on client2
         redant.authenticated_mount(subdir_volume_client2, self.server_list[0],
                                    self.mountpoint, self.client_list[1])
+        self.is_vol_mounted = True
 
         # Unmount d1 from client2
         redant.volume_unmount(subdir_volume_client2, self.mountpoint,
                               self.client_list[1])
+        self.is_vol_mounted = False
