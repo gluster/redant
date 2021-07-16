@@ -18,38 +18,34 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Test Cases in this module related to Glusterd volume status while
     IOs in progress
-@runs_on([['replicated', 'distributed-replicated'], ['glusterfs']])
 """
-# disruptive;rep
+# disruptive;rep,dist-rep
 
+import traceback
 import random
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
 
-    # def tearDown(self):
-    #     """
-    #     tearDown for every test
-    #     """
-    #     if not self.io_validation_complete:
-    #         g.log.info("Wait for IO to complete as IO validation did not "
-    #                    "succeed in test method")
-    #         ret = wait_for_io_to_complete(self.all_mounts_procs, self.mounts)
-    #         if not ret:
-    #             raise ExecutionError("IO failed on some of the clients")
-    #         g.log.info("IO is successful on all mounts")
+    def terminate(self):
+        """
+        tearDown for every test
+        """
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed to complete")
+            self.redant.profile_stop(self.vol_name,
+                                     random.choice(self.server_list))
 
-    #         # List all files and dirs created
-    #         g.log.info("List all files and directories:")
-    #         ret = list_all_files_and_dirs_mounts(self.mounts)
-    #         if not ret:
-    #             raise ExecutionError("Failed to list all files and dirs")
-    #         g.log.info("Listing all files and directories is successful")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    #     ret, _, _ = profile_stop(random.choice(self.servers), self.volname)
-    #     self.assertEqual(ret, 0, (
-    #         "Volume profile failed to stop for volume %s" % self.volname))
     @DParentTest.setup_custom_enable
     def setup_test(self):
         """
@@ -71,6 +67,8 @@ class TestCase(DParentTest):
         check the release directory value should be less or equals '4'
         '''
 
+        self.all_mounts_procs = []
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         status_on = "on"
         validate_profiles = ('cluster.eager-lock',
                              'diagnostics.count-fop-hits',
@@ -79,65 +77,59 @@ class TestCase(DParentTest):
         redant.profile_start(self.vol_name,
                              random.choice(self.server_list))
 
-        # for validate_profile in validate_profiles:
-        #     out = get_volume_options(
-        #         random.choice(self.servers), self.volname,
-        #         option=(validate_profile))
-        #     self.assertIsNotNone(out, "Volume get failed for volume "
-        #                          "%s" % self.volname)
-        #     self.assertEqual(out[validate_profile], status_on, "Failed to "
-        #                      "match profile information")
+        for validate_profile in validate_profiles:
+            out = redant.get_volume_options(self.vol_name,
+                                            validate_profile,
+                                            random.choice(self.server_list))
+            if out is None:
+                raise Exception("Failed to get volume option"
+                                f" {validate_profile}")
+        # Mounting a volume
+        self.mountpoint = f"/mnt/{self.vol_name}"
+        for client in self.client_list:
+            redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                            client)
+            redant.volume_mount(self.server_list[0],
+                                self.vol_name,
+                                self.mountpoint, client)
 
-        # # Mounting a volume
-        # ret = self.mount_volume(self.mounts)
-        # self.assertTrue(ret, "Volume mount failed for %s" % self.volname)
+        # run IOs
+        self.counter = 1
+        for mount_obj in self.mounts:
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      self.counter,
+                                                      2, 15, 5, 25,
+                                                      mount_obj['client'])
+            self.all_mounts_procs.append(proc)
+            self.counter = self.counter + 10
 
-        # # run IOs
-        # g.log.info("Starting IO on all mounts...")
-        # self.all_mounts_procs = []
-        # for mount_obj in self.mounts:
-        #     g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-        #                mount_obj.mountpoint)
-        #     cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-        #            "--dirname-start-num %d "
-        #            "--dir-depth 2 "
-        #            "--dir-length 15 "
-        #            "--max-num-of-dirs 5 "
-        #            "--num-of-files 25 %s" % (self.script_upload_path,
-        #                                      self.counter,
-        #                                      mount_obj.mountpoint))
+        # this command should not get hang while io is in progress
+        for i in range(20):
+            ret = redant.profile_info(self.vol_name,
+                                      random.choice(self.server_list))
+            if ret is None:
+                raise Exception("Failed to get the profile info")
 
-        #     proc = g.run_async(mount_obj.client_system, cmd,
-        #                        user=mount_obj.user)
-        #     self.all_mounts_procs.append(proc)
-        #     self.counter = self.counter + 10
-        # self.io_validation_complete = False
+        # Validate IO
+        ret = self.redant.validate_io_procs(self.all_mounts_procs, self.mounts)
+        if not ret:
+            raise Exception("IO validation failed")
 
-        # # this command should not get hang while io is in progress
-        # # pylint: disable=unused-variable
-        # for i in range(20):
-        #     ret, _, _ = profile_info(
-        #         random.choice(self.servers), self.volname)
-        #     self.assertEqual(ret, 0, ("Volume profile info failed on "
-        #                               "volume %s" % self.volname))
+        # List all files and dirs created
+        if not (redant.
+                list_all_files_and_dirs_mounts(self.mounts)):
+            raise Exception("Failed to list files and dirs")
 
-        # # Validate IO
-        # ret = validate_io_procs(self.all_mounts_procs, self.mounts)
-        # self.io_validation_complete = True
-        # self.assertTrue(ret, "IO failed on some of the clients")
+        cmd = (f"gluster v profile {self.vol_name} info | grep OPENDIR"
+               " | awk '{print$8}'")
+        ret = redant.execute_abstract_op_node(cmd,
+                                              random.choice(self.server_list))
+        out = ret['msg']
+        if out is None:
+            raise Exception(f"Failed to get volume {self.vol_name}"
+                            " profile info")
 
-        # # List all files and dirs created
-        # ret = list_all_files_and_dirs_mounts(self.mounts)
-        # self.assertTrue(ret, "Failed to list all files and dirs")
-        # g.log.info("Listing all files and directories is successful")
-
-        # volume_profile_info = "gluster v profile %s info"
-        # _, out, _ = g.run(random.choice(self.servers),
-        #                   volume_profile_info % self.volname + " | grep"
-        #                   "OPENDIR | awk '{print$8}'")
-        # self.assertIsNotNone(out, "Failed to get volume %s profile info" %
-        #                      self.volname)
-        # out.strip().split('\n')
-        # for value in out:
-        #     self.assertLessEqual(value, '4', "Failed to Validate profile"
-        #                          " on volume %s" % self.volname)
+        for value in out:
+            if value.rstrip("\n") > '4':
+                raise Exception("Failed to validate profile"
+                                f" info on volume {self.vol_name}")
