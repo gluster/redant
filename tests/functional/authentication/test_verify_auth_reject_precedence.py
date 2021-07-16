@@ -20,10 +20,27 @@
 """
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestVerifyAuthRejectPrecedence(DParentTest):
+
+    def terminate(self):
+        """
+        Unmount the volume if mounted
+        """
+        try:
+            if self.is_vol_mounted:
+                cmd = f"umount {self.mountpoint}"
+                for client in self.client_list:
+                    self.redant.execute_abstract_op_node(cmd, client, False)
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     @DParentTest.setup_custom_enable
     def setup_test(self):
@@ -73,16 +90,19 @@ class TestVerifyAuthRejectPrecedence(DParentTest):
             hostname.
         20. Repeat steps 15 to 18.
         """
+        self.is_vol_mounted = False
         # Mounting volume on client2
         redant.authenticated_mount(self.vol_name, self.server_list[0],
                                    self.mountpoint, self.client_list[0])
+        self.is_vol_mounted = True
 
         # Creating sub directory d1 on mounted volume
         redant.create_dir(self.mountpoint, "d1", self.client_list[0])
 
         # Unmount volume from client1
-        redant.volume_unmount(self.vol_name, self.mountpoint,
-                              self.client_list[0])
+        cmd = f"umount {self.mountpoint}"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
+        self.is_vol_mounted = False
 
         # Setting auth.reject on volume for all clients
         auth_dict = {'all': ['*']}
@@ -97,15 +117,15 @@ class TestVerifyAuthRejectPrecedence(DParentTest):
             raise Exception("Failed to set authentication")
 
         # Trying to mount volume on client1
-        redant.authenticated_mount(self.vol_name, self.server_list[0],
-                                   self.mountpoint, self.client_list[0])
+        redant.unauthenticated_mount(self.vol_name, self.server_list[0],
+                                     self.mountpoint, self.client_list[0])
 
         # Verify whether mount failure on client1 is due to auth error
         prev_log_statement_c1 = redant.is_auth_failure(self.client_list[0])
 
         # Trying to mount volume on client2
-        redant.authenticated_mount(self.vol_name, self.server_list[0],
-                                   self.mountpoint, self.client_list[1])
+        redant.unauthenticated_mount(self.vol_name, self.server_list[0],
+                                     self.mountpoint, self.client_list[1])
 
         # Verify whether mount failure on client2 is due to auth error
         prev_log_statement_c2 = redant.is_auth_failure(self.client_list[1])
@@ -125,16 +145,16 @@ class TestVerifyAuthRejectPrecedence(DParentTest):
             raise Exception("Failed to set authentication")
 
         # Trying to mount volume on client1
-        redant.authenticated_mount(self.vol_name, self.server_list[0],
-                                   self.mountpoint, self.client_list[0])
+        redant.unauthenticated_mount(self.vol_name, self.server_list[0],
+                                     self.mountpoint, self.client_list[0])
 
         # Verify whether mount failure on client1 is due to auth error
         prev_log_statement_c1 = redant.is_auth_failure(self.client_list[0],
                                                        prev_log_statement_c1)
 
         # Trying to mount volume on client2
-        redant.authenticated_mount(self.vol_name, self.server_list[0],
-                                   self.mountpoint, self.client_list[1])
+        redant.unauthenticated_mount(self.vol_name, self.server_list[0],
+                                     self.mountpoint, self.client_list[1])
 
         # Verify whether mount failure on client2 is due to auth error
         prev_log_statement_c2 = redant.is_auth_failure(self.client_list[1],
