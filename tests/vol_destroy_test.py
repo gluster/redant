@@ -29,5 +29,5 @@ class VolDestroy(LazyParentTest):
         This child is responsible for the destruction of a volume
         of said type and its mountpoint.
         """
-        volume_nodes = self.redant.es.get_volume_nodes(self.vol_name)
-        self.redant.cleanup_volumes(volume_nodes[0], self.vol_name)
+        volume_nodes = redant.es.get_volume_nodes(self.vol_name)
+        redant.cleanup_volumes(volume_nodes[0], self.vol_name)
