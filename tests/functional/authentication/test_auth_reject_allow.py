@@ -33,11 +33,9 @@ class TestFuseAuthRejectAllow(DParentTest):
         """
         try:
             if self.is_vol_mounted:
-                cmd1 = f"umount {self.mountpoint}"
-                cmd2 = f"umount {self.subdir_vol}"
+                cmd = f"umount {self.mountpoint}"
                 for client in self.client_list:
-                    self.redant.execute_abstract_op_node(cmd1, client, False)
-                    self.redant.execute_abstract_op_node(cmd2, client, False)
+                    self.redant.execute_abstract_op_node(cmd, client, False)
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -118,8 +116,8 @@ class TestFuseAuthRejectAllow(DParentTest):
         self.is_vol_mounted = True
 
         # Unmount volume from client2
-        redant.volume_unmount(self.vol_name, self.mountpoint,
-                              self.client_list[1])
+        cmd = f"umount {self.mountpoint}"
+        redant.execute_abstract_op_node(cmd, self.client_list[1])
         self.is_vol_mounted = False
 
         # Obtain hostname of client1
@@ -159,8 +157,8 @@ class TestFuseAuthRejectAllow(DParentTest):
         redant.create_dir(self.mountpoint, "d1", self.client_list[1])
 
         # Unmount volume from client2
-        redant.volume_unmount(self.vol_name, self.mountpoint,
-                              self.client_list[1])
+        cmd = f"umount {self.mountpoint}"
+        redant.execute_abstract_op_node(cmd, self.client_list[1])
         self.is_vol_mounted = False
 
         # Setting auth.reject on d1 for client1 using ip
@@ -193,8 +191,8 @@ class TestFuseAuthRejectAllow(DParentTest):
         self.is_vol_mounted = True
 
         # Unmount d1 from client2
-        redant.volume_unmount(subdir_volume_client2, self.mountpoint,
-                              self.client_list[1])
+        cmd = f"umount {self.mountpoint}"
+        redant.execute_abstract_op_node(cmd, self.client_list[1])
         self.is_vol_mounted = False
 
         # Setting auth.reject on d1 for client1 using hostname
@@ -223,6 +221,6 @@ class TestFuseAuthRejectAllow(DParentTest):
         self.is_vol_mounted = True
 
         # Unmount d1 from client2
-        redant.volume_unmount(subdir_volume_client2, self.mountpoint,
-                              self.client_list[1])
+        cmd = f"umount {self.mountpoint}"
+        redant.execute_abstract_op_node(cmd, self.client_list[1])
         self.is_vol_mounted = False
