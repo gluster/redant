@@ -22,7 +22,6 @@ snapshot Status and Info for Invalid cases.
 
 """
 
-# disruptive;rep
 # disruptive;rep,dist,disp,dist-rep,dist-disp
 
 from tests.d_parent_test import DParentTest
