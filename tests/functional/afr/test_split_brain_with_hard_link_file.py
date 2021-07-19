@@ -15,7 +15,9 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
+Description:
+    Test deals with checking split brain condition with hard link
+    file.
 """
 
 # disruptive;dist-rep
@@ -25,34 +27,26 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    # def _test_brick_down_with_file_rename(self, pfile, rfile, brick):
-    #     # Bring brick offline
-    #     g.log.info('Bringing brick %s offline', brick)
-    #     ret = bring_bricks_offline(self.volname, brick)
-    #     self.assertTrue(ret, 'Failed to bring brick %s offline'
-    #                     % brick)
+    def _test_brick_down_with_file_rename(self, pfile, rfile, brick):
+        # Bring brick offline
+        self.redant.bring_bricks_offline(self.vol_name, brick)
 
-    #     ret = are_bricks_offline(self.mnode, self.volname,
-    #                              [brick])
-    #     self.assertTrue(ret, 'Brick %s is not offline'
-    #                     % brick)
-    #     g.log.info('Bringing brick %s offline is successful',
-    #                brick)
+        if not self.redant.are_bricks_offline(self.vol_name,
+                                              [brick],
+                                              self.server_list[0]):
+            raise Exception(f'Brick {brick} is not offline')
 
-    #     # Rename file
-    #     cmd = ("mv %s/%s %s/%s"
-    #            % (self.mounts[0].mountpoint, pfile,
-    #               self.mounts[0].mountpoint, rfile))
-    #     ret, _, _ = g.run(self.clients[0], cmd)
-    #     self.assertEqual(ret, 0, "rename of file failed")
+        # Rename file
+        cmd = (f"mv {self.mounts[0]['mountpath']}/{pfile} "
+               f"{self.mounts[0]['mountpath']}/{rfile}")
+        self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-    #     # Bring brick back online
-    #     g.log.info('Bringing brick %s online', brick)
-    #     ret = bring_bricks_online(self.mnode, self.volname,
-    #                               brick)
-    #     self.assertTrue(ret, 'Failed to bring brick %s online' %
-    #                     brick)
-    #     g.log.info('Bringing brick %s online is successful', brick)
+        # Bring brick back online
+        self.redant.bring_bricks_online(self.vol_name, self.server_list,
+                                        [brick])
+        if not self.redant.are_bricks_online(self.vol_name, [brick],
+                                             self.server_list[0]):
+            raise Exception(f"Brick {brick} is not online.")
 
     def run_test(self, redant):
         """
@@ -67,6 +61,7 @@ class TestCase(DParentTest):
         5. Now enable shd and let selfheals complete.
         6. Heal should complete without split-brains.
         """
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         bricks_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
         options = {"metadata-self-heal": "off",
                    "entry-self-heal": "off",
@@ -74,56 +69,52 @@ class TestCase(DParentTest):
                    "self-heal-daemon": "off"}
         redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
-        # cmd = ("touch %s/FILE" % self.mounts[0].mountpoint)
-        # ret, _, _ = g.run(self.clients[0], cmd)
-        # self.assertEqual(ret, 0, "file creation failed")
+        cmd = f"touch {self.mounts[0]['mountpath']}/FILE"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        # # Creating a hardlink for the file created
-        # for i in range(1, 4):
-        #     ret = create_link_file(self.clients[0],
-        #                            '{}/FILE'.format(self.mounts[0].mountpoint),
-        #                            '{}/HLINK{}'.format
-        #                            (self.mounts[0].mountpoint, i))
-        #     self.assertTrue(ret, "Unable to create hard link file ")
+        # Creating a hardlink for the file created
+        for i in range(1, 4):
+            if not (redant.
+                    create_link_file(
+                        self.client_list[0],
+                        f'{self.mounts[0]["mountpath"]}/FILE',
+                        f'{self.mounts[0]["mountpath"]}/HLINK{i}')):
+                raise Exception("Unable to create hard link file.")
 
-        # # Bring brick3 offline,Rename file HLINK1,and bring back brick3 online
-        # self._test_brick_down_with_file_rename("HLINK1", "NEW-HLINK1",
-        #                                        bricks_list[3])
+        # Bring brick3 offline,Rename file HLINK1,and bring back brick3 online
+        self._test_brick_down_with_file_rename("HLINK1", "NEW-HLINK1",
+                                               bricks_list[3])
 
-        # # Bring brick4 offline,Rename file HLINK2,and bring back brick4 online
-        # self._test_brick_down_with_file_rename("HLINK2", "NEW-HLINK2",
-        #                                        bricks_list[4])
+        # Bring brick4 offline,Rename file HLINK2,and bring back brick4 online
+        self._test_brick_down_with_file_rename("HLINK2", "NEW-HLINK2",
+                                               bricks_list[4])
 
-        # # Bring brick5 offline,Rename file HLINK3,and bring back brick5 online
-        # self._test_brick_down_with_file_rename("HLINK3", "NEW-HLINK3",
-        #                                        bricks_list[5])
+        # Bring brick5 offline,Rename file HLINK3,and bring back brick5 online
+        self._test_brick_down_with_file_rename("HLINK3", "NEW-HLINK3",
+                                               bricks_list[5])
 
-        # # Setting options
-        # options = {"self-heal-daemon": "on"}
-        # ret = set_volume_options(self.mnode, self.volname, options)
-        # self.assertTrue(ret, 'Failed to set options %s' % options)
-        # g.log.info("Option 'self-heal-daemon' is set to 'on' successfully")
+        # Setting options
+        options = {"self-heal-daemon": "on"}
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
-        # # Start healing
-        # ret = trigger_heal(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not started')
-        # g.log.info('Healing is started')
+        # Start healing
+        if not redant.trigger_heal(self.vol_name, self.server_list[0]):
+            raise Exception('Heal is not started')
 
-        # # Monitor heal completion
-        # ret = monitor_heal_completion(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal has not yet completed')
+        # monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet finished")
 
-        # # Check if heal is completed
-        # ret = is_heal_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not complete')
-        # g.log.info('Heal is completed successfully')
+        # is heal complete testing
+        if not redant.is_heal_complete(self.server_list[0],
+                                       self.vol_name):
+            raise Exception("Heal not yet finished")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume in split-brain")
 
-        # # Check data on mount point
-        # cmd = ("ls %s" % (self.mounts[0].mountpoint))
-        # ret, _, _ = g.run(self.clients[0], cmd)
-        # self.assertEqual(ret, 0, "failed to fetch data from mount point")
+        # Check data on mount point
+        if not redant.list_all_files_and_dirs_mounts([self.mounts[0]]):
+            raise Exception("Can't find data on mount point")
