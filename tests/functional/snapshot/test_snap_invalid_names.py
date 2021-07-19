@@ -1,66 +1,35 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
+  Copyright (C) 2021  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Description:
 
 Test Cases in this module tests the
 snapshot creation and listing Invalid names
 and parameters.
-
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.snap_ops import snap_create, get_snap_list
+
+# disruptive;rep,dist,dist-rep,disp,dist-disp
+
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed', 'distributed'],
-          ['glusterfs']])
-class SnapshotInvalidNames(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-        cls.snap1 = "snap1"
-        cls.snapinvalid = "#64^@*)"
-        cls.volname1 = "vola1"
-
-    def setUp(self):
-        # SettingUp volume and Mounting the volume
-        self.get_super_method(self, 'setUp')()
-        g.log.info("Starting to SetUp and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-        g.log.info("Volume %s has been setup successfully", self.volname)
-
-    def tearDown(self):
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-        # Unmount and cleanup-volume
-        g.log.info("Unmount and cleanup-volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount and Cleanup Volume")
-        g.log.info("Cleanup Volume Successfully")
-
-    def test_snap_list_invalid_cases_names(self):
+    def run_test(self, redant):
         """
         Steps:
         1. create volume and mount it
@@ -71,47 +40,38 @@ class SnapshotInvalidNames(GlusterBaseClass):
         5. snapshot list Invalid parameters with multiple
            and non-existing volume name should fail
         """
+        self.snap1 = "snap1"
+        self.snapinvalid = "#64^@*)"
+        self.volname1 = "vola1"
         # Creating snapshot with invalid snap name
-        g.log.info("Creating snapshot with invalid snap name")
-        ret, _, _ = snap_create(self.mnode, self.volname, self.snapinvalid)
-        self.assertNotEqual(ret, 0, ("Unexpected: Snapshot %s created "
-                                     "successfully for volume %s with "
-                                     "invalid snap name"
-                                     % (self.snapinvalid, self.volname)))
-        g.log.info("Expected: Failed to create snapshot %s for volume %s"
-                   "with invalid snap name", self.snap1, self.volname)
+        ret = redant.snap_create(self.vol_name, self.snapinvalid,
+                                 self.server_list[0], excep=False)
+
+        if ret['error_code'] == 0:
+            raise Exception("Snap creation with snap name"
+                            f" {self.snapinvalid} should have failed.")
 
         # Creating snapshot
-        g.log.info("Starting to Create snapshot")
-        ret, _, _ = snap_create(self.mnode, self.volname, self.snap1)
-        self.assertEqual(ret, 0, ("Failed to create snapshot for volume %s",
-                                  self.volname))
-        g.log.info("Snapshot %s created "
-                   "successfully for volume"
-                   "%s", self.snapinvalid, self.volname)
+        redant.snap_create(self.vol_name, self.snap1,
+                           self.server_list[0])
 
         # validate snapshot list with volname
-        g.log.info("validate snapshot list with volname")
-        out = get_snap_list(self.mnode)
-        self.assertIsNotNone(out, "Failed to list all snapshots")
-        self.assertEqual(len(out), 1, "Failed to validate snap_list")
-        g.log.info("Successfully validated snapshot list")
+        ret = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(ret) > 1:
+            raise Exception("More than 1 snapshot present even though only"
+                            " 1 was created.")
 
         # listing snapshot with invalid volume name which should fail
-        g.log.info("snapshot list with invalid volume name should fail")
-        cmd = ("gluster snap list %s" % self.volname1)
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertNotEqual(ret, 0, "Unexpected: Successfully listed "
-                            "all snapshots with invalid volume name "
-                            "%s" % self.volname1)
-        g.log.info("Expected to fail listing the snapshot with invalid"
-                   "volume name %s", self.volname1)
+        ret = redant.get_snap_list(self.server_list[0], self.volname1,
+                                   excep=False)
+        if ret['msg']['opRet'] != '-1':
+            raise Exception(f"Snap listing with volname {self.volname1}"
+                            " should've failed.")
 
         # snapshot list with multiple and non-existing volume
-        g.log.info("snapshot list Invalid parameter with "
-                   "multiple and non-existing volume name should fail")
-        cmd = ("gluster snap list %s %s"
-               % (self.volname, self.volname1))
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertNotEqual(ret, 0, "Unexpected: listed all snapshots")
-        g.log.info("Expected: Failed to list snapshots")
+        cmd = (f"gluster snap list {self.vol_name} {self.volname1} --xml"
+               " --mode=script")
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
+        if ret['error_code'] == 0:
+            raise Exception(f"The command {cmd} should've failed as invalid"
+                            " command.")
