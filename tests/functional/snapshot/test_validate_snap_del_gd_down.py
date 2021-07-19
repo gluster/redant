@@ -1,68 +1,36 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
+  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Description:
-
-This test cases will validate snapshot delete behaviour
-when glusterd is down on one node.
+  This test cases will validate snapshot delete behaviour
+  when glusterd is down on one node.
 
 """
-import time
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-from glustolibs.gluster.gluster_init import stop_glusterd, start_glusterd
-from glustolibs.gluster.snap_ops import (get_snap_list, snap_delete,
-                                         snap_delete_all, snap_create)
+
+# disruptive;rep
+# disruptive;rep,disp,dist,dist-rep,dist-disp
+
+from time import sleep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed', 'distributed-dispersed'],
-          ['glusterfs']])
-class SnapDelWhenGDDown(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def setUp(self):
-
-        # Setting and Mounting the volume
-        self.get_super_method(self, 'setUp')()
-        g.log.info("Starting to Set and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-        g.log.info("Volume %s has been setup successfully", self.volname)
-
-    def tearDown(self):
-        # deleting created snapshots
-        ret, _, _ = snap_delete_all(self.mnode)
-        if ret != 0:
-            raise ExecutionError("Failed to delete snapshot of volume"
-                                 "%s" % self.volname)
-        g.log.info("Successfully deleted snapshots of volume %s", self.volname)
-
-        # Unmount and volume cleanup
-        g.log.info("Starting to Unmount and cleanup volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount and Clean Volume")
-        g.log.info("Successful in Unmount and Clean Volume")
-
-    def test_snap_del_gd_down(self):
-
+    def run_test(self, redant):
         """
         Steps:
         1. Create volumes
@@ -75,54 +43,49 @@ class SnapDelWhenGDDown(GlusterBaseClass):
            brought down node.
         """
         # Create 5 snapshot
-        g.log.info("Creating 5 snapshots for volume %s", self.volname)
         for i in range(0, 5):
-            ret, _, _ = snap_create(self.mnode, self.volname, "snapy%s" % i)
-            self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                      % self.volname))
-            g.log.info("Snapshot %s created successfully for volume  %s",
-                       "snapy%s" % i, self.volname)
+            self.snap_name = f"{self.vol_name}-snap{i}"
+            redant.snap_create(self.vol_name, self.snap_name,
+                               self.server_list[0])
 
         # Check for no of snaps using snap_list it should be 5 now
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(5, len(snap_list), "No of snaps not consistent "
-                         "for volume %s" % self.volname)
-        g.log.info("Successfully validated number of snaps.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 5:
+            raise Exception("Snap list should have 5 snap volumes. But instead"
+                            f" is {snap_list}")
 
         # Stopping glusterd service on server[1]
-        ret = stop_glusterd(self.servers[1])
-        self.assertTrue(ret, "Failed to stop glusterd service on node : %s"
-                        % self.servers[1])
-        g.log.info("Stopped glusterd services successfully on: %s",
-                   self.servers[1])
+        redant.stop_glusterd(self.server_list[1])
+        if not redant.wait_for_glusterd_to_stop(self.server_list[1]):
+            raise Exception(f"Glusterd didn't stop at {self.server_list[1]}")
 
         # Delete one snapshot snapy1
-        ret, _, _ = snap_delete(self.servers[0], "snapy1")
-        self.assertEqual(ret, 0, "Failed to delete snapshot snapy1")
-        g.log.info("Successfully deleted snapshot of snapy1")
+        self.snap_name = f"{self.vol_name}-snap1"
+        redant.snap_delete(self.snap_name, self.server_list[0])
 
         # Check for no of snaps using snap_list it should be 4 now
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(4, len(snap_list), "No of snaps not consistent "
-                         "for volume %s" % self.volname)
-        g.log.info("Successfully validated number of snaps.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 4:
+            raise Exception("Snap list should have 4 snap volumes. But instead"
+                            f" is {snap_list}")
+        print(snap_list)
 
         # Starting glusterd services on server[1]
-        ret = start_glusterd(self.servers[1])
-        self.assertTrue(ret, "Failed to start glusterd on node "
-                             ": %s" % self.servers[1])
-        g.log.info("Started glusterd services successfully on: %s",
-                   self.servers[1])
+        redant.start_glusterd(self.server_list[1])
+        if not redant.wait_for_glusterd_to_start(self.server_list[1]):
+            raise Exception(f"Glusterd didn't start at {self.server_list[1]}")
 
-        # Check for no of snaps using snap_list it should be 4 for server[1]
-        count = 0
-        # putting wait here for glusterd handshake
-        while count < 60:
-            snap_list = get_snap_list(self.servers[1])
+        # Wait till peers are in connected mode.
+        if not redant.wait_till_all_peers_connected(self.server_list):
+            raise Exception("Peers are not in connected state.")
+
+        # Check for no of snaps using snap_list it should be 4 now
+        for _ in range(60):
+            snap_list = redant.get_snap_list(self.server_list[1],
+                                             self.vol_name)
             if len(snap_list) == 4:
-                break
-            time.sleep(2)
-            count += 2
-        self.assertEqual(4, len(snap_list), "No of snaps not consistent "
-                         "for volume %s" % self.volname)
-        g.log.info("Successfully validated number of snaps.")
+                 break
+            sleep(5)
+        if len(snap_list) != 4:
+            raise Exception("Snap list should have 4 snap volumes. But instead"
+                            f" is {snap_list}")
