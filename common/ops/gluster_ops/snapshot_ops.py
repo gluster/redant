@@ -362,7 +362,8 @@ class SnapshotOps(AbstractOps):
             snap_status_dict[snap['name']] = temp_dict
         return snap_status_dict
 
-    def get_snap_status_by_snapname(self, snapname: str, node: str) -> dict:
+    def get_snap_status_by_snapname(self, snapname: str, node: str,
+                                    excep: bool = True) -> dict:
         """
         Method to get a snap status for a specific snapshot.
 
@@ -370,11 +371,16 @@ class SnapshotOps(AbstractOps):
             snapname (str): name of the snapshot
             node (str): node wherein the command is to be executed.
 
+        Optional:
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else
+            it isn't.
+
         Returns:
             Dictionary of the snap status for the said snapshot or Nonetype
             object.
         """
-        snap_status_dict = self.get_snap_status(node)
+        snap_status_dict = self.get_snap_status(node, excep)
 
         if snapname in snap_status_dict.keys():
             return snap_status_dict[snapname]
@@ -433,7 +439,7 @@ class SnapshotOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
         if not excep and ret['msg']['opRet'] != '0':
-            return None
+            return ret
 
         snap_info_dict = {}
         snap_info = ret['msg']['snapInfo']['snapshots']['snapshot']
@@ -449,7 +455,8 @@ class SnapshotOps(AbstractOps):
             return None
         return snap_info_dict
 
-    def get_snap_info_by_snapname(self, snapname: str, node: str) -> dict:
+    def get_snap_info_by_snapname(self, snapname: str, node: str,
+                                  excep: bool = True) -> dict:
         """
         Method to obtain the snap info specific to a snapname.
 
@@ -457,10 +464,16 @@ class SnapshotOps(AbstractOps):
             snapname (str): name of the snapshot.
             node (str): the node wherein the command has to be run.
 
+        Optional:
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else
+            it isn't.
+
         Returns:
             dictionary of the snap status or Nonetype object.
         """
-        snap_info_dict = self.get_snap_info(node)
+        snap_info_dict = self.get_snap_info(node, excep)
+
         if snap_info_dict is None:
             return None
         if snapname in snap_info_dict.keys():
@@ -468,7 +481,8 @@ class SnapshotOps(AbstractOps):
         else:
             return None
 
-    def get_snap_info_by_volname(self, volname: str, node: str) -> dict:
+    def get_snap_info_by_volname(self, volname: str, node: str,
+                                 excep: bool = True) -> dict:
         """
         Method to obtain the snap info specific to volume
 
@@ -476,12 +490,18 @@ class SnapshotOps(AbstractOps):
             volname (str): name of the volume.
             node (str): the node wherein the command has to be run.
 
+        Optional:
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else
+            it isn't.
+
         Returns:
             dictionary of the snap status or Nonetype object.
         """
-        snap_info_dict = self.get_snap_info(node)
+        snap_info_dict = self.get_snap_info(node, excep)
         if snap_info_dict is None:
             return None
+
         snap_vol_dict = {}
         for snap in snap_info_dict:
             if snap_info_dict[snap]['snapVolume']['originVolume']['name'] ==\
