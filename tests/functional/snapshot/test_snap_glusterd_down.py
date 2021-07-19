@@ -1,60 +1,35 @@
-#  Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
+  Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Description:
 
 Test Cases in this module tests the
 snapshot activation and deactivation status
 when glusterd is down.
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.peer_ops import wait_for_peers_to_connect
-from glustolibs.gluster.gluster_init import (stop_glusterd,
-                                             start_glusterd,
-                                             wait_for_glusterd_to_start)
-from glustolibs.gluster.snap_ops import (snap_create,
-                                         get_snap_info_by_snapname,
-                                         get_snap_list, snap_deactivate,
-                                         snap_activate)
+
+# disruptive;rep,dist,disp,dist-rep,dist-disp
+
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed', 'distributed'],
-          ['glusterfs']])
-class SnapshotGlusterddown(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-        cls.snap = "snap1"
-
-    def setUp(self):
-        # SettingUp volume and Mounting the volume
-        self.get_super_method(self, 'setUp')()
-        g.log.info("Starting to SetUp Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-        g.log.info("Volume %s has been setup successfully", self.volname)
-
-    def test_snap_glusterd_down(self):
-        # pylint: disable=too-many-statements
+    def run_test(self, redant):
         """
         Steps:
 
@@ -75,114 +50,56 @@ class SnapshotGlusterddown(GlusterBaseClass):
 
         """
         # Creating snapshot:
-        g.log.info("Starting to Create snapshot")
-        ret, _, _ = snap_create(self.mnode, self.volname, self.snap)
-        self.assertEqual(ret, 0, ("Failed to create snapshot %s for volume %s"
-                                  % (self.snap, self.volname)))
-        g.log.info("Snapshot %s created successfully "
-                   "for volume %s", self.snap, self.volname)
+        snap_name = f"{self.vol_name}-snap"
+        redant.snap_create(self.vol_name, snap_name, self.server_list[0])
 
         # Check snapshot info
-        g.log.info("Checking snapshot info")
-        snap_info = get_snap_info_by_snapname(self.mnode, self.snap)
-        self.assertIsNotNone(snap_info, "Failed to get snap information"
-                             "for snapshot %s" % self.snap)
-        status = snap_info['snapVolume']['status']
-        self.assertNotEqual(status, 'Started', "snapshot %s "
-                            "not started" % self.snap)
-        g.log.info("Successfully checked snapshot info")
+        ret = redant.get_snap_info_by_snapname(snap_name, self.server_list[0])
+        if ret is None:
+            raise Exception(f"Snap info for {snap_name} not found")
+        if ret['snapVolume']['status'] != 'Stopped':
+            raise Exception("Snap status should be stopped before activation.")
 
         # Activating snapshot
-        g.log.info("Starting to Activate Snapshot")
-        ret, _, _ = snap_activate(self.mnode, self.snap)
-        self.assertEqual(ret, 0, ("Failed to Activate snapshot %s"
-                                  % self.snap))
-        g.log.info("Snapshot %s activated successfully", self.snap)
+        redant.snap_activate(snap_name, self.server_list[0])
 
         # snapshot list
-        g.log.info("Starting to validate list of snapshots")
-        snap_list1 = get_snap_list(self.mnode)
-        self.assertIsNotNone(snap_list1, "Failed to list all the snapshot")
-        self.assertEqual(len(snap_list1), 1, "Failed to validate snap list")
-        g.log.info("Snapshot list successfully validated")
+        ret = redant.get_snap_list(self.server_list[0])
+        if len(ret) > 1:
+            raise Exception("More than 1 snapshot present even though only 1"
+                            " was created")
 
         # Check snapshot info
-        g.log.info("Checking snapshot info")
-        snap_info = get_snap_info_by_snapname(self.mnode, self.snap)
-        status = snap_info['snapVolume']['status']
-        self.assertEqual(status, 'Started', "Failed to"
-                         "start snapshot info")
-        g.log.info("Successfully checked snapshot info")
+        ret = redant.get_snap_info_by_snapname(snap_name, self.server_list[0])
+        if ret is None:
+            raise Exception(f"Snap info for {snap_name} not found")
+        if ret['snapVolume']['status'] != 'Started':
+            raise Exception("Snap status should be started after activation.")
 
         # Stop Glusterd on one node
-        g.log.info("Stopping Glusterd on one node")
-        ret = stop_glusterd(self.servers[1])
-
-        # Check Glusterd status
-        g.log.info("Check glusterd running or not")
-        self.assertFalse(
-            wait_for_glusterd_to_start(self.servers[1]),
-            "glusterd is still running on %s" % self.servers[1])
-        g.log.info("Expected: Glusterd not running on node %s",
-                   self.servers[1])
+        redant.stop_glusterd(self.server_list[1])
+        if not redant.wait_for_glusterd_to_stop(self.server_list[1]):
+            raise Exception(f"Glusterd didn't stop at {self.server_list[1]}")
 
         # de-activating snapshot
-        g.log.info("Starting to de-activate Snapshot")
-        ret, _, _ = snap_deactivate(self.mnode, self.snap)
-        self.assertEqual(ret, 0, ("Failed to deactivate snapshot %s"
-                                  % self.snap))
-        g.log.info("Snapshot %s deactivated successfully", self.snap)
+        redant.snap_deactivate(snap_name, self.server_list[0])
 
         # validate snapshot info
-        g.log.info("Checking snapshot info")
-        snap_info = get_snap_info_by_snapname(self.mnode, self.snap)
-        status = snap_info['snapVolume']['status']
-        self.assertNotEqual(status, 'Started', "snapshot %s "
-                            "not started" % self.snap)
-        g.log.info("Successfully validated snapshot info")
+        ret = redant.get_snap_info_by_snapname(snap_name, self.server_list[0])
+        if ret is None:
+            raise Exception(f"Snap info for {snap_name} not found")
+        if ret['snapVolume']['status'] != 'Stopped':
+            raise Exception("Snap status should be stopped before activation.")
 
         # Start Glusterd on node
-        g.log.info("Starting Glusterd on node %s", self.servers[1])
-        ret = start_glusterd(self.servers[1])
-        self.assertTrue(ret, "Failed to start glusterd on %s node"
-                        % self.servers[1])
-        g.log.info("Successfully started glusterd on "
-                   "%s node", self.servers[1])
-
-        # Check Glusterd status
-        g.log.info("Check glusterd running or not")
-        self.assertTrue(
-            wait_for_glusterd_to_start(self.servers[1]),
-            "glusterd is still running on %s" % self.servers[1])
-        g.log.info("glusterd is running on %s node",
-                   self.servers[1])
+        redant.start_glusterd(self.server_list[1])
+        if not redant.wait_for_glusterd_to_start(self.server_list[1]):
+            raise Exception(f"Glusterd didn't start at {self.server_list[1]}")
 
         # validate snapshot info
-        g.log.info("Checking snapshot info")
-        snap_info = get_snap_info_by_snapname(self.mnode, self.snap)
-        self.assertIsNotNone(snap_info, "Failed to get snap info for"
-                             " snapshot %s" % self.snap)
-        status = snap_info['snapVolume']['status']
-        self.assertNotEqual(status, 'Started', "snapshot"
-                            " %s failed to validate with snap info"
-                            % self.snap)
-        g.log.info("Successfully validated snapshot info")
-
-        # Check all the peers are in connected state
-        g.log.info("Validating all the peers are in connected state")
-        self.assertTrue(
-            wait_for_peers_to_connect(self.mnode, self.servers),
-            "glusterd is still running on %s" % self.servers)
-        g.log.info("Successfully validated all the peers")
-
-    def tearDown(self):
-
-        # Unmount and cleanup original volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        ret = redant.get_snap_info_by_snapname(snap_name, self.server_list[0])
+        if ret is None:
+            raise Exception(f"Snap info for {snap_name} not found")
+        if ret['snapVolume']['status'] != 'Stopped':
+            raise Exception("Snap status should be stopped after"
+                            "deactivation.")
