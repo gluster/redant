@@ -363,7 +363,7 @@ class SnapshotOps(AbstractOps):
         return snap_status_dict
 
     def get_snap_status_by_snapname(self, snapname: str, node: str,
-                                    excep: bool=True) -> dict:
+                                    excep: bool = True) -> dict:
         """
         Method to get a snap status for a specific snapshot.
 
