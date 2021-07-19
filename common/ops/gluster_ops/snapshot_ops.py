@@ -584,7 +584,7 @@ class SnapshotOps(AbstractOps):
                 - cmd : command that got executed
                 - node : node on which the command got executed
         """
-        cmd = (f"gluster snapshot volume {volname} --xml --mode=script")
+        cmd = (f"gluster snapshot delete volume {volname} --xml --mode=script")
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def snap_delete_all(self, node: str, excep: bool = True) -> dict:
