@@ -52,7 +52,6 @@ class TestCase(DParentTest):
         - validate IO
         """
         self.all_mounts_procs = []
-        self.counter = 1
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.bricks_list = redant.get_all_bricks(self.vol_name,
                                                  self.server_list[0])
