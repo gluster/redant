@@ -24,6 +24,8 @@ snapshot Status and Info for Invalid cases.
 
 # disruptive;rep,dist,disp,dist-rep,dist-disp
 
+# TODO cifs and nfs
+
 from tests.d_parent_test import DParentTest
 
 
