@@ -254,3 +254,260 @@
         ```python
             redant.snap_info(self.server_list[0], snapname=self.snap_name)
 		```
+
+14) **get_snap_info**<br>
+		To obtain the snap info command output when run in a node and to access the results by snapname.
+		
+		Args:
+			node (str); Node wherein the command is run
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+			a dictionary in case of valid data or else NoneType.
+		
+		Example:
+		```python
+			redant.get_snap_info(self.server_list[0])
+		```
+
+15) **get_snap_info_by_snapname**<br>
+		To obtain the snap info specific to a snapname.
+		
+		Args:
+			snapname (str): Name of the snap whose info is to be obtained.
+			node (str): Node wherein the command has to be run.
+
+		Returns:
+			Dictionary of snap info pertaining to a snapname and Nonetype object if not found.
+		
+		Example:
+		```
+			redant.get_snap_info_by_snapname(self.snap_name, self.server_list[0])
+		```
+
+
+16) **get_snap_info_by_volname**<br>
+		To obtain the snap info specific to a volname.
+		
+		Args:
+			volname (str): Name of the volume whose snap infos are to be obtained.
+			node (str): Node wherein the command has to be run.
+
+		Returns:
+			Dictionary of snap infos pertaining to a volume and Nonetype object if not found.
+		
+		Example:
+		```
+			redant.get_snap_info_by_volname(self.vol_name, self.server_list[0])
+		```
+
+17) **snap_list**<br>
+		To run snap list command and get the ret dict back.
+		
+		Args:
+			node (str): Node wherein the command is run.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.snap_list(self.server_list[0])
+        ```
+
+18) **get_snap_list**
+		To obtain the snapshot list.
+		
+		Args:
+			node (str): Node wherein the command is run.
+			volname (str): Optional parameter with default value being None. When provided, the snap list is specific to the volname provided.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                when excep is False or else a list of snapshots is returned.
+                
+        Example:
+        ```python
+            redant.get_snap_list(self.server_list[0], self.vol_name)
+        ```
+
+19) **snap_delete**<br>
+		To delete a specific snapshot.
+		
+		Args:
+			snapname (str): Name of the snapshot which is to be deleted.
+			node (str): Node wherein the command is run.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.snap_delete(self.snap_name, self.server_list[0])
+        ```
+
+20) **snap_delete_by_volumename**<br>
+		Delete a snapshot by volume name.
+		
+		Args:
+			volname (str): Name of the volume whose snapshots are to be purged.
+			node (str): Node wherein the command is to be executed.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.snap_delete_by_volumename(self.vol_name, self.server_list[0])
+        ```
+
+21) **snap_delete_all**<br>
+		Delete all snapshots present in the cluster.
+		
+		Args:
+			node (str): Node wherien the command is to be run. This node is part of the cluster whose snaps are deleted.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.snap_delete_all(self.server_list[0])
+        ```
+
+22) **snap_activate**<br>
+		Activate a snapshot.
+		
+		Args:
+			snapname (str): name of the snapshot to be activated.
+			node (str): Node wherein the command is to be run.
+			force (bool): Optional parameter with default value being False.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+		
+		Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.snap_activate(self.snap_name, self.server_list[0])
+        ```
+
+23) **snap_deactivate**<br>
+		Deactivate a snapshot.
+		
+		Args:
+			snapname (str): name of the snapshot to be de-activated.
+			node (str): node wherein the command is to be run.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+			
+			Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.snap_deactivate(self.snap_name, self.server_list[0])
+        ```
+
+24) **terminate_snapds_on_node**<br>
+		To stop snap process on the specified node.
+		
+		Args:
+			node (str): Node wherien the command is to be run.
+		
+		Example:
+		```
+			redant.terminate_snapds_on_node(self.server_list[0])
+		```
+
+25) **get_snap_config**<br>
+		To obtain the snap config
+		
+		Args:
+			node (str): The node wherein the command is run.
+			volname (str): Optional parameter with default value being None. When providede the config is parsed only for snaps derived from this volume.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+			
+			Returns:
+				A dictionary of config values. Parsing would be done only when excep if True, else the raw output is returned to the user which is of the form,
+				ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+            
+            Example:
+            ```
+                redant.get_snap_config(self.server_list[0])
+            ```
+
+26) **set_snap_config**<br>
+		To set the snap config.
+		
+		Args:
+			option (dict): Key value pair of the option to be set.
+			node (str): Node wherein the command is to be run.
+			volname (str): Optional parameter with defauly value being None.
+			excep (bool): Optional parameter with default value being True. With this true, the exception handling on the command execution will be handled by the framework.
+			
+			Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+                
+        Example:
+        ```python
+            redant.set_snap_config(options_dict, self.server_list[0])
+        ```

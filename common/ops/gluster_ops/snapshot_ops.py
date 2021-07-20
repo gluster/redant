@@ -421,7 +421,7 @@ class SnapshotOps(AbstractOps):
 
     def get_snap_info(self, node: str, excep: bool = True) -> dict:
         """
-        Method to obtain the snap status command output when run in a node,
+        Method to obtain the snap info command output when run in a node,
         and to access the result by snapnames.
 
         Args:
@@ -470,7 +470,7 @@ class SnapshotOps(AbstractOps):
             it isn't.
 
         Returns:
-            dictionary of the snap status or Nonetype object.
+            dictionary of the snap info or Nonetype object.
         """
         snap_info_dict = self.get_snap_info(node, excep)
 
@@ -496,7 +496,7 @@ class SnapshotOps(AbstractOps):
             it isn't.
 
         Returns:
-            dictionary of the snap status or Nonetype object.
+            dictionary of the snap info or Nonetype object.
         """
         snap_info_dict = self.get_snap_info(node, excep)
         if snap_info_dict is None:
@@ -515,7 +515,8 @@ class SnapshotOps(AbstractOps):
 
     def snap_list(self, node: str, excep: bool = True) -> dict:
         """
-        Method to list the snapshots in a node.
+        Method to list the snapshots in a node. The response will
+        be raw dictionary.
 
         Args:
             node (str): Node wherein the command will be executed.
@@ -533,13 +534,36 @@ class SnapshotOps(AbstractOps):
                 - error_code: error code returned
                 - cmd : command that got executed
                 - node : node on which the command got executed
-               when excep is False or else we return list of snapshots.
         """
         cmd = "gluster snapshot list --mode=script --xml"
         return self.execute_abstract_op_node(cmd, node, excep)
 
     def get_snap_list(self, node: str, volname: str = None,
                       excep: bool = True) -> list:
+        """
+        Method to return the list of snapshots present.
+
+        Args:
+            node (str): Node wherein the command is to be run.
+
+        Optional:
+            volname (str): An optional parameter with default value None.
+            If provided, the list will be snap list specific to the said
+            volume.
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else
+            it isn't.
+
+        Returns:
+            ret: A dictionary consisting
+               - Flag: To check if the connection failed.
+               - msg: message
+               - error_msg: error message
+               - error_code: error code
+               - cmd: command that got executed
+               - node: node on which the command got executed.
+              when excep is False or else we return list of snapshots.
+        """
         if volname is None:
             cmd = "gluster snapshot list --xml --mode=script"
         else:
@@ -588,7 +612,7 @@ class SnapshotOps(AbstractOps):
 
         Args:
             volname (str): name of the volume.
-            node (str): Node whereint he command is to be executed.
+            node (str): Node wherein the command is to be executed.
 
         Optional:
             excep (bool): Flag to control exception handling by the
@@ -678,6 +702,15 @@ class SnapshotOps(AbstractOps):
             excep (bool): Flag to control exception handling by the
             abstract ops. If True, the exception is handled, or else it
             isn't.
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
         """
         cmd = (f"gluster snapshot deactivate {snapname} --mode=script --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
