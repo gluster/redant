@@ -103,8 +103,7 @@ class TestCase(DParentTest):
         1) Create a replica 3 volume and start volume.
         2) Set client side self heal off.
         3) Fuse mount the volume.
-        4) Create directory dir1 and write data.
-           Example: untar linux tar from the client into the dir1
+        4) Perform IO
         5) When IO's is running, execute remove-brick command,
            and convert replica 3 to replica 2 volume
         6) Execute add-brick command and convert to arbiter volume,
