@@ -65,7 +65,7 @@ class TestSnapInfoOnPeerDetachedNode(DParentTest):
 
         # Create a snapshot of the volume after volume start
         redant.snap_create(self.vol_name, self.snapname,
-                           self.server_list[0], excep=False)
+                           self.server_list[0])
 
         # Activate snapshot created
         redant.snap_activate(self.snapname, self.server_list[0])
