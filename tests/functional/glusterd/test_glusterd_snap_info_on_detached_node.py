@@ -1,52 +1,32 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check snap info when a peer is detached
+"""
+
+# disruptive;
 import random
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterfile import file_exists
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.volume_ops import (volume_create,
-                                           set_volume_options, volume_start)
-from glustolibs.gluster.snap_ops import snap_create, snap_activate
-from glustolibs.gluster.peer_ops import (
-    peer_detach_servers,
-    peer_probe_servers)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestSnapInfoOnPeerDetachedNode(GlusterBaseClass):
+class TestSnapInfoOnPeerDetachedNode(DParentTest):
 
-    def tearDown(self):
-
-        ret = peer_probe_servers(self.mnode, self.servers)
-        if not ret:
-            raise ExecutionError("Failed to peer probe servers")
-
-        # stopping the volume and Cleaning up the volume
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed Cleanup the Volume %s" % self.volname)
-        g.log.info("Volume deleted successfully : %s", self.volname)
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_snap_info_from_detached_node(self):
-        # pylint: disable=too-many-statements
+    def run_test(self, redant):
         """
         Create a volume with single brick
         Create a snapshot
@@ -59,71 +39,55 @@ class TestSnapInfoOnPeerDetachedNode(GlusterBaseClass):
         """
 
         # Creating volume with single brick on one node
-        servers_info_single_node = {self.servers[0]:
-                                    self.all_servers_info[self.servers[0]]}
-        bricks_list = form_bricks_list(self.mnode, self.volname,
-                                       1, self.servers[0],
-                                       servers_info_single_node)
-        ret, _, _ = volume_create(self.servers[0], self.volname, bricks_list)
-        self.assertEqual(ret, 0, "Volume creation failed")
-        g.log.info("Volume %s created successfully", self.volname)
+        brick_dict, bricks_cmd = redant.form_brick_cmd(self.server_list[0],
+                                                       self.brick_roots,
+                                                       self.vol_name, 1)
+        conf_hash = {
+            "dist_count": 1,
+            "replica_count": 1,
+            "transport": "tcp"
+        }
+        redant.volume_create_with_custom_bricks(self.vol_name,
+                                                self.server_list[0],
+                                                conf_hash, bricks_cmd,
+                                                brick_dict)
 
         # Create a snapshot of the volume without volume start should fail
         self.snapname = "snap1"
-        ret, _, _ = snap_create(
-            self.mnode, self.volname, self.snapname, timestamp=False)
-        self.assertNotEqual(
-            ret, 0, "Snapshot created without starting the volume")
-        g.log.info("Snapshot creation failed as expected")
+        ret = redant.snap_create(self.vol_name, self.snapname,
+                                 self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == 0:
+            raise Exception("Unexpected: Snapshot creation succeeded without"
+                            " starting the volume")
 
         # Start the volume
-        ret, _, _ = volume_start(self.mnode, self.volname)
-        self.assertEqual(
-            ret, 0, "Failed to start the volume %s" % self.volname)
-        g.log.info("Volume start succeeded")
+        redant.volume_start(self.vol_name, self.server_list[0])
 
         # Create a snapshot of the volume after volume start
-        ret, _, _ = snap_create(
-            self.mnode, self.volname, self.snapname, timestamp=False)
-        self.assertEqual(
-            ret, 0, "Snapshot creation failed on the volume %s" % self.volname)
-        g.log.info("Snapshot create succeeded")
+        redant.snap_create(self.vol_name, self.snapname,
+                           self.server_list[0], excep=False)
 
         # Activate snapshot created
-        ret, _, err = snap_activate(self.mnode, self.snapname)
-        self.assertEqual(
-            ret, 0, "Snapshot activate failed with following error %s" % (err))
-        g.log.info("Snapshot activated successfully")
+        redant.snap_activate(self.snapname, self.server_list[0])
 
         # Enable uss
-        self.vol_options['features.uss'] = 'enable'
-        ret = set_volume_options(self.mnode, self.volname, self.vol_options)
-        self.assertTrue(ret, "gluster volume set %s features.uss "
-                             "enable failed" % self.volname)
-        g.log.info("gluster volume set %s features.uss "
-                   "enable successfully", self.volname)
+        option = {'features.uss': 'enable'}
+        redant.set_volume_options(self.vol_name, option, self.server_list[0])
 
         # Validate files /var/lib/glusterd/snaps on all the servers is same
-        self.pathname = "/var/lib/glusterd/snaps/%s" % self.snapname
-        for server in self.servers:
-            ret = file_exists(server, self.pathname)
-            self.assertTrue(ret, "%s directory doesn't exist on node %s" %
-                            (self.pathname, server))
-            g.log.info("%s path exists on node %s", self.pathname, server)
+        pathname = f"/var/lib/glusterd/snaps/{self.snapname}"
+        for server in self.server_list:
+            ret = redant.path_exists(server, pathname)
+            if not ret:
+                raise Exception(f"Path {pathname} doesn't exist on {server}")
 
         # Peer detach one node
-        self.random_node_peer_detach = random.choice(self.servers[1:])
-        ret = peer_detach_servers(self.mnode,
-                                  self.random_node_peer_detach, validate=True)
-        self.assertTrue(ret, "Peer detach of node: %s failed" %
-                        self.random_node_peer_detach)
-        g.log.info("Peer detach succeeded")
+        random_node = random.choice(self.server_list[1:])
+        if not redant.peer_detach_servers(random_node, self.server_list[0]):
+            raise Exception(f"Failed to detach the peer {random_node}")
 
         # /var/lib/glusterd/snaps/<snapname> directory should not present
-
-        ret = file_exists(self.random_node_peer_detach, self.pathname)
-        self.assertFalse(ret, "%s directory should not exist on the peer"
-                              "which is detached from cluster%s" % (
-                                  self.pathname, self.random_node_peer_detach))
-        g.log.info("Expected: %s path doesn't exist on peer detached node %s",
-                   self.pathname, self.random_node_peer_detach)
+        ret = redant.path_exists(random_node, pathname)
+        if ret:
+            raise Exception(f"Unexpected: Path {pathname} exists on "
+                            f"{random_node}")
