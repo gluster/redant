@@ -67,8 +67,6 @@ class TestCase(DParentTest):
         - Launch heals and verify that the heals are over.
         - Verify that the files and directories have gfid assigned.
         """
-        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
-
         # Create data on the bricks.
         self.bricks_list = redant.get_all_bricks(self.vol_name,
                                                  self.server_list[0])
@@ -86,7 +84,7 @@ class TestCase(DParentTest):
 
         # Access files from mount
         for i in range(1, 4):
-            cmd = f"ls {self.mounts[0]['mountpath']}/dir{i}/file{i}"
+            cmd = f"ls {self.mountpoint}/dir{i}/file{i}"
             redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Trigger heal
