@@ -22,24 +22,10 @@ Description:
 # disruptive;rep
 
 import time
-import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
-
-    def terminate(self):
-        try:
-            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
-                                                      self.mounts)
-            if not ret:
-                raise Exception("IO failed on some clients")
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
 
     def _verify_gfid_and_link_count(self, dirname, filename):
         """
@@ -53,7 +39,7 @@ class TestCase(DParentTest):
 
             ret = self.redant.get_fattr(f'{brick_path}/{dirname}',
                                         'trusted.gfid', brick_node)
-            
+
             dir_gfids.setdefault(dirname, []).append(ret[1])
 
             ret = self.redant.get_fattr(f'{brick_path}/{dirname}/{filename}',
@@ -67,7 +53,6 @@ class TestCase(DParentTest):
             if stat_data['st_nlink'] != 2:
                 raise Exception("Link count not 2")
 
-        
         if len(set(dir_gfids[dirname])) != 1:
             raise Exception(f"GFID mismatched for dir {dirname}")
 
@@ -82,12 +67,11 @@ class TestCase(DParentTest):
         - Launch heals and verify that the heals are over.
         - Verify that the files and directories have gfid assigned.
         """
-        self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Create data on the bricks.
         self.bricks_list = redant.get_all_bricks(self.vol_name,
-                                            self.server_list[0])
+                                                 self.server_list[0])
         i = 0
         for brick in self.bricks_list:
             i += 1
@@ -115,12 +99,10 @@ class TestCase(DParentTest):
                                               self.vol_name):
             raise Exception("Heal is not yet finished")
 
-
         # Check if heal is completed
         if not redant.is_heal_complete(self.server_list[0],
                                        self.vol_name):
             raise Exception("Heal not yet finished")
-
 
         # Verify gfid and links at the backend.
         self._verify_gfid_and_link_count("dir1", "file1")
