@@ -28,18 +28,6 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def terminate(self):
-        try:
-            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
-                                                      self.mounts)
-            if not ret:
-                raise Exception("IO failed on some clients")
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
-
     def run_test(self, redant):
         """
         Test Script which verifies that the existing glustershd should take
