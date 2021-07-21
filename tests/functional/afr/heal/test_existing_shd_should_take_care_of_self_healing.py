@@ -17,17 +17,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     Test Cases in this module tests the self heal daemon process.
-@runs_on([['replicated', 'distributed-replicated'],
-          ['glusterfs', 'cifs', 'nfs']])
 """
-# disruptive;rep
+# disruptive;rep,dist-rep
 # TODO: nfs, cifs
 
 import time
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -98,7 +109,7 @@ class TestCase(DParentTest):
 
         # Bring bricks online
         redant.bring_bricks_online(self.vol_name, self.server_list,
-                                  bricks_to_bring_offline, True)
+                                   bricks_to_bring_offline, True)
         if not redant.are_bricks_online(self.vol_name,
                                         bricks_to_bring_offline,
                                         self.server_list[0]):
@@ -127,55 +138,50 @@ class TestCase(DParentTest):
         if not flag:
             raise Exception("Pro-active self heal is not started")
 
-        # # bring down bricks again
-        # g.log.info("Going to bring down the brick process "
-        #            "for %s", bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, ("Failed to bring down the bricks. Please "
-        #                       "check the log file for more details."))
-        # g.log.info("Brought down the brick process "
-        #            "for %s successfully", bricks_to_bring_offline)
+        # bring down bricks again
+        redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception("Failed to bring down the bricks. Please "
+                            "check the log file for more details.")
 
-        # # wait for 60 sec and brought up the brick again
-        # g.log.info('waiting for 60 sec and brought up the brick again')
-        # time.sleep(60)
-        # g.log.info("Bring bricks: %s online", bricks_to_bring_offline)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_offline, 'glusterd_restart')
-        # self.assertTrue(ret, ("Failed to bring bricks: %s online"
-        #                       % bricks_to_bring_offline))
-        # g.log.info("Successfully brought all bricks: %s online",
-        #            bricks_to_bring_offline)
+        # wait for 60 sec and bring up the brick again
+        time.sleep(60)
 
-        # # Verfiy glustershd process releases its parent process
-        # ret = is_shd_daemonized(self.server_list)
-        # self.assertTrue(ret, ("Either No self heal daemon process found or "
-        #                       "more than One self heal daemon process found"))
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_to_bring_offline, True)
+        if not redant.are_bricks_online(self.vol_name,
+                                        bricks_to_bring_offline,
+                                        self.server_list[0]):
+            raise Exception("Failed to bring bricks: "
+                            f"{bricks_to_bring_offline} online")
 
-        # # check the self-heal daemon process
-        # ret, pids = get_self_heal_daemon_pid(self.server_list)
-        # self.assertTrue(ret, ("Either No self heal daemon process found or "
-        #                       "more than One self heal daemon process "
-        #                       "found : %s" % pids))
+        # Verfiy glustershd process releases its parent process
+        if not redant.is_shd_daemonized(self.server_list):
+            raise Exception("Either No self heal daemon process found or "
+                            "more than One self heal daemon process found.")
 
-        # shd_pids_after_bricks_online = pids
+        # check the self-heal daemon process
+        ret, shd_pids_after_bricks_online = \
+            redant.get_self_heal_daemon_pid(self.server_list)
 
-        # # compare the glustershd pids
-        # self.assertNotEqual(glustershd_pids,
-        #                     shd_pids_after_bricks_online,
-        #                     ("self heal daemon process are same before and "
-        #                      "after bringing up bricks online"))
-        # g.log.info("EXPECTED : self heal daemon process are different before "
-        #            "and after bringing up bricks online")
+        if not ret:
+            raise Exception("Either No self heal daemon process found or "
+                            "more than One self heal daemon process "
+                            f"found : {shd_pids_after_bricks_online}")
 
-        # # wait for heal to complete
-        # g.log.info("Monitoring the heal.....")
-        # ret = monitor_heal_completion(self.mnode, self.volname)
-        # self.assertTrue(ret, ("Heal is not completed on volume %s"
-        #                       % self.volname))
-        # g.log.info("Heal Completed on volume %s", self.volname)
+        # compare the glustershd pids
+        if glustershd_pids == shd_pids_after_bricks_online:
+            raise Exception("Self-heal daemon process are same before and "
+                            "after bringing up bricks online")
 
-        # # Check if heal is completed
-        # ret = is_heal_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not complete')
-        # g.log.info('Heal is completed successfully')
+        # monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet finished")
+
+        # is heal complete testing
+        if not redant.is_heal_complete(self.server_list[0],
+                                       self.vol_name):
+            raise Exception("Heal not yet finished")
