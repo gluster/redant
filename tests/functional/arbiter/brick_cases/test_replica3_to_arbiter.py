@@ -116,24 +116,26 @@ class TestCase(DParentTest):
         self.io_process = []
         self.subvols = redant.get_subvols(self.vol_name,
                                           self.server_list[0])
-        # self._convert_replicated_to_arbiter_volume()
 
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
-        # Create a dir to start untar
-        redant.create_dir(self.mounts[0]['mountpath'], "linuxuntar",
-                          self.server_list[0])
 
-        # Start linux untar on dir linuxuntar
-        self.io_process = redant.run_linux_untar(self.client_list[0],
-                                                 self.mounts[0]['mountpath'],
-                                                 dirs=tuple(['linuxuntar']))
+        counter = 1
+
+        for mount in self.mounts:
+            redant.logger.info(f"Starting IO on {mount['client']}:"
+                               f"{mount['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                      counter, 2, 2, 2, 10,
+                                                      mount['client'])
+            self.io_process.append(proc)
+            counter = counter + 10
 
         # Convert relicated to arbiter volume
         self._convert_replicated_to_arbiter_volume()
 
         # Wait for IO to complete.
         ret = redant.wait_for_io_to_complete(self.io_process,
-                                             self.mounts[0])
+                                             self.mounts)
         if not ret:
             raise Exception("IO failed on some of the clients")
 
