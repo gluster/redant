@@ -1,59 +1,49 @@
-#  Copyright (C) 2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2018  Red Hat, Inc. <http://www.redhat.com>
 
-""" Description:
-      Test peer probe while snapd is running.
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    Test peer probe while snapd is running.
 """
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.snap_ops import snap_create
-from glustolibs.gluster.uss_ops import enable_uss, is_snapd_running
-from glustolibs.gluster.peer_ops import (peer_probe_servers, peer_detach,
-                                         nodes_from_pool_list)
+# disruptive;dist,rep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'replicated'], ['glusterfs']])
-class TestPeerProbeWhileSnapdRunning(GlusterBaseClass):
-    def tearDown(self):
+class TestPeerProbeWhileSnapdRunning(DParentTest):
+
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        tearDown for every test
+        Create and start the volume
         """
-        # stopping the volume and Cleaning up the volume
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed Cleanup the Volume %s" % self.volname)
+        if len(self.server_list) < 4:
+            self.TEST_RES = None
+            raise Exception("The test case require 4 servers to run the test")
 
-        # Checking peers are in connected state or not
-        ret = self.validate_peers_are_connected()
-        if not ret:
-            # Peer probe detached servers
-            pool = nodes_from_pool_list(self.mnode)
-            for node in pool:
-                peer_detach(self.mnode, node)
-            ret = peer_probe_servers(self.mnode, self.servers)
-            if not ret:
-                raise ExecutionError("Failed to probe detached servers %s"
-                                     % self.servers)
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        # Detach on node
+        self.extra_node = self.server_list[-1]
+        self.redant.peer_detach(self.extra_node, self.server_list[0])
 
-    def test_peer_probe_snapd_running(self):
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list[0:3],
+                                 self.brick_roots, force=True)
 
+    def run_test(self, redant):
         '''
         -> Create Volume
         -> Create snap for that volume
@@ -61,47 +51,17 @@ class TestPeerProbeWhileSnapdRunning(GlusterBaseClass):
         -> Check snapd running or not
         -> Probe a new node while snapd is running
         '''
-
-        # Performing node detach, Here detached node considering as extra
-        # server
-        extra_node = self.servers[-1]
-        ret, _, _ = peer_detach(self.mnode, extra_node)
-        self.assertEqual(ret, 0, "Peer detach failed for %s"
-                         % extra_node)
-        g.log.info("Peer detach success for %s", extra_node)
-
-        # Removing detached node from 'self.servers' list, it's because of
-        # 'self.setup_volume' function checking peer status of 'self.servers'
-        # list before creating volume
-        self.servers.remove(extra_node)
-
-        # Creating volume
-        ret = self.setup_volume()
-        self.assertTrue(ret, "Failed Create volume %s" % self.volname)
-        g.log.info("Volume created successfully %s", self.volname)
-
-        # Adding node back into self.servers list
-        self.servers.append(extra_node)
-
         # creating Snap
-        ret, _, _ = snap_create(self.mnode, self.volname, 'snap1')
-        self.assertEqual(ret, 0, "Snap creation failed for volume %s"
-                         % self.volname)
-        g.log.info("Snap created successfully for volume %s", self.volname)
+        redant.snap_create(self.vol_name, 'snap1', self.server_list[0])
 
         # Enabling Snapd(USS)
-        ret, _, _ = enable_uss(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to enable USS for volume %s"
-                         % self.volname)
-        g.log.info("USS Enabled successfully on volume %s", self.volname)
+        redant.enable_uss(self.vol_name, self.server_list[0])
 
         # Checking snapd running or not
-        ret = is_snapd_running(self.mnode, self.volname)
-        self.assertTrue(ret, "Snapd not running for volume %s" % self.volname)
-        g.log.info("snapd running for volume %s", self.volname)
+        if not redant.is_snapd_running(self.vol_name, self.server_list[0]):
+            raise Exception("Unexpected: Snapd is not running")
 
         # Probing new node
-        ret = peer_probe_servers(self.mnode, extra_node)
-        self.assertTrue(ret, "Peer Probe failed for new server %s"
-                        % extra_node)
-        g.log.info("Peer Probe success for new server %s", extra_node)
+        if not redant.peer_probe_servers(self.extra_node,
+                                         self.server_list[0]):
+            raise Exception(f"Failed to peer probe node {self.extra_node}")
