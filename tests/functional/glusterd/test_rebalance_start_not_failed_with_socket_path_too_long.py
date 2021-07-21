@@ -101,7 +101,16 @@ class TestLookupDir(DParentTest):
         self.list_of_procs = []
 
         # mount volume
+        mount_dict = []
         self.mount = ("/mnt/replicated_mount", "/mnt/disperse_mount")
+        for mount in self.mount:
+            redant.execute_abstract_op_node(f"mkdir -p {mount}",
+                                            self.client_list[0])
+            mount_dict.append({
+                "client": self.client_list[0],
+                "mountpath": mount
+            })
+
         self.counter = 1
         for mount_dir, volname in zip(self.mount, volnames):
             redant.volume_mount(self.server_list[0], volname, mount_dir,
@@ -116,16 +125,6 @@ class TestLookupDir(DParentTest):
             self.counter += 10
 
         # Validate IO
-        mount_dict = [
-            {
-                "client": self.client_list[0],
-                "mountpath": self.mount[0]
-            },
-            {
-                "client": self.client_list[0],
-                "mountpath": self.mount[1]
-            }
-        ]
         ret = redant.validate_io_procs(self.list_of_procs, mount_dict)
         if not ret:
             raise Exception("IO validation failed")
