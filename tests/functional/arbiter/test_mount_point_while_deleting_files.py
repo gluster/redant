@@ -46,7 +46,7 @@ class TestVolumeSetDataSelfHealTests(DParentTest):
                                             self.client_list[0])
 
             redant.volume_mount(self.server_list[0], f"arb-volume{i}",
-                                f"mnt/arb-volume{i}", self.client_list[0])
+                                f"/mnt/arb-volume{i}", self.client_list[0])
 
         # create files on all mounts
         procs_list = []
