@@ -29,7 +29,7 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
-    def test_existing_glustershd_should_take_care_of_self_healing(self):
+    def run_test(self, redant):
         """
         Test Script which verifies that the existing glustershd should take
         care of self healing
@@ -47,103 +47,85 @@ class TestCase(DParentTest):
         * Monitor the heal till its complete
 
         """
+        self.all_mounts_procs = []
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Verfiy glustershd process releases its parent process
-        if not redant.is_shd_daemonized(self.server_list)
+        if not redant.is_shd_daemonized(self.server_list):
             raise Exception("Self Heal Daemon process was still"
                             " holding parent process.")
 
-        # # check the self-heal daemon process
-        # ret, pids = get_self_heal_daemon_pid(self.server_list)
-        # self.assertTrue(ret, ("Either No self heal daemon process found or "
-        #                       "more than One self heal daemon process "
-        #                       "found : %s" % pids))
-        # glustershd_pids = pids
+        # check the self-heal daemon process
+        ret, glustershd_pids = (redant.
+                                get_self_heal_daemon_pid(self.server_list))
+        if not ret:
+            raise Exception("Either No self heal daemon process found or "
+                            "more than One self heal daemon process "
+                            f"found : {glustershd_pids}")
 
-        # # select the bricks to bring offline
-        # g.log.info("Selecting bricks to brought offline for volume %s",
-        #            self.volname)
-        # bricks_to_bring_offline = \
-        #     select_volume_bricks_to_bring_offline(self.mnode,
-        #                                           self.volname)
-        # g.log.info("Brick List to bring offline : %s",
-        #            bricks_to_bring_offline)
+        # select the bricks to bring offline
+        bricks_to_bring_offline = \
+            redant.select_volume_bricks_to_bring_offline(self.vol_name,
+                                                         self.server_list[0])
+        # Bring down the selected bricks
+        redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception("Failed to bring down the bricks. Please "
+                            "check the log file for more details.")
 
-        # # Bring down the selected bricks
-        # g.log.info("Going to bring down the brick process "
-        #            "for %s", bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, ("Failed to bring down the bricks. Please "
-        #                       "check the log file for more details."))
-        # g.log.info("Brought down the brick process "
-        #            "for %s successfully", bricks_to_bring_offline)
+        # get the bricks which are running
+        online_bricks = redant.get_online_bricks_list(self.vol_name,
+                                                      self.server_list[0])
 
-        # # get the bricks which are running
-        # g.log.info("getting the brick list which are online")
-        # online_bricks = get_online_bricks_list(self.mnode, self.volname)
-        # g.log.info("Online Bricks for volume %s : %s",
-        #            self.volname, online_bricks)
+        # write 1MB files to the mounts
+        cmd = ("for i in `seq 1 1000`; "
+               f"do dd if=/dev/urandom of={self.mountpoint}/file_$i "
+               "bs=1M count=1; done")
+        proc = redant.execute_command_async(cmd, self.client_list[0])
+        self.all_mounts_procs.append(proc)
 
-        # # write 1MB files to the mounts
-        # g.log.info("Starting IO on all mounts...")
-        # g.log.info("mounts: %s", self.mounts)
-        # all_mounts_procs = []
-        # cmd = ("for i in `seq 1 1000`; "
-        #        "do dd if=/dev/urandom of=%s/file_$i "
-        #        "bs=1M count=1; "
-        #        "done"
-        #        % self.mounts[0].mountpoint)
-        # g.log.info(cmd)
-        # proc = g.run_async(self.mounts[0].client_system, cmd,
-        #                    user=self.mounts[0].user)
-        # all_mounts_procs.append(proc)
+        # Validate IO
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mounts):
+            raise Exception("IO failed on some of the clients")
 
-        # # Validate IO
-        # self.assertTrue(
-        #     validate_io_procs(all_mounts_procs, self.mounts),
-        #     "IO failed on some of the clients"
-        # )
+        # check the heal info
+        heal_info = redant.get_heal_info_summary(self.server_list[0],
+                                                 self.vol_name)
+        if heal_info is None:
+            raise Exception("Failed to get the heal info summary.")
 
-        # # check the heal info
-        # g.log.info("Get the pending heal info for the volume %s",
-        #            self.volname)
-        # heal_info = get_heal_info_summary(self.mnode, self.volname)
-        # g.log.info("Successfully got heal info for the volume %s",
-        #            self.volname)
-        # g.log.info("Heal Info for volume %s : %s", self.volname, heal_info)
+        # Bring bricks online
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                  bricks_to_bring_offline, True)
+        if not redant.are_bricks_online(self.vol_name,
+                                        bricks_to_bring_offline,
+                                        self.server_list[0]):
+            raise Exception("Failed to bring bricks: "
+                            f"{bricks_to_bring_offline} online")
 
-        # # Bring bricks online
-        # g.log.info("Bring bricks: %s online", bricks_to_bring_offline)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_offline, 'glusterd_restart')
-        # self.assertTrue(ret, ("Failed to bring bricks: %s online"
-        #                       % bricks_to_bring_offline))
-        # g.log.info("Successfully brought all bricks: %s online",
-        #            bricks_to_bring_offline)
+        # Wait for 90 sec to start self healing
+        time.sleep(90)
 
-        # # Wait for 90 sec to start self healing
-        # g.log.info('Waiting for 90 sec to start self healing')
-        # time.sleep(90)
+        # check the heal info
+        heal_info_after_brick_online = (redant.
+                                        get_heal_info_summary(
+                                            self.server_list[0],
+                                            self.vol_name))
+        if heal_info_after_brick_online is None:
+            raise Exception("Failed to get the heal info summary.")
 
-        # # check the heal info
-        # g.log.info("Get the pending heal info for the volume %s",
-        #            self.volname)
-        # heal_info_after_brick_online = get_heal_info_summary(self.mnode,
-        #                                                      self.volname)
-        # g.log.info("Successfully got heal info for the volume %s",
-        #            self.volname)
-        # g.log.info("Heal Info for volume %s : %s",
-        #            self.volname, heal_info_after_brick_online)
+        # check heal pending is decreased
+        flag = False
+        for brick in online_bricks:
+            if int(heal_info_after_brick_online[brick]['numberOfEntries'])\
+                    < int(heal_info[brick]['numberOfEntries']):
+                flag = True
+                break
 
-        # # check heal pending is decreased
-        # flag = False
-        # for brick in online_bricks:
-        #     if int(heal_info_after_brick_online[brick]['numberOfEntries'])\
-        #             < int(heal_info[brick]['numberOfEntries']):
-        #         flag = True
-        #         break
-
-        # self.assertTrue(flag, "Pro-active self heal is not started")
-        # g.log.info("Pro-active self heal is started")
+        if not flag:
+            raise Exception("Pro-active self heal is not started")
 
         # # bring down bricks again
         # g.log.info("Going to bring down the brick process "
