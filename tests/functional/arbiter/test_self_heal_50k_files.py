@@ -60,7 +60,7 @@ class TestSelfHeal50kFiles(DParentTest):
                    "for i in `seq 1 50000` ; "
                    "do dd if=/dev/urandom of=test_$i "
                    "bs=100k count=1;done;")
-        proc = self.execute_command_async(command, self.client_list[0])
+        proc = redant.execute_command_async(command, self.client_list[0])
 
         # Validate IO
         mount_dict = {
