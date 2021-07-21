@@ -97,8 +97,6 @@ class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
-        Description: Replica 3 to arbiter conversion with ongoing IO's
-
         Steps :
         1) Create a replica 3 volume and start volume.
         2) Set client side self heal off.
@@ -132,11 +130,11 @@ class TestCase(DParentTest):
         # Convert relicated to arbiter volume
         self._convert_replicated_to_arbiter_volume()
 
-        # Wait for IO to complete.
-        ret = redant.wait_for_io_to_complete(self.io_process,
-                                             self.mounts)
+        # validate IO
+        ret = redant.validate_io_procs(self.io_process,
+                                       self.mounts)
         if not ret:
-            raise Exception("IO failed on some of the clients")
+            raise Exception("IO validation failed")
 
         # Start healing
         if not redant.trigger_heal(self.vol_name,
