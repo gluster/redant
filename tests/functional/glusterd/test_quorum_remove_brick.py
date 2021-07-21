@@ -73,13 +73,12 @@ class TestServerQuorumNotMet(DParentTest):
             raise Exception("Unexpected: remove-brick operation should have"
                             " failed when quorum not met")
 
-        # # Expected error message for remove brick operation
-        # msg = ("volume remove-brick commit force: failed: "
-        #        "Quorum not met. Volume operation not allowed")
+        # Expected error message for remove brick operation
+        msg = "Quorum not met. Volume operation not allowed"
 
-        # if msg not in ret['msg']['opErrstr']:
-        #     raise Exception("Error message is not correct for "
-        #                     "remove brick operation when quorum not met")
+        if msg not in ret['msg']['opErrstr']:
+            raise Exception("Error message is not correct for "
+                            "remove brick operation when quorum not met")
 
         # Starting glusterd
         redant.start_glusterd(self.random_server)
