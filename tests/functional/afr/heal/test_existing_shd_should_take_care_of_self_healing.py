@@ -22,7 +22,6 @@ Description:
 # TODO: nfs, cifs
 
 import time
-import traceback
 from tests.d_parent_test import DParentTest
 
 
