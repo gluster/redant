@@ -441,7 +441,7 @@ class BrickOps(AbstractOps):
     def form_bricks_list_to_remove_brick(self, node: str, volname: str,
                                          subvol_num: list = None,
                                          replica_num: int = None,
-                                         **kwargs) -> str:
+                                         **kwargs) -> list:
         """
         Form bricks list for removing the bricks.
 
@@ -467,7 +467,7 @@ class BrickOps(AbstractOps):
                         count to reduce.
 
         Returns:
-            str: String having the bricks to remove from the volume.
+            list: List of bricks to remove from the volume.
             NoneType: None if volume doesn't exists or any other failure.
         """
         # pylint: disable=too-many-return-statements
