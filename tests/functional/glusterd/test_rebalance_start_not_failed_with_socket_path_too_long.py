@@ -1,67 +1,47 @@
-#  Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-Description:
+ Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
     Test Rebalance should start successfully if name of volume more than 108
     chars
 """
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.mount_ops import umount_volume, mount_volume
-from glustolibs.gluster.rebalance_ops import (
-    rebalance_start,
-    wait_for_rebalance_to_complete
-)
-from glustolibs.gluster.volume_libs import (
-    volume_start,
-    cleanup_volume
-)
-from glustolibs.gluster.volume_ops import volume_create, get_volume_list
-from glustolibs.io.utils import run_linux_untar
+# disruptive;
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-class TestLookupDir(GlusterBaseClass):
-    def tearDown(self):
-        cmd = ("sed -i '/transport.socket.bind-address/d'"
-               " /etc/glusterfs/glusterd.vol")
-        ret, _, _ = g.run(self.mnode, cmd)
-        if ret:
-            raise ExecutionError("Failed to remove entry from 'glusterd.vol'")
-        for mount_dir in self.mount:
-            ret = umount_volume(self.clients[0], mount_dir)
-            if not ret:
-                raise ExecutionError("Failed to cleanup Volume")
+class TestLookupDir(DParentTest):
 
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is not None:
-            for volume in vol_list:
-                ret = cleanup_volume(self.mnode, volume)
-                if not ret:
-                    raise ExecutionError("Failed to cleanup volume")
-                g.log.info("Volume deleted successfully : %s", volume)
+    def terminate(self):
+        """
+        Revert the changes in glusterd.vol file
+        """
+        try:
+            cmd = ("sed -i '/transport.socket.bind-address/d'"
+                   " /etc/glusterfs/glusterd.vol")
+            self.redant.execute_abstract_op_node(cmd, self.server_list[0])
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_rebalance_start_not_fail(self):
+    def run_test(self, redant):
         """
         1. On Node N1, Add "transport.socket.bind-address N1" in the
             /etc/glusterfs/glusterd.vol
@@ -74,9 +54,9 @@ class TestLookupDir(GlusterBaseClass):
         6. Perform add-brick for disperse volume 6 bricks
         7. Start rebalance of disperse volume
         """
-        cmd = ("sed -i 's/end-volume/option "
-               "transport.socket.bind-address {}\\n&/g' "
-               "/etc/glusterfs/glusterd.vol".format(self.mnode))
+        cmd = ("sed -i 's/end-volume/option transport.socket.bind-address"
+               f" {self.server_list[0]}\\n&/g' /etc/glusterfs/glusterd.vol")
+
         disperse = ("disperse_e4upxjmtre7dl4797wedbp7r3jr8equzvmcae9f55t6z1"
                     "ffhrlk40jtnrzgo4n48fjf6b138cttozw3c6of3ze71n9urnjkshoi")
         replicate = ("replicate_e4upxjmtre7dl4797wedbp7r3jr8equzvmcae9f55t6z1"
@@ -86,88 +66,94 @@ class TestLookupDir(GlusterBaseClass):
         for volume, vol_name in (
                 ("disperse", disperse), ("replicate", replicate)):
 
-            bricks_list = form_bricks_list(self.mnode, volume,
-                                           6 if volume == "disperse" else 3,
-                                           self.servers,
-                                           self.all_servers_info)
+            mul_fac = 6 if volume == "disperse" else 3
+            brick_dict, bricks_cmd = redant.form_brick_cmd(self.server_list,
+                                                           self.brick_roots,
+                                                           volume, mul_fac)
             if volume == "replicate":
-                ret, _, _ = volume_create(self.mnode, replicate,
-                                          bricks_list,
-                                          replica_count=3)
+                conf_hash = {
+                    "dist_count": 1,
+                    "replica_count": 3,
+                    "transport": "tcp"
+                }
+                redant.volume_create_with_custom_bricks(replicate,
+                                                        self.server_list[0],
+                                                        conf_hash, bricks_cmd,
+                                                        brick_dict)
 
             else:
-                ret, _, _ = volume_create(
-                    self.mnode, disperse, bricks_list, force=True,
-                    disperse_count=6, redundancy_count=2)
+                conf_hash = {
+                    "disperse_count": 6,
+                    "redundancy_count": 2,
+                    "transport": "tcp"
+                }
+                redant.volume_create_with_custom_bricks(disperse,
+                                                        self.server_list[0],
+                                                        conf_hash, bricks_cmd,
+                                                        brick_dict,
+                                                        force=True)
 
-            self.assertFalse(
-                ret,
-                "Unexpected: Volume create '{}' failed ".format(vol_name))
-            ret, _, _ = volume_start(self.mnode, vol_name)
-            self.assertFalse(ret, "Failed to start volume")
+            redant.volume_start(vol_name, self.server_list[0])
 
         # Add entry in 'glusterd.vol'
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertFalse(
-            ret, "Failed to add entry in 'glusterd.vol' file")
+        redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        self.list_of_io_processes = []
+        self.list_of_procs = []
 
         # mount volume
         self.mount = ("/mnt/replicated_mount", "/mnt/disperse_mount")
+        self.counter = 1
         for mount_dir, volname in zip(self.mount, volnames):
-            ret, _, _ = mount_volume(
-                volname, "glusterfs", mount_dir, self.mnode,
-                self.clients[0])
-            self.assertFalse(
-                ret, "Failed to mount the volume '{}'".format(mount_dir))
+            redant.volume_mount(self.server_list[0], volname, mount_dir,
+                                self.client_list[0])
 
             # Run IO
-            # Create a dir to start untar
-            # for mount_point in self.mount:
-            self.linux_untar_dir = "{}/{}".format(mount_dir, "linuxuntar")
-            ret = mkdir(self.clients[0], self.linux_untar_dir)
-            self.assertTrue(ret, "Failed to create dir linuxuntar for untar")
+            proc = redant.create_deep_dirs_with_files(mount_dir, self.counter,
+                                                      2, 6, 3, 3,
+                                                      self.client_list[0])
 
-            # Start linux untar on dir linuxuntar
-            ret = run_linux_untar(self.clients[:1], mount_dir,
-                                  dirs=tuple(['linuxuntar']))
-            self.list_of_io_processes += ret
-            self.is_io_running = True
+            self.list_of_procs.append(proc)
+            self.counter += 10
+
+        # Validate IO
+        mount_dict = [
+            {
+                "client": self.client_list[0],
+                "mountpath": self.mount[0]
+            },
+            {
+                "client": self.client_list[0],
+                "mountpath": self.mount[1]
+            }
+        ]
+        ret = redant.validate_io_procs(self.list_of_procs, mount_dict)
+        if not ret:
+            raise Exception("IO validation failed")
 
         # Add Brick to replicate Volume
-        bricks_list = form_bricks_list(
-            self.mnode, replicate, 3,
-            self.servers, self.all_servers_info, "replicate")
-        ret, _, _ = add_brick(
-            self.mnode, replicate, bricks_list, force=True)
-        self.assertFalse(ret, "Failed to add-brick '{}'".format(replicate))
+        _, brick_cmd = redant.form_brick_cmd(self.server_list,
+                                             self.brick_roots, replicate,
+                                             3, True)
+        redant.add_brick(replicate, brick_cmd, self.server_list[0],
+                         force=True)
 
         # Trigger Rebalance on the volume
-        ret, _, _ = rebalance_start(self.mnode, replicate)
-        self.assertFalse(
-            ret, "Failed to start rebalance on the volume '{}'".format(
-                replicate))
+        redant.rebalance_start(replicate, self.server_list[0])
 
         # Add Brick to disperse Volume
-        bricks_list = form_bricks_list(
-            self.mnode, disperse, 6,
-            self.servers, self.all_servers_info, "disperse")
-
-        ret, _, _ = add_brick(
-            self.mnode, disperse, bricks_list, force=True)
-        self.assertFalse(ret, "Failed to add-brick '{}'".format(disperse))
+        _, brick_cmd = redant.form_brick_cmd(self.server_list,
+                                             self.brick_roots, disperse,
+                                             6, True)
+        redant.add_brick(disperse, brick_cmd, self.server_list[0],
+                         force=True)
 
         # Trigger Rebalance on the volume
-        ret, _, _ = rebalance_start(self.mnode, disperse)
-        self.assertFalse(
-            ret,
-            "Failed to start rebalance on the volume {}".format(disperse))
+        redant.rebalance_start(disperse, self.server_list[0])
 
         # Check if Rebalance is completed on both the volume
         for volume in (replicate, disperse):
-            ret = wait_for_rebalance_to_complete(
-                self.mnode, volume, timeout=600)
-            self.assertTrue(
-                ret, "Rebalance is not Compleated on Volume '{}'".format(
-                    volume))
+            ret = redant.wait_for_rebalance_to_complete(volume,
+                                                        self.server_list[0],
+                                                        timeout=600)
+            if not ret:
+                raise Exception(f"Rebalance is not completed on {volume}")
