@@ -46,9 +46,10 @@ class TestCase(NdParentTest):
         for mount in self.mounts:
             redant.logger.info(f"Starting IO on {mount['client']}:"
                                f"{mount['mountpath']}")
-            proc = redant.create_files(mount['mountpath'], 10,
-                                       mount['client'],
-                                       base_file_name='newfile')
+            proc = redant.create_files(num_files=1, fix_fil_size="1k",
+                                       path=mount['mountpath'],
+                                       node=mount['client'],
+                                       base_file_name="test_file")
             self.all_mounts_procs.append(proc)
 
         if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):

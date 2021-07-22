@@ -232,8 +232,8 @@ class IoOps(AbstractOps):
                 tmp_val[1] = tmp_val[1][15:].split('=')[1]
             if tmp_val[1].isdigit():
                 tmp_val[1] = float(tmp_val[1])
-                if tmp_val[1].is_integer():
-                    tmp_val[1] = int(tmp_val[1])
+            if tmp_val[1].is_integer():
+                tmp_val[1] = int(tmp_val[1])
             stat_res[tmp_val[0]] = tmp_val[1]
         ret_val['msg'] = stat_res
         return ret_val
@@ -286,36 +286,6 @@ class IoOps(AbstractOps):
                f"--dirname-start-num {dir_start_no} --dir-depth {dir_depth}"
                f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
                f"--num-of-files {no_files} {path}")
-        return self.execute_command_async(cmd, node)
-
-    def create_files(self, path: str, no_of_files: str, node: str,
-                     fixed_file_size: str = None,
-                     base_file_name: str = 'testfile',
-                     file_types: str = 'txt'):
-        """
-        Creates files. This function encapsulates the operation of the
-        creates_files script present in the client machines.
-        Args:
-            path (str): Path wherein this io is to be done.
-            no_of_files (str): Number of files to be created.
-        Kwargs:
-            fixed_file_size : Fixed file size. The sizes can be
-                              1k, 10k, 512k, 1M
-            base_file_name : Base file name
-            file_types: File Types to be created. File types can be txt, docx,
-                        empty_file separated with space. Defaults to 'txt'
-
-        """
-
-        cmd = f"python3 /tmp/file_dir_ops.py create_files -f {no_of_files} "
-        if file_types != 'txt':
-            cmd = cmd + f'--file-types {file_types} '
-        if fixed_file_size is not None:
-            cmd = cmd + f'--fixed-file-size {fixed_file_size} '
-        if base_file_name != 'testfile':
-            cmd = cmd + f'--base-file-name {base_file_name} '
-        cmd = cmd + path
-
         return self.execute_command_async(cmd, node)
 
     def get_file_permission(self, node: str, path: str) -> dict:
