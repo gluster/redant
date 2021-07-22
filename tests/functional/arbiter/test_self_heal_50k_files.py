@@ -1,20 +1,16 @@
 """
  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  any later version.
-
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
-
  You should have received a copy of the GNU General Public License along
  with this program; if not, write to the Free Software Foundation, Inc.,
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
  Description:
     TC to check self-heal with 50k files
 """
@@ -59,7 +55,7 @@ class TestSelfHeal50kFiles(DParentTest):
         command = (f"cd {self.mountpoint}; "
                    "for i in `seq 1 50000` ; "
                    "do dd if=/dev/urandom of=test_$i "
-                   "bs=100k count=1;done;")
+                   "bs=1k count=1;done;")
         proc = redant.execute_command_async(command, self.client_list[0])
 
         # Validate IO
@@ -78,7 +74,7 @@ class TestSelfHeal50kFiles(DParentTest):
 
         # Wait for volume processes to be online
         if not (redant.wait_for_volume_process_to_be_online(self.vol_name,
-                self.server_list[0])):
+                self.server_list[0], self.server_list)):
             raise Exception("Failed to wait for volume processes to "
                             "be online")
 
@@ -94,6 +90,6 @@ class TestSelfHeal50kFiles(DParentTest):
             raise Exception("Heal has not yet completed")
 
         # Check for split-brain
-        if not redant.is_volume_in_split_brain(self.server_list[0],
-                                               self.vol_name):
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
             raise Exception("Volume is in split-brain state")
