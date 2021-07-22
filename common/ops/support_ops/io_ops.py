@@ -437,7 +437,7 @@ class IoOps(AbstractOps):
             total_path = os.path.join(mount['mountpath'], path)
             self.logger.info(
                 f"arequal-checksum of mount {mount['client']}:{total_path}")
-            cmd = f"arequal-checksum -p {total_path} -i .trashcan"
+            cmd = f"arequal-checksum {total_path}"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
         all_mounts_arequal_checksums = []

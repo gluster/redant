@@ -47,9 +47,6 @@ class TestCase(DParentTest):
         options = {"data-self-heal-algorithm": "full"}
         redant.set_volume_options(self.vol_name, options,
                                   self.server_list[0])
-        options = {"features.trash": "on"}
-        redant.set_volume_options(self.vol_name, options,
-                                  self.server_list[0])
 
         # Creating files on client side
         proc = redant.create_files('1k', self.mountpoint,
