@@ -27,7 +27,7 @@ class TestVolumeSetDataSelfHealTests(DParentTest):
 
     def run_test(self, redant):
         """
-        - create two volumes with arbiter1 and mount it on same client
+        - create two volumes with arbiter 1 and mount it on same client
         - create IO
         - start deleting files from both mountpoints
         - kill brick from one of the node
