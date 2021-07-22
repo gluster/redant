@@ -45,6 +45,7 @@ class TestCase(DParentTest):
         - Get arequal after getting bricks online
         """
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.all_mounts_procs = []
 
         # Creating directory test_compilation
         redant.create_dir(self.mountpoint, 'test_gfid_self_heal',
@@ -54,7 +55,7 @@ class TestCase(DParentTest):
         count = 1
         for mount_obj in self.mounts:
             proc = (redant.
-                    create_deep_dirs_with_files(path_dir,
+                    create_deep_dirs_with_files(f'{mount_obj["mountpath"]}/dir1',
                                                 count, 2, 10, 5, 5,
                                                 mount_obj['client']))
             self.all_mounts_procs.append(proc)
@@ -66,10 +67,9 @@ class TestCase(DParentTest):
             raise Exception("IO validation failed")
 
         # Get arequal before getting bricks offline
-        # ret, result_before_offline = collect_mounts_arequal(self.mounts)
-        # self.assertTrue(ret, 'Failed to get arequal')
-        # g.log.info('Arequal after getting bricks offline '
-        #            'is %s', result_before_offline)
+        result_before_offline = redant.collect_mounts_arequal(self.mounts)
+        if result_before_offline is None:
+            raise Exception('Failed to get arequal')
 
         # Select bricks to bring offline
         bricks_to_bring_offline = (redant.
@@ -77,18 +77,16 @@ class TestCase(DParentTest):
                                        self.vol_name, self.server_list[0]))
         if bricks_to_bring_offline is None:
             raise Exception("Failed to select bricks from volume")
+        print(bricks_to_bring_offline)
 
         # Bring brick offline
-        ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        self.assertTrue(ret, 'Failed to bring bricks {} offline'.
-                        format(bricks_to_bring_offline))
+        redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
 
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 bricks_to_bring_offline)
-        self.assertTrue(ret, 'Bricks {} are not offline'.
-                        format(bricks_to_bring_offline))
-        g.log.info('Bringing bricks %s offline is successful',
-                   bricks_to_bring_offline)
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception(f'Bricks {bricks_to_bring_offline} '
+                            'are not offline')
 
         # # Delete directory on mountpoint where data is written
         # cmd = ('rm -rf -v %s/test_gfid_self_heal' % self.mounts[0].mountpoint)
