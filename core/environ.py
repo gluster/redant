@@ -495,7 +495,7 @@ class FrameworkEnv:
         based on the dictionary of options
         Args:
             volname (str)
-            option_list (dict) : dict of key value pair of options to be set.
+            options_dict (dict) : dict of key value pair of options to be set.
         """
         self._validate_volname(volname)
         if 'options' not in list(self.volds[volname]):
@@ -557,6 +557,9 @@ class FrameworkEnv:
     def _reset_all_options_in_a_vol(self, volname):
         """
         Method to reset all options of a given volume.
+
+        Args:
+            volname (str)
         """
         if self.volds[volname]['options'] != {}:
             for opt in list(self.volds[volname]['options']):
