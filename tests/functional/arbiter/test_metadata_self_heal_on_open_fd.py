@@ -1,39 +1,24 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
 
 import os
 import copy
 from socket import gethostbyname
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           bring_bricks_online,
-                                           are_bricks_offline,
-                                           get_all_bricks)
-from glustolibs.gluster.heal_libs import is_volume_in_split_brain
-from glustolibs.gluster.heal_ops import get_heal_info_summary
-from glustolibs.gluster.glusterfile import get_file_stat
-from glustolibs.gluster.volume_ops import get_volume_info
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.gluster.glusterfile import get_pathinfo
-from glustolibs.gluster.lib_utils import (collect_bricks_arequal,
-                                          add_user, del_user)
-from glustolibs.io.utils import collect_mounts_arequal
-
 
 @runs_on([['replicated', 'distributed-replicated', 'arbiter',
            'distributed-arbiter'],
