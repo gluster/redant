@@ -232,8 +232,8 @@ class IoOps(AbstractOps):
                 tmp_val[1] = tmp_val[1][15:].split('=')[1]
             if tmp_val[1].isdigit():
                 tmp_val[1] = float(tmp_val[1])
-            if tmp_val[1].is_integer():
-                tmp_val[1] = int(tmp_val[1])
+                if tmp_val[1].is_integer():
+                    tmp_val[1] = int(tmp_val[1])
             stat_res[tmp_val[0]] = tmp_val[1]
         ret_val['msg'] = stat_res
         return ret_val
