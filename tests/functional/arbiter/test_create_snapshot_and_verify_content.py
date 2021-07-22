@@ -40,13 +40,16 @@ class TestArbiterSelfHeal(DParentTest):
         # Creating files on client side
         proc = redant.create_deep_dirs_with_files(self.mountpoint, 1, 2, 2,
                                                   2, 20, self.client_list[0])
-        ret = redant.validate_io_procs(proc, self.client_list[0])
+        mount_dict = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
+        ret = redant.validate_io_procs(proc, mount_dict)
         if not ret:
             raise Exception("IO validation failed")
 
         # Get arequal before snapshot
-        arequal_before_snapshot = (redant.collect_mounts_arequal(
-                                   self.client_list[0]))
+        arequal_before_snapshot = redant.collect_mounts_arequal(mount_dict)
 
         # Create snapshot
         snapshot_name = 'testsnap'
@@ -55,7 +58,7 @@ class TestArbiterSelfHeal(DParentTest):
         # Add files on client side
         proc = redant.create_deep_dirs_with_files(self.mountpoint, 1, 2, 2,
                                                   2, 20, self.client_list[0])
-        ret = redant.validate_io_procs(proc, self.client_list[0])
+        ret = redant.validate_io_procs(proc, mount_dict)
         if not ret:
             raise Exception("IO validation failed")
 
@@ -80,8 +83,7 @@ class TestArbiterSelfHeal(DParentTest):
             raise Exception("All process of volume are not online")
 
         # Get arequal after restoring snapshot
-        arequal_after_restoring = (redant.collect_mounts_arequal(
-                                   self.client_list[0]))
+        arequal_after_restoring = redant.collect_mounts_arequal(mount_dict)
 
         # Checking arequals before creating and after restoring snapshot
         if arequal_before_snapshot != arequal_after_restoring:
