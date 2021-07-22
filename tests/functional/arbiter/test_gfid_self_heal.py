@@ -17,9 +17,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     Arbiter Test cases related to GFID self heal
-@runs_on([['arbiter', 'distributed-arbiter'], ['glusterfs']])
 """
-# disruptive;arb
+# disruptive;arb,dist-arb
 
 from tests.d_parent_test import DParentTest
 
@@ -28,7 +27,6 @@ class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
-        Test GFID self heal
         Description:
         - Creating directory test_compilation
         - Write Deep directories and files
@@ -55,9 +53,10 @@ class TestCase(DParentTest):
         count = 1
         for mount_obj in self.mounts:
             proc = (redant.
-                    create_deep_dirs_with_files(f'{mount_obj["mountpath"]}/dir1',
-                                                count, 2, 10, 5, 5,
-                                                mount_obj['client']))
+                    create_deep_dirs_with_files(
+                        f'{mount_obj["mountpath"]}/dir1',
+                        count, 2, 10, 5, 5,
+                        mount_obj['client']))
             self.all_mounts_procs.append(proc)
             count += 10
 
@@ -77,7 +76,6 @@ class TestCase(DParentTest):
                                        self.vol_name, self.server_list[0]))
         if bricks_to_bring_offline is None:
             raise Exception("Failed to select bricks from volume")
-        print(bricks_to_bring_offline)
 
         # Bring brick offline
         redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
@@ -88,67 +86,67 @@ class TestCase(DParentTest):
             raise Exception(f'Bricks {bricks_to_bring_offline} '
                             'are not offline')
 
-        # # Delete directory on mountpoint where data is written
-        # cmd = ('rm -rf -v %s/test_gfid_self_heal' % self.mounts[0].mountpoint)
-        # ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        # self.assertEqual(ret, 0, "Failed to delete directory")
-        # g.log.info("Directory deleted successfully for %s", self.mounts[0])
+        # Delete directory on mountpoint where data is written
+        # cmd = f'rm -rf -v {self.mountpoint}/test_gfid_self_heal'
+        if not redant.rmdir(f'{self.mountpoint}/test_gfid_self_heal',
+                            self.client_list[0], True):
+            raise Exception("Failed to delete directory")
 
-        # # Create the same directory and write same data
-        # ret = mkdir(self.mounts[0].client_system, "{}/test_gfid_self_heal"
-        #             .format(self.mounts[0].mountpoint))
-        # self.assertTrue(ret, "Failed to create directory")
-        # g.log.info("Directory 'test_gfid_self_heal' on %s created "
-        #            "successfully", self.mounts[0])
+        # Create the same directory and write same data
+        redant.create_dir(self.mountpoint, 'test_gfid_self_heal',
+                          self.client_list[0])
 
-        # # Write the same files again
-        # count = 1
-        # for mount_obj in self.mounts:
-        #     cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-        #            "--dirname-start-num %d --dir-depth 2 "
-        #            "--dir-length 10 --max-num-of-dirs 5 "
-        #            "--num-of-files 5 %s/dir1" % (
-        #                self.script_upload_path, count,
-        #                mount_obj.mountpoint))
-        #     ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        #     self.assertEqual(ret, 0, "Failed to create files on mountpoint")
-        #     g.log.info("Successfully created files on mountpoint")
-        #     count += 10
+        # Write the same files again
+        self.all_mounts_procs = []
+        count = 1
+        for mount_obj in self.mounts:
+            proc = (redant.
+                    create_deep_dirs_with_files(
+                        f'{mount_obj["mountpath"]}/dir1',
+                        count, 2, 10, 5, 5,
+                        mount_obj['client']))
+            self.all_mounts_procs.append(proc)
+            count += 10
 
-        # # Bring bricks online
-        # ret = bring_bricks_online(
-        #     self.mnode, self.volname,
-        #     bricks_to_bring_offline,
-        #     bring_bricks_online_methods=['volume_start_force'])
-        # self.assertTrue(ret, 'Failed to bring bricks {} online'.format
-        #                 (bricks_to_bring_offline))
-        # g.log.info('Bringing bricks %s online is successful',
-        #            bricks_to_bring_offline)
+        # Validate IO
+        ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
+        if not ret:
+            raise Exception("IO validation failed")
 
-        # # Wait for volume processes to be online
-        # ret = wait_for_volume_process_to_be_online(self.mnode, self.volname)
-        # self.assertTrue(ret, ("Failed to wait for volume {} processes to "
-        #                       "be online".format(self.volname)))
-        # g.log.info("Successful in waiting for volume %s processes to be "
-        #            "online", self.volname)
+        # Bring bricks online
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_to_bring_offline, True)
+        if not redant.are_bricks_online(self.vol_name, bricks_to_bring_offline,
+                                        self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline}"
+                            " are not online.")
 
-        # # Verify volume's all process are online
-        # ret = verify_all_process_of_volume_are_online(self.mnode, self.volname)
-        # self.assertTrue(ret, ("Volume {} : All process are not online".format
-        #                       (self.volname)))
-        # g.log.info("Volume %s : All process are online", self.volname)
+        # Wait for volume processes to be online
+        if not (redant
+                .wait_for_volume_process_to_be_online(self.vol_name,
+                                                      self.server_list[0],
+                                                      self.server_list)):
+            raise Exception(f"Failed to wait for volume {self.vol_name}"
+                            " processes to be online")
 
-        # # Monitor heal completion
-        # ret = monitor_heal_completion(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal has not yet completed')
+        # Verify volume's all process are online
+        if not (redant.
+                verify_all_process_of_volume_are_online(self.vol_name,
+                                                        self.server_list[0])):
+            raise Exception(f"Volume {self.vol_name} : All process are "
+                            "not online")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet finished")
+
+        # Check for split-brain
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume in split-brain")
 
         # # Get arequal after getting bricks online
-        # ret, result_after_online = collect_mounts_arequal(self.mounts)
-        # self.assertTrue(ret, 'Failed to get arequal')
-        # g.log.info('Arequal after getting bricks online '
-        #            'is %s', result_after_online)
+        result_after_online = redant.collect_mounts_arequal(self.mounts)
+        if result_after_online is None:
+            raise Exception('Failed to get arequal')
