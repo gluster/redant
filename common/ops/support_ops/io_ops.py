@@ -415,7 +415,7 @@ class IoOps(AbstractOps):
             self.logger.info("No core files found ")
             return False
 
-    def collect_mounts_arequal(self, mounts: dict, path='') -> list:
+    def collect_mounts_arequal(self, mounts: list, path='') -> list:
         """
         Collects arequal from all the mounts
         Args:
@@ -429,6 +429,8 @@ class IoOps(AbstractOps):
                 arequal-checksum for a mount would be 'None' when failed to
                 collect arequal for that mount.
         """
+        if not isinstance(mounts, list):
+            mounts = [mounts]
 
         # Collect arequal-checksum from all mounts
         self.logger.info("Start collecting arequal-checksum from all mounts")
