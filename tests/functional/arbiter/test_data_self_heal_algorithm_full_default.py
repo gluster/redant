@@ -18,7 +18,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Arbiter Test cases related to
     healing in default configuration of the volume
-@runs_on([['arbiter', 'distributed-arbiter'],
 """
 
 # disruptive;arb,dist-arb
@@ -46,6 +45,9 @@ class TestCase(DParentTest):
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Setting options
         options = {"data-self-heal-algorithm": "full"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
+        options = {"features.trash": "on"}
         redant.set_volume_options(self.vol_name, options,
                                   self.server_list[0])
 
