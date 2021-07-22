@@ -415,7 +415,7 @@ class IoOps(AbstractOps):
             self.logger.info("No core files found ")
             return False
 
-    def collect_mounts_arequal(self, mounts: list, path='') -> list:
+    def collect_mounts_arequal(self, mounts: list, path: str = '') -> list:
         """
         Collects arequal from all the mounts
         Args:
