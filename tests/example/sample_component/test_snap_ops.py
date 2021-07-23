@@ -2,6 +2,7 @@
 This file contains a test-case which tests
 the snapshot ops.
 """
+
 # disruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
 
@@ -18,7 +19,16 @@ class TestCase(DParentTest):
         In the testcase:
         Steps:
         1. Creation of snapshot
-        2. Deletion of snapshot
+        2. Getting info and status
+        3. Setting a config option
+        4. Activating snap and checking info and status
+        5. Mounting the snap
+        6. Perform listing inside the snap mount
+        7. Unmount the snapshot
+        8. Deactivate the snapshot
+        9. Check status and info
+        10. Disabling the config option
+        11. Deletion of snapshot
         """
         self.snap_name = f"{self.vol_name}-snap1"
         self.snap_name2 = f"{self.vol_name}-snap2"
@@ -52,9 +62,23 @@ class TestCase(DParentTest):
         snap_running_status = redant.is_snapd_running(self.vol_name,
                                                       self.server_list[0])
         redant.logger.info(f"Snapd run status : {snap_running_status}")
+
+        self.snap_mount = f"/mnt/{self.snap_name}"
+        redant.execute_abstract_op_node(f"mkdir {self.snap_mount}",
+                                        self.client_list[0])
+        redant.mount_snap(self.server_list[0], self.vol_name, self.snap_name,
+                          self.client_list[0], self.snap_mount)
+
+        redant.execute_abstract_op_node(f"ls -l {self.snap_mount}",
+                                        self.client_list[0])
+        redant.unmount_snap(self.snap_name, self.snap_mount,
+                            self.client_list[0])
+
         redant.snap_deactivate(self.snap_name, self.server_list[0])
         redant.logger.info(redant.get_snap_status_by_snapname(
             self.snap_name, self.server_list[0]))
+        value_set = {"auto-delete": "disable"}
+        redant.set_snap_config(value_set, self.server_list[0])
         redant.disable_uss(self.vol_name, self.server_list[0])
         snap_running_status = redant.is_snapd_running(self.vol_name,
                                                       self.server_list[0])

@@ -454,6 +454,8 @@ class VolumeOps(AbstractOps):
                         self.execute_abstract_op_node(f"rm -rf {mount}",
                                                       mntd['client'])
 
+        self.unmount_all_snap()
+
         # Clearing the snaps before moving on to the volume stop and delete.
         self.snap_delete_all(node)
 
