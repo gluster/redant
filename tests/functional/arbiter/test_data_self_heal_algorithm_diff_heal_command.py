@@ -141,6 +141,10 @@ class TestSelfHeal(DParentTest):
                                               self.vol_name):
             raise Exception("Heal has not yet completed")
 
+        # Check if heal is completed
+        if not redant.is_heal_complete(self.server_list[0], self.vol_name):
+            raise Exception("Heal is not yet complete")
+
         # Check for split-brain
         if redant.is_volume_in_split_brain(self.server_list[0],
                                            self.vol_name):
