@@ -451,7 +451,7 @@ class HealOps:
         and parsing the get volume status output.
 
         Args:
-            node (str): The first node in servers list
+            node (str): Node where command will be ran
             server (str): The node to be checked for whether
             the glustershd process is up or not
             volname (str): Name of the volume created

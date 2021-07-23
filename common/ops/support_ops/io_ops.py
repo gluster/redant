@@ -1213,3 +1213,52 @@ class IoOps(AbstractOps):
                                   f'{node} for file {sfile}')
             return False
         return True
+
+    def kill_process(self, node: str, process_ids: str = '',
+                     process_names: str = '') -> bool:
+        """
+        Kills the given set of process running in the specified node
+
+        Args:
+            node (str): Node at which the command has to be executed
+            process_ids (list|str): List of pid's to be terminated
+            process_names(list|str): List of Process names to be terminated
+
+        Returns:
+            bool : True on successful termination of all the processes
+                   False, otherwise
+        Example:
+            >>> kill_process("10.70.43.68", process_ids=27664)
+            True/False
+            >>> kill_process("10.70.43.68", process_names=["glustershd",
+            "glusterd"])
+            True/False
+        """
+        if process_names:
+            process_ids = []
+            if not isinstance(process_names, list):
+                process_names = [process_names]
+
+            for process in process_names:
+                cmd = (f"ps -aef | grep -i '{process}' | grep -v 'grep' | "
+                       "awk '{ print $2 }'")
+                ret = self.execute_abstract_op_node(cmd, node, False)
+                if ret['error_code'] != 0:
+                    self.logger.error("Failed to get the PID for process")
+                    return False
+
+                for pid in ret['msg']:
+                    if pid:
+                        process_ids.append(pid.rstrip('\n'))
+
+        if process_ids and not isinstance(process_ids, list):
+            process_ids = [process_ids]
+
+        # Kill process
+        for pid in process_ids:
+            ret = self.execute_abstract_op_node(f"kill -9 {pid}", node, False)
+            if ret['error_code'] != 0:
+                self.logger.error(f"Failed to kill process with pid {pid}")
+                return False
+
+        return True
