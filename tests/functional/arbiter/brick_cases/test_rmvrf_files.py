@@ -59,7 +59,7 @@ class TestRmrfMount(DParentTest):
         counter = 0
         for mount in self.mounts:
             proc = redant.create_deep_dirs_with_files(mount['mountpath'],
-                                                      counter, 2, 35, 5, 5,
+                                                      counter, 2, 10, 5, 5,
                                                       mount['client'])
             self.proc_list.append(proc)
             counter += 10
