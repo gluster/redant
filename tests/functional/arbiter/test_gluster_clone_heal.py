@@ -28,7 +28,7 @@ class TestGlusterCloneHeal(DParentTest):
 
     def terminate(self):
         """
-        Wait for IO to complete, if it TC fails in between
+        Wait for IO to complete, if TC fails in between
         """
         try:
             if not self.io_validation_complete:
