@@ -63,67 +63,66 @@ class TestGlusterCloneHeal(DParentTest):
                           self.client_list[0])
 
         # Perform compilation check two times
-        for _ in range(1, 3):
-            self.proc_list = []
-            self.io_validation_complete = False
-            self.mount = {
-                "client": self.client_list[0],
-                "mountpath": self.mountpoint
-            }
+        self.proc_list = []
+        self.io_validation_complete = False
+        self.mount = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
 
-            # Compile gluster on mountpoint
-            cmd = (f"cd {self.mountpoint}/test_compilation; rm -rf glusterfs; "
-                   "git clone git://github.com/gluster/glusterfs.git; "
-                   "cd glusterfs; ./autogen.sh; ./configure "
-                   "CFLAGS='-g3 -O0 -DDEBUG'; make; cd ../..;")
-            proc = redant.execute_command_async(cmd, self.client_list[0])
-            self.proc_list.append(proc)
+        # Compile gluster on mountpoint
+        cmd = (f"cd {self.mountpoint}/test_compilation; rm -rf glusterfs; "
+               "git clone git://github.com/gluster/glusterfs.git; "
+               "cd glusterfs; ./autogen.sh; ./configure "
+               "CFLAGS='-g3 -O0 -DDEBUG'; make; cd ../..;")
+        proc = redant.execute_command_async(cmd, self.client_list[0])
+        self.proc_list.append(proc)
 
-            # Select bricks to bring offline
-            offline_brick_list = (redant.select_volume_bricks_to_bring_offline(
-                                  self.vol_name, self.server_list[0]))
+        # Select bricks to bring offline
+        offline_brick_list = (redant.select_volume_bricks_to_bring_offline(
+                              self.vol_name, self.server_list[0]))
 
-            # Killing one brick from the volume set
-            if not redant.bring_bricks_offline(self.vol_name,
-                                               offline_brick_list):
-                raise Exception("Failed to bring bricks offline")
+        # Killing one brick from the volume set
+        if not redant.bring_bricks_offline(self.vol_name,
+                                           offline_brick_list):
+            raise Exception("Failed to bring bricks offline")
 
-            # Validate if bricks are offline
-            if not redant.are_bricks_offline(self.vol_name, offline_brick_list,
-                                             self.server_list[0]):
-                raise Exception(f"Bricks {offline_brick_list} are not offline")
+        # Validate if bricks are offline
+        if not redant.are_bricks_offline(self.vol_name, offline_brick_list,
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {offline_brick_list} are not offline")
 
-            # Validate IO
-            ret = self.redant.validate_io_procs(self.proc_list, self.mount)
-            if not ret:
-                raise Exception("IO validation failed")
-            self.io_validation_complete = True
+        # Validate IO
+        ret = self.redant.validate_io_procs(self.proc_list, self.mount)
+        if not ret:
+            raise Exception("IO validation failed")
+        self.io_validation_complete = True
 
-            # Bring bricks online
-            if not redant.bring_bricks_online(self.vol_name, self.server_list,
-                                              offline_brick_list):
-                raise Exception("Failed to bring bricks online")
+        # Bring bricks online
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
+                                          offline_brick_list):
+            raise Exception("Failed to bring bricks online")
 
-            # Wait for volume processes to be online
-            if not (redant.wait_for_volume_process_to_be_online(self.vol_name,
-                    self.server_list[0], self.server_list)):
-                raise Exception("Failed to wait for volume processes to "
-                                "be online")
+        # Wait for volume processes to be online
+        if not (redant.wait_for_volume_process_to_be_online(self.vol_name,
+                self.server_list[0], self.server_list)):
+            raise Exception("Failed to wait for volume processes to "
+                            "be online")
 
-            # Verify volume's all process are online
-            if not (redant.verify_all_process_of_volume_are_online(
-                    self.vol_name, self.server_list[0])):
-                raise Exception("All process are not online")
+        # Verify volume's all process are online
+        if not (redant.verify_all_process_of_volume_are_online(self.vol_name,
+                self.server_list[0])):
+            raise Exception("All process are not online")
 
-            # Monitor heal completion
-            if not redant.monitor_heal_completion(self.server_list[0],
-                                                  self.vol_name):
-                raise Exception("Heal has not yet completed")
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal has not yet completed")
 
-            # Check for split-brain
-            if redant.is_volume_in_split_brain(self.server_list[0],
-                                               self.vol_name):
-                raise Exception("Volume is in split-brain state")
+        # Check for split-brain
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume is in split-brain state")
 
-            # Get arequal after getting bricks online
-            redant.collect_mounts_arequal(self.mount)
+        # Get arequal after getting bricks online
+        redant.collect_mounts_arequal(self.mount)
