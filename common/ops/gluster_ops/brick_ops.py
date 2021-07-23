@@ -322,7 +322,6 @@ class BrickOps(AbstractOps):
         brick_cmd = ""
         server_iter = 0
         brick_iter = 0
-        server_limit = 0
 
         iter_add = 0
         if add_flag:
@@ -341,21 +340,16 @@ class BrickOps(AbstractOps):
                 server_iter = 0
                 brick_iter += 1
 
-            # If no more new bricks left, start from the beginning
-            if server_limit == len(server_list):
-                brick_iter = 0
-
             server_val = server_list[server_iter]
             if server_val not in brick_dict.keys():
                 brick_dict[server_val] = []
 
-            if len(brick_root[server_val]) <= brick_iter:
+            if brick_iter <= (len(brick_root[server_val]) - 1):
                 brick_path_val = (f"{brick_root[server_val][brick_iter]}/"
                                   f"{volname}-{iteration+iter_add}")
             else:
-                server_limit += 1
-                server_iter += 1
-                continue
+                brick_path_val = (f"{brick_root[server_val][0]}/"
+                                  f"{volname}-{iteration+iter_add}")
 
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")

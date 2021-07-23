@@ -17,12 +17,12 @@ class TestCase(DParentTest):
         operations.
         """
         redant.check_node_power_status(self.server_list)
-        redant.reboot_nodes(self.server_list[0])
+        redant.reboot_nodes(self.server_list[1])
         redant.check_node_power_status(self.server_list)
 
-        ret = redant.wait_node_power_up(self.server_list[0])
+        ret = redant.wait_node_power_up(self.server_list[1])
         if not ret:
-            raise Exception(f"{self.server_list[0]} is offline")
+            raise Exception(f"{self.server_list[1]} is offline")
 
         ret = redant.wait_till_all_peers_connected(self.server_list)
         if not ret:
