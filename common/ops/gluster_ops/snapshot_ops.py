@@ -633,7 +633,7 @@ class SnapshotOps(AbstractOps):
 
     def snap_delete_all(self, node: str, excep: bool = True) -> dict:
         """
-        Method to delete all snapshots in the cluster. Also unmounting them.
+        Method to delete all snapshots in the cluster.
 
         Args:
             node (str): Node wherein the command is to be run. This node
