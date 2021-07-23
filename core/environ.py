@@ -349,8 +349,8 @@ class FrameworkEnv:
         else:
             self.volds[volname]['mountpath'][node].remove(path)
 
-    def remove_snap_mountpath(self, snapname: str=None, node: str=None,
-                              path: str=None):
+    def remove_snap_mountpath(self, snapname: str = None, node: str = None,
+                              path: str = None):
         """
         Removes the snap mountpath entry.
 
@@ -383,7 +383,7 @@ class FrameworkEnv:
         self._validate_volname(volname)
         return list(self.volds[volname]['mountpath'])
 
-    def get_snap_mnt_dict(self, snapname: str=None) -> dict:
+    def get_snap_mnt_dict(self, snapname: str = None) -> dict:
         """
         Method to obtain the mountpath directory
 
@@ -399,7 +399,7 @@ class FrameworkEnv:
             return {}
         return copy.deepcopy(self.snapm[snapname])
 
-    def get_snap_mnt_dict_simplified(self, snapname: str=None) -> list:
+    def get_snap_mnt_dict_simplified(self, snapname: str = None) -> list:
         """
         Method to obtain the snap data as a dictionary wherein keys
         correspond to the snapname and the list is client:path string.

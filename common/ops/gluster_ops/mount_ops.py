@@ -226,9 +226,9 @@ class MountOps(AbstractOps):
         """
         Unmounts all snapshot mounts.
         """
-        # Getting a list of snap mountpaths so that we can unmount them.           
-        snap_mnt_dict = self.es.get_snap_mnt_dict()                                
-        for snap in snap_mnt_dict.keys():                                       
-            for client in  snap_mnt[snap].keys():                               
-                for mntpath in snap_mnt[snap][client]:                          
+        # Getting a list of snap mountpaths so that we can unmount them.
+        snap_mnt_dict = self.es.get_snap_mnt_dict()
+        for snap in snap_mnt_dict.keys():
+            for client in snap_mnt_dict[snap].keys():
+                for mntpath in snap_mnt_dict[snap][client]:
                     self.unmount_snap(snap, mntpath, client)
