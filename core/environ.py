@@ -153,6 +153,7 @@ class FrameworkEnv:
         """
         self.volds = {}
         self.clusteropt = {}
+        self.snapm = {}
 
     def _validate_volname(self, volname: str):
         """
@@ -188,6 +189,7 @@ class FrameworkEnv:
         """
         self.volds = {}
         self.clusteropt = {}
+        self.snapm = {}
 
     def get_volnames(self) -> list:
         """
@@ -316,6 +318,22 @@ class FrameworkEnv:
         if path not in list(self.volds[volname]['mountpath'][node]):
             self.volds[volname]['mountpath'][node].append(path)
 
+    def add_new_snap_mountpath(self, snapname: str, node: str, path: str):
+        """
+        Add a new mountpath for given snapshot.
+
+        Args:
+            snapname (str): Name of the snapshot.
+            node (str): Node wherein snapshot is mounted.
+            path (str): The mountpath.
+        """
+        if snapname not in self.snapm.keys():
+            self.snapm[snapname] = {}
+        if node not in self.snapm[snapname].keys():
+            self.snapm[snapname][node] = []
+
+        self.snapm[snapname][node].append(path)
+
     def remove_mountpath(self, volname: str, node: str, path: str):
         """
         Removes the mountpath entries under a client node for a
@@ -331,6 +349,29 @@ class FrameworkEnv:
         else:
             self.volds[volname]['mountpath'][node].remove(path)
 
+    def remove_snap_mountpath(self, snapname: str=None, node: str=None,
+                              path: str=None):
+        """
+        Removes the snap mountpath entry.
+
+        Args:
+            snapname (str): Optional parameter with default value None. Name
+            of the snapshot .If None then all data is purged.
+            node (str): Optional parameter with default value None. Node
+            wherein snapshot is mounted. If None, the data for all nodes under
+            a snap is cleared.
+            path (str): Optional parameter with default value None. The
+            mountpath. If None, the data under all clients is purged.
+        """
+        if snapname is None:
+            self.snapm = {}
+        elif node is None:
+            self.snapm[snapname] = {}
+        elif path is None:
+            self.snapm[snapname][node] = []
+        else:
+            self.snapm[snapname][node].remove(path)
+
     def get_mnt_pts_dict(self, volname: str) -> dict:
         """
         Method to obtain the mountpath dictionary.
@@ -341,6 +382,54 @@ class FrameworkEnv:
         """
         self._validate_volname(volname)
         return list(self.volds[volname]['mountpath'])
+
+    def get_snap_mnt_dict(self, snapname: str=None) -> dict:
+        """
+        Method to obtain the mountpath directory
+
+        Arg:
+            snapname (str): optional parameter with default value None.
+            None implies snap data for all snapshots.
+        Returns:
+            dictionary of mountpoints for a given snap(s) or empty dict.
+        """
+        if snapname is None:
+            return copy.deepcopy(self.snapm)
+        if snapname not in self.snapm.keys():
+            return {}
+        return copy.deepcopy(self.snapm[snapname])
+
+    def get_snap_mnt_dict_simplified(self, snapname: str=None) -> list:
+        """
+        Method to obtain the snap data as a dictionary wherein keys
+        correspond to the snapname and the list is client:path string.
+
+        Arg:
+            snapname (str): Optional parameter with default value None.
+            None implies snap data for all snapshots.
+
+        Returns:
+            dictionary of snapname-> list of string of client:path relation.
+        """
+        temp_dict = {}
+        if snapname is not None:
+            if snapname not in self.snapm.keys():
+                return temp_dict
+            temp_list = []
+            for (client, mnts) in self.snapm[snapname].items():
+                for mnt in mnts:
+                    val = f"{client}:{mnt}"
+                    temp_list.appen(val)
+            temp_dict[snapname] = temp_list
+            return temp_dict
+        for snap in self.snapm.keys():
+            temp_list = []
+            for (client, mnts) in self.snapm[snap].items():
+                for mnt in mnts:
+                    val = f"{client}:{mnt}"
+                    temp_list.append(val)
+            temp_dict[snapname] = temp_list
+        return temp_dict
 
     def get_mnt_pts_dict_in_list(self, volname: str) -> list:
         """
