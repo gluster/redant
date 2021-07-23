@@ -65,7 +65,7 @@ class TestArbiterSelfHeal(DParentTest):
                 redant.stop_glusterd(node)
 
                 # Stop glustershd
-                ret = redant.kill_process(node, "glustershd")
+                ret = redant.kill_process(node, process_names="glustershd")
                 if not ret:
                     if redant.is_shd_daemon_running(self.server_list[0], node,
                                                     self.vol_name):
