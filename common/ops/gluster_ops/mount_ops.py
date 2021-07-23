@@ -24,7 +24,7 @@ class MountOps(AbstractOps):
             node (str): The client node in the cluster where volume
                         mount is to be run
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          mount command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
@@ -86,7 +86,7 @@ class MountOps(AbstractOps):
                            is to be mounted
             mserver (str): Server to which volume is mounted to
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          is_mounted command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
         Returns:
@@ -168,7 +168,7 @@ class MountOps(AbstractOps):
             path (str): The path of the mount directory(mount point)
             node (str): The node where snap mount is to be run
             excep (bool): exception flag to bypass the exception if the
-                          volume status command fails. If set to False
+                          snap mount command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
 
