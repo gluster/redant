@@ -12,7 +12,7 @@ consult any of the active developers in the github discussions or issues.
 Descriptions of section entries:
 
 	M: Main contact that knows and takes care of this area
-    P: Peer for a component
+        P: Peer for a component
 
 Architecture & POC:
 ------------------
@@ -23,11 +23,11 @@ Dev Team:
 M: Srijan Sivakumar <ssivakum@redhat.com>
 M: Nikhil Ladha <nladha@redhat.com>
 P: Ayush Ujjwal <aujjwal@redhat.com>
-P: Nishith Vihar Sakinala <nsakinal@redhat.com>
-P: Neeraj Pratap Singh <neesingh@redhat.com>
 
 Special Thanks
 --------------
 
 Redant would not be possible without the contributions of:
 Barak Sason Rofman <sason922@gmail.com>
+Nishith Vihar Sakinala <nsakinal@redhat.com>
+Neeraj Pratap Singh <neesingh@redhat.com>
