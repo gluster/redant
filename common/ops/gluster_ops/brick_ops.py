@@ -321,6 +321,7 @@ class BrickOps(AbstractOps):
         brick_dict = {}
         brick_cmd = ""
         server_iter = 0
+        brick_iter = 0
 
         iter_add = 0
         if add_flag:
@@ -332,14 +333,24 @@ class BrickOps(AbstractOps):
             iter_add = iter_add + 1
 
         for iteration in range(mul_fac):
+            # If no more servers left in brick_root dict, start from beginning
+            # And, update the brick_iter value to check for multiple bricks
+            # within a node
             if server_iter == len(server_list):
                 server_iter = 0
+                brick_iter += 1
+
             server_val = server_list[server_iter]
             if server_val not in brick_dict.keys():
                 brick_dict[server_val] = []
-            brick_path_val = (
-                f"{brick_root[server_list[server_iter]]}/{volname}-"
-                f"{iteration+iter_add}")
+
+            if brick_iter <= (len(brick_root[server_val]) - 1):
+                brick_path_val = (f"{brick_root[server_val][brick_iter]}/"
+                                  f"{volname}-{iteration+iter_add}")
+            else:
+                brick_path_val = (f"{brick_root[server_val][0]}/"
+                                  f"{volname}-{iteration+iter_add}")
+
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
             server_iter += 1

@@ -150,9 +150,10 @@ class MachineOps(AbstractOps):
             self.execute_abstract_op_node(cmd, node, False)
 
         # Clear out the brick dirs under the brick roots.
-        for (server, brick) in brick_root.items():
-            cmd = (f"rm -rf {brick}/*")
-            self.execute_abstract_op_node(cmd, server, False)
+        for (server, brick_list) in brick_root.items():
+            for brick in brick_list:
+                cmd = (f"rm -rf {brick}/*")
+                self.execute_abstract_op_node(cmd, server, False)
 
         # Clear out the mountpoints in clients.
         cmd = "umount /mnt/*; rm -rf /mnt/*"

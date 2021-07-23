@@ -156,7 +156,7 @@ class ParamsHandler:
         """
         brick_roots = {}
         for server in self.server_config:
-            brick_roots[server] = self.server_config[server]['brick_root'][0]
+            brick_roots[server] = self.server_config[server]['brick_root']
         return brick_roots
 
     def get_excluded_tests(self):
