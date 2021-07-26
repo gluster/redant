@@ -79,7 +79,7 @@ class TestSelfHealDaemon(DParentTest):
         }
 
         # Get arequal before getting bricks offline
-        result_before_online = redant.collect_mounts_arequal(mount_dict)
+        redant.collect_mounts_arequal(mount_dict)
 
         # Select bricks to bring offline
         offline_brick_list = (redant.select_volume_bricks_to_bring_offline(
@@ -133,11 +133,7 @@ class TestSelfHealDaemon(DParentTest):
             raise Exception("Volume is in split-brain state")
 
         # Get arequal after getting bricks online
-        result_after_online = redant.collect_mounts_arequal(mount_dict)
-
-        # Compare checksum
-        if result_after_online != result_before_online:
-            raise Exception("Arequal-checksum is not equal")
+        redant.collect_mounts_arequal(mount_dict)
 
         # Select bricks to bring offline
         offline_brick_list = (redant.select_volume_bricks_to_bring_offline(
