@@ -537,6 +537,8 @@ class IoOps(AbstractOps):
             bool: True if listing file and dirs on mounts is successful.
                 False otherwise.
         """
+        if not isinstance(mounts, list):
+            mounts = [mounts]
 
         ignore_dirs_list = [".trashcan"]
         ignore_dirs = r"\|".join(ignore_dirs_list)
