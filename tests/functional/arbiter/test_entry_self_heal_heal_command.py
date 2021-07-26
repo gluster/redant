@@ -83,7 +83,7 @@ class TestSelfHeal(DParentTest):
         for cmd in cmds:
             # Get arequal before getting bricks offline
             arequal = redant.collect_mounts_arequal(mount_dict)
-            result_before_offline = arequal[0].splitlines()[-1].split(':')[-1]
+            result_before_offline = arequal[0][-1].split(':')[-1]
 
             # Setting options
             options = {"self-heal-daemon": "off"}
@@ -105,7 +105,7 @@ class TestSelfHeal(DParentTest):
 
             # Get arequal after getting bricks offline
             arequal = redant.collect_mounts_arequal(mount_dict)
-            result_after_offline = arequal[0].splitlines()[-1].split(':')[-1]
+            result_after_offline = arequal[0][-1].split(':')[-1]
 
             # Checking arequals before bringing bricks offline
             # and after bringing bricks offline
@@ -122,7 +122,7 @@ class TestSelfHeal(DParentTest):
 
             # Get arequal before getting bricks online
             arequal = redant.collect_mounts_arequal(mount_dict)
-            result_before_online = arequal[0].splitlines()[-1].split(':')[-1]
+            result_before_online = arequal[0][-1].split(':')[-1]
 
             # List all files and dirs created
             if not redant.list_all_files_and_dirs_mounts(mount_dict):
@@ -175,7 +175,7 @@ class TestSelfHeal(DParentTest):
 
             # Get arequal after getting bricks online
             arequal = redant.collect_mounts_arequal(mount_dict)
-            result_after_online = arequal[0].splitlines()[-1].split(':')[-1]
+            result_after_online = arequal[0][-1].split(':')[-1]
 
             # List all files and dirs created
             if not redant.list_all_files_and_dirs_mounts(mount_dict):
