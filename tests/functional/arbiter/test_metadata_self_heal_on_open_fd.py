@@ -190,7 +190,7 @@ class TestCase(DParentTest):
 
         # Get arequal for mount
         arequals = redant.collect_mounts_arequal(self.mounts)
-        print(arequals)
+        print("\nMounts arequal:\n",arequals)
         # mount_point_total = arequals[0].splitlines()[-1].split(':')[-1]
 
         # # Collecting data bricks
