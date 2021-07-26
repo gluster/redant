@@ -439,7 +439,7 @@ class IoOps(AbstractOps):
             total_path = os.path.join(mount['mountpath'], path)
             self.logger.info(
                 f"arequal-checksum of mount {mount['client']}:{total_path}")
-            cmd = f"arequal-checksum {total_path}.trashcan"
+            cmd = f"arequal-checksum -p {total_path} -i .trashcan"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
         all_mounts_arequal_checksums = []
@@ -460,47 +460,43 @@ class IoOps(AbstractOps):
             raise Exception(error_msg)
         return all_mounts_arequal_checksums
 
-    def collect_bricks_arequal(self, bricks_list: list) -> tuple:
+    def collect_bricks_arequal(self, bricks_list: list) -> list:
         """
         Collects arequal for all bricks in list
 
         Args:
             bricks_list (list): List of bricks.
             Example:
-                bricks_list = 'gluster.blr.cluster.com:/bricks/brick1/vol'
+                bricks_list = ['brick1','brick2']
 
         Returns:
-            tuple(bool, list):
-                On success returns (True, list of arequal-checksums
-                of each brick)
-                On failure returns (False, list of arequal-checksums
-                of each brick)
-                arequal-checksum for a brick would be 'None' when
-                failed to collect arequal for that brick.
+            list: arequal-checksum values for the bricks
+                  on success
+            None: on failure
         """
         # Converting a bricks_list to list if not.
         if not isinstance(bricks_list, list):
             bricks_list = [bricks_list]
 
-        return_code, arequal_list = True, []
+        arequal_list = []
         for brick in bricks_list:
 
             # Running arequal-checksum on the brick.
             node, brick_path = brick.split(':')
-            cmd = f'arequal-checksum {brick_path}/.trashcan'
+            cmd = (f'arequal-checksum -p {brick_path} -i .glusterfs -i '
+                   '.landfill -i .trashcan')
             ret = self.execute_abstract_op_node(cmd, node, False)
 
             # Generating list accordingly
             if ret['error_code'] != 0:
                 self.logger.error(f'Failed to get arequal on brick {brick}')
-                return_code = False
                 arequal_list.append(None)
             else:
                 self.logger.info('Successfully calculated arequal'
                                  f' for brick {brick}')
                 arequal_list.append(ret['msg'])
 
-        return (return_code, arequal_list)
+        return arequal_list
 
     def log_mounts_info(self, mounts: list):
         """
