@@ -38,6 +38,9 @@ class TestArbiterSelfHeal(DParentTest):
         - Check for split-brain
         - Calculate arequal checksum and compare it
         """
+        options = {"features.trash": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
         # Creating files on client side
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.proc_list = []

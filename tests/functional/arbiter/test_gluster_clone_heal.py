@@ -58,6 +58,9 @@ class TestGlusterCloneHeal(DParentTest):
         - Compile gluster on mountpoint again
         - Repeat the above steps
         """
+        options = {"features.trash": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
         # Creating directory test_compilation
         redant.create_dir(self.mountpoint, "test_compilation",
                           self.client_list[0])

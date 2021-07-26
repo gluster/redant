@@ -17,12 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     Pro-active metadata self heal on open fd
-@runs_on([['replicated', 'distributed-replicated', 'arbiter',
-           'distributed-arbiter'],
-          ['glusterfs']])
 """
 
-# disruptive;rep
+# disruptive;rep,dist-rep,arb,dist-arb
 
 import traceback
 import os
@@ -32,7 +29,7 @@ from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
-  
+
     def terminate(self):
         for node in self.nodes:
             try:
@@ -45,24 +42,25 @@ class TestCase(DParentTest):
                 self.logger.error(tb)
         super().terminate()
 
-    # def _verify_stat_info(self, nodes_to_check, test_file):
-    #     """
-    #     Helper method to verify stat on all bricks and client.
-    #     """
-    #     for node in nodes_to_check:
-    #         filepath = nodes_to_check[node] + "/" + test_file
-    #         stat_dict = get_file_stat(node, filepath)
-    #         self.assertIsNotNone(stat_dict, "stat on {} failed"
-    #                              .format(test_file))
-    #         self.assertEqual(stat_dict['username'], self.user,
-    #                          "Expected qa but found {}"
-    #                          .format(stat_dict['username']))
-    #         self.assertEqual(stat_dict['groupname'], self.user,
-    #                          "Expected gid qa but found {}"
-    #                          .format(stat_dict['groupname']))
-    #         self.assertEqual(stat_dict['access'], '777',
-    #                          "Expected permission 777 but found {}"
-    #                          .format(stat_dict['access']))
+    def _verify_stat_info(self, nodes_to_check: list, test_file: str):
+        """
+        Helper method to verify stat on all bricks and client.
+        """
+        for node in nodes_to_check:
+            filepath = nodes_to_check[node] + "/" + test_file
+            stat_dict = self.redant.get_file_stat(node, filepath)['msg']
+
+            if stat_dict['user'] != self.user:
+                raise Exception(f"Expected username {self.user} "
+                                f"found {stat_dict['user']}")
+
+            if stat_dict['group'] != self.user:
+                raise Exception(f"Expected groupname {self.user} "
+                                f"found {stat_dict['group']}")
+
+            if stat_dict['permission'] != 777:
+                raise Exception(f"Expected permission 777 "
+                                f"found {stat_dict['permission']}")
 
     def run_test(self, redant):
         """
@@ -90,6 +88,9 @@ class TestCase(DParentTest):
         self.nodes = copy.deepcopy(self.server_list)
         self.nodes.append(self.client_list[0])
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        options = {"features.trash": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
 
         # Create user for changing ownership
         for node in self.nodes:
@@ -114,14 +115,12 @@ class TestCase(DParentTest):
         # Execute the test file
         cmd = f"cd {m_point}; sh {test_file}"
         redant.logger.info(f"Running {cmd} on {client}")
-        # redant.execute_command_async(cmd, client)
         self.proc = redant.execute_command_async(cmd, client)
-        # print(ret)
+
         # Get pid of the test file
         _cmd = "ps -aux | grep -v grep | grep testfile.sh | awk '{print $2}'"
         ret = redant.execute_abstract_op_node(_cmd, client)
         out = ret['msg']
-        print("PS AUX\n",ret)
 
         # Bring brick1 offline
         redant.bring_bricks_offline(self.vol_name, [bricks_list[1]])
@@ -147,7 +146,7 @@ class TestCase(DParentTest):
                                    [bricks_list[1]])
 
         ret = redant.get_pathinfo(f"{m_point}/{test_file}", client)
-        
+
         if ret is None:
             raise Exception("Failed to get path info")
 
@@ -163,18 +162,23 @@ class TestCase(DParentTest):
             bricks_list.append(path)
         nodes_to_check[client] = m_point
 
-        # # Verify that the changes are successful on bricks and client
-        # self._verify_stat_info(nodes_to_check, test_file)
+        # Verify that the changes are successful on bricks and client
+        self._verify_stat_info(nodes_to_check, test_file)
 
         # Kill the test executable file
         for pid in out:
             pid = pid.rstrip("\n")
             cmd = f"kill -s 9 {pid}"
             redant.execute_abstract_op_node(cmd, client)
-        # # Verify that the changes are successful on bricks and client
-        # self._verify_stat_info(nodes_to_check, test_file)
+
+        # Verify that the changes are successful on bricks and client
+        self._verify_stat_info(nodes_to_check, test_file)
 
         # Verify there are no pending heals
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Pending heal")
+
         heal_info = redant.get_heal_info_summary(self.server_list[0],
                                                  self.vol_name)
         if heal_info is None:
@@ -190,7 +194,7 @@ class TestCase(DParentTest):
 
         # Get arequal for mount
         arequals = redant.collect_mounts_arequal(self.mounts)
-        mount_point_total = arequal[0][-1].split(':')[-1]
+        mount_point_total = arequals[0][-1].split(':')[-1].strip()
 
         # Collecting data bricks
         vol_info = redant.get_volume_info(self.server_list[0], self.vol_name)
@@ -211,11 +215,13 @@ class TestCase(DParentTest):
         for subvol in subvols:
             subvol = [i for i in subvol if i in bricks_list]
             if subvol:
-                arequal = redant.collect_bricks_arequal(subvol[0:stop])
-                # self.assertEqual(len(set(arequal)), 1, 'Mismatch of arequal '
-                #                  'checksum among {} is '
-                #                  'identified'.format(subvol[0:stop]))
-                # brick_total = arequal[-1].splitlines()[-1].split(':')[-1]
-                # self.assertEqual(brick_total, mount_point_total,
-                #                  "Arequals for mountpoint and {} "
-                #                  "are not equal".format(subvol[0:stop]))
+                ret, arequals = redant.collect_bricks_arequal(subvol[0:stop])
+                for arequal in arequals:
+                    curr_arequal = arequal[-1].split(':')[-1]
+                    if curr_arequal != arequals[0][-1].split(':')[-1]:
+                        raise Exception("Mismatch of arequal checksum")
+                brick_total = arequals[-1][-1].split(':')[-1].strip()
+
+                if brick_total != mount_point_total:
+                    raise Exception("Arequals for mountpoint and "
+                                    f"{subvol[0:stop]} are not equal.")

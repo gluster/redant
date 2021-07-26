@@ -44,7 +44,9 @@ class TestCase(DParentTest):
         """
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.all_mounts_procs = []
-
+        options = {"features.trash": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
         # Creating directory test_compilation
         redant.create_dir(self.mountpoint, 'test_gfid_self_heal',
                           self.client_list[0])
