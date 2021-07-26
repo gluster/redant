@@ -89,6 +89,7 @@ class TestCase(DParentTest):
         self.nodes = []
         self.nodes = copy.deepcopy(self.server_list)
         self.nodes.append(self.client_list[0])
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Create user for changing ownership
         for node in self.nodes:
@@ -120,83 +121,76 @@ class TestCase(DParentTest):
         _cmd = "ps -aux | grep -v grep | grep testfile.sh | awk '{print $2}'"
         ret = redant.execute_abstract_op_node(_cmd, client)
         out = ret['msg']
+        print("PS AUX\n",ret)
 
-        # # Bring brick1 offline
-        # ret = bring_bricks_offline(self.volname, [bricks_list[1]])
-        # self.assertTrue(ret, 'Failed to bring bricks {} '
-        #                 'offline'.format(bricks_list[1]))
+        # Bring brick1 offline
+        redant.bring_bricks_offline(self.vol_name, [bricks_list[1]])
 
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          [bricks_list[1]])
-        # self.assertTrue(ret, 'Bricks {} are not '
-        #                 'offline'.format(bricks_list[1]))
+        if not redant.are_bricks_offline(self.vol_name,
+                                         [bricks_list[1]],
+                                         self.server_list[0]):
+            raise Exception(f"Brick {bricks_list[1]} is not offline")
 
-        # # change uid, gid and permission from client
-        # cmd = "chown {} {}/{}".format(self.user, m_point, test_file)
-        # ret, _, _ = g.run(client, cmd)
-        # self.assertEqual(ret, 0, "chown failed")
+        # change uid, gid and permission from client
+        cmd = f"chown {self.user} {m_point}/{test_file}"
+        redant.execute_abstract_op_node(cmd, client)
 
-        # cmd = "chgrp {} {}/{}".format(self.user, m_point, test_file)
-        # ret, _, _ = g.run(client, cmd)
-        # self.assertEqual(ret, 0, "chgrp failed")
+        cmd = f"chgrp {self.user} {m_point}/{test_file}"
+        redant.execute_abstract_op_node(cmd, client)
 
-        # cmd = "chmod 777 {}/{}".format(m_point, test_file)
-        # ret, _, _ = g.run(client, cmd)
-        # self.assertEqual(ret, 0, "chown failed")
+        cmd = f"chmod 777 {m_point}/{test_file}"
+        redant.execute_abstract_op_node(cmd, client)
 
-        # # Bring brick1 online
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           [bricks_list[1]])
-        # self.assertTrue(ret, 'Failed to bring bricks {} online'
-        #                 .format(bricks_list[1]))
+        # Bring brick1 online
+        redant.bring_bricks_online(self.vol_name,
+                                   self.server_list,
+                                   [bricks_list[1]])
 
-        # ret = get_pathinfo(client, "{}/{}"
-        #                    .format(m_point, test_file))
-        # self.assertIsNotNone(ret, "Unable to get "
-        #                      "trusted.glusterfs.pathinfo  of file")
-        # nodes_to_check = {}
-        # bricks_list = []
-        # for brick in ret['brickdir_paths']:
-        #     node, brick_path = brick.split(':')
-        #     if node[0:2].isdigit():
-        #         nodes_to_check[node] = os.path.dirname(brick_path)
-        #         path = node + ":" + os.path.dirname(brick_path)
-        #     else:
-        #         nodes_to_check[gethostbyname(node)] = (os.path.dirname(
-        #             brick_path))
-        #         path = gethostbyname(node) + ":" + os.path.dirname(brick_path)
-        #     bricks_list.append(path)
-        # nodes_to_check[client] = m_point
+        ret = redant.get_pathinfo(f"{m_point}/{test_file}", client)
+        
+        if ret is None:
+            raise Exception("Failed to get path info")
+
+        nodes_to_check = {}
+        bricks_list = []
+        for brick in ret['brickdir_paths']:
+            node, brick_path = brick.split(':')
+
+            if not node[0:2].isdigit():
+                node = gethostbyname(node)
+            nodes_to_check[node] = os.path.dirname(brick_path)
+            path = node + ":" + os.path.dirname(brick_path)
+            bricks_list.append(path)
+        nodes_to_check[client] = m_point
 
         # # Verify that the changes are successful on bricks and client
         # self._verify_stat_info(nodes_to_check, test_file)
 
         # Kill the test executable file
-        # for pid in out:
-        #     cmd = "kill -s 9 {pid}".format(pid)
-        #     ret, _, _ = g.run(client, cmd)
-        #     self.assertEqual(ret, 0, "Failed to kill test file execution")
-        pid = ret['msg'][-1].rstrip("\n")
-        cmd = f"kill -s 9 {pid}"
-        redant.execute_abstract_op_node(cmd, client)
+        for pid in out:
+            pid = pid.rstrip("\n")
+            cmd = f"kill -s 9 {pid}"
+            redant.execute_abstract_op_node(cmd, client)
         # # Verify that the changes are successful on bricks and client
         # self._verify_stat_info(nodes_to_check, test_file)
 
-        # # Verify there are no pending heals
-        # heal_info = get_heal_info_summary(self.mnode, self.volname)
-        # self.assertIsNotNone(heal_info, 'Unable to get heal info')
-        # for brick in bricks_list:
-        #     self.assertEqual(int(heal_info[brick]['numberOfEntries']),
-        #                      0, ("Pending heal on brick {} ".format(brick)))
+        # Verify there are no pending heals
+        heal_info = redant.get_heal_info_summary(self.server_list[0],
+                                                 self.vol_name)
+        if heal_info is None:
+            raise Exception('Unable to get heal info')
+        for brick in bricks_list:
+            if heal_info[brick]['numberOfEntries'] != '0':
+                raise Exception(f"Pending heal on brick {brick}")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        # Check for split-brain
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume is not in split brain state")
 
-        # # Get arequal for mount
-        # ret, arequals = collect_mounts_arequal(self.mounts)
-        # self.assertTrue(ret, 'Failed to get arequal')
+        # Get arequal for mount
+        arequals = redant.collect_mounts_arequal(self.mounts)
+        print(arequals)
         # mount_point_total = arequals[0].splitlines()[-1].split(':')[-1]
 
         # # Collecting data bricks
