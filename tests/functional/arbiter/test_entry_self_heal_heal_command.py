@@ -75,9 +75,8 @@ class TestSelfHeal(DParentTest):
             ("python3 /tmp/file_dir_ops.py create_files -f 20 "
              f"{self.mountpoint}/files"),
             f"python3 /tmp/file_dir_ops.py mv {self.mountpoint}/files",
-            # 'copy' command works incorrect. disable until fixed
-            # ("python3 /tmp/file_dir_ops.py copy --dest-dir "
-            #  f"{self.mountpoint}/new_dir {self.mountpoint}/files"),
+            ("python3 /tmp/file_dir_ops.py copy --dest-dir "
+             f"{self.mountpoint}/new_dir {self.mountpoint}/files"),
             f"python3 /tmp/file_dir_ops.py delete {self.mountpoint}",
         )
         for cmd in cmds:
@@ -113,11 +112,6 @@ class TestSelfHeal(DParentTest):
                 raise Exception('Checksums are not equal')
 
             # Modify the data
-            # if 'copy --dest-dir' in cmd:
-            #     parsed_cmd = cmd % (self.script_upload_path,
-            #                         self.mounts[0].mountpoint,
-            #                         self.mounts[0].mountpoint)
-            # else:
             redant.execute_abstract_op_node(cmd, self.client_list[0])
 
             # Get arequal before getting bricks online
