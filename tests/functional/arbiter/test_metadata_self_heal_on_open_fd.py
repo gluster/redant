@@ -190,35 +190,32 @@ class TestCase(DParentTest):
 
         # Get arequal for mount
         arequals = redant.collect_mounts_arequal(self.mounts)
-        print("\nMounts arequal:\n",arequals)
-        # mount_point_total = arequals[0].splitlines()[-1].split(':')[-1]
+        mount_point_total = arequal[0][-1].split(':')[-1]
 
-        # # Collecting data bricks
-        # vol_info = get_volume_info(self.mnode, self.volname)
-        # self.assertIsNotNone(vol_info, 'Unable to get volume info')
-        # data_brick_list = []
-        # for brick in bricks_list:
-        #     for brick_info in vol_info[self.volname]["bricks"]["brick"]:
-        #         if brick_info["name"] == brick:
-        #             if brick_info["isArbiter"] == "0":
-        #                 data_brick_list.append(brick)
-        # bricks_list = data_brick_list
+        # Collecting data bricks
+        vol_info = redant.get_volume_info(self.server_list[0], self.vol_name)
 
-        # # Get arequal on bricks and compare with mount_point_total
-        # # It should be the same
-        # arbiter = self.volume_type.find('arbiter') >= 0
-        # subvols = get_subvols(self.mnode, self.volname)['volume_subvols']
-        # stop = len(subvols[0]) - 1 if arbiter else len(subvols[0])
-        # for subvol in subvols:
-        #     subvol = [i for i in subvol if i in bricks_list]
-        #     if subvol:
-        #         ret, arequal = collect_bricks_arequal(subvol[0:stop])
-        #         self.assertTrue(ret, 'Unable to get arequal checksum '
-        #                         'on {}'.format(subvol[0:stop]))
-        #         self.assertEqual(len(set(arequal)), 1, 'Mismatch of arequal '
-        #                          'checksum among {} is '
-        #                          'identified'.format(subvol[0:stop]))
-        #         brick_total = arequal[-1].splitlines()[-1].split(':')[-1]
-        #         self.assertEqual(brick_total, mount_point_total,
-        #                          "Arequals for mountpoint and {} "
-        #                          "are not equal".format(subvol[0:stop]))
+        data_brick_list = []
+        for brick in bricks_list:
+            for brick_info in vol_info[self.vol_name]["bricks"]:
+                if brick_info["name"] == brick:
+                    if brick_info["isArbiter"] == "0":
+                        data_brick_list.append(brick)
+        bricks_list = data_brick_list
+
+        # Get arequal on bricks and compare with mount_point_total
+        # It should be the same
+        arbiter = self.volume_type.find('arbiter') >= 0
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        stop = len(subvols[0]) - 1 if arbiter else len(subvols[0])
+        for subvol in subvols:
+            subvol = [i for i in subvol if i in bricks_list]
+            if subvol:
+                arequal = redant.collect_bricks_arequal(subvol[0:stop])
+                # self.assertEqual(len(set(arequal)), 1, 'Mismatch of arequal '
+                #                  'checksum among {} is '
+                #                  'identified'.format(subvol[0:stop]))
+                # brick_total = arequal[-1].splitlines()[-1].split(':')[-1]
+                # self.assertEqual(brick_total, mount_point_total,
+                #                  "Arequals for mountpoint and {} "
+                #                  "are not equal".format(subvol[0:stop]))
