@@ -155,14 +155,18 @@ class TestSelfHealDaemon(DParentTest):
                " done ; cd ..")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        file_path = (f"{self.mountpoint}/test_hardlink_self_heal/"
-                     "dir{1..5}/file{1..10}")
-        link_path = (f"{self.mountpoint}/test_hardlink_self_heal/"
-                     "dir{1..5}/link_file{1..10}")
-        file_stat = redant.get_file_stat(self.client_list[0], file_path)
-        link_stat = redant.get_file_stat(self.client_list[0], link_path)
-        if file_stat != link_stat:
-            raise Exception("Verification of hardlinks failed")
+        for i in range(1, 6):
+            for j in range(1, 11):
+                file_path = (f"{self.mountpoint}/test_hardlink_self_heal/"
+                             f"dir{i}/file{j}")
+                link_path = (f"{self.mountpoint}/test_hardlink_self_heal/"
+                             f"dir{i}/link_file{j}")
+                file_stat = redant.get_file_stat(self.client_list[0],
+                                                 file_path)
+                link_stat = redant.get_file_stat(self.client_list[0],
+                                                 link_path)
+                if file_stat != link_stat:
+                    raise Exception("Verification of hardlinks failed")
 
         # Bring brick online
         if not redant.bring_bricks_online(self.vol_name, self.server_list,
