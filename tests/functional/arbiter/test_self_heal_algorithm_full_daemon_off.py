@@ -103,15 +103,15 @@ class TestSelfHeal(DParentTest):
                                                      timeout=30):
             raise Exception("Bricks didn't come online")
 
-        # Verifying all bricks online
-        if not (redant.verify_all_process_of_volume_are_online(self.vol_name,
-                self.server_list[0])):
-            raise Exception("All process of volume are not online")
-
         # Wait for self heal processes to come online
         if not (redant.wait_for_self_heal_daemons_to_be_online(self.vol_name,
                 self.server_list[0])):
             raise Exception("Self-heal process are not online")
+
+        # Verifying all bricks online
+        if not (redant.verify_all_process_of_volume_are_online(self.vol_name,
+                self.server_list[0])):
+            raise Exception("All process of volume are not online")
 
         # Wait for self-heal to complete
         if not redant.monitor_heal_completion(self.server_list[0],
