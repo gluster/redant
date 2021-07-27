@@ -69,7 +69,7 @@ class environ:
                                    [dpath]):
             remove = True
         for node in machines:
-            self.redant.logger.info(f'Copying file_dir_ops to {node}')
+            self.redant.logger.info(f'Copying file to {node}')
             self.redant.transfer_file_from_local(spath,
                                                  dpath, node,
                                                  remove)
@@ -87,6 +87,42 @@ class environ:
             io_script_spath,
             io_script_dpath)
 
+    def _list_of_machines_without_arequal(self, machines: list):
+        """
+        This function returns the list of machines without
+        arequal checksum installed on it.
+        """
+        cmd = "arequal-checksum"
+        machines = set(machines)
+        arequal_machines = []
+        for machine in machines:
+            ret = self.redant.execute_abstract_op_node(cmd, machine,
+                                                       False)
+            if ret['error_code'] != 64:
+                arequal_machines.append(machine)
+        return arequal_machines
+
+    def _check_and_install_arequal_checksum(self):
+        """
+        Checks if arequal checksum is present on
+        the servers and clients and if not present
+        installs it.
+        """
+        arequal_dpath = '/tmp/arequal_install.sh'
+        arequal_spath = f'{os.getcwd()}/tools/arequal_install.sh'
+        arequal_machines = self._list_of_machines_without_arequal(
+            self.client_list + self.server_list
+        )
+        if len(arequal_machines) > 0:
+            self._transfer_files_to_machines(
+                arequal_machines,
+                arequal_spath,
+                arequal_dpath)
+
+            cmd = f"sh {arequal_dpath}"
+            self.redant.execute_abstract_op_multinode(cmd,
+                                                      arequal_machines)
+
     def setup_env(self):
         """
         Setting up of the environment before the TC execution begins.
@@ -99,6 +135,7 @@ class environ:
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
             self._check_and_copy_io_script()
+            self._check_and_install_arequal_checksum()
             self.spinner.succeed("Environment setup successful.")
         except Exception as error:
             tb = traceback.format_exc()
