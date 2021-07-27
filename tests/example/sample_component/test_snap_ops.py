@@ -3,6 +3,7 @@ This file contains a test-case which tests
 the snapshot ops.
 """
 
+# disruptive;rep
 # disruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
 
@@ -57,6 +58,8 @@ class TestCase(DParentTest):
         redant.logger.info(f"Snapd run status : {snap_running_status}")
         redant.snap_activate(self.snap_name, self.server_list[0],
                              force=True)
+        redant.snap_activate(self.snap_name2, self.server_list[0],
+                             force=True)
         redant.logger.info(redant.snap_list(self.server_list[0]))
         redant.logger.info(redant.get_snap_status(self.server_list[0]))
         snap_running_status = redant.is_snapd_running(self.vol_name,
@@ -74,7 +77,16 @@ class TestCase(DParentTest):
         redant.unmount_snap(self.snap_name, self.snap_mount,
                             self.client_list[0])
 
+        redant.enable_uss(self.vol_name, self.server_list[0])
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.snap_list = redant.get_snap_list(self.server_list[0],
+                                              self.vol_name)
+        if not redant.view_snap_from_mount(self.mnt_list,
+                                           self.snap_list):
+            raise Exception("Snap in .snaps doesn't match snap list provided")
+
         redant.snap_deactivate(self.snap_name, self.server_list[0])
+        redant.snap_deactivate(self.snap_name2, self.server_list[0])
         redant.logger.info(redant.get_snap_status_by_snapname(
             self.snap_name, self.server_list[0]))
         value_set = {"auto-delete": "disable"}
