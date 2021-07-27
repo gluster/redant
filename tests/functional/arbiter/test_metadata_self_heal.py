@@ -21,10 +21,24 @@
 
 # disruptive;arb,dist-arb
 # TODO: NFS
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestMetadataSelfHeal(DParentTest):
+
+    def terminate(self):
+        """
+        Delete the user created in the TC
+        """
+        try:
+            if not self.redant.del_user(self.all_nodes, "test"):
+                raise Exception("Failed to delete the user 'test")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -49,8 +63,8 @@ class TestMetadataSelfHeal(DParentTest):
         - check group and user are 'qa'
         """
         # Create a new user
-        all_nodes = self.server_list + self.client_list
-        if not redant.add_user(all_nodes, "test"):
+        self.all_nodes = self.server_list + self.client_list
+        if not redant.add_user(self.all_nodes, "test"):
             raise Exception("Failed to add user 'test'")
 
         # Setting options
