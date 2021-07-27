@@ -75,7 +75,7 @@ class TestCase(DParentTest):
         self.all_mounts_procs = []
         self.mounts = [{'client': self.client_list[0],
                         'mountpath': self.mountpoint}]
-        
+
         # Setting options
         options = {"metadata-self-heal": "off",
                    "entry-self-heal": "off",
@@ -247,8 +247,9 @@ class TestCase(DParentTest):
 
             # Verify volume's all process are online
             if not (redant.
-                    verify_all_process_of_volume_are_online(self.vol_name,
-                                                            self.server_list[0])):
+                    verify_all_process_of_volume_are_online(
+                        self.vol_name,
+                        self.server_list[0])):
                 raise Exception(f"Volume {self.vol_name} : All process"
                                 " are not online")
 
@@ -256,9 +257,7 @@ class TestCase(DParentTest):
             if not redant.is_shd_daemonized(self.server_list):
                 raise Exception("Either No self heal daemon process found")
 
-
         # Validate IO
         if not redant.validate_io_procs(self.all_mounts_procs,
                                         self.mounts):
             raise Exception("IO failed on some of the clients")
-
