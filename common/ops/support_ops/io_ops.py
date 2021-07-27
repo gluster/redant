@@ -485,13 +485,17 @@ class IoOps(AbstractOps):
             # Running arequal-checksum on the brick.
             node, brick_path = brick.split(':')
 
-            # this finds the anonymous inode directory
+            # this finds the anonymous inode directories
+            # and creates the command to ignore those
             cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
             ret = self.execute_abstract_op_node(cmd, node)
-            anon_dir = ret["msg"][0].rstrip("/\n")
+            anon_dir_cmd = ""
+            for anon_dir in ret['msg']:
+                anon_dir = anon_dir.rstrip("/\n")
+                anon_dir_cmd = f"{anon_dir_cmd} -i {anon_dir}"
 
             cmd = (f'arequal-checksum -p {brick_path} -i .glusterfs -i '
-                   f'.landfill -i .trashcan -i {anon_dir}')
+                   f'.landfill -i .trashcan {anon_dir_cmd}')
             ret = self.execute_abstract_op_node(cmd, node, False)
 
             # Generating list accordingly
