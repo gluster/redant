@@ -112,12 +112,12 @@ class TestSelfHeal(DParentTest):
         # Verify whether the links are properly created
         # Get symlink list
         cmd = f"cd {self.mountpoint}/{test_folder}/ ; ls |grep 'sym'"
-        redant.execute_abstract_op_node(cmd, self.client_list[0])
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
         symlink_list = ret['msg']
 
         # Get folder list
         cmd = f"cd {self.mountpoint}/{test_folder}/ ; ls |grep -v 'sym'"
-        redant.execute_abstract_op_node(cmd, self.client_list[0])
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
         folder_list = ret['msg']
 
         # Compare symlinks and folders
@@ -125,7 +125,7 @@ class TestSelfHeal(DParentTest):
             symlink_index = symlink_list.index(symlink)
             symlink = symlink.rstrip('\n')
             cmd = f"cd {self.mountpoint}/{test_folder}/ ; readlink {symlink}"
-            redant.execute_abstract_op_node(cmd, self.client_list[0])
+            ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
             symlink_to_folder = ret['msg'][0]
             if symlink_to_folder != folder_list[symlink_index]:
                 raise Exception("Links are not properly created")
