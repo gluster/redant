@@ -327,6 +327,7 @@ class BrickOps(AbstractOps):
 
         iter_add = 0
         if add_flag:
+            brick = ""
             unused_servers = server_list[:]
             brick_list = self.get_all_bricks(volname, server_list[0])
             for brick in brick_list:
@@ -358,7 +359,7 @@ class BrickOps(AbstractOps):
                 server_iter = 0
                 brick_iter += 1
 
-            if len(unused_servers):
+            if len(unused_servers) > 0:
                 server_val = unused_servers[iteration]
                 unused_servers.remove(server_val)
             else:
