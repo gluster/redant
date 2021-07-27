@@ -3,7 +3,6 @@ This file contains a test-case which tests
 the snapshot ops.
 """
 
-# disruptive;rep
 # disruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
 
@@ -22,11 +21,12 @@ class TestCase(DParentTest):
         1. Creation of snapshot
         2. Getting info and status
         3. Setting a config option
-        4. Activating snap and checking info and status
+        4. Activating snaps and checking info and status
         5. Mounting the snap
         6. Perform listing inside the snap mount
         7. Unmount the snapshot
-        8. Deactivate the snapshot
+        8. Check if the activated snaps are accessible under .snaps
+        8. Deactivate the snaps
         9. Check status and info
         10. Disabling the config option
         11. Deletion of snapshot
