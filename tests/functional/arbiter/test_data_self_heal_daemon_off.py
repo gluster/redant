@@ -18,17 +18,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Arbiter Test cases related to
     healing in default configuration of the volume
-
-@runs_on([['arbiter', 'distributed-arbiter'], ['glusterfs', 'nfs']])
 """
-# disruptive;arb
+# disruptive;arb,dist-arb
 # TODO: nfs
 
+import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+
+    def terminate(self):
+        try:
+            if len(self.all_mounts_procs) > 0:
+                ret = (self.redant.
+                       wait_for_io_to_complete(self.all_mounts_procs,
+                                               self.mounts))
+                if not ret:
+                    raise Exception("IO failed on some of the clients")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -58,224 +72,193 @@ class TestCase(DParentTest):
         in cycle
         - validate IO
         """
+        self.all_mounts_procs = []
+        self.mounts = [{'client': self.client_list[0],
+                        'mountpath': self.mountpoint}]
+        
         # Setting options
         options = {"metadata-self-heal": "off",
                    "entry-self-heal": "off",
                    "data-self-heal": "off"}
-        redant.set_volume_options(self.mnode, self.volname, options)
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
 
-        # # Creating files on client side
-        # cmd = ("/usr/bin/env python %s create_files -f 100"
-        #        " --fixed-file-size 1k %s"
-        #        % (self.script_upload_path,
-        #           self.mounts[0].mountpoint))
-        # ret, _, err = g.run(self.mounts[0].client_system, cmd,
-        #                     user=self.mounts[0].user)
-        # self.assertFalse(ret, 'Failed to create the data for %s: %s'
-        #                  % (self.mounts[0].mountpoint, err))
-        # g.log.info('Created IO for %s is successfully',
-        #            self.mounts[0].mountpoint)
+        # Creating files on client side
+        proc = redant.create_files('1k', self.mountpoint,
+                                   self.client_list[0], 100)
 
-        # # Get arequal before getting bricks offline
-        # g.log.info('Getting arequal before getting bricks offline...')
-        # ret, arequals = collect_mounts_arequal(self.mounts)
-        # self.assertTrue(ret, 'Failed to get arequal')
-        # result_before_offline = arequals[0].splitlines()[-1].split(':')[-1]
-        # g.log.info('Getting arequal before getting bricks offline '
-        #            'is successful')
+        self.all_mounts_procs.append(proc)
 
-        # # Setting options
-        # g.log.info('Setting options...')
-        # options = {"self-heal-daemon": "off"}
-        # ret = set_volume_options(self.mnode, self.volname, options)
-        # self.assertTrue(ret, 'Failed to set options %s' % options)
-        # g.log.info("Option 'self-heal-daemon' is set to 'off' successfully")
+        # Validate IO
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mounts):
+            raise Exception("IO failed on some of the clients")
 
-        # # Select bricks to bring offline
-        # bricks_to_bring_offline_dict = (select_bricks_to_bring_offline(
-        #     self.mnode, self.volname))
-        # bricks_to_bring_offline = bricks_to_bring_offline_dict['volume_bricks']
+        # Get arequal before getting bricks offline
+        arequals = redant.collect_mounts_arequal(self.mounts)
+        result_before_offline = arequals[0][-1].split(':')[-1]
 
-        # # Bring brick offline
-        # g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        # ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-        #                 bricks_to_bring_offline)
+        # Setting options
+        options = {"self-heal-daemon": "off"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
 
-        # ret = are_bricks_offline(self.mnode, self.volname,
-        #                          bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Bricks %s are not offline'
-        #                 % bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s offline is successful',
-        #            bricks_to_bring_offline)
+        # Select bricks to bring offline
+        bricks_to_bring_offline = (redant.
+                                   select_volume_bricks_to_bring_offline(
+                                       self.vol_name, self.server_list[0]))
 
-        # # Get arequal after getting bricks offline
-        # g.log.info('Getting arequal after getting bricks offline...')
-        # ret, arequals = collect_mounts_arequal(self.mounts)
-        # self.assertTrue(ret, 'Failed to get arequal')
-        # result_after_offline = arequals[0].splitlines()[-1].split(':')[-1]
-        # g.log.info('Getting arequal after getting bricks offline '
-        #            'is successful')
+        # Bring brick offline
+        redant.bring_bricks_offline(self.vol_name,
+                                    bricks_to_bring_offline)
 
-        # # Checking arequals before bringing bricks offline
-        # # and after bringing bricks offline
-        # self.assertEqual(result_before_offline, result_after_offline,
-        #                  'Checksums before and '
-        #                  'after bringing bricks online are not equal')
-        # g.log.info('Checksums before and after bringing bricks online '
-        #            'are equal')
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception(f'Bricks {bricks_to_bring_offline}'
+                            ' are not offline')
 
-        # # Modify the data
-        # g.log.info("Modifying data for %s:%s", self.mounts[0].client_system,
-        #            self.mounts[0].mountpoint)
-        # cmd = ("/usr/bin/env python %s create_files -f 100"
-        #        " --fixed-file-size 10k %s"
-        #        % (self.script_upload_path,
-        #           self.mounts[0].mountpoint))
-        # ret, _, err = g.run(self.mounts[0].client_system, cmd,
-        #                     user=self.mounts[0].user)
-        # self.assertFalse(ret, 'Failed to midify the data for %s: %s'
-        #                  % (self.mounts[0].mountpoint, err))
-        # g.log.info('Modified IO for %s is successfully',
-        #            self.mounts[0].mountpoint)
+        # Get arequal after getting bricks offline
+        arequals = redant.collect_mounts_arequal(self.mounts)
+        result_after_offline = arequals[0][-1].split(':')[-1]
 
-        # # Bring brick online
-        # g.log.info('Bringing bricks %s online...', bricks_to_bring_offline)
-        # ret = bring_bricks_online(self.mnode, self.volname,
-        #                           bricks_to_bring_offline)
-        # self.assertTrue(ret, 'Failed to bring bricks %s online' %
-        #                 bricks_to_bring_offline)
-        # g.log.info('Bringing bricks %s online is successful',
-        #            bricks_to_bring_offline)
+        # Checking arequals before bringing bricks offline
+        # and after bringing bricks offline
+        if result_after_offline != result_before_offline:
+            raise Exception('Checksums before and after bringing'
+                            ' bricks online are not equal')
 
-        # # Setting options
-        # g.log.info('Setting options...')
-        # options = {"self-heal-daemon": "on"}
-        # ret = set_volume_options(self.mnode, self.volname, options)
-        # self.assertTrue(ret, 'Failed to set options %s' % options)
-        # g.log.info("Option 'self-heal-daemon' is set to 'on' successfully")
+        # Modify the data
+        self.all_mounts_procs = []
+        proc = redant.create_files('10k', self.mountpoint,
+                                   self.client_list[0], 100)
 
-        # # Wait for volume processes to be online
-        # g.log.info("Wait for volume processes to be online")
-        # ret = wait_for_volume_process_to_be_online(self.mnode, self.volname)
-        # self.assertTrue(ret, ("Failed to wait for volume %s processes to "
-        #                       "be online", self.volname))
-        # g.log.info("Successful in waiting for volume %s processes to be "
-        #            "online", self.volname)
+        self.all_mounts_procs.append(proc)
 
-        # # Verify volume's all process are online
-        # g.log.info("Verifying volume's all process are online")
-        # ret = verify_all_process_of_volume_are_online(self.mnode, self.volname)
-        # self.assertTrue(ret, ("Volume %s : All process are not online"
-        #                       % self.volname))
-        # g.log.info("Volume %s : All process are online", self.volname)
+        # Validate IO
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mounts):
+            raise Exception("IO failed on some of the clients")
 
-        # # Wait for self-heal-daemons to be online
-        # g.log.info("Waiting for self-heal-daemons to be online")
-        # ret = is_shd_daemonized(self.all_servers)
-        # self.assertTrue(ret, "Either No self heal daemon process found")
-        # g.log.info("All self-heal-daemons are online")
+        # Bring brick online
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_to_bring_offline)
+        if not redant.are_bricks_online(self.vol_name,
+                                        bricks_to_bring_offline,
+                                        self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline}"
+                            " are not online.")
 
-        # # Start healing
-        # ret = trigger_heal(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not started')
-        # g.log.info('Healing is started')
+        # Setting options
+        options = {"self-heal-daemon": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
 
-        # # Monitor heal completion
-        # ret = monitor_heal_completion(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal has not yet completed')
+        # Wait for volume processes to be online
+        if not redant.wait_for_volume_process_to_be_online(self.vol_name,
+                                                           self.server_list[0],
+                                                           self.server_list):
+            raise Exception(f"Failed to wait for volume {self.vol_name} "
+                            "processes to be online")
 
-        # # Check if heal is completed
-        # ret = is_heal_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Heal is not complete')
-        # g.log.info('Heal is completed successfully')
+        # Verify volume's all process are online
+        if not (redant.
+                verify_all_process_of_volume_are_online(self.vol_name,
+                                                        self.server_list[0])):
+            raise Exception(f"Volume {self.vol_name} : All process"
+                            " are not online")
 
-        # # Check for split-brain
-        # ret = is_volume_in_split_brain(self.mnode, self.volname)
-        # self.assertFalse(ret, 'Volume is in split-brain state')
-        # g.log.info('Volume is not in split-brain state')
+        # Wait for self-heal-daemons to be online
+        if not redant.is_shd_daemonized(self.server_list):
+            raise Exception("Either No self heal daemon process found")
 
-        # # Add bricks
-        # g.log.info("Start adding bricks to volume...")
-        # ret = expand_volume(self.mnode, self.volname, self.servers,
-        #                     self.all_servers_info)
-        # self.assertTrue(ret, ("Failed to expand the volume %s", self.volname))
-        # g.log.info("Expanding volume is successful on "
-        #            "volume %s", self.volname)
+        # Start healing
+        if not redant.trigger_heal(self.vol_name, self.server_list[0]):
+            raise Exception("Heal is not started")
 
-        # # Do rebalance
-        # ret, _, _ = rebalance_start(self.mnode, self.volname)
-        # self.assertEqual(ret, 0, 'Failed to start rebalance')
-        # g.log.info('Rebalance is started')
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet finished")
 
-        # ret = wait_for_rebalance_to_complete(self.mnode, self.volname)
-        # self.assertTrue(ret, 'Rebalance is not completed')
-        # g.log.info('Rebalance is completed successfully')
+        # is heal complete testing
+        if not redant.is_heal_complete(self.server_list[0],
+                                       self.vol_name):
+            raise Exception("Heal not yet finished")
 
-        # # Create 1k files
-        # all_mounts_procs = []
-        # g.log.info("Modifying data for %s:%s", self.mounts[0].client_system,
-        #            self.mounts[0].mountpoint)
-        # command = ("/usr/bin/env python %s create_files -f 1000"
-        #            " --base-file-name newfile %s"
-        #            % (self.script_upload_path, self.mounts[0].mountpoint))
+        # Check for split-brain
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume in split-brain")
 
-        # proc = g.run_async(self.mounts[0].client_system, command,
-        #                    user=self.mounts[0].user)
-        # all_mounts_procs.append(proc)
+        # Add bricks
+        if not (redant.
+                expand_volume(self.server_list[0], self.vol_name,
+                              self.server_list, self.brick_roots)):
+            raise Exception("Failed to expamd volume")
 
-        # # Kill all bricks in cycle
-        # bricks_list = get_all_bricks(self.mnode, self.volname)
-        # for brick in bricks_list:
-        #     # Bring brick offline
-        #     g.log.info('Bringing bricks %s offline', brick)
-        #     ret = bring_bricks_offline(self.volname, [brick])
-        #     self.assertTrue(ret, 'Failed to bring bricks %s offline' % brick)
+        # Do rebalance
+        redant.rebalance_start(self.vol_name, self.server_list[0])
 
-        #     ret = are_bricks_offline(self.mnode, self.volname, [brick])
-        #     self.assertTrue(ret, 'Bricks %s are not offline' % brick)
-        #     g.log.info('Bringing bricks %s offline is successful', brick)
+        if not redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                     self.server_list[0]):
+            raise Exception("Rebalance is not completed")
 
-        #     # Introducing 30 second sleep when brick is down
-        #     g.log.info("Waiting for 30 seconds, with ongoing IO while "
-        #                "brick %s is offline", brick)
-        #     sleep(30)
+        # Create 1k files
+        self.all_mounts_procs = []
 
-        #     # Bring brick online
-        #     g.log.info('Bringing bricks %s online...', brick)
-        #     ret = bring_bricks_online(self.mnode, self.volname,
-        #                               [brick])
-        #     self.assertTrue(ret, 'Failed to bring bricks %s online' %
-        #                     bricks_to_bring_offline)
-        #     g.log.info('Bringing bricks %s online is successful',
-        #                brick)
+        proc = redant.create_files('1k', self.mountpoint,
+                                   self.client_list[0], 1000)
 
-        #     # Wait for volume processes to be online
-        #     g.log.info("Wait for volume processes to be online")
-        #     ret = wait_for_volume_process_to_be_online(self.mnode,
-        #                                                self.volname)
-        #     self.assertTrue(ret, ("Failed to wait for volume %s processes to "
-        #                           "be online", self.volname))
-        #     g.log.info("Successful in waiting for volume %s processes to be "
-        #                "online", self.volname)
+        self.all_mounts_procs.append(proc)
 
-        #     # Verify volume's all process are online
-        #     g.log.info("Verifying volume's all process are online")
-        #     ret = verify_all_process_of_volume_are_online(self.mnode,
-        #                                                   self.volname)
-        #     self.assertTrue(ret, ("Volume %s : All process are not online"
-        #                           % self.volname))
-        #     g.log.info("Volume %s : All process are online", self.volname)
+        # Kill all bricks in cycle
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        for brick in bricks_list:
 
-        #     # Wait for self-heal-daemons to be online
-        #     g.log.info("Waiting for self-heal-daemons to be online")
-        #     ret = is_shd_daemonized(self.all_servers)
-        #     self.assertTrue(ret, "Either No self heal daemon process found or"
-        #                          "more than one self heal daemon process"
-        #                          "found")
-        #     g.log.info("All self-heal-daemons are online")
+            # Bring brick offline
+            redant.bring_bricks_offline(self.vol_name, [brick])
 
-        # # Validate IO
-        # self.assertTrue(
-        #     validate_io_procs(all_mounts_procs, self.mounts),
-        #     "IO failed on some of the clients")
+            if not redant.are_bricks_offline(self.vol_name,
+                                             [brick],
+                                             self.server_list[0]):
+                raise Exception(f"{brick} is still online")
+
+            # Introducing 10 second sleep when brick is down
+            sleep(10)
+
+            # Bring brick online
+            redant.bring_bricks_online(self.vol_name, self.server_list,
+                                       [brick])
+            if not redant.are_bricks_online(self.vol_name,
+                                            [brick],
+                                            self.server_list[0]):
+                raise Exception(f"Bricks {[brick]}"
+                                " are not online.")
+
+            # Wait for volume processes to be online
+            if not (redant.
+                    wait_for_volume_process_to_be_online(self.vol_name,
+                                                         self.server_list[0],
+                                                         self.server_list)):
+                raise Exception(f"Failed to wait for volume {self.vol_name} "
+                                "processes to be online")
+
+            # Verify volume's all process are online
+            if not (redant.
+                    verify_all_process_of_volume_are_online(self.vol_name,
+                                                            self.server_list[0])):
+                raise Exception(f"Volume {self.vol_name} : All process"
+                                " are not online")
+
+            # Wait for self-heal-daemons to be online
+            if not redant.is_shd_daemonized(self.server_list):
+                raise Exception("Either No self heal daemon process found")
+
+
+        # Validate IO
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mounts):
+            raise Exception("IO failed on some of the clients")
+
