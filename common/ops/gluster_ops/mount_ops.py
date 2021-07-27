@@ -245,7 +245,7 @@ class MountOps(AbstractOps):
 
         Returns:
             bool: True if all the said snapnames in the snaps list are present
-            under the .snaps dir, else False.        
+            under the .snaps dir, else False.
         """
         if not isinstance(snaps, list):
             snaps = [snaps]
