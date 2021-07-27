@@ -83,10 +83,14 @@ class TestGlusterArbiterVolumeTypeChangeClass(DParentTest):
                 raise Exception("IO validation failed")
 
             # Adding bricks to make an Arbiter Volume
+            force = False
+            if len(self.server_list) < 6:
+                force = True
+
             kwargs = {'replica_count': 1, 'arbiter_count': 1}
             ret = redant.expand_volume(self.server_list[0], self.volname,
                                        self.server_list, self.brick_roots,
-                                       **kwargs)
+                                       force, **kwargs)
             if not ret:
                 raise Exception(f"Failed to expand the volume {self.volname}")
 
