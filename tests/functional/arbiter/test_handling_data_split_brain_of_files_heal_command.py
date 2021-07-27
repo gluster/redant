@@ -196,14 +196,9 @@ class TestCase(DParentTest):
         # for mount_obj in self.mounts:
         #     command = ("python3 /tmp/file_dir_ops.py "
         #                f"read {mount_obj['mountpath']}")
-<<<<<<< Updated upstream
-        #     redant.execute_abstract_op_node(command,
-        #                                     mount_obj['client'])
-=======
         #     ret = redant.execute_abstract_op_node(command,
         #                                           mount_obj['client'])
         #     print(ret,"\n")
->>>>>>> Stashed changes
         options = {"self-heal-daemon": "on"}
         redant.set_volume_options(self.vol_name, options,
                                   self.server_list[0])
