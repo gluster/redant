@@ -322,29 +322,31 @@ class BrickOps(AbstractOps):
         brick_cmd = ""
         server_iter = 0
         brick_iter = 0
+        used_servers = []
         unused_servers = []
         last_node = ""
 
         iter_add = 0
         if add_flag:
             brick = ""
-            unused_servers = server_list[:]
             brick_list = self.get_all_bricks(volname, server_list[0])
             for brick in brick_list:
                 brick_num = int(brick.split('-')[-1])
                 if iter_add < brick_num:
                     iter_add = brick_num
 
-                # Create unused servers list
-                for server in unused_servers:
-                    if server in brick:
-                        unused_servers.remove(server)
+                # Create used servers list
+                used_servers.append(brick.split(':')[0])
 
             # Save the last used node, so that new brick addition starts from
             # a different node
             last_node = brick.split(':')[0]
-
             iter_add = iter_add + 1
+
+        if used_servers:
+            for server in server_list:
+                if server not in used_servers:
+                    unused_servers.append(server)
 
         # Don't begin brick creation from the same node as the last node
         # If we are adding new bricks
