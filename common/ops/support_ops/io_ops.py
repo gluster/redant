@@ -485,6 +485,7 @@ class IoOps(AbstractOps):
             # Running arequal-checksum on the brick.
             node, brick_path = brick.split(':')
 
+            # this finds the anonymous inode directory
             cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
             ret = self.execute_abstract_op_node(cmd, node)
             anon_dir = ret["msg"][0].rstrip("/\n")
