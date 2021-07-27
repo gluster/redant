@@ -54,6 +54,7 @@
             self.volume_unmount(volname, mount, mntd['client'], False)
 
 3) **is_mounted**<br>
+        
         This function checks if the volume is already mounted or not
         Args:
             1. volname (str): Name of volume to be checked
@@ -102,6 +103,19 @@
             else False.
 
         Example:
-
             ret = redant.wait_for_mountpoint_to_connect(self.mountpoint,
                                                         self.client_list[0])
+
+6) **view_snap_from_mount**<br>
+
+        This method verifies if the stated snaps are present under the .snaps directory.
+
+        Args:
+            mount_obj (dict): The mount_obj consists of client and mountpath combination of dirs in a list.
+            snaps (list/str): List of snap names or a snap name as str.
+
+        Return:
+            bool: True if all the said snapnames in the snaps list are present under the .snaps dir, else False.
+        
+        Example:
+            ret = redant.view_snap_from_mount(self.mountobj, self.snap_list)
