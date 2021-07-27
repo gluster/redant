@@ -81,7 +81,8 @@ class TestCase(DParentTest):
                    "entry-self-heal": "off",
                    "data-self-heal": "off"}
         redant.set_volume_options(self.vol_name, options,
-                                  self.server_list[0])
+                                  self.server_list[0],
+                                  multi_option=True)
 
         # Creating files on client side
         proc = redant.create_files('1k', self.mountpoint,
@@ -109,8 +110,10 @@ class TestCase(DParentTest):
                                        self.vol_name, self.server_list[0]))
 
         # Bring brick offline
-        redant.bring_bricks_offline(self.vol_name,
-                                    bricks_to_bring_offline)
+        if not redant.bring_bricks_offline(self.vol_name,
+                                           bricks_to_bring_offline):
+            raise Exception("Failed to bring "
+                            f"{bricks_to_bring_offline} offline")
 
         if not redant.are_bricks_offline(self.vol_name,
                                          bricks_to_bring_offline,
@@ -218,7 +221,9 @@ class TestCase(DParentTest):
         for brick in bricks_list:
 
             # Bring brick offline
-            redant.bring_bricks_offline(self.vol_name, [brick])
+            if not (redant.
+                    bring_bricks_offline(self.vol_name, [brick])):
+                raise Exception(f"Failed to bring {brick} offline")
 
             if not redant.are_bricks_offline(self.vol_name,
                                              [brick],
