@@ -374,6 +374,11 @@ def handle_results(resultQueue, totalTime: float, filePath: str = None):
     # Obtain the statistics for further use.
     statDict = _obtain_stat(resultDict)
 
+    # Check for exclude test run.
+    if statDict == {'Total': {}}:
+        print("Requested test is in exclude list.")
+        return 
+
     # Convert the pass values to percentage.
     statDict = _transform_to_percent(statDict)
 
