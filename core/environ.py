@@ -111,7 +111,7 @@ class environ:
         arequal_dpath = '/tmp/arequal_install.sh'
         arequal_spath = f'{os.getcwd()}/tools/arequal_install.sh'
         arequal_machines = self._list_of_machines_without_arequal(
-            self.client_list[:] + self.server_list[:]
+            self.client_list + self.server_list
         )
         if len(arequal_machines) > 0:
             self._transfer_files_to_machines(
