@@ -38,9 +38,6 @@ class TestCase(NdParentTest):
         7) calculate checksum again
         8) checksum should be same without remounting the volume.
         """
-        options = {"features.trash": "on"}
-        redant.set_volume_options(self.vol_name, options,
-                                  self.server_list[0])
         # run IOs
         redant.logger.info("Starting IO on all mounts...")
         self.all_mounts_procs = []

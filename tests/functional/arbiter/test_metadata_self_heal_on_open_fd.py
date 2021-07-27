@@ -17,10 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
     Pro-active metadata self heal on open fd
-    ,dist-rep,arb,dist-arb
 """
 
-# disruptive;rep
+# disruptive;rep,dist-rep,arb,dist-arb
 
 import traceback
 import os
@@ -90,9 +89,6 @@ class TestCase(DParentTest):
         self.nodes.append(self.client_list[0])
         self.mounts = [{'client': self.client_list[0],
                         'mountpath': self.mountpoint}]
-        # options = {"features.trash": "on"}
-        # redant.set_volume_options(self.vol_name, options,
-        #                           self.server_list[0])
 
         # Create user for changing ownership
         for node in self.nodes:
@@ -196,7 +192,6 @@ class TestCase(DParentTest):
 
         # Get arequal for mount
         arequals = redant.collect_mounts_arequal(self.mounts)
-        print("Mounts arequal\n", arequals, "\n")
         mount_point_total = arequals[0][-1].split(':')[-1].strip()
 
         # Collecting data bricks
@@ -219,15 +214,12 @@ class TestCase(DParentTest):
             subvol = [i for i in subvol if i in bricks_list]
             if subvol:
                 arequals = redant.collect_bricks_arequal(subvol[0:stop])
-                print("\n\n", arequals)
-                print("\n\n", mount_point_total)
                 for arequal in arequals:
                     curr_arequal = arequal[-1].split(':')[-1]
                     if curr_arequal != arequals[0][-1].split(':')[-1]:
                         raise Exception("Mismatch of arequal checksum")
                 brick_total = arequals[-1][-1].split(':')[-1].strip()
-                print("\n\n", brick_total)
 
-                # if brick_total != mount_point_total:
-                #     raise Exception("Arequals for mountpoint and "
-                #                     f"{subvol[0:stop]} are not equal.")
+                if brick_total != mount_point_total:
+                    raise Exception("Arequals for mountpoint and "
+                                    f"{subvol[0:stop]} are not equal.")

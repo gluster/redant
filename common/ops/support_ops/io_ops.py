@@ -439,6 +439,7 @@ class IoOps(AbstractOps):
             total_path = os.path.join(mount['mountpath'], path)
             self.logger.info(
                 f"arequal-checksum of mount {mount['client']}:{total_path}")
+
             cmd = f"arequal-checksum -p {total_path} -i .trashcan"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
@@ -483,8 +484,13 @@ class IoOps(AbstractOps):
 
             # Running arequal-checksum on the brick.
             node, brick_path = brick.split(':')
+
+            cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
+            ret = self.execute_abstract_op_node(cmd, node)
+            anon_dir = ret["msg"][0].rstrip("/\n")
+
             cmd = (f'arequal-checksum -p {brick_path} -i .glusterfs -i '
-                   '.landfill -i .trashcan')
+                   f'.landfill -i .trashcan -i {anon_dir}')
             ret = self.execute_abstract_op_node(cmd, node, False)
 
             # Generating list accordingly

@@ -59,9 +59,6 @@ class TestSelfHeal(DParentTest):
         redant.set_volume_options(self.vol_name, options, self.server_list[0],
                                   multi_option=True)
 
-        options = {"features.trash": "on"}
-        redant.set_volume_options(self.vol_name, options,
-                                  self.server_list[0])
         # Creating files on client side
         mount_dict = []
         cmd = ("python3 /tmp/file_dir_ops.py create_files -f 100 "
