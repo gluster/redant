@@ -40,6 +40,7 @@ class TestArbiterSelfHeal(DParentTest):
         # Creating files on client side
         proc = redant.create_deep_dirs_with_files(self.mountpoint, 1, 2, 2,
                                                   2, 20, self.client_list[0])
+
         mount_dict = {
             "client": self.client_list[0],
             "mountpath": self.mountpoint

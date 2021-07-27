@@ -38,7 +38,6 @@ class TestCase(NdParentTest):
         7) calculate checksum again
         8) checksum should be same without remounting the volume.
         """
-
         # run IOs
         redant.logger.info("Starting IO on all mounts...")
         self.all_mounts_procs = []

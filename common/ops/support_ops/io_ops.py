@@ -439,7 +439,8 @@ class IoOps(AbstractOps):
             total_path = os.path.join(mount['mountpath'], path)
             self.logger.info(
                 f"arequal-checksum of mount {mount['client']}:{total_path}")
-            cmd = f"arequal-checksum {total_path}"
+
+            cmd = f"arequal-checksum -p {total_path} -i .trashcan"
             async_obj = self.execute_command_async(cmd, mount['client'])
             all_mounts_async_objs.append(async_obj)
         all_mounts_arequal_checksums = []
@@ -459,6 +460,54 @@ class IoOps(AbstractOps):
         if not _rc:
             raise Exception(error_msg)
         return all_mounts_arequal_checksums
+
+    def collect_bricks_arequal(self, bricks_list: list) -> list:
+        """
+        Collects arequal for all bricks in list
+
+        Args:
+            bricks_list (list): List of bricks.
+            Example:
+                bricks_list = ['brick1','brick2']
+
+        Returns:
+            list: arequal-checksum values for the bricks
+                  on success
+            None: on failure
+        """
+        # Converting a bricks_list to list if not.
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
+        arequal_list = []
+        for brick in bricks_list:
+
+            # Running arequal-checksum on the brick.
+            node, brick_path = brick.split(':')
+
+            # this finds the anonymous inode directories
+            # and creates the command to ignore those
+            cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
+            ret = self.execute_abstract_op_node(cmd, node)
+            anon_dir_cmd = ""
+            for anon_dir in ret['msg']:
+                anon_dir = anon_dir.rstrip("/\n")
+                anon_dir_cmd = f"{anon_dir_cmd} -i {anon_dir}"
+
+            cmd = (f'arequal-checksum -p {brick_path} -i .glusterfs -i '
+                   f'.landfill -i .trashcan {anon_dir_cmd}')
+            ret = self.execute_abstract_op_node(cmd, node, False)
+
+            # Generating list accordingly
+            if ret['error_code'] != 0:
+                self.logger.error(f'Failed to get arequal on brick {brick}')
+                arequal_list.append(None)
+            else:
+                self.logger.info('Successfully calculated arequal'
+                                 f' for brick {brick}')
+                arequal_list.append(ret['msg'])
+
+        return arequal_list
 
     def log_mounts_info(self, mounts: list):
         """
@@ -1114,8 +1163,9 @@ class IoOps(AbstractOps):
         pathinfo['raw'] = self.get_fattr(fqpath,
                                          'trusted.glusterfs.pathinfo',
                                          node, encode="text")
+
         pathinfo['brickdir_paths'] = re.findall(r".*?POSIX.*?:(\S+)\>",
-                                                pathinfo['raw'])
+                                                ''.join(pathinfo['raw']))
 
         return pathinfo
 
