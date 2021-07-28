@@ -88,7 +88,7 @@ def main():
     # Building the test list and obtaining the TC details.
     excluded_result = param_obj.get_excluded_tests()
     if not excluded_result[1]:
-        spinner.fail("error in exclude list. Invalid path present")
+        spinner.fail("Error in exclude list. Invalid path present")
         sys.exit(1)
 
     excluded_tests = excluded_result[0]
