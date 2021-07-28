@@ -290,13 +290,15 @@ class MachineOps(AbstractOps):
 
         # Replace localhost with its hostname
         if 'localhost' in node_list:
+            new_node_list.append(node)
             node_list.remove('localhost')
-            node_list.append(node)
 
         for value in node_list:
             if not value.replace('.', '').isnumeric():
                 ip_val = socket.gethostbyname(value)
                 new_node_list.append(ip_val)
+            else:
+                new_node_list.append(value)
 
         return new_node_list
 
@@ -349,7 +351,7 @@ class MachineOps(AbstractOps):
         for node in lv_dict:
             snap_lv_dict[node] = []
             for lv_path in lv_dict[node]:
-                split_lv_path = lv_path.split('_')
+                split_lv_path = lv_path.split('/')[-1].split('_')
                 if len(split_lv_path) == 2 and len(split_lv_path[0]) == 32 and\
                         split_lv_path[1].isalnum():
                     snap_lv_dict[node].append(lv_path)
