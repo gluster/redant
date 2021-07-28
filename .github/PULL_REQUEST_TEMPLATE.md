@@ -1,6 +1,6 @@
 ### All Submissions:
 
-Desciption:
+Description:
 
 (If it closes the issue)
 Fixes: #
