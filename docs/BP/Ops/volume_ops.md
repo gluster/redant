@@ -571,7 +571,7 @@
 
         Example:
 			```python
-            self.redant.cleanup_volume(self.volume_name1, self.server_list[0])
+            self.redant.cleanup_volume(self.server_list, self.volname1)
 			```
 
  23) **is_distribute_volume**<br>

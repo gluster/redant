@@ -108,7 +108,7 @@ class MachineOps(AbstractOps):
         return False
 
     def hard_terminate(self, server_list: list, client_list: list,
-                       brick_root: dict, pre_test_lv_dict: dict = None):
+                       brick_root: dict):
         """
         hard terminate is inconsiderate. It will clear out the env
         completely and is to be used with caution. Don't use it inside the
@@ -117,8 +117,6 @@ class MachineOps(AbstractOps):
             server_list (list): List of gluster server machines
             client_list (list): List of gluster client machines
             brick_root (dict): Dictionary of brick roots and nodes.
-            pre_test_lv_dict (dict): Node -> lv path list mapping. An
-            optional parameter with default value None.
         """
         # Wait for nodes to power up.
         for server in server_list:
@@ -166,14 +164,9 @@ class MachineOps(AbstractOps):
         self.umount_snap_brick_from_servers(server_list)
 
         # Check for stray LVs and delete them.
-        if pre_test_lv_dict is not None:
-            post_test_lv_dict = self.get_lv_paths_from_servers(server_list)
-            diff_dict = {}
-            for node in server_list:
-                diff_list = list(set(post_test_lv_dict[node])
-                                 ^ set(pre_test_lv_dict[node]))
-                diff_dict[node] = diff_list
-            self.remove_lv_paths_from_servers(diff_dict)
+        lv_dict = self.get_lv_paths_from_servers(server_list)
+
+        self.remove_snap_lv(lv_dict)
 
         # Flush the IP tables
         cmd = "iptables --flush"
@@ -341,3 +334,26 @@ class MachineOps(AbstractOps):
             for lv_path in lv_dict[node]:
                 cmd = (f"lvremove {lv_path} --force")
                 self.execute_abstract_op_node(cmd, node)
+
+    def remove_snap_lv(self, lv_dict: dict):
+        """
+        Method to find out the gluster snap specific lv and then remove it.
+
+        Args:
+            lv_dict (dict): It is a dictionary wherein the key is the node
+            and the value being the list of LV paths corresponding to that
+            node.
+        """
+        snap_lv_dict = {}
+
+        for node in lv_dict:
+            snap_lv_dict[node] = []
+            for lv_path in lv_dict[node]:
+                split_lv_path = lv_path.split('_')
+                if len(split_lv_path) == 2 and len(split_lv_path[0]) == 32 and\
+                        split_lv_path[1].isalnum():
+                    snap_lv_dict[node].append(lv_path)
+            if snap_lv_dict[node] == []:
+                del snap_lv_dict[node]
+
+        self.remove_lv_paths_from_servers(snap_lv_dict)

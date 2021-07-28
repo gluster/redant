@@ -37,7 +37,7 @@ class TestChangeReservcelimit(NdParentTest):
                                                       self.mounts)
             if not ret:
                 raise Exception("IO failed on some of the clients")
-            self.redant.cleanup_volumes(self.server_list[0], self.volume_name1)
+            self.redant.cleanup_volumes(self.server_list, self.volume_name1)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

@@ -35,8 +35,6 @@ class DParentTest(metaclass=abc.ABCMeta):
         self.server_list = param_obj.get_server_ip_list()
         self.client_list = param_obj.get_client_ip_list()
         self.brick_roots = param_obj.get_brick_roots()
-        self.pre_test_lv_paths = self.redant.get_lv_paths_from_servers(
-            self.server_list)
 
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, env_obj, log_path: str,
@@ -124,13 +122,12 @@ class DParentTest(metaclass=abc.ABCMeta):
             for (opt, _) in self.redant.es.get_vol_options_all().items():
                 self.redant.reset_volume_option('all', opt,
                                                 self.server_list[0])
-            self.redant.cleanup_volumes(self.server_list[0])
+            self.redant.cleanup_volumes(self.server_list)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
             self.redant.hard_terminate(self.server_list, self.client_list,
-                                       self.brick_roots,
-                                       self.pre_test_lv_paths)
+                                       self.brick_roots)
         finally:
             self.redant.deconstruct_connection()
