@@ -193,17 +193,17 @@ class TestCase(DParentTest):
                                 self.mountpoint, client)
 
         # Start heal from mount point
-        # for mount_obj in self.mounts:
-        #     command = ("python3 /tmp/file_dir_ops.py "
-        #                f"read {mount_obj['mountpath']}")
-        #     ret = redant.execute_abstract_op_node(command,
-        #                                           mount_obj['client'])
-        #     print(ret,"\n")
-        options = {"self-heal-daemon": "on"}
-        redant.set_volume_options(self.vol_name, options,
-                                  self.server_list[0])
-        if not redant.trigger_heal(self.vol_name, self.server_list[0]):
-            raise Exception("Failed to trigger heal.")
+        for mount_obj in self.mounts:
+            command = ("python3 /tmp/file_dir_ops.py "
+                       f"read {mount_obj['mountpath']}")
+            ret = redant.execute_abstract_op_node(command,
+                                                  mount_obj['client'])
+            print(ret,"\n")
+        # options = {"self-heal-daemon": "on"}
+        # redant.set_volume_options(self.vol_name, options,
+        #                           self.server_list[0])
+        # if not redant.trigger_heal(self.vol_name, self.server_list[0]):
+        #     raise Exception("Failed to trigger heal.")
 
         # Monitor heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
