@@ -389,7 +389,7 @@ class VolumeOps(AbstractOps):
         if ret:
             # It seems like something has gone awry, so do a volume
             # cleanup followed by setup volume.
-            self.cleanup_volumes(server_list[0])
+            self.cleanup_volumes(server_list, volname)
             self.setup_volume(volname, server_list[0], vol_param, server_list,
                               brick_root, force=True)
 
@@ -401,7 +401,7 @@ class VolumeOps(AbstractOps):
                     self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
                     self.volume_mount(server_list[0], volname, mountdir, node)
 
-    def cleanup_volumes(self, node: str, vol_name: list = None):
+    def cleanup_volumes(self, nodes: list, vol_name: list = None):
         """
         Cleanup volume will delete the snaps and volumes.
 
@@ -457,12 +457,19 @@ class VolumeOps(AbstractOps):
         self.unmount_all_snap()
 
         # Clearing the snaps before moving on to the volume stop and delete.
-        self.snap_delete_all(node)
+        self.snap_delete_all(nodes[0])
+
+        # A corner case when snap bricks have not unmounted ( stray )
+        self.umount_snap_brick_from_servers(nodes)
+
+        # Get lv paths and delete the stray lv paths related to snap.
+        lv_dict = self.get_lv_paths_from_servers(nodes)
+        self.remove_snap_lv(lv_dict)
 
         # Stopping the volumes and deleting them.
         for volname in volnames:
             vol_nodes = self.es.get_volume_nodes(volname)
-            brick_list = self.get_all_bricks(volname, node)
+            brick_list = self.get_all_bricks(volname, nodes[0])
             self.volume_stop(volname, vol_nodes[0], force=True)
             self.volume_delete(volname, vol_nodes[0])
             self.delete_bricks(brick_list)

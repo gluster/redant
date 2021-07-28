@@ -35,7 +35,7 @@ class TestCase(DParentTest):
         terminate function in the DParentTest is called
         """
         try:
-            self.redant.cleanup_volumes(self.server_list[0], self.volume_name1)
+            self.redant.cleanup_volumes(self.server_list, self.volume_name1)
             ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
                                                       self.mnt_list)
             if not ret:

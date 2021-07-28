@@ -30,4 +30,4 @@ class VolDestroy(LazyParentTest):
         of said type and its mountpoint.
         """
         volume_nodes = redant.es.get_volume_nodes(self.vol_name)
-        redant.cleanup_volumes(volume_nodes[0], self.vol_name)
+        redant.cleanup_volumes(volume_nodes, self.vol_name)
