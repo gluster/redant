@@ -18,19 +18,23 @@ Description:
     Test cases in this module tests whether directory with null gfid
     is getting the gfids assigned on both the subvols of a dist-rep
     volume when lookup comes on that directory from the mount point.
+
+    ,dist-rep,dist
 """
 
-# nonDisruptive;rep,dist-rep,dist
+# disruptive;rep
 
 from time import sleep
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
 
     def verify_gfid_and_retun_gfid(self, dirname):
         dir_gfids = dict()
-        for brick in self.bricks_list:
+        bricks_list = self.redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
+        for brick in bricks_list:
             brick_node, brick_path = brick.split(":")
 
             ret = self.redant.get_fattr(f'{brick_path}/{dirname}',
@@ -59,26 +63,38 @@ class TestCase(NdParentTest):
         """
 
         # Create a directory on the mount
-        redant.create_dir(self.mountpoint, "dir1", self.client_list[0])
+        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        cmd = ("python3 /tmp/file_dir_ops.py create_deep_dir -d 0 -l 0 "
+               f"{self.mountpoint}/dir1")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Verify gfids are same on all the bricks and get dir1 gfid
         self.bricks_list = redant.get_all_bricks(self.vol_name,
-                                                 self.server_list[0])
+                                                 self.server_list[0])[1:]
         dir_gfid = self.verify_gfid_and_retun_gfid("dir1")
 
         # Delete gfid attr from all but one backend bricks
-        for brick in self.bricks_list[1:]:
+        for brick in self.bricks_list:
             brick_node, brick_path = brick.split(":")
             redant.delete_fattr(f'{brick_path}/dir1',
                                 'trusted.gfid',
                                 brick_node)
 
         # Trigger heal from mount point
-        redant.trigger_heal_full(self.vol_name, self.server_list[0])
-        if not redant.is_heal_complete(self.server_list[0], self.vol_name):
+        for mount_obj in self.mnt_list:
+            command = (f'cd {mount_obj["mountpath"]}; ls -l')
+            redant.execute_abstract_op_node(command,
+                                            mount_obj['client'])
+            sleep(10)
+        # redant.trigger_heal_full(self.vol_name, self.server_list[0])
+        # if not redant.is_heal_complete(self.server_list[0], self.vol_name):
+        #     raise Exception("Heal not yet finished")
+
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
             raise Exception("Heal not yet finished")
         sleep(10)
-        self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
         redant.get_mounts_stat(self.mnt_list)
 
         # Verify that all gfids for dir1 are same and get the gfid
