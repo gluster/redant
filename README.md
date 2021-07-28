@@ -80,16 +80,16 @@ how to get things running and that's it, take the blue pill.
 
 ### STEP-BY-STEP procedure to run:
 1. git clone `[your fork for this repo]`
-2. Create a virtual environment : `virtualenv <virtual_env_name>`
+2. Create a virtual environment : `venv <virtual_env_name>`
 3. Activate the virtual-env : `source <virtual_env_name>/bin/activate`
 4. cd `[the-fork]`
 5. Run `pip3 install -r requirements.txt`
 6. To run the sample TC, just run the below cmd after populating the
 config file with relevant values. The command has to be run from the main redant
 reository. The tests path should be given with respect to the redant directory.
-`python3 ./core/redant_main.py -c ./core/parsing/config.yml -t tests/example/`
-7. Log files can be found at /tmp/redant.log [ default path ].
+`python3 ./core/redant_main.py -c ./config/config.yml -t tests/example/`
 For more options, run `python3 ./core/redant_main.py --help`
+7. Log files can be found at /tmp/redant/ [ default path ].
 
 The logging is specific to a TC run. So when a user gives a specific base dir
 for logging when invoking `redant_main.py`, that directory will inturn
@@ -112,11 +112,11 @@ In addition to running TCs from within a suite, either performance or
 functional or even under a more granular level of component, one can select to
 run a specific TC also.
 For example,
-`python3 core/redant_main.py -c core/parsing/config.yml -t tests/example/sample_component`
+`python3 core/redant_main.py -c config/config.yml -t tests/example/sample_component`
 
 One can also run the scripts given under the tools dir which will reduce the
 lengthy commands to be typed out everytime. Check out the README.md at the link
-[Tools-README](./docs/BP/Tools/README.md)
+[Tools-README](./tools/README.md)
 
 ## Those looking to get into the action of migrating test cases
 
