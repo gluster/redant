@@ -29,9 +29,7 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def terminate(self):
-        """
-        tearDown for every test
-        """
+
         try:
             ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
                                                       self.mounts)
