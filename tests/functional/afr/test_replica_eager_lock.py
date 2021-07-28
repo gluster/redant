@@ -102,7 +102,7 @@ class TestCase(DParentTest):
             self.counter = self.counter + 10
 
         # this command should not get hang while io is in progress
-        for i in range(20):
+        for _ in range(20):
             ret = redant.profile_info(self.vol_name,
                                       random.choice(self.server_list))
             if ret is None:
