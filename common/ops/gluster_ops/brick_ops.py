@@ -322,15 +322,36 @@ class BrickOps(AbstractOps):
         brick_cmd = ""
         server_iter = 0
         brick_iter = 0
+        used_servers = []
+        unused_servers = []
+        last_node = ""
 
         iter_add = 0
         if add_flag:
+            brick = ""
             brick_list = self.get_all_bricks(volname, server_list[0])
             for brick in brick_list:
                 brick_num = int(brick.split('-')[-1])
                 if iter_add < brick_num:
                     iter_add = brick_num
+
+                # Create used servers list
+                used_servers.append(brick.split(':')[0])
+
+            # Save the last used node, so that new brick addition starts from
+            # a different node
+            last_node = brick.split(':')[0]
             iter_add = iter_add + 1
+
+        if used_servers:
+            for server in server_list:
+                if server not in used_servers:
+                    unused_servers.append(server)
+
+        # Don't begin brick creation from the same node as the last node
+        # If we are adding new bricks
+        if last_node == server_list[server_iter]:
+            server_iter += 1
 
         for iteration in range(mul_fac):
             # If no more servers left in brick_root dict, start from beginning
@@ -340,7 +361,13 @@ class BrickOps(AbstractOps):
                 server_iter = 0
                 brick_iter += 1
 
-            server_val = server_list[server_iter]
+            if len(unused_servers) > 0:
+                server_val = unused_servers[iteration]
+                unused_servers.remove(server_val)
+            else:
+                server_val = server_list[server_iter]
+                server_iter += 1
+
             if server_val not in brick_dict.keys():
                 brick_dict[server_val] = []
 
@@ -353,7 +380,6 @@ class BrickOps(AbstractOps):
 
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
-            server_iter += 1
 
         brick_cmd = brick_cmd.lstrip(" ")
 

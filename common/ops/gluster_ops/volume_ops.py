@@ -574,7 +574,7 @@ class VolumeOps(AbstractOps):
 
         Returns:
             bool: True if removing bricks from the volume is successful.
-                False otherwise.
+                  False otherwise.
 
         """
         # pylint: disable=too-many-return-statements
