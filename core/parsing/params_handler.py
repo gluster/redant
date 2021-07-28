@@ -3,6 +3,7 @@ This module contains one class - ParamsHandler,
 which contains APIs for configuration parameter
 parsing.
 """
+import os
 from parsing.test_parser import Parser
 
 
@@ -159,10 +160,17 @@ class ParamsHandler:
             brick_roots[server] = self.server_config[server]['brick_root']
         return brick_roots
 
-    def get_excluded_tests(self):
+    def get_excluded_tests(self) -> tuple:
         """
         Gets a list of exluded tests from the config file.
         Returns:
-            list : list of exluded tests
+            tuple: With first value being the list of paths and second
+            value being boolean which indicates whether the exclude list
+            is valid or not.
         """
-        return self.config_hashmap.get("excluded_tests", [])
+        ret = self.config_hashmap.get("excluded_tests", [])
+        for paths in ret:
+            if not os.path.isfile(paths):
+                return ([], False)
+
+        return (ret, True)

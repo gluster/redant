@@ -86,7 +86,12 @@ def main():
 
     spinner.start("Building test list")
     # Building the test list and obtaining the TC details.
-    excluded_tests = param_obj.get_excluded_tests()
+    excluded_result = param_obj.get_excluded_tests()
+    if not excluded_result[1]:
+        spinner.fail("error in exclude list. Invalid path present")
+        sys.exit(1)
+
+    excluded_tests = excluded_result[0]
     spec_test = (args.test_dir.endswith(".py")
                  and args.test_dir.split("/")[-1].startswith("test"))
     try:
