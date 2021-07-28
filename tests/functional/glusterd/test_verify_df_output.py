@@ -34,20 +34,20 @@ class TestCase(DParentTest):
                        get_mnt_pts_dict_in_list(self.vol_name))
         self.all_mounts_procs, counter = [], 1
 
-        # for mount in self.mounts:
-        #     self.redant.logger.info(f"Starting IO on {mount['client']}:"
-        #                             f"{mount['mountpath']}")
-        #     proc = self.redant.create_deep_dirs_with_files(mount['mountpath'],
-        #                                                    counter, 2, 3, 3, 2,
-        #                                                    mount['client'])
-        #     self.all_mounts_procs.append(proc)
-        #     counter = counter + 10
+        for mount in self.mounts:
+            self.redant.logger.info(f"Starting IO on {mount['client']}:"
+                                    f"{mount['mountpath']}")
+            proc = self.redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                           counter, 2, 3, 3, 2,
+                                                           mount['client'])
+            self.all_mounts_procs.append(proc)
+            counter = counter + 10
 
-        # # Validating IO's on mount point and waiting to complete
-        # ret = self.redant.validate_io_procs(self.all_mounts_procs,
-        #                                     self.mounts)
-        # if not ret:
-        #     raise Exception("IO validation failed")
+        # Validating IO's on mount point and waiting to complete
+        ret = self.redant.validate_io_procs(self.all_mounts_procs,
+                                            self.mounts)
+        if not ret:
+            raise Exception("IO validation failed")
 
     def _replace_bricks_and_wait_for_heal_completion(self):
         """ Replaces all the bricks and waits for the heal to complete"""
