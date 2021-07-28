@@ -143,9 +143,11 @@ class MachineOps(AbstractOps):
         for node in client_list:
             self.execute_abstract_op_node(cmd, node, False)
 
-        # Clear out the vol and peer file on the servers.
+        # Clear out the content in vol, peer, snaps and glusterfind keys
+        # directory on the servers.
         cmd = ("rm -rf /var/lib/glusterd/vols/*; rm -rf /var/lib/glusterd"
-               "/peers/*; rm -rf /var/lib/glusterd/snaps/*")
+               "/peers/*; rm -rf /var/lib/glusterd/snaps/*; "
+               "rm -rf /var/lib/glusterd/glusterfind/.keys/*")
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
@@ -288,18 +290,22 @@ class MachineOps(AbstractOps):
         Returns:
             list : list of converted IPs
         """
+        new_node_list = []
+
         if not isinstance(node_list, list):
             node_list = [node_list]
 
+        # Replace localhost with its hostname
         if 'localhost' in node_list:
             node_list.remove('localhost')
             node_list.append(node)
+
         for value in node_list:
             if not value.replace('.', '').isnumeric():
                 ip_val = socket.gethostbyname(value)
-                node_list.remove(value)
-                node_list.append(ip_val)
-        return node_list
+                new_node_list.append(ip_val)
+
+        return new_node_list
 
     def get_lv_paths_from_servers(self, nodes: list) -> list:
         """

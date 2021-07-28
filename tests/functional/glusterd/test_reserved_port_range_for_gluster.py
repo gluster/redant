@@ -20,7 +20,7 @@ Description:
 """
 
 # disruptive;
-
+import traceback
 from tests.d_parent_test import DParentTest
 
 
@@ -32,14 +32,21 @@ class TestCase(DParentTest):
         then the port range needs to be brought
         back to the previous state.
         """
-        # Reset port range if some test fails
-        if self.port_range_changed:
-            cmd = ("sed -i 's/49200/60999/' "
-                   "/etc/glusterfs/glusterd.vol")
-            self.redant.execute_abstract_op_node(cmd, self.server_list[0])
+        try:
+            # Reset port range if some test fails
+            if self.port_range_changed:
+                cmd = ("sed -i 's/49200/60999/' "
+                       "/etc/glusterfs/glusterd.vol")
+                self.redant.execute_abstract_op_node(cmd, self.server_list[0])
 
-        self.redant.hard_terminate(self.server_list, self.client_list,
-                                   self.brick_roots)
+            # Restart glusterd to update the port range
+            self.redant.restart_glusterd(self.server_list)
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
