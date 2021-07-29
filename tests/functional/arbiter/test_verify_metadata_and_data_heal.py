@@ -249,9 +249,8 @@ class TestSelfHeal(DParentTest):
                                                  self.server_list[0]):
                 raise Exception(f"Brick {brick} is not online")
 
-        # Assert metadata/data operations resulted in pending heals
-        if not self.redant.is_heal_complete(self.server_list[0],
-                                            self.vol_name):
+        # Confirm metadata/data operations resulted in pending heals
+        if self.redant.is_heal_complete(self.server_list[0], self.vol_name):
             raise Exception("Heal is not yet complete")
 
         # Enable and wait self heal daemon to be online
@@ -297,18 +296,23 @@ class TestSelfHeal(DParentTest):
         """Refactor of steps common to all tests: Validate arequal from
            bricks backend and perform a lookup of all files from mount"""
         arequal = None
+        new_arequal = []
         for subvol in subvols:
             arequal = self.redant.collect_bricks_arequal(subvol[0:stop])
-            if len(set(arequal)) != 1:
+            for item in arequal:
+                item = " ".join(item)
+                new_arequal.append(item)
+
+            if len(set(new_arequal)) != 1:
                 raise Exception("Mismatch of `arequal` checksum among "
                                 f"{subvol[0:stop]} is identified")
 
         # Validate arequal of mount point matching against backend bricks
         mp_arequal = self.redant.collect_mounts_arequal(self.mounts)
-        if len(set(arequal + mp_arequal)) != 1:
-            raise Exception()
-        self.assertEqual("Mismatch of `arequal` checksum among "
-                         "bricks and mount is identified")
+        mp_arequal = [" ".join(mp_arequal[0])]
+        if len(set(new_arequal + mp_arequal)) != 1:
+            raise Exception("Mismatch of `arequal` checksum among "
+                            "bricks and mount is identified")
 
         # Perform a lookup of all files and directories on mounts
         if not self.redant.list_all_files_and_dirs_mounts(self.mounts):
