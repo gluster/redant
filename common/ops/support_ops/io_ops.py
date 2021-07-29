@@ -3,6 +3,7 @@ This file contains one class - IoOps which
 holds API for running all the IO commands.
 """
 import os
+from time import sleep
 import re
 from common.ops.abstract_ops import AbstractOps
 
@@ -563,6 +564,7 @@ class IoOps(AbstractOps):
                 f"Stat of mount {mount['client']}:{mount['mountpath']}")
             cmd = f"python3 /tmp/file_dir_ops.py stat -R {mount['mountpath']}"
             ret = self.execute_abstract_op_node(cmd, mount['client'], False)
+            sleep(10)
             if ret['error_code'] != 0:
                 _rc = False
 

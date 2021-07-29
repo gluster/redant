@@ -14,15 +14,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Description:
     Test cases in this module tests whether directory with null gfid
     is getting the gfids assigned on both the subvols of a dist-rep
     volume when lookup comes on that directory from the mount point.
 
-    ,dist-rep,dist
 """
 
-# disruptive;rep
+# disruptive;dist-rep,dist
+# TODO: add rep when done with get_mounts_stat on rep
 
 from time import sleep
 from tests.d_parent_test import DParentTest
@@ -81,21 +82,8 @@ class TestCase(DParentTest):
                                 brick_node)
 
         # Trigger heal from mount point
-        for mount_obj in self.mnt_list:
-            command = (f'cd {mount_obj["mountpath"]}; ls -l')
-            redant.execute_abstract_op_node(command,
-                                            mount_obj['client'])
-            sleep(10)
-        # redant.trigger_heal_full(self.vol_name, self.server_list[0])
-        # if not redant.is_heal_complete(self.server_list[0], self.vol_name):
-        #     raise Exception("Heal not yet finished")
-
-        if not redant.monitor_heal_completion(self.server_list[0],
-                                              self.vol_name):
-            raise Exception("Heal not yet finished")
-        sleep(10)
-
         redant.get_mounts_stat(self.mnt_list)
+        sleep(10)
 
         # Verify that all gfids for dir1 are same and get the gfid
         dir_gfid_new = self.verify_gfid_and_retun_gfid("dir1")
