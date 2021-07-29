@@ -546,37 +546,35 @@ class IoOps(AbstractOps):
             ret = self.execute_abstract_op_node(cmd, host)
             self.logger.info(ret['msg'])
 
-    def get_mounts_stat(self, mounts: list) -> list:
+    def get_mounts_stat(self, mounts: list) -> bool:
         """
         Recursively get stat of the mountpoint
         Args:
             mounts (list): List of all mountpoints.
         Returns:
-            list: list of attributes of stat command
+            bool: True if the stat command was executed successfully,
+                  false otherwise.
         """
 
         self.logger.info("Start getting stat of the mountpoint recursively")
-        all_mounts_async_objs = []
+        _rc = True
         for mount in mounts:
             self.logger.info(
                 f"Stat of mount {mount['client']}:{mount['mountpath']}")
-            cmd = f"find {mount['mountpath']} | xargs stat"
-            async_obj = self.execute_command_async(cmd, mount['client'])
-            all_mounts_async_objs.append(async_obj)
-        _rc = True
-        error_msg = ""
-        for i, async_obj in enumerate(all_mounts_async_objs):
-            ret = self.wait_till_async_command_ends(async_obj)
+            cmd = f"python3 /tmp/file_dir_ops.py stat -R {mount['mountpath']}"
+            ret = self.execute_abstract_op_node(cmd, mount['client'], False)
             if ret['error_code'] != 0:
-                self.logger.error(f"Stat of files and dirs under "
-                                  f"{mounts[i]['client']}:"
-                                  f"{mounts[i]['mountpath']} Failed")
                 _rc = False
-                error_msg = ret['error_msg']
 
-        if not _rc:
-            raise Exception(error_msg)
-        return ret['msg']
+            if not _rc:
+                self.logger.error("Stat of some or all files/directories "
+                                  f"failed for {mount['client']}:"
+                                  f"{mount['mountpath']}")
+            else:
+                self.logger.info("Stat of all files/directories was "
+                                 f"successfull for {mount['client']}:"
+                                 f"{mount['mountpath']}")
+        return _rc
 
     def list_all_files_and_dirs_mounts(self, mounts: list) -> bool:
         """List all Files and Directories from mounts.
