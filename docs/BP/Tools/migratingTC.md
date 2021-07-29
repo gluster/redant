@@ -19,8 +19,8 @@ source idealogy.
 ## Automatic migration.
 
 There are couple of tools which have been created.
-1. One for the migration of test case from glusto-test to redant repo.[migrate_tc.py](../../tools/migrate_tc.py)
-2. Seconds script for converting the glusto-test test file into redantish model. [glusto_redant_parser.py](../../tools/glusto_redant_parser.py)
+1. One for the migration of test case from glusto-test to redant repo.[migrate_tc.py](../../../tools/migrate_tc.py)
+2. Seconds script for converting the glusto-test test file into redantish model. [glusto_redant_parser.py](../../../tools/glusto_redant_parser.py)
 
 ## Manual migration.
 
@@ -39,7 +39,7 @@ be performing the migration.
 Add a remote in case of redant repository so as to rebase in future if need be.
 
 ```
-# git remote add upstream git@github.com:srijan-sivakumar/redant.git
+# git remote add upstream git@github.com:gluster/redant.git
 ```
 
 The next step would be to determining which test case you'd be migrating. The
@@ -52,7 +52,7 @@ Post that, create a new branch in the local repository of redant,
 # git checkout -b issue<issueID> origin/main
 ```
 
-The nex batch of steps are important and the explanation of what is happening
+The next batch of steps are important and the explanation of what is happening
 is not provided in this markdown. For the ever curious souls, we'd add a blog
 post in future to explain what gears are turning for these given set of git
 commands.
@@ -110,7 +110,7 @@ destination repository.
 
 7. If one were to see the current commit in the git log, they'd find the set
 of patches belonging to the file we had transferred. Hence the first half of
-the migraiton is complete.
+the migration is complete.
 
 8. The second half of the migration. Well..herein you'd have to work a little
 more, read the existing docs on redant to see how a test case is to be 
