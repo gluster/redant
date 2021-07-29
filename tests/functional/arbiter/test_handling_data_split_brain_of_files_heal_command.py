@@ -193,6 +193,10 @@ class TestCase(DParentTest):
                                 self.mountpoint, client)
 
         # Start heal
+        #     command = ("python3 /tmp/file_dir_ops.py "
+        #                f"read {mount_obj['mountpath']}")
+        #     redant.execute_abstract_op_node(command,
+        #                                     mount_obj['client'])
         options = {"self-heal-daemon": "on"}
         redant.set_volume_options(self.vol_name, options,
                                   self.server_list[0])
