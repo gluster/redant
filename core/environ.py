@@ -543,9 +543,21 @@ class FrameworkEnv:
         Method to remove the brick brickdata
         """
         self._validate_volname(volname)
+
         for node in brick_data:
             for brick in brick_data[node]:
                 self.volds[volname]["brickdata"][node].remove(brick)
+
+    def replace_brick_from_brickdata(self, volname: str, src_brick: str,
+                                     dest_brick: str):
+        """
+        Method to replace the brick brickdata
+        """
+        self._validate_volname(volname)
+        s_node, s_path = src_brick.split(":")
+        d_node, d_path = dest_brick.split(":")
+        self.volds[volname]["brickdata"][d_node].append(d_path)
+        self.volds[volname]["brickdata"][s_node].remove(s_path)
 
     def get_brickdata(self, volname: str) -> dict:
         """

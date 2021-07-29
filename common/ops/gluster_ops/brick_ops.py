@@ -167,6 +167,11 @@ class BrickOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
+
+        self.es.replace_brick_from_brickdata(volname, src_brick,
+                                             dest_brick)
         return ret
 
     def replace_brick_from_volume(self, volname: str, node: str,
@@ -203,16 +208,16 @@ class BrickOps(AbstractOps):
         # Get subvols
         subvols_list = self.get_subvols(volname, node)
 
+        if not src_brick:
+            # Randomly select a brick to replace
+            src_brick = (random.choice(random.choice(subvols_list)))
         if not dst_brick:
             _, dst_brick = self.form_brick_cmd(servers, brick_roots,
                                                volname, 1, True)
 
+            dst_brick = f"{src_brick.split(':')[0]}:{dst_brick.split(':')[1]}"
             if not dst_brick:
                 self.logger.error("Failed to get a new brick to replace")
-
-        if not src_brick:
-            # Randomly select a brick to replace
-            src_brick = (random.choice(random.choice(subvols_list)))
 
         # Bring src brick offline
         if not self.bring_bricks_offline(volname, src_brick):
