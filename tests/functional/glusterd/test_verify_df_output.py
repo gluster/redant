@@ -15,13 +15,12 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-@runs_on([['distributed-dispersed', 'distributed-replicated',
-           'distributed-arbiter', 'dispersed', 'replicated',
-           'arbiter'],
-          ['glusterfs']])
+Description:
+    Test to verufy the df -h value for various brick and volume
+    operations.
 """
 
-# disruptive;rep
+# disruptive;rep,dist-rep,disp,dist-disp,arb,dist-arb
 
 from tests.d_parent_test import DParentTest
 
@@ -78,7 +77,7 @@ class TestCase(DParentTest):
         split_cmd = " | awk '{split($0,a,\" \");print a[2]}' | sed 's/.$//'"
         cmd = (f"cd {self.mounts[0]['mountpath']};df -h | grep "
                f"{self.vol_name} {split_cmd}")
-        ret = self.redant.execute_abstract_op_node(cmd, self.client_list[1])
+        ret = self.redant.execute_abstract_op_node(cmd, self.client_list[0])
         return float(ret['msg'][0].split("\n")[0])
 
     def run_test(self, redant):
@@ -91,7 +90,6 @@ class TestCase(DParentTest):
         - Remove bricks from volume and check output of df -h
         - Add bricks to volume and check output of df -h
         """
-
         # Perform some IO on the mount point
         self._perform_io_and_validate()
 
@@ -103,36 +101,35 @@ class TestCase(DParentTest):
 
         # Get df -h output after brick replace
         mount_size_after_replace = self._get_mount_size_from_df_h_output()
-        print(initial_mount_size, " ", mount_size_after_replace)
         # Verify the mount point size remains the same after brick replace
         if initial_mount_size != mount_size_after_replace:
-            print("The mount sizes before and after replace bricks "
+            raise Exception("The mount sizes before and after replace bricks "
                             "are not same")
 
         # Add bricks
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
                                    self.server_list, self.brick_roots, True)
+
         if not ret:
-            print("Failed to expand volume")
+            raise Exception("Failed to expand volume")
 
         # Get df -h output after volume expand
         mount_size_after_expand = self._get_mount_size_from_df_h_output()
 
         # Verify df -h output returns greater value
-        print(mount_size_after_expand," ", initial_mount_size)
         if mount_size_after_expand <= initial_mount_size:
-            print("The mount size has not increased after expanding")
+            raise Exception("The mount size has not increased after expanding")
 
         # Remove bricks
         ret = redant.shrink_volume(self.server_list[0], self.vol_name,
                                    force=True)
+
         if not ret:
-            print("Failed to shrink volume")
+            raise Exception("Failed to shrink volume")
 
         # Get df -h output after volume shrink
         mount_size_after_shrink = self._get_mount_size_from_df_h_output()
 
         # Verify the df -h output returns smaller value
-        print(mount_size_after_shrink, " ", mount_size_after_expand)
         if mount_size_after_expand <= mount_size_after_shrink:
-            print("The mount size has not reduced after shrinking")
+            raise Exception("The mount size has not reduced after shrinking")
