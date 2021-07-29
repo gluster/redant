@@ -192,13 +192,12 @@ class TestCase(DParentTest):
             redant.volume_mount(self.server_list[0], self.vol_name,
                                 self.mountpoint, client)
 
-        # Start heal from mount point
-        redant.get_mounts_stat(self.mounts)
-        # options = {"self-heal-daemon": "on"}
-        # redant.set_volume_options(self.vol_name, options,
-        #                           self.server_list[0])
-        # if not redant.trigger_heal(self.vol_name, self.server_list[0]):
-        #     raise Exception("Failed to trigger heal.")
+        # Start heal
+        options = {"self-heal-daemon": "on"}
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
+        if not redant.trigger_heal(self.vol_name, self.server_list[0]):
+            raise Exception("Failed to trigger heal.")
 
         # Monitor heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
