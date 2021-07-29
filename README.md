@@ -80,7 +80,9 @@ how to get things running and that's it, take the blue pill.
 
 ### STEP-BY-STEP procedure to run:
 1. git clone `[your fork for this repo]`
-2. Create a virtual environment : `venv <virtual_env_name>`
+2. Create a virtual environment : 
+python2 `virtualenv <virtual_env_name>`
+python3 `python3 -m venv <virtual-env-name>`
 3. Activate the virtual-env : `source <virtual_env_name>/bin/activate`
 4. cd `[the-fork]`
 5. Run `pip3 install -r requirements.txt`
