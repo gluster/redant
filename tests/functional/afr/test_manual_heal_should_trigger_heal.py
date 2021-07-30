@@ -80,7 +80,7 @@ class TestSelfHeal(DParentTest):
 
         # Add bricks
         redant.add_brick(self.vol_name, bricks_to_add, self.server_list[0],
-                         force=True, replica_count=3)
+                         force=True, replica_count=2)
 
         # Make sure the newly added bricks are available in the volume
         # get the bricks for the volume
