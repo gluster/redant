@@ -362,7 +362,7 @@ class BrickOps(AbstractOps):
                 brick_iter += 1
 
             if len(unused_servers) > 0:
-                server_val = unused_servers[iteration]
+                server_val = unused_servers[0]
                 unused_servers.remove(server_val)
             else:
                 server_val = server_list[server_iter]
