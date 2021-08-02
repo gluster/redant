@@ -185,8 +185,8 @@ class TestSelfHeal(DParentTest):
 
         # Validate normal file `file10` and healed files don't differ in
         # subvols via an `arequal`
-        new_arequal = []
         for subvol in subvols:
+            new_arequal = []
             # Disregard last brick if volume is of arbiter type
             arequal = redant.collect_bricks_arequal(subvol[0:stop])
             for item in arequal:
