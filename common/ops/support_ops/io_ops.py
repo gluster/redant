@@ -3,7 +3,6 @@ This file contains one class - IoOps which
 holds API for running all the IO commands.
 """
 import os
-from time import sleep
 import re
 from common.ops.abstract_ops import AbstractOps
 
