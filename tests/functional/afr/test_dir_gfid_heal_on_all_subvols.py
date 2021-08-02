@@ -22,9 +22,7 @@ Description:
 
 """
 
-# disruptive;dist-rep,dist
-# TODO: add rep when done with get_mounts_stat on rep
-
+# disruptive;rep,dist-rep,dist
 from time import sleep
 from tests.d_parent_test import DParentTest
 
@@ -82,8 +80,10 @@ class TestCase(DParentTest):
                                 brick_node)
 
         # Trigger heal from mount point
-        redant.get_mounts_stat(self.mnt_list)
-        sleep(10)
+        sleep(2)
+        cmd = f"stat {self.mountpoint}/dir1"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
+        sleep(5)
 
         # Verify that all gfids for dir1 are same and get the gfid
         dir_gfid_new = self.verify_gfid_and_retun_gfid("dir1")
