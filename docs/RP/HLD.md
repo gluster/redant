@@ -60,7 +60,7 @@ understood if one were to divide it into three components,
      +----------------------+               | Performance | Component2 TCs |
      |       MIXIN          |               |             | Component3 TCs |
      +----------------------+               +------------------------------+
-                                            |       Abstract Test            |
+                                            |       Abstract Test          |
                                             +------------------------------+
    
    
@@ -92,4 +92,6 @@ and performance tests ( I guess the names are self explanatory ). And within the
 such as 'Glusterd', 'Geo-replication', 'Snapshot', etc. Each sub-component will contain the test cases catering to different scenarios wherein the said
 component figures in. All these test components are dependent upon the Common. Also, every test case derives some basic operational capability from a common
 abstract test which lifts much of the repeated tasks usually done when a test case run begins and ends.
+
+[Back to Red Pill Index](../RPIndex.md)
 
