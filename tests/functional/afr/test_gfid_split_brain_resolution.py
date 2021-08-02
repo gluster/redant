@@ -56,7 +56,7 @@ class TestSelfHeal(DParentTest):
         if files is None:
             raise Exception("Failed to get the list of files")
 
-        files = [file_name.rsplit('/', 1)[-1] for file_name in files]
+        files = [(file_name.rsplit('/', 1)[-1]).strip() for file_name in files]
         return [
             each_file for each_file in files
             if each_file in ('file1', 'file2', 'file3')
@@ -74,7 +74,7 @@ class TestSelfHeal(DParentTest):
           subvols
         """
         io_cmd = 'cat /dev/urandom | tr -dc [:space:][:print:] | head -c '
-        arbiter = self.volume_type.find('arbiter') >= 0
+        arbiter = self.volume_type.find('arb') >= 0
 
         # Disable self-heal daemon and set `quorum-type` option to `none`
         options = {'self-heal-daemon': 'off', 'cluster.quorum-type': 'none'}
@@ -108,7 +108,7 @@ class TestSelfHeal(DParentTest):
         for index, bricks in enumerate(self._get_two_bricks(subvols, arbiter),
                                        1):
             # Bring down two bricks from each subvol
-            if not redant.bring_bricks_offline(self.vol_name, bricks):
+            if not redant.bring_bricks_offline(self.vol_name, list(bricks)):
                 raise Exception(f"Unable to bring {bricks} offline")
 
             redant.execute_abstract_op_node((f"cd {self.mountpoint}; "
@@ -124,7 +124,7 @@ class TestSelfHeal(DParentTest):
 
             # Bring offline bricks online
             if not redant.bring_bricks_online(self.vol_name, self.server_list,
-                                              bricks):
+                                              list(bricks)):
                 raise Exception("Failed to bring bricks online")
 
         # Enable self-heal daemon, trigger heal and assert volume is in split
@@ -155,20 +155,20 @@ class TestSelfHeal(DParentTest):
         for index, source_brick in enumerate(source_bricks):
             for each_file in files[index]:
                 cmd = (f"gluster volume heal {self.vol_name} split-brain"
-                       f" source-brick {source_brick} {split_dir} "
+                       f" source-brick {source_brick} /{split_dir}/"
                        f"{each_file}")
                 redant.execute_abstract_op_node(cmd, self.server_list[0])
 
         # Resolve `file4, file5, file6` gfid split files using `bigger-file`
         for each_file in ('file4', 'file5', 'file6'):
             cmd = (f"gluster volume heal {self.vol_name} split-brain"
-                   f" bigger-file {split_dir} {each_file}")
+                   f" bigger-file /{split_dir}/{each_file}")
             redant.execute_abstract_op_node(cmd, self.server_list[0])
 
         # Resolve `file7, file8, file9` gfid split files using `latest-mtime`
         for each_file in ('file7', 'file8', 'file9'):
             cmd = (f"gluster volume heal {self.vol_name} split-brain"
-                   f" latest-mtime {split_dir} {each_file}")
+                   f" latest-mtime /{split_dir}/{each_file}")
             redant.execute_abstract_op_node(cmd, self.server_list[0])
 
         # Unless `shd` is triggered manually/automatically files will still
