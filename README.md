@@ -48,7 +48,7 @@ engineers being spartans who understand logic only from code is what we feel as
 . We need to be civilized humans and make it easy for the next person coming 
 in to just glance at what it is, why it is and how it is.
 
-
+Before trying out redant, do check the [known issues](./docs/known_issues.md) section
 
 For those who want a pure markdown experience and a deeper dive...
 
