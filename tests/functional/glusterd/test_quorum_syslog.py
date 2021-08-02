@@ -73,6 +73,8 @@ class TestCase(DParentTest):
         for both the volumes in /var/log/messages and
         /var/log/glusterfs/glusterd.log
         """
+        
+
 
         self.log_messages = "/var/log/messages"
         self.log_glusterd = "/var/log/glusterfs/glusterd.log"
