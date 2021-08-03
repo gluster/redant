@@ -178,14 +178,13 @@ class MachineOps(AbstractOps):
     def check_os(self, os_name: str, nodes: str,
                  os_version: str = None) -> bool:
         """
-        Checks the os release and compares the
-        os and version.
+        Checks the os release and compares the os and version.
 
         Args:
-            os_name (str): Operating system name
-            os_version (str): Operating system version
-            nodes (str|list): Nodes on which command
-                              has to be executed
+            os_name (str): Operating system name.
+            nodes (str|list): Nodes on which command has to be executed.
+            os_version (str): Optional parameter with default value None.
+                              Operating system version.
 
         Returns: bool, True, if os_name and os_version found
                  else False
