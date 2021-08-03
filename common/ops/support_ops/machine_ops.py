@@ -145,7 +145,8 @@ class MachineOps(AbstractOps):
         # directory on the servers.
         cmd = ("rm -rf /var/lib/glusterd/vols/*; rm -rf /var/lib/glusterd"
                "/peers/*; rm -rf /var/lib/glusterd/snaps/*; "
-               "rm -rf /var/lib/glusterd/glusterfind/.keys/*")
+               "rm -rf /var/lib/glusterd/glusterfind/.keys/*; "
+               "rm -rf /var/run/gluster*; ")
         for node in server_list:
             self.execute_abstract_op_node(cmd, node, False)
 
