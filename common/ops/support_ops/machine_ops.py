@@ -175,7 +175,7 @@ class MachineOps(AbstractOps):
 
         self.es.reset_ds()
 
-    def check_os(self, os_name: str, os_version: str, nodes: str):
+    def check_os(self, os_name: str, nodes: str, os_version: str=None) -> bool:
         """
         Checks the os release and compares the
         os and version.
@@ -202,10 +202,13 @@ class MachineOps(AbstractOps):
                 return False
 
             out = item['msg']
-            if (
-                os_name not in out[0].lower()
-                or os_version not in out[1]
-            ):
+            if os_version is not None:
+                if (
+                    os_name not in out[0].lower()
+                    or os_version not in out[1]
+                ):
+                    return False
+            elif os_name not in out[0].lower():
                 return False
 
         return True
@@ -257,7 +260,7 @@ class MachineOps(AbstractOps):
             bool: True, On successful daemon reload
                 False, Otherwise
         """
-        if self.check_os('rhel', '6', [node]):
+        if self.check_os('rhel', [nodes], '6'):
             cmd = 'service glusterd reload'
             ret = self.execute_abstract_op_node(node, cmd, False)
         else:

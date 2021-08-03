@@ -62,6 +62,7 @@ class TestCase(DParentTest):
         """
         # Check if servers are sufficient to run the test case.
         if len(self.server_list) < 4:
+            self.TEST_RES = None
             raise Exception("Servers are not sufficient to run the test")
 
         # Creating 100 files.
