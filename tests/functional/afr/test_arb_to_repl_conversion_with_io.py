@@ -130,7 +130,7 @@ class TestArbiterToReplicatedConversion(DParentTest):
         in_sync = False
         while wait_time:
             ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
-            if int(ret['msg'].strip()) == int(brick_count):
+            if int(ret['msg'][0].strip()) == int(brick_count):
                 in_sync = True
                 break
             sleep(30)
