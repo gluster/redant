@@ -72,7 +72,7 @@ class TestCase(DParentTest):
         quorum regain message should be recorded with message id - 106003
         for both the volumes in /var/log/messages and
         /var/log/glusterfs/glusterd.log
-        """ 
+        """
 
         if redant.check_os("fedora", nodes=self.server_list):
             self.TEST_RES = None
