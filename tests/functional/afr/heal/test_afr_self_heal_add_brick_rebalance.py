@@ -22,6 +22,7 @@ from time import sleep
 from random import sample
 from tests.nd_parent_test import NdParentTest
 
+
 class TestCase(NdParentTest):
 
     def run_test(self, redant):
@@ -46,19 +47,20 @@ class TestCase(NdParentTest):
             redant.logger.info(f"Starting IO on {mount_obj['client']}:"
                                f"{mount_obj['mountpath']}")
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
-                                                      count,1,2,2,30,
+                                                      count, 1, 2, 2, 30,
                                                       mount_obj['client'])
             self.all_mounts_procs.append(proc)
 
         # Validate IO
-        if not redant.validate_io_procs(self.all_mounts_procs, self.mnt_list[0]):
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mnt_list[0]):
             raise Exception("IO failed on some of the clients")
 
         # Get Subvols
         subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
         if not subvols_list:
             redant.logger.error("No Sub-Volumes available for the volume "
-                              f"{volname}")
+                                f"{self.vol_name}")
             return None
 
         # List a brick in each subvol and bring them offline
@@ -66,7 +68,8 @@ class TestCase(NdParentTest):
         for subvol in subvols_list:
             brick_to_bring_offline.extend(sample(subvol, 1))
 
-        ret = redant.bring_bricks_offline(self.vol_name, brick_to_bring_offline)
+        redant.bring_bricks_offline(self.vol_name,
+                                    brick_to_bring_offline)
 
         # Validate the brick is offline
         if not redant.are_bricks_offline(self.vol_name, brick_to_bring_offline,
@@ -96,7 +99,7 @@ class TestCase(NdParentTest):
 
         # Expanding volume by adding bricks to the volume when IO in progress
         if not (redant.expand_volume(self.server_list[0], self.vol_name,
-                                   self.server_list, self.brick_roots)):
+                                     self.server_list, self.brick_roots)):
             raise Exception("Failed to expand volume")
 
         # Wait for volume processes to be online
@@ -112,7 +115,8 @@ class TestCase(NdParentTest):
         sleep(2)
 
         # Wait for rebalance to complete
-        if not (redant.wait_for_rebalance_to_complete(self.vol_name, self.server_list[0])):
+        if not (redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                      self.server_list[0])):
             raise Exception("Rebalance operation has not yet completed.")
 
         # Validate IO
@@ -122,7 +126,7 @@ class TestCase(NdParentTest):
 
         self.io_validation_complete = True
         self.all_mounts_procs *= 0
-        
+
         # List all files and dirs created
         if not (redant.list_all_files_and_dirs_mounts(self.mnt_list)):
             raise Exception("Failed to list files and dirs")
@@ -133,7 +137,6 @@ class TestCase(NdParentTest):
 
         for subvol in subvols_list:
             arequals = redant.collect_bricks_arequal(subvol[0:stop])
-            redant.logger.info(f"Arequals are {arequals}")
             for arequal in arequals:
                 curr_arequal = arequal[-1].split(':')[-1]
                 if curr_arequal != arequals[0][-1].split(':')[-1]:
