@@ -69,6 +69,7 @@ class TestArbiterToReplicatedConversion(DParentTest):
         - Validate heal completes with no errors and arequal of first dir
           matches against initial checksum
         """
+        self.proc = []
         # Fill IO in first directory
         cmd = ("python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
                "--dir-depth 10 --fixed-file-size 1M --num-of-files 100 "
