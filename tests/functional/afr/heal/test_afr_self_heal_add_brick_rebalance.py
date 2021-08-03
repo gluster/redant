@@ -1,29 +1,48 @@
 """
-Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-any later version.
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    Test verifies self-heal on replicated volume types after add-brick.
 """
 
 # nonDisruptive;arb,dist-arb,rep,dist-rep
 
 from time import sleep
 from random import sample
+import traceback
 from tests.nd_parent_test import NdParentTest
 
 
 class TestCase(NdParentTest):
+
+    def terminate(self):
+        """
+        Wait for IO to complete, if the TC fails early
+        """
+        try:
+            if not self.io_validation_complete:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mnt_list)):
+                    raise Exception("IO failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -38,6 +57,8 @@ class TestCase(NdParentTest):
         8. Check arequal of the subvol and all the brick in the same subvol
         should have same checksum
         """
+        self.io_validation_complete = True
+
         # Get mount point list
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
@@ -50,11 +71,6 @@ class TestCase(NdParentTest):
                                                       count, 1, 2, 2, 30,
                                                       mount_obj['client'])
             self.all_mounts_procs.append(proc)
-
-        # Validate IO
-        if not redant.validate_io_procs(self.all_mounts_procs,
-                                        self.mnt_list[0]):
-            raise Exception("IO failed on some of the clients")
 
         # Get Subvols
         subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
@@ -125,7 +141,6 @@ class TestCase(NdParentTest):
                             " or all of the clients")
 
         self.io_validation_complete = True
-        self.all_mounts_procs *= 0
 
         # List all files and dirs created
         if not (redant.list_all_files_and_dirs_mounts(self.mnt_list)):
