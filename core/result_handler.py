@@ -201,7 +201,6 @@ def _obtain_stat(resultDict: dict) -> dict:
                 tempDict[key] = 0
             tempDict[key] += val
     statDict['Total'] = copy.deepcopy(tempDict)
-    print(statDict)
     return statDict
 
 

@@ -78,7 +78,7 @@ class TestCase(DParentTest):
             self.TEST_RES = None
             raise Exception("This test cannot be run on Fedora servers.")
 
-        """self.log_messages = "/var/log/messages"
+        self.log_messages = "/var/log/messages"
         self.log_glusterd = "/var/log/glusterfs/glusterd.log"
 
         # Create and start another volume
@@ -224,4 +224,4 @@ class TestCase(DParentTest):
                       - int(before_glusterd_start_glusterd_id_count))
         if count_diff != 2:
             raise Exception(f"Failed to record regain messages "
-                            f"in : {self.log_glusterd}")"""
+                            f"in : {self.log_glusterd}")
