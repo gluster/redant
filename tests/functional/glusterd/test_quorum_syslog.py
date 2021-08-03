@@ -74,6 +74,10 @@ class TestCase(DParentTest):
         /var/log/glusterfs/glusterd.log
         """
 
+        if redant.check_os("fedora", nodes=self.server_list):
+            self.TEST_RES = None
+            raise Exception("This test cannot be run on Fedora servers.")
+
         self.log_messages = "/var/log/messages"
         self.log_glusterd = "/var/log/glusterfs/glusterd.log"
 

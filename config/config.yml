@@ -54,7 +54,6 @@ volume_types:
         
 #excluded_tests - Tests which are excluded during the test run.
 excluded_tests:
-    - tests/functional/glusterd/test_quorum_syslog.py
     - tests/functional/glusterd/test_volume_set_when_glusterd_stopped_on_one_node.py
     - tests/functional/glusterd/test_peer_probe_firewall_ports_not_opened.py # need gluster setup done with firewalld enabled
     - tests/functional/glusterd/test_glusterd_memory_consumption_increase.py # 100 volumes created, run multiple times
