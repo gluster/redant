@@ -56,6 +56,7 @@ class TestCase(DParentTest):
                             remove_brick_list, 'force', replica_count=1)
         redant.es.set_vol_type_param(self.vol_name, 'replica_count', -1)
 
-        if not redant.is_distribute_volume(self.vol_name):
+        if not redant.is_distribute_volume(self.server_list[0],
+                                           self.vol_name):
             raise Exception(f"Volume {self.vol_name} is not a pure distribute"
                             " volume")
