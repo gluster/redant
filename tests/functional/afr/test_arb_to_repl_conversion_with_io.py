@@ -34,8 +34,8 @@ class TestArbiterToReplicatedConversion(DParentTest):
         Wait for IO to complete, if the TC fails.
         """
         try:
-            if self.proc:
-                if not self.redant.wait_for_io_to_complete(self.proc,
+            if self.proc_list:
+                if not self.redant.wait_for_io_to_complete(self.proc_list,
                                                            self.mounts):
                     raise Exception("Failed to wait for IO to complete")
         except Exception as error:
@@ -69,7 +69,8 @@ class TestArbiterToReplicatedConversion(DParentTest):
         - Validate heal completes with no errors and arequal of first dir
           matches against initial checksum
         """
-        self.proc = []
+        self.proc_list = []
+
         # Fill IO in first directory
         cmd = ("python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
                "--dir-depth 10 --fixed-file-size 1M --num-of-files 100 "
@@ -87,7 +88,8 @@ class TestArbiterToReplicatedConversion(DParentTest):
         cmd = ("python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
                "--dir-depth 10 --fixed-file-size 1M --num-of-files 250 "
                f"--dirname-start-num 2 {self.mountpoint}")
-        self.proc = redant.execute_command_async(cmd, self.client_list[0])
+        proc = redant.execute_command_async(cmd, self.client_list[0])
+        self.proc_list.append(proc)
 
         # Wait for IO to fill before volume conversion
         sleep(30)
@@ -162,11 +164,11 @@ class TestArbiterToReplicatedConversion(DParentTest):
 
         # Validate IO
         prev_time = datetime.now().replace(microsecond=0)
-        ret = redant.validate_io_procs(self.proc, self.mounts)
+        ret = redant.validate_io_procs(self.proc_list, self.mounts)
         curr_time = datetime.now().replace(microsecond=0)
         if not ret:
             raise Exception('Not able to validate completion of IO on mount')
-        self.proc = []
+        self.proc_list = []
 
         # To ascertain IO was happening during brick operations
         if curr_time - prev_time <= timedelta(seconds=10):
