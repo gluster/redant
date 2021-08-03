@@ -202,7 +202,7 @@ class MachineOps(AbstractOps):
                 return False
 
             out = item['msg']
-            if os_version is not None:
+            if os_version:
                 if (
                     os_name not in out[0].lower()
                     or os_version not in out[1]
