@@ -121,7 +121,7 @@ class IoOps(AbstractOps):
             list_of_nodes = [list_of_nodes]
 
         if not isinstance(list_of_paths, list):
-            list_of_paths = (list_of_paths.split(" "))
+            list_of_paths = [list_of_paths.split(" ")]
 
         for path in list_of_paths:
             cmd = f"stat {path}"
@@ -985,6 +985,37 @@ class IoOps(AbstractOps):
         if len(ret['msg']) == 0:
             return 1
         return 0
+
+    def occurences_of_pattern_in_file(self, node: str, search_pattern: str,
+                                      filename: str) -> int:
+        """
+        Get the number of occurences of pattern in the file
+
+        Args:
+            node (str): Host on which the command is executed.
+            search_pattern (str): Pattern to be found in the file.
+            filename (str): File in which the pattern is to be validated
+
+        Returns:
+            int: -1 - When the file doesn't exists,
+                  0 - When pattern doesn't exists in the file,
+                number of occurences - When pattern is found.
+        """
+        # Check if the file exists
+        ret = self.path_exists(node, filename)
+        if not ret:
+            self.logger.error(f"File {filename} is not present on the node")
+            return -1
+
+        cmd = f"grep -c '{search_pattern}' {filename}"
+        ret = self.execute_abstract_op_node(cmd, node)
+        num = int(ret['msg'][0].strip())
+        if num == 0:
+            self.logger.error("No occurence of the pattern found in the file"
+                              f" {filename}")
+            return 0
+
+        return num
 
     def find_and_replace_in_file(self, node: str,
                                  fpattern: str, rpattern: str,
