@@ -44,10 +44,10 @@ class TestSelfHealWithDiffAlgorithm(DParentTest):
 
         # Setting options
         options = {
-            "data-self-heal", "off",
-            "metadata-self-heal", "off",
-            "entry-self-heal", "off",
-            "data-self-heal-algorithm", "diff"
+            "data-self-heal": "off",
+            "metadata-self-heal": "off",
+            "entry-self-heal": "off",
+            "data-self-heal-algorithm": "diff"
         }
         redant.set_volume_options(self.vol_name, options, self.server_list[0],
                                   multi_option=True)
