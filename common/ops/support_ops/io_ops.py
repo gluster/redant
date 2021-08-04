@@ -970,8 +970,9 @@ class IoOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
         return ret['msg']
 
-    def check_if_pattern_in_file(self, node: str,
-                                 pattern: str, fqpath: str):
+    def check_if_pattern_in_file(self, node: str, pattern: str,
+                                 fqpath: str,
+                                 check_occurence: bool = False) -> int:
         """Check if a give pattern is in seen in file or not.
 
         Args:
@@ -984,13 +985,25 @@ class IoOps(AbstractOps):
             1: If pattern not present in file.
            -1: If command was not executed.
         """
-        cmd = f"cat {fqpath} | grep \"{pattern}\""
+        flag = ""
+        if check_occurence:
+            flag = "-c"
+
+        cmd = f"cat {fqpath} | grep {flag} \"{pattern}\""
         ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
+            self.logger.error("Failed to check the pattern in file "
+                              f"{fqpath}")
             return -1
-        if len(ret['msg']) == 0:
-            return 1
-        return 0
+
+        if check_occurence:
+            return int(ret['msg'][0].strip())
+        else:
+            if len(ret['msg']) == 0:
+                self.logger.error("No occurence of the pattern found in the"
+                                  f" file {fqpath}")
+                return 1
+            return 0
 
     def occurences_of_pattern_in_file(self, node: str, search_pattern: str,
                                       filename: str) -> int:
@@ -1003,25 +1016,13 @@ class IoOps(AbstractOps):
             filename (str): File in which the pattern is to be validated
 
         Returns:
-            int: -1 - When the file doesn't exists,
-                  0 - When pattern doesn't exists in the file,
-                number of occurences - When pattern is found.
+            int: -1 - When the file doesn't exists or failed to
+                      execute the command, Or
+                number of occurences of the pattern
         """
-        # Check if the file exists
-        ret = self.path_exists(node, filename)
-        if not ret:
-            self.logger.error(f"File {filename} is not present on the node")
-            return -1
-
-        cmd = f"grep -c '{search_pattern}' {filename}"
-        ret = self.execute_abstract_op_node(cmd, node)
-        num = int(ret['msg'][0].strip())
-        if num == 0:
-            self.logger.error("No occurence of the pattern found in the file"
-                              f" {filename}")
-            return 0
-
-        return num
+        out = self.check_if_pattern_in_file(node, search_pattern, filename,
+                                            True)
+        return out
 
     def find_and_replace_in_file(self, node: str,
                                  fpattern: str, rpattern: str,

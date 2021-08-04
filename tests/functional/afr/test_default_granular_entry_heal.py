@@ -118,7 +118,7 @@ class TestDefaultGranularEntryHeal(DParentTest):
                 arequals, dir_brick_list)
 
         # Check arequals for "distributed-replicated"
-        if self.volume_type == "dist-rep" or self.volume_type == "dist-arb":
+        else:
             # Get the subvolumes
             subvols = self.redant.get_subvols(self.vol_name,
                                               self.server_list[0])
