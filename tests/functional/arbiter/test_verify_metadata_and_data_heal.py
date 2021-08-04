@@ -296,8 +296,8 @@ class TestSelfHeal(DParentTest):
         """Refactor of steps common to all tests: Validate arequal from
            bricks backend and perform a lookup of all files from mount"""
         arequal = None
-        new_arequal = []
         for subvol in subvols:
+            new_arequal = []
             arequal = self.redant.collect_bricks_arequal(subvol[0:stop])
             for item in arequal:
                 item = " ".join(item)
