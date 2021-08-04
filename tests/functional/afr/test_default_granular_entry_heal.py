@@ -199,7 +199,7 @@ class TestDefaultGranularEntryHeal(DParentTest):
                "softlinkfile")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        # Bring back the killed brick by restarting the volume	Bricks should
+        # Bring back the killed brick by restarting the volume bricks should
         # be online again
         self._restart_volume_and_bring_all_offline_bricks_online()
 
