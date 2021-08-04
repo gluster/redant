@@ -71,9 +71,11 @@ class TestSelfHealWithDiffAlgorithm(DParentTest):
                 item = " ".join(item)
                 new_arequal.append(item)
 
-            val = len(set(new_arequal))
             if (self.volume_type == "arb" or self.volume_type == "dist-arb"):
                 val = len(set(new_arequal[:2]))
+            else:
+                val = len(set(new_arequal))
+
             if val != 1:
                 raise Exception("Arequal is not same on all the bricks in the"
                                 " subvol")
@@ -127,9 +129,11 @@ class TestSelfHealWithDiffAlgorithm(DParentTest):
                 item = " ".join(item)
                 new_arequal.append(item)
 
-            val = len(set(new_arequal))
             if (self.volume_type == "arb" or self.volume_type == "dist-arb"):
                 val = len(set(new_arequal[:2]))
+            else:
+                val = len(set(new_arequal))
+
             if val != 1:
                 raise Exception("Arequal is not same on all the bricks in the"
                                 " subvol")
