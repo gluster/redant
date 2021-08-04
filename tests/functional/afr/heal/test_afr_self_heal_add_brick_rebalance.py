@@ -148,12 +148,15 @@ class TestCase(DParentTest):
             raise Exception("Failed to list files and dirs")
 
         # Check arequal checksum of all the bricks is same
-        arbiter = self.volume_type.find('arb') >= 0
-        stop = len(subvols_list[0]) - 1 if arbiter else len(subvols_list[0])
-
         for subvol in subvols_list:
-            arequals = redant.collect_bricks_arequal(subvol[0:stop])
-            for arequal in arequals:
-                curr_arequal = arequal[-1].split(':')[-1]
-                if curr_arequal != arequals[0][-1].split(':')[-1]:
-                    raise Exception("Mismatch of arequal checksum")
+            new_arequal = []
+            arequals = redant.collect_bricks_arequal(subvol)
+            for item in arequals:
+                item = " ".join(item)
+                new_arequal.append(item)
+
+            val = len(set(new_arequal))
+            if (self.volume_type == "arb" or self.volume_type == "dist-arb"):
+                val = len(set(new_arequal[:2]))
+            if val != 1:
+                raise Exception("Mismatch of arequal checksum")
