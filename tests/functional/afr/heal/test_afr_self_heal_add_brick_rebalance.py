@@ -19,15 +19,15 @@
     Test verifies self-heal on replicated volume types after add-brick.
 """
 
-# nonDisruptive;arb,dist-arb,rep,dist-rep
+# disruptive;rep,arb,dist-rep,dist-arb
 
 from time import sleep
 from random import sample
 import traceback
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
 
     def terminate(self):
         """
@@ -71,6 +71,7 @@ class TestCase(NdParentTest):
                                                       count, 1, 2, 2, 30,
                                                       mount_obj['client'])
             self.all_mounts_procs.append(proc)
+            self.io_validation_complete = False
 
         # Get Subvols
         subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
