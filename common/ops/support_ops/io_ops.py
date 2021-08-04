@@ -121,7 +121,7 @@ class IoOps(AbstractOps):
             list_of_nodes = [list_of_nodes]
 
         if not isinstance(list_of_paths, list):
-            list_of_paths = [list_of_paths.split(" ")]
+            list_of_paths = (list_of_paths.split(" "))
 
         for path in list_of_paths:
             cmd = f"stat {path}"
@@ -487,12 +487,18 @@ class IoOps(AbstractOps):
 
             # this finds the anonymous inode directories
             # and creates the command to ignore those
-            cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
-            ret = self.execute_abstract_op_node(cmd, node)
             anon_dir_cmd = ""
-            for anon_dir in ret['msg']:
-                anon_dir = anon_dir.rstrip("/\n")
-                anon_dir_cmd = f"{anon_dir_cmd} -i {anon_dir}"
+            cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
+            ret = self.execute_abstract_op_node(cmd, node, False)
+            if ret['error_code'] != 0 and ret['msg'] == []:
+                pass
+            elif ret['error_code'] == 0:
+                for anon_dir in ret['msg']:
+                    anon_dir = anon_dir.rstrip("/\n")
+                    anon_dir_cmd = f"{anon_dir_cmd} -i {anon_dir}"
+            else:
+                self.logger.error("Failed to check brick path")
+                return None
 
             cmd = (f'arequal-checksum -p {brick_path} -i .glusterfs -i '
                    f'.landfill -i .trashcan {anon_dir_cmd}')

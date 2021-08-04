@@ -99,7 +99,7 @@ class TestDefaultGranularEntryHeal(DParentTest):
         Check if arequals of mount point and bricks are
         are the same.
         """
-        if self.volume_type == "rep":
+        if self.volume_type == "rep" or self.volume_type == "arb":
             # Check arequals for "replicated"
             brick_list = self.redant.get_all_bricks(self.vol_name,
                                                     self.server_list[0])
@@ -118,7 +118,7 @@ class TestDefaultGranularEntryHeal(DParentTest):
                 arequals, dir_brick_list)
 
         # Check arequals for "distributed-replicated"
-        if self.volume_type == "dist-rep":
+        if self.volume_type == "dist-rep" or self.volume_type == "dist-arb":
             # Get the subvolumes
             subvols = self.redant.get_subvols(self.vol_name,
                                               self.server_list[0])
