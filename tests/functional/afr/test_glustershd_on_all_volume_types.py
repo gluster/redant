@@ -172,7 +172,3 @@ class TestSelfHealDaemonProcessTestsWithMultipleVolumes(DParentTest):
             raise Exception("Either No self heal daemon process found or "
                             "more than One self heal daemon process "
                             f"found : {glustershd_pids_after_adding_bricks}")
-
-        # if glustershd_pids == glustershd_pids_after_adding_bricks:
-        #     raise Exception("Self Daemon process is same before and"
-        #                     " after adding bricks")
