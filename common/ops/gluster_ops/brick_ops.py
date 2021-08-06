@@ -327,9 +327,15 @@ class BrickOps(AbstractOps):
         brick_cmd = ""
         server_iter = 0
         brick_iter = 0
-        used_servers = []
-        unused_servers = []
+        used_servers, unused_servers = [], []
+        used_bricks, unused_bricks = {}, {}
         last_node = ""
+        new_brick = ""
+
+        # Empty the used_bricks dict
+        for node in brick_root.keys():
+            used_bricks[node] = []
+            unused_bricks[node] = []
 
         iter_add = 0
         if add_flag:
@@ -340,8 +346,13 @@ class BrickOps(AbstractOps):
                 if iter_add < brick_num:
                     iter_add = brick_num
 
+                node, brick_path = brick.split(':')
                 # Create used servers list
-                used_servers.append(brick.split(':')[0])
+                used_servers.append(node)
+
+                # Create used bricks list
+                root_brick = brick_path[0:brick_path.rfind('/')]
+                used_bricks[node].append(root_brick)
 
             # Save the last used node, so that new brick addition starts from
             # a different node
@@ -352,6 +363,16 @@ class BrickOps(AbstractOps):
             for server in server_list:
                 if server not in used_servers:
                     unused_servers.append(server)
+
+        # Create the unused bricks dict
+        if used_bricks:
+            for node, brick in brick_root.items():
+                if not used_bricks[node]:
+                    unused_bricks[node] = brick_root[node].copy()
+                else:
+                    for br in brick:
+                        if br not in used_bricks[node]:
+                            unused_bricks[node].append(br)
 
         # Don't begin brick creation from the same node as the last node
         # If we are adding new bricks
@@ -376,12 +397,24 @@ class BrickOps(AbstractOps):
             if server_val not in brick_dict.keys():
                 brick_dict[server_val] = []
 
-            if brick_iter <= (len(brick_root[server_val]) - 1):
-                brick_path_val = (f"{brick_root[server_val][brick_iter]}/"
-                                  f"{volname}-{iteration+iter_add}")
+            # If there are unused bricks, then use them and remove the
+            # brick from the dict once used
+            if server_val in unused_bricks.keys() and \
+               len(unused_bricks[server_val]) > 0:
+                new_brick = unused_bricks[server_val][0]
+                brick_path_val = (f"{new_brick}/{volname}-"
+                                  f"{iteration+iter_add}")
+                unused_bricks[server_val].remove(new_brick)
+
+            # If there are no unused bricks, then start from the beginning
+            # of the brick_root dict
             else:
-                brick_path_val = (f"{brick_root[server_val][0]}/"
-                                  f"{volname}-{iteration+iter_add}")
+                if brick_iter <= (len(brick_root[server_val]) - 1):
+                    brick_path_val = (f"{brick_root[server_val][brick_iter]}/"
+                                      f"{volname}-{iteration+iter_add}")
+                else:
+                    brick_path_val = (f"{brick_root[server_val][0]}/"
+                                      f"{volname}-{iteration+iter_add}")
 
             brick_dict[server_val].append(brick_path_val)
             brick_cmd = (f"{brick_cmd} {server_val}:{brick_path_val}")
