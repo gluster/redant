@@ -230,7 +230,18 @@ class SnapshotOps(AbstractOps):
         """
         cmd = (f"gluster snapshot clone {clonename} {snapname} --mode=script"
                " --xml")
-        return self.execute_abstract_op_node(cmd, node, excep)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        if not excep and ret['msg']['opRet'] != '0':
+            return ret
+
+        # Query the vol info for clonename
+
+        # Parse the brick info
+
+        # Obtain the volume params
+
+        # create environ data
+        return ret
 
     def snap_restore(self, snapname: str, node: str,
                      excep: bool = True) -> bool:
