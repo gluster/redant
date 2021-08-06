@@ -329,7 +329,7 @@ class BrickOps(AbstractOps):
         brick_cmd = ""
         server_iter = 0
         brick_iter = 0
-        used_servers = [], unused_servers = [], []
+        used_servers, unused_servers = [], []
         used_bricks, unused_bricks = {}, {}
         last_node = ""
         new_brick = ""
