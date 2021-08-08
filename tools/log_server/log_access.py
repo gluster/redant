@@ -10,4 +10,4 @@ if __name__ == "__main__":
     ppath = config['logpath']['path']
     fport = int(config['logpath']['port'])
     AutoIndex(app, browse_root=ppath)
-    app.run(host='0.0.0.0', port = fport)
+    app.run(host='0.0.0.0', port=fport)
