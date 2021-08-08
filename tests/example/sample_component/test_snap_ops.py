@@ -3,7 +3,6 @@ This file contains a test-case which tests
 the snapshot ops.
 """
 
-# disruptive;rep
 # disruptive;rep,dist,dist-rep,arb,dist-arb,disp,dist-disp
 
 
