@@ -62,14 +62,7 @@ class TestCase(DParentTest):
         redant.snap_activate(self.snap_name2, self.server_list[0],
                              force=True)
 
-        vol_list = redant.get_volume_list(self.server_list[0])
-        #print(vol_list)
         redant.snap_clone(self.snap_name, "clone1", self.server_list[0])
-        vol_list = redant.get_volume_list(self.server_list[0])
-        #print(vol_list)
-        vol_info = redant.get_volume_info(self.server_list[0])
-        #print(vol_info)
-        
         redant.logger.info(redant.snap_list(self.server_list[0]))
         redant.logger.info(redant.get_snap_status(self.server_list[0]))
         snap_running_status = redant.is_snapd_running(self.vol_name,

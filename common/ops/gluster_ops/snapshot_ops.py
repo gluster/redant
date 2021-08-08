@@ -234,13 +234,28 @@ class SnapshotOps(AbstractOps):
         if not excep and ret['msg']['opRet'] != '0':
             return ret
 
-        # Query the vol info for clonename
+        # Query the vol info for brick and vol param data.
+        brick_data = {}
+        ret = self.get_volume_info(node, clonename)
+        for brick in ret[clonename]['bricks']:
+            ip, brick_path = brick['name'].split(':')
+            if ip not in brick_data.keys():
+                brick_data[ip] = []
+            brick_data[ip].append(brick_path)
 
-        # Parse the brick info
-
-        # Obtain the volume params
+        # build the volume params for cloned volume.
+        vol_param = {}
+        vol_param["dist_count"] = ret[clonename]["distCount"]
+        vol_param["replica_count"] = ret[clonename]["replicaCount"]
+        vol_param["disperse_count"] = ret[clonename]["disperseCount"]
+        vol_param["arbiter_count"] = ret[clonename]["arbiterCount"]
+        vol_param["redundancy_count"] = ret[clonename]["redundancyCount"]
+        vol_param["transport"] = "tcp"
 
         # create environ data
+        self.es.set_new_volume(clonename, brick_data)
+        self.es.set_vol_type(clonename, vol_param)
+
         return ret
 
     def snap_restore(self, snapname: str, node: str,
