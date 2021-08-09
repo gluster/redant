@@ -10,5 +10,7 @@ Following are some pointers which describe a Dtc. If a test case satisfies even 
 
 * The test case reboots a node ( server or client ).
 * The test case reconfigures ports or changes firewalld rules.
-* The test case is unmounting the mountpoint which acts as glusterfs brick roots.
-* The test case aims to create a huge amount of volumes, snapshots, geo-rep sessions or gfind sessions.
+* The test case is unmounting the client mountpoints and volume bricks itself.
+* The test case changes cluster-level config parameters.
+* The test case kills/stops/restarts glusterd in a node.
+* The test case aims to create a huge amount of volumes, snapshots, geo-rep sessions or gfind sessions. [ The langauge here is a little vague and the reason behind that is we don't have a benchmarked value for what is huge amount of volumes or high IO.]
