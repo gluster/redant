@@ -29,7 +29,7 @@ class TestAuthRejectVol(DParentTest):
     @DParentTest.setup_custom_enable
     def setup_test(self):
         # Check server requirements
-        redant.check_hardware_requirements(self.client_list, 2)
+        self.redant.check_hardware_requirements(self.client_list, 2)
 
         # Create and start the volume
         conf_hash = self.vol_type_inf[self.volume_type]
