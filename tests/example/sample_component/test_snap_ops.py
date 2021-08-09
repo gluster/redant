@@ -60,6 +60,8 @@ class TestCase(DParentTest):
                              force=True)
         redant.snap_activate(self.snap_name2, self.server_list[0],
                              force=True)
+
+        redant.snap_clone(self.snap_name, "clone1", self.server_list[0])
         redant.logger.info(redant.snap_list(self.server_list[0]))
         redant.logger.info(redant.get_snap_status(self.server_list[0]))
         snap_running_status = redant.is_snapd_running(self.vol_name,
