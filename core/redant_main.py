@@ -139,8 +139,8 @@ def main():
     if args.excel_sheet is None:
         handle_results(result_queue, total_time, logger_obj)
     else:
-        handle_results(result_queue, total_time, args.excel_sheet,
-                       logger_obj)
+        handle_results(result_queue, total_time, logger_obj,
+                       args.excel_sheet)
 
     logger_obj.debug("Starting env teardown.")
     env_set.teardown_env()
