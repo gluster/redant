@@ -47,7 +47,7 @@ class HealOps:
                    False otherwise
         """
         # Return True if the volume is pure distribute
-        if self.is_distribute_volume(volname):
+        if self.is_distribute_volume(node, volname):
             self.logger.info(f"Volume {volname} is a distribute volume. "
                              "Hence not waiting for self-heal daemons "
                              "to be online")
@@ -89,7 +89,7 @@ class HealOps:
                    False otherwise.
             NoneType: None if unable to get the volume status
         """
-        if self.is_distribute_volume(volname):
+        if self.is_distribute_volume(node, volname):
             self.logger.info(f"Volume {volname} is a distribute volume. "
                              "Hence not waiting for self-heal daemons "
                              "to be online")

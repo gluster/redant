@@ -1367,21 +1367,26 @@ class VolumeOps(AbstractOps):
 
         return ret
 
-    def is_distribute_volume(self, volname: str) -> bool:
+    def is_distribute_volume(self, node: str, volname: str) -> bool:
         """
         Check if volume is a plain distributed volume
 
         Args:
+            node (str): Node on which the command has to be run
             volname (str): Name of the volume.
 
         Returns:
             bool : True if the volume is distributed volume. False otherwise
             NoneType: None if volume does not exist.
         """
-        volume_dict = self.es.get_volume_dict(volname)
-        if volume_dict['voltype']['dist_count'] > 0 and\
-                volume_dict['voltype']['replica_count'] == 1:
+        volume_dict = self.get_volume_type_info(node, volname)
+        if not volume_dict:
+            self.logger.error("Failed to check the volume type")
+            return False
+
+        if volume_dict['volume_type_info']['typeStr'] == "Distribute":
             return True
+
         return False
 
     def wait_for_volume_process_to_be_online(self, volname: str, node: str,
@@ -1619,7 +1624,7 @@ class VolumeOps(AbstractOps):
             return False
 
         # Verify all self-heal-daemons are running for non-distribute volumes.
-        if not self.is_distribute_volume(volname):
+        if not self.is_distribute_volume(node, volname):
             if not self.are_all_self_heal_daemons_online(volname,
                                                          node):
                 return False
