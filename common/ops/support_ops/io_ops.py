@@ -487,12 +487,18 @@ class IoOps(AbstractOps):
 
             # this finds the anonymous inode directories
             # and creates the command to ignore those
-            cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
-            ret = self.execute_abstract_op_node(cmd, node)
             anon_dir_cmd = ""
-            for anon_dir in ret['msg']:
-                anon_dir = anon_dir.rstrip("/\n")
-                anon_dir_cmd = f"{anon_dir_cmd} -i {anon_dir}"
+            cmd = f'ls -ap {brick_path} | grep .glusterfs-anonymous-inode'
+            ret = self.execute_abstract_op_node(cmd, node, False)
+            if ret['error_code'] != 0 and ret['msg'] == []:
+                pass
+            elif ret['error_code'] == 0:
+                for anon_dir in ret['msg']:
+                    anon_dir = anon_dir.rstrip("/\n")
+                    anon_dir_cmd = f"{anon_dir_cmd} -i {anon_dir}"
+            else:
+                self.logger.error("Failed to check brick path")
+                return None
 
             cmd = (f'arequal-checksum -p {brick_path} -i .glusterfs -i '
                    f'.landfill -i .trashcan {anon_dir_cmd}')
@@ -964,8 +970,9 @@ class IoOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, node)
         return ret['msg']
 
-    def check_if_pattern_in_file(self, node: str,
-                                 pattern: str, fqpath: str):
+    def check_if_pattern_in_file(self, node: str, pattern: str,
+                                 fqpath: str,
+                                 check_occurence: bool = False) -> int:
         """Check if a give pattern is in seen in file or not.
 
         Args:
@@ -978,13 +985,44 @@ class IoOps(AbstractOps):
             1: If pattern not present in file.
            -1: If command was not executed.
         """
-        cmd = f"cat {fqpath} | grep \"{pattern}\""
+        flag = ""
+        if check_occurence:
+            flag = "-c"
+
+        cmd = f"cat {fqpath} | grep {flag} \"{pattern}\""
         ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
+            self.logger.error("Failed to check the pattern in file "
+                              f"{fqpath}")
             return -1
-        if len(ret['msg']) == 0:
-            return 1
-        return 0
+
+        if check_occurence:
+            return int(ret['msg'][0].strip())
+        else:
+            if len(ret['msg']) == 0:
+                self.logger.error("No occurence of the pattern found in the"
+                                  f" file {fqpath}")
+                return 1
+            return 0
+
+    def occurences_of_pattern_in_file(self, node: str, search_pattern: str,
+                                      filename: str) -> int:
+        """
+        Get the number of occurences of pattern in the file
+
+        Args:
+            node (str): Host on which the command is executed.
+            search_pattern (str): Pattern to be found in the file.
+            filename (str): File in which the pattern is to be validated
+
+        Returns:
+            int: -1 - When the file doesn't exists or failed to
+                      execute the command, Or
+                number of occurences of the pattern
+        """
+        out = self.check_if_pattern_in_file(node, search_pattern, filename,
+                                            True)
+        return out
 
     def find_and_replace_in_file(self, node: str,
                                  fpattern: str, rpattern: str,
