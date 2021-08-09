@@ -20,7 +20,7 @@ def main():
         ppath = config['serverdata']['path']
     except Exception as KeyError:
         print("Key error in path. Defaulting to /tmp/redant as log path.")
-        ppath = "/tmp/redant"""
+        ppath = "/tmp/redant"
 
     # Port extraction and validation.
     try:
