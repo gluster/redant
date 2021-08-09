@@ -314,6 +314,7 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
         logger.error(f"XLS Save error : {error}")
         logger.error(f"XLS Save traceback : {tb}")
 
+
 def _data_to_pretty_tables(statDict: dict, resultDict: dict,
                            totalRTime: str):
     """
