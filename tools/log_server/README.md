@@ -1,6 +1,6 @@
 ## Flask Log Server
 
-Logs are important for two purposes, when we are developing the code and when the code fails and we want to find what went wrong. To access the logs quickly, the flask server tool was created. With a couple of changes in the dev env, users can run a poor man's flask server which server the redant log dir.
+Logs are important for two purposes, when we are developing the code and when the code fails and we want to find what went wrong. To access the logs quickly, the flask server tool was created. With a couple of changes in the dev env, users can run a poor man's flask server which serves the redant log dir.
 
 1. The log path and the port to be exposed needs to be updated inside the [log_access.ini](./log_access.ini) file.
 2. After log path updation, one can simply run `python3 log_access.py`. This will start a debug flask server.
