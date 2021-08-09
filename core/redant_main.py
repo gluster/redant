@@ -141,6 +141,8 @@ def main():
     else:
         handle_results(result_queue, total_time, args.excel_sheet,
                        logger_obj)
+
+    logger_obj.debug("Starting env teardown.")
     env_set.teardown_env()
 
 
