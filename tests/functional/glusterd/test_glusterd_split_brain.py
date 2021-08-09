@@ -38,7 +38,7 @@ class TestCase(DParentTest):
 
         """
         # Check server requirements
-        redant.check_hardware_requirements(self.server_list, 6)
+        self.redant.check_hardware_requirements(self.server_list, 6)
 
         # Create a dist-rep volume using first 4 nodes
         conf_hash = {
