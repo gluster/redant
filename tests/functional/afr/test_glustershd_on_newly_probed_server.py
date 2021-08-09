@@ -109,7 +109,7 @@ class TestSelfHealDaemonProcessTests(DParentTest):
                             f"after stopping volume {self.volname}")
 
         for node in pids:
-            if pids[node][0] != -1:
+            if pids[node] != -1:
                 raise Exception("Self Heal Daemon is still running on node"
                                 f" {node} even after stopping all volumes")
 
