@@ -136,10 +136,11 @@ class environ:
             self.redant.create_cluster(self.server_list)
             self._check_and_copy_io_script()
             self._check_and_install_arequal_checksum()
+            self.redant.logger.info("Environment setup success.")
             self.spinner.succeed("Environment setup successful.")
         except Exception as error:
             tb = traceback.format_exc()
-            self.redant.logger.error(error)
+            self.redant.logger.error(f"Environment setup failure : {error}")
             self.redant.logger.error(tb)
             self.spinner.fail("Environment setup failed.")
             sys.exit(0)
@@ -153,10 +154,11 @@ class environ:
         try:
             self.redant.hard_terminate(self.server_list, self.client_list,
                                        self.brick_root)
+            self.redant.logger.info("Environment teardown success.")
             self.spinner.succeed("Tearing down successful.")
         except Exception as error:
             tb = traceback.format_exc()
-            self.redant.logger.error(error)
+            self.redant.logger.error(f"Environment teardown failure : {error}")
             self.redant.logger.error(tb)
             self.spinner.fail("Environment Teardown failed.")
 

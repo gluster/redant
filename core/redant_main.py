@@ -117,24 +117,32 @@ def main():
     # Framework Environment datastructure.
     env_obj = FrameworkEnv()
     env_obj.init_ds()
+    logger_obj = env_obj.get_framework_logger()
 
     # Environment setup.
+    logger_obj.debug("Starting env setup.")
     env_set = environ(param_obj, env_obj, errer, f"{log_dir_current}/main.log",
                       args.log_level)
     env_set.setup_env()
 
     # invoke the test_runner.
+    logger_obj.debug("Running the test cases.")
     TestRunner.init(TestListBuilder, param_obj, env_set, log_dir_current,
                     args.log_level, args.concur_count, spec_test)
     result_queue = TestRunner.run_tests(env_obj)
+    logger_obj.debug("Collected test results queue.")
 
     # Environment cleanup. TBD.
     total_time = time.time() - start
 
+    # Setup the result
     if args.excel_sheet is None:
-        handle_results(result_queue, total_time)
+        handle_results(result_queue, total_time, logger_obj)
     else:
-        handle_results(result_queue, total_time, args.excel_sheet)
+        handle_results(result_queue, total_time, args.excel_sheet,
+                       logger_obj)
+
+    logger_obj.debug("Starting env teardown.")
     env_set.teardown_env()
 
 

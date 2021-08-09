@@ -6,6 +6,7 @@ results in two ways:
 2. store in a spreadsheet
 """
 import copy
+import traceback
 import xlwt
 from xlwt import Workbook
 from prettytable import PrettyTable
@@ -233,7 +234,7 @@ def _transform_to_percent(statDict: dict) -> dict:
 
 
 def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
-                 totalRTime: str):
+                 totalRTime: str, logger):
     """
     Function to prepare a spreadsheet using the data for
     results.
@@ -306,7 +307,12 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
                     row += 1
 
     # Push the changes to the file.
-    wb.save(filePath)
+    try:
+        wb.save(filePath)
+    except Exception as error:
+        tb = traceback.format_exc()
+        logger.error(f"XLS Save error : {error}")
+        logger.error(f"XLS Save traceback : {tb}")
 
 
 def _data_to_pretty_tables(statDict: dict, resultDict: dict,
@@ -361,17 +367,21 @@ def _data_to_pretty_tables(statDict: dict, resultDict: dict,
     print(f"Total Time Taken : {totalTime}")
 
 
-def handle_results(resultQueue, totalTime: float, filePath: str = None):
+def handle_results(resultQueue, totalTime: float, logger,
+                   filePath: str = None):
     """
     Function to handle the results for redant.
 
     Args:
         resultQueue: It is a queue containing the test run results.
+        totalTime: The total time taken for test case execution.
+        logger: The logger object used for logging.
 
     Optional:
         filePath (str): The path wherein the result is to be stored
         if the output format is for xls.
     """
+    logger.debug("Initializing result handling.")
     # Transform queue data to dictionary.
     resultDict = _transform_queue_to_dict(resultQueue)
 
@@ -388,6 +398,8 @@ def handle_results(resultQueue, totalTime: float, filePath: str = None):
 
     # Output the result.
     if filePath is not None:
-        _data_to_xls(statDict, resultDict, filePath, totalTime)
+        logger.info(f"Results to be put inside : {filePath}")
+        _data_to_xls(statDict, resultDict, filePath, totalTime, logger)
     else:
+        logger.info("Results to be put to stdout")
         _data_to_pretty_tables(statDict, resultDict, totalTime)
