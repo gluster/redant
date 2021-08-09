@@ -81,9 +81,8 @@ class TestCase(DParentTest):
         5) While the volume start is happening restart N4.
         6) Check if glusterd has crashed on any node.
         """
-        if len(self.server_list) < 4:
-            self.TEST_RES = None
-            raise Exception("Minimum 4 nodes required for this TC to run")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 4)
 
         # Fetching all the parameters for volume_create
         list_of_three_servers = self.server_list[0:3]

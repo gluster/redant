@@ -34,10 +34,8 @@ class TestCase(DParentTest):
         creating a volume with bricks in another cluster, creating a volume
         when one of the brick node is down are validated.
         """
-        # Check for 4 servers
-        if len(self.server_list) < 4:
-            self.TEST_RES = None
-            raise Exception("The test case requires 4 servers to run the test")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 4)
 
         # create and start a volume
 

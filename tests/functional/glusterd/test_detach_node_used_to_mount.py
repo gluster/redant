@@ -60,10 +60,8 @@ class TestCase(DParentTest):
         11.Create a new directory from the client on the mount point.
         12.Check for directory in both replica sets.
         """
-        # Check if servers are sufficient to run the test case.
-        if len(self.server_list) < 4:
-            self.TEST_RES = None
-            raise Exception("Servers are not sufficient to run the test")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 4)
 
         # Creating 100 files.
         command = ('for number in `seq 1 100`;do touch '

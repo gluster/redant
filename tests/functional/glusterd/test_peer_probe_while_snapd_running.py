@@ -30,9 +30,8 @@ class TestPeerProbeWhileSnapdRunning(DParentTest):
         """
         Create and start the volume
         """
-        if len(self.server_list) < 4:
-            self.TEST_RES = None
-            raise Exception("The test case require 4 servers to run the test")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 4)
 
         # Detach on node
         self.extra_node = self.server_list[-1]
