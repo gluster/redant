@@ -361,17 +361,21 @@ def _data_to_pretty_tables(statDict: dict, resultDict: dict,
     print(f"Total Time Taken : {totalTime}")
 
 
-def handle_results(resultQueue, totalTime: float, filePath: str = None):
+def handle_results(resultQueue, totalTime: float, logger,
+                   filePath: str = None):
     """
     Function to handle the results for redant.
 
     Args:
         resultQueue: It is a queue containing the test run results.
+        totalTime: The total time taken for test case execution.
+        logger: The logger object used for logging.
 
     Optional:
         filePath (str): The path wherein the result is to be stored
         if the output format is for xls.
     """
+    logger.debug("Initializing result handling.")
     # Transform queue data to dictionary.
     resultDict = _transform_queue_to_dict(resultQueue)
 
@@ -388,6 +392,8 @@ def handle_results(resultQueue, totalTime: float, filePath: str = None):
 
     # Output the result.
     if filePath is not None:
+        logger.info(f"Results to be put inside : {filePath}")
         _data_to_xls(statDict, resultDict, filePath, totalTime)
     else:
+        logger.info("Results to be put to stdout")
         _data_to_pretty_tables(statDict, resultDict, totalTime)
