@@ -12,8 +12,8 @@ def main():
             config.read('log_access.ini')
     except IOError:
         print("log_access.ini doesn't exist. Hence taking a default dict."
-              f" with path : /tmp/redant and port : 5000")
-        config = {"serverdata" : {"path" : "/tmp/redant", "port": 5000}}
+              " with path : /tmp/redant and port : 5000")
+        config = {"serverdata": {"path": "/tmp/redant", "port": 5000}}
 
     # Path extraction and validation.
     try:
@@ -35,6 +35,7 @@ def main():
     app = Flask(__name__)
     AutoIndex(app, browse_root=ppath)
     app.run(host='0.0.0.0', port=fport)
+
 
 if __name__ == "__main__":
     main()
