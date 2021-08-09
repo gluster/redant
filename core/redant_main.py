@@ -122,6 +122,7 @@ def main():
     env_set = environ(param_obj, env_obj, errer, f"{log_dir_current}/main.log",
                       args.log_level)
     logger_obj = env_set.get_framework_logger()
+    logger_obj.debug("Running env setup.")
     env_set.setup_env()
 
     # invoke the test_runner.
