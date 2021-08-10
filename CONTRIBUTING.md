@@ -32,7 +32,7 @@ To execute the same:
 ### Using script:
 You can run the following command
 ```console
-tools/linting.sh -p PATH/TO/FILE -l -f
+tools/linting.sh
 ```
 To know more about the script, go [here](./tools/README.md).
 
