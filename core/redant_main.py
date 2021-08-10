@@ -146,6 +146,7 @@ def main():
     logger_obj.debug("Starting env teardown.")
     env_set.teardown_env()
 
+
 if __name__ == '__main__':
     print(pyfiglet.figlet_format("REDANT", font="slant"))
     failure = False
