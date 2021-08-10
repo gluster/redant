@@ -58,7 +58,7 @@ class NdParentTest(metaclass=abc.ABCMeta):
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
             if self.TEST_RES is None:
-                self.SKIP_REASON = error
+                self.SKIP_REASON = str(error)
             else:
                 self.TEST_RES = False
 

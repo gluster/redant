@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import datetime
+import traceback
 import argparse
 import pyfiglet
 from halo import Halo
@@ -145,7 +146,23 @@ def main():
     logger_obj.debug("Starting env teardown.")
     env_set.teardown_env()
 
-
 if __name__ == '__main__':
     print(pyfiglet.figlet_format("REDANT", font="slant"))
-    main()
+    failure = False
+    try:
+        main()
+    except Exception as error:
+        error_string = str(error)
+        tb = traceback.format_exc()
+        error_string = f"{error_string}. Traceback : {tb}"
+        failure = True
+
+    if failure:
+        time_now = time.time()
+        try:
+            f = open(f"/tmp/redant/redant-{time_now}", 'w')
+            f.write(error_string)
+            f.close()
+            print(f"Traceback put into /tmp/redant/redant-{time_now}")
+        except Exception as err:
+            print(f"Couldn't write main exception {error_string} due to {err}")
