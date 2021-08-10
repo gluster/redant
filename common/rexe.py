@@ -291,7 +291,8 @@ class Rexe:
         Arg:
             node (str)
         """
-        cmd = f'ssh -t root@{node} "reboot" > /dev/null 2>&1'
+        cmd = (f'ssh -t root@{node} "sleep 1;reboot > /dev/null 2>&1;"'
+               ' > /dev/null 2>&1;')
         self.logger.info(f"Executing the command : {cmd}")
         ret = os.system(cmd)
         self.logger.info(f"Return value for the command {cmd} is {ret}")
