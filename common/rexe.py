@@ -219,20 +219,41 @@ class Rexe:
         self.logger.debug(ret_dict)
         return ret_dict
 
-    def wait_till_async_command_ends(self, async_obj: dict) -> dict:
+    def wait_till_async_command_ends(self, async_obj: dict,
+                                     timeout: int = None) -> dict:
         """
         Stay put till the async command finished it's execution and
         provide the required return value.
         Args:
             async_obj (dict) : Contains the details about the async command,
-            with keys -> 'stdout', 'stderr', 'cmd', 'node'
+                               with keys -> 'stdout', 'stderr', 'cmd', 'node'
+            timeout (int) : Time until which the async command status shall
+                            be checked
         Returns:
             dict: Returns the resultant dictionary after the command ends.
         """
 
         ret_dict = {}
-        while not async_obj['stdout'].channel.exit_status_ready():
-            time.sleep(1)
+        if timeout:
+            while timeout:
+                if not async_obj['stdout'].channel.exit_status_ready():
+                    time.sleep(1)
+                    timeout -= 1
+                else:
+                    break
+
+            if not timeout:
+                ret_dict['error_code'] = -1
+                ret_dict['Flag'] = False
+                ret_dict['msg'] = ""
+                ret_dict['error_msg'] = "Command execution incomplete"
+                ret_dict['node'] = async_obj['node']
+                ret_dict['cmd'] = async_obj['cmd']
+                return ret_dict
+
+        else:
+            while not async_obj['stdout'].channel.exit_status_ready():
+                time.sleep(1)
 
         ret_dict = self.collect_async_result(async_obj)
         return ret_dict
