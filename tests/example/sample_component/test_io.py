@@ -67,3 +67,10 @@ class TestCase(NdParentTest):
                                        f"{self.mountpoint}/source_file.txt",
                                        f"{self.mountpoint}/link_file.txt"):
             raise Exception("Failed to create link")
+
+        # Test async command timeout
+        proc = redant.execute_command_async("sleep 20;", self.client_list[0])
+        ret = redant.wait_till_async_command_ends(proc, timeout=5)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: Command should have failed as the"
+                            " timout is less than the expected time")

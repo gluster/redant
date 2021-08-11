@@ -242,6 +242,15 @@ class Rexe:
                 else:
                     break
 
+            if not timeout:
+                ret_dict['error_code'] = -1
+                ret_dict['Flag'] = False
+                ret_dict['msg'] = ""
+                ret_dict['error_msg'] = "Command execution incomplete"
+                ret_dict['node'] = async_obj['node']
+                ret_dict['cmd'] = async_obj['cmd']
+                return ret_dict
+
         else:
             while not async_obj['stdout'].channel.exit_status_ready():
                 time.sleep(1)
