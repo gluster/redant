@@ -115,7 +115,7 @@ class TestCase(DParentTest):
 
         # Bring brick2 online
         redant.restart_glusterd(self.server_list[1])
-        
+
         sleep(10)
         # Check if the brick b2 on node2 is online or not
         if not redant.are_bricks_online(self.vol_name, brick2,
