@@ -21,7 +21,6 @@ Description:
 
 # disruptive;rep
 
-from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -95,13 +94,14 @@ class TestCase(DParentTest):
 
         # Bring the brick1 online
         redant.restart_glusterd(self.server_list[0])
+        if not (self.redant.
+                wait_for_glusterd_to_start(self.server_list[0])):
+            raise Exception(f"Glusterd still running on {self.server_list[0]}")
 
-        sleep(10)
-        # Check if the brick b1 on node1 is online or not
-        if not redant.are_bricks_online(self.vol_name, brick1,
-                                        self.server_list[0]):
-            raise Exception(f"Brick:{brick1} is still offline after "
-                            "glusterd restart")
+        if not redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                     self.server_list,
+                                                     brick1):
+            raise Exception("Brick {brick1} is not online")
 
         # Create 10 files under dir1 naming x{1..10}
         cmd = (f"cd {self.mountpoint}/dir1; for i in `seq 1 10`;"
@@ -116,12 +116,14 @@ class TestCase(DParentTest):
         # Bring brick2 online
         redant.restart_glusterd(self.server_list[1])
 
-        sleep(10)
-        # Check if the brick b2 on node2 is online or not
-        if not redant.are_bricks_online(self.vol_name, brick2,
-                                        self.server_list[1]):
-            raise Exception(f"Brick:{brick2} is still offline after "
-                            "glusterd restart")
+        if not (self.redant.
+                wait_for_glusterd_to_start(self.server_list[1])):
+            raise Exception(f"Glusterd still running on {self.server_list[1]}")
+
+        if not redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                     self.server_list,
+                                                     brick2):
+            raise Exception("Brick {brick2} is not online")
 
         # Check are there any files in split-brain and heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
