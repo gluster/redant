@@ -32,9 +32,8 @@ class TestSelfHealDaemonProcessTests(DParentTest):
         Override the cluster formation, volume create and start in
         parent_run_test
         """
-        if len(self.server_list) < 6:
-            self.TEST_RES = None
-            raise Exception("The test case require 6 servers to run the test")
+        # Check hardware configuration
+        self.redant.check_hardware_requirements(self.server_list, 6)
 
         self.extra_servers = self.server_list[-2:]
         self.servers = self.server_list[:-2]
