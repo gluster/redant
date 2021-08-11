@@ -203,12 +203,12 @@ class TestRunner:
         test_stats['tcNature'] = test_dict['tcNature']
         spinner.clear()
         result_text = f"{test_dict['moduleName'][:-3]}-{test_dict['volType']}"
-        if test_stats['testResult'] is True:
+        if test_stats['testResult'][0] is True:
             test_stats['testResult'] = "PASS"
             result_text += " PASS"
             spinner = Halo(spinner='dots', text_color='green')
             spinner.succeed(text=f"{mname}-{volume_type} Succeeded")
-        elif test_stats['testResult'] is False:
+        elif test_stats['testResult'][0] is False:
             result_text += " FAIL"
             test_stats['testResult'] = "FAIL"
             spinner = Halo(spinner='dots', text_color='red')
