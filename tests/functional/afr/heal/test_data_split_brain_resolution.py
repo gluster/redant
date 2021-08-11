@@ -1,271 +1,171 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
-# pylint: disable=too-many-statements, too-many-locals
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
 
-""" Description:
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
         Test cases in this module tests whether heal command for resolving
         split-brains will resolve all the files in data-split brains by using
         one of the method (bigger-file/latest-mtime/source-brick).
 """
 
-from glusto.core import Glusto as g
+# disruptive;rep
 
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.gluster.volume_ops import set_volume_options
-from glustolibs.gluster.heal_ops import trigger_heal
-from glustolibs.gluster.heal_libs import (monitor_heal_completion,
-                                          is_volume_in_split_brain)
-from glustolibs.gluster.brick_libs import (get_all_bricks,
-                                           bring_bricks_offline,
-                                           bring_bricks_online,
-                                           are_bricks_offline,
-                                           are_bricks_online)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated'],
-          ['glusterfs']])
-class HealDataSplitBrain(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Override Volume
-        if cls.volume_type == "replicated":
-            cls.volume['voltype'] = {
-                'type': 'replicated',
-                'replica_count': 2,
-                'transport': 'tcp'}
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts "
-                                 "to clients %s" % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = cls.setup_volume_and_mount_volume(cls.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def tearDown(self):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        Cleanup and umount volume
+        Override the volume create
         """
-        # Cleanup and umount volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
+        conf_hash = self.vol_type_inf['rep']
+        conf_hash['replica_count'] = 2
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0],
+                                     self.vol_name,
+                                     self.mountpoint, client)
 
-        # Calling GlusterBaseClass teardown
-        self.get_super_method(self, 'tearDown')()
+    def _verify_brick_arequals(self):
+        """
+        Collects arequal for all bricks and compare
+        """
+        all_bricks = self.redant.get_online_bricks_list(
+                self.vol_name, self.server_list[0])
+        arequal = self.redant.collect_bricks_arequal(all_bricks)
+        if len(set(tuple(x) for x in arequal)) != 1:
+            raise Exception("Arequal is not same on all the bricks "
+                            "in the subvol")
 
-    def verify_brick_arequals(self):
-        g.log.info("Fetching bricks for the volume: %s", self.volname)
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        g.log.info('Getting arequal on bricks...')
-        arequal_0 = 0
-        for brick in bricks_list:
-            g.log.info('Getting arequal on bricks %s...', brick)
-            node, brick_path = brick.split(':')
-            command = ('arequal-checksum -p %s '
-                       '-i .glusterfs -i .landfill -i .trashcan'
-                       % brick_path)
-            ret, arequal, _ = g.run(node, command)
-            self.assertFalse(ret, 'Failed to get arequal on brick %s'
-                             % brick)
-            g.log.info('Getting arequal for %s is successful', brick)
-            brick_total = arequal.splitlines()[-1].split(':')[-1]
-            if arequal_0 == 0:
-                arequal_0 = brick_total
-            else:
-                self.assertEqual(brick_total, arequal_0, 'Arequal for %s and '
-                                 '%s are not equal' % (bricks_list[0], brick))
-        g.log.info('All arequals are equal on all the bricks')
-
-    def test_data_split_brain_resolution(self):
+    def run_test(self, redant):
         # Setting options
-        g.log.info('Setting options...')
         options = {"metadata-self-heal": "off",
                    "entry-self-heal": "off",
                    "data-self-heal": "off"}
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, 'Failed to set options %s' % options)
-        g.log.info("Successfully set %s for volume %s",
-                   options, self.volname)
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
+
+        redant.logger.info(f"mount point = {self.mountpoint}")
 
         # Creating files and directories on client side
-        g.log.info('Creating files and directories...')
-        cmd = ("for i in `seq 1 10`; do mkdir %s/dir.$i; for j in `seq 1 5`;"
-               "do dd if=/dev/urandom of=%s/dir.$i/file.$j bs=1K count=1;"
-               "done; dd if=/dev/urandom of=%s/file.$i bs=1K count=1; done"
-               % (self.mounts[0].mountpoint, self.mounts[0].mountpoint,
-                  self.mounts[0].mountpoint))
-
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Creating files and directories failed")
-        g.log.info("Files & directories created successfully")
+        cmd = (f"for i in `seq 1 10`; do mkdir {self.mountpoint}/dir_$i; "
+               "for j in `seq 1 5`; do dd if=/dev/urandom "
+               f"of={self.mountpoint}/dir_$i/file_$j bs=1K count=1; "
+               f"done; dd if=/dev/urandom of={self.mountpoint}/file_$i "
+               "bs=1K count=1; done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check arequals for all the bricks
-        g.log.info('Getting arequal before getting bricks offline...')
-        self.verify_brick_arequals()
-        g.log.info('Getting arequal before getting bricks offline '
-                   'is successful')
+        self._verify_brick_arequals()
 
         # Set option self-heal-daemon to OFF
-        g.log.info('Setting option self-heal-daemon to off...')
         options = {"self-heal-daemon": "off"}
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, 'Failed to set options %s' % options)
-        g.log.info("Option 'self-heal-daemon' is set to 'off' successfully")
-
-        bricks_list = get_all_bricks(self.mnode, self.volname)
+        redant.set_volume_options(self.vol_name, options,
+                                  self.server_list[0])
 
         # Bring brick1 offline
-        g.log.info('Bringing brick %s offline', bricks_list[0])
-        ret = bring_bricks_offline(self.volname, bricks_list[0])
-        self.assertTrue(ret, 'Failed to bring bricks %s offline'
-                        % bricks_list[0])
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
 
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 [bricks_list[0]])
-        self.assertTrue(ret, 'Brick %s is not offline'
-                        % bricks_list[0])
-        g.log.info('Bringing brick %s offline is successful',
-                   bricks_list[0])
+        redant.bring_bricks_offline(self.vol_name, bricks_list[0])
+        if not redant.are_bricks_offline(self.vol_name, bricks_list[0],
+                                         self.server_list[0]):
+            raise Exception(f"Brick {bricks_list[0]} is not offline")
 
         # Modify the contents of the files
         cmd = ("for i in `seq 1 10`; do for j in `seq 1 5`;"
-               "do dd if=/dev/urandom of=%s/dir.$i/file.$j bs=1M count=1;"
-               "done; dd if=/dev/urandom of=%s/file.$i bs=1K count=1; done"
-               % (self.mounts[0].mountpoint, self.mounts[0].mountpoint))
+               "do dd if=/dev/urandom "
+               f"of={self.mountpoint}/dir_$i/file_$j bs=1M count=1;"
+               "done; dd if=/dev/urandom "
+               f"of={self.mountpoint}/file_$i bs=1K count=1; done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Updating file contents failed")
-        g.log.info("File contents updated successfully")
-
-        # Bricng brick1 online and check the status
-        g.log.info('Bringing brick %s online', bricks_list[0])
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  [bricks_list[0]])
-        self.assertTrue(ret, 'Failed to bring brick %s online' %
-                        bricks_list[0])
-        g.log.info('Bringing brick %s online is successful', bricks_list[0])
-
-        g.log.info("Verifying if brick %s is online", bricks_list[0])
-        ret = are_bricks_online(self.mnode, self.volname, bricks_list)
-        self.assertTrue(ret, ("Brick %s did not come up", bricks_list[0]))
-        g.log.info("Brick %s has come online.", bricks_list[0])
+        # Bring brick1 online and check the status
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_list[0])
+        if not redant.are_bricks_online(self.vol_name, bricks_list[0],
+                                        self.server_list[0]):
+            raise Exception(f"Brick {bricks_list[0]} is not online")
 
         # Bring brick2 offline
-        g.log.info('Bringing brick %s offline', bricks_list[1])
-        ret = bring_bricks_offline(self.volname, bricks_list[1])
-        self.assertTrue(ret, 'Failed to bring bricks %s offline'
-                        % bricks_list[1])
-
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 [bricks_list[1]])
-        self.assertTrue(ret, 'Brick %s is not offline'
-                        % bricks_list[1])
-        g.log.info('Bringing brick %s offline is successful',
-                   bricks_list[1])
+        redant.bring_bricks_offline(self.vol_name, bricks_list[1])
+        if not redant.are_bricks_offline(self.vol_name, bricks_list[1],
+                                         self.server_list[1]):
+            raise Exception(f"Brick {bricks_list[1]} is not offline")
 
         # Modify the contents of the files
         cmd = ("for i in `seq 1 10`; do for j in `seq 1 5`;"
-               "do dd if=/dev/urandom of=%s/dir.$i/file.$j bs=1M count=2;"
-               "done; dd if=/dev/urandom of=%s/file.$i bs=1K count=2; done"
-               % (self.mounts[0].mountpoint, self.mounts[0].mountpoint))
+               "do dd if=/dev/urandom "
+               f"of={self.mountpoint}/dir_$i/file_$j bs=1M count=2;"
+               "done; dd if=/dev/urandom "
+               f"of={self.mountpoint}/file_$i bs=1K count=2; done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Updating file contents failed")
-        g.log.info("File contents updated successfully")
-
-        # Bricng brick2 online and check the status
-        g.log.info('Bringing brick %s online', bricks_list[1])
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  [bricks_list[1]])
-        self.assertTrue(ret, 'Failed to bring brick %s online' %
-                        bricks_list[1])
-        g.log.info('Bringing brick %s online is successful', bricks_list[1])
-
-        g.log.info("Verifying if brick %s is online", bricks_list[1])
-        ret = are_bricks_online(self.mnode, self.volname, bricks_list)
-        self.assertTrue(ret, ("Brick %s did not come up", bricks_list[1]))
-        g.log.info("Brick %s has come online.", bricks_list[1])
+        # Bring brick2 online and check the status
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   bricks_list[1])
+        if not redant.are_bricks_online(self.vol_name, bricks_list[1],
+                                        self.server_list[1]):
+            raise Exception(f"Brick {bricks_list[1]} is not online")
 
         # Set option self-heal-daemon to ON
-        g.log.info('Setting option self-heal-daemon to on...')
         options = {"self-heal-daemon": "on"}
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, 'Failed to set options %s' % options)
-        g.log.info("Option 'self-heal-daemon' is set to 'on' successfully")
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
-        g.log.info("Checking if files are in split-brain")
-        ret = is_volume_in_split_brain(self.mnode, self.volname)
-        self.assertTrue(ret, "Unable to create split-brain scenario")
-        g.log.info("Successfully created split brain scenario")
+        # Check if there any files in split-brain
+        if not redant.is_volume_in_split_brain(self.server_list[0],
+                                               self.vol_name):
+            raise Exception("Failed to create split-brain state")
 
-        g.log.info("Resolving split-brain by using the source-brick option "
-                   "by choosing second brick as source for all the files")
         node, _ = bricks_list[1].split(':')
-        command = ("gluster v heal " + self.volname + " split-brain "
-                   "source-brick " + bricks_list[1])
-        ret, _, _ = g.run(node, command)
-        self.assertEqual(ret, 0, "Command execution not successful")
+        cmd = ("gluster v heal " + self.vol_name + " split-brain "
+               "source-brick " + bricks_list[1])
+        redant.execute_abstract_op_node(cmd, node)
 
         # triggering heal
-        ret = trigger_heal(self.mnode, self.volname)
-        self.assertTrue(ret, "Heal not triggered")
+        if not redant.trigger_heal(self.vol_name,
+                                   self.server_list[0]):
+            raise Exception("Start heal failed")
 
         # waiting for heal to complete
-        ret = monitor_heal_completion(self.mnode, self.volname,
-                                      timeout_period=120)
-        self.assertTrue(ret, "Heal not completed")
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name,
+                                              timeout_period=120):
+            raise Exception("Heal not yet completed")
 
         # Try accessing the file content from the mount
-        cmd = ("for i in `seq 1 10`; do cat %s/file.$i > /dev/null;"
-               "for j in `seq 1 5` ; do cat %s/dir.$i/file.$j > /dev/null;"
-               "done ; done"
-               % (self.mounts[0].mountpoint, self.mounts[0].mountpoint))
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Unable to access the file contents")
-        g.log.info("File contents are accessible")
+        cmd = ("for i in `seq 1 10`; "
+               f"do cat {self.mountpoint}/file_$i > /dev/null;"
+               "for j in `seq 1 5` ; "
+               f"do cat {self.mountpoint}/dir_$i/file_$j > /dev/null;"
+               "done ; done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # checking if file is in split-brain
-        ret = is_volume_in_split_brain(self.mnode, self.volname)
-        self.assertFalse(ret, "File still in split-brain")
-        g.log.info("Successfully resolved split brain situation using "
-                   "CLI based resolution")
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume is in split-brain state")
 
         # Check arequals for all the bricks
-        g.log.info('Getting arequal for all the bricks after heal...')
-        self.verify_brick_arequals()
-        g.log.info('Getting arequal after heal is successful')
+        self._verify_brick_arequals()
