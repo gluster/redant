@@ -384,13 +384,13 @@ class MachineOps(AbstractOps):
         """
         # Check server requirements
         if servers and len(servers) < servers_count:
-            self.TEST_RES = None
+            self.TEST_RES[0] = None
             raise Exception(f"The test case requires {servers_count} servers"
                             " to run the test")
 
         # Check client requirements
         if clients and len(clients) < clients_count:
-            self.TEST_RES = None
+            self.TEST_RES[0] = None
             raise Exception(f"The test case requires {clients_count} clients"
                             " to run the test")
 
@@ -398,6 +398,6 @@ class MachineOps(AbstractOps):
         if brick_roots:
             for node in brick_roots.keys():
                 if len(brick_roots[node]) < bricks_count:
-                    self.TEST_RES = None
+                    self.TEST_RES[0] = None
                     raise Exception(f"The test case requires {bricks_count}"
                                     " bricks per node to run the test")

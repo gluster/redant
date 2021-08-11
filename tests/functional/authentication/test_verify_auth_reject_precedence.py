@@ -45,7 +45,8 @@ class TestVerifyAuthRejectPrecedence(DParentTest):
     @DParentTest.setup_custom_enable
     def setup_test(self):
         # Check server requirements
-        self.redant.check_hardware_requirements(self.client_list, 2)
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
 
         # Create and start the volume
         conf_hash = self.vol_type_inf[self.volume_type]

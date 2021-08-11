@@ -55,8 +55,7 @@ class TestCase(DParentTest):
         self.check_for_remount = False
 
         # Check server requirements
-        redant.check_hardware_requirements(self.server_list, 4,
-                                           self.brick_roots, 1)
+        redant.check_hardware_requirements(self.server_list, 6)
 
         # Fetching the brick list
         brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])

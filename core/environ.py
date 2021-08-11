@@ -23,7 +23,7 @@ class environ:
         """
         self.spinner = Halo(spinner='dots')
         self.redant = RedantMixin(param_obj.get_server_config(),
-                                  param_obj.get_client_config(), es)
+                                  param_obj.get_client_config(), es, [True])
         self.redant.init_logger("environ", log_path, log_level)
         try:
             self.redant.establish_connection()

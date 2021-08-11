@@ -37,7 +37,8 @@ class TestCase(NdParentTest):
         4. Wait till 300 iteration on both the node
         """
         # Check client requirements
-        redant.check_hardware_requirements(self.client_list, 2)
+        redant.check_hardware_requirements(clients=self.client_list,
+                                           clients_count=2)
 
         # Shell Script to be run on mount point
         script = """
