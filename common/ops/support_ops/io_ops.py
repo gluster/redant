@@ -676,7 +676,7 @@ class IoOps(AbstractOps):
         return _rc
 
     def validate_io_procs(self, all_mounts_async_objs: list,
-                          mounts: list) -> bool:
+                          mounts: list, timeout: int = None) -> bool:
         """
         Validate whether IO was successful or not.
         Args:
@@ -685,6 +685,8 @@ class IoOps(AbstractOps):
                                           self.execute_command_async method.
             mounts (list): List of all mountpoints on which process were
                            started.
+            timeout (int) : Time until which the async command status shall
+                            be checked
         Returns:
             bool: True if IO is successful on all mounts. False otherwise.
         """
@@ -699,7 +701,7 @@ class IoOps(AbstractOps):
         for i, async_obj in enumerate(all_mounts_async_objs):
             self.logger.info(f"Validating IO on {mounts[i]['client']}:"
                              f"{mounts[i]['mountpath']}")
-            ret = self.wait_till_async_command_ends(async_obj)
+            ret = self.wait_till_async_command_ends(async_obj, timeout)
             if ret['error_code'] != 0:
                 self.logger.error(f"IO Failed on {mounts[i]['client']}:"
                                   f"{mounts[i]['mountpath']}")
@@ -709,7 +711,7 @@ class IoOps(AbstractOps):
         return False
 
     def wait_for_io_to_complete(self, all_mounts_async_objs: list,
-                                mounts: list) -> bool:
+                                mounts: list, timeout: int = None) -> bool:
         """
         Waits for IO to complete
         Args:
@@ -717,6 +719,8 @@ class IoOps(AbstractOps):
                                           as returned by g.run_async method.
             mounts (list): List of all mountpoints on which process were
                            started.
+            timeout (int) : Time until which the async command status shall
+                            be checked
         Returns:
             bool: True if IO is complete on all mounts. False otherwise.
         """
@@ -729,7 +733,7 @@ class IoOps(AbstractOps):
             self.logger.info(f"Waiting for IO to be complete on "
                              f"{mounts[i]['client']}:"
                              f"{mounts[i]['mountpath']}")
-            ret = self.wait_till_async_command_ends(async_obj)
+            ret = self.wait_till_async_command_ends(async_obj, timeout)
             if ret['error_code'] != 0:
                 self.logger.error(f"IO Not complete on {mounts[i]['client']}:"
                                   f"{mounts[i]['mountpath']}")
