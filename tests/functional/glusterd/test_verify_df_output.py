@@ -88,6 +88,15 @@ class TestCase(DParentTest):
         - Remove bricks from volume and check output of df -h
         - Add bricks to volume and check output of df -h
         """
+        # Check hardware configuration
+        if (self.volume_type == "dist-arb" or self.volume_type == "dist-rep"
+           or self.volume_type == "dist-disp"):
+            redant.check_hardware_requirements(self.server_list, 6,
+                                               self.brick_roots, 2)
+        else:
+            redant.check_hardware_requirements(self.server_list, 3,
+                                               self.brick_roots, 2)
+
         # Perform some IO on the mount point
         self._perform_io_and_validate()
 
