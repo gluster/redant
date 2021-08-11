@@ -37,10 +37,8 @@ class TestCase(DParentTest):
         - Check the peer status, all the nodes should be in connected state
 
         """
-        # Before starting the testcase, proceed only it has minimum of 6 nodes
-        if len(self.server_list) < 6:
-            self.TEST_RES = None
-            raise Exception("Minimum 6 nodes are required for this testcase")
+        # Check server requirements
+        self.redant.check_hardware_requirements(self.server_list, 6)
 
         # Create a dist-rep volume using first 4 nodes
         conf_hash = {

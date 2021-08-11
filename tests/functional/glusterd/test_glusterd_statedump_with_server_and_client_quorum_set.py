@@ -151,9 +151,8 @@ class TestGlusterdStatedumpWhenQuorumSetOnVolumes(DParentTest):
         16. Get the glusterd statedump
         """
         # pylint: disable=too-many-statements
-        if len(self.server_list) < 5:
-            self.TEST_RES = None
-            raise Exception("Server/Brick requirements not met")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 5)
 
         # Delete old statedumps
         cmd = "rm -rf /var/run/gluster/glusterdump.*"

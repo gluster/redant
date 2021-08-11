@@ -32,6 +32,7 @@ class RedantMixin(GlusterdOps, VolumeOps, BrickOps, PeerOps,
     level data structure for volume and cleanup.
     """
 
-    def __init__(self, server_config, client_config, es):
+    def __init__(self, server_config, client_config, es, res):
         super().__init__(server_config, client_config)
         self.es = es
+        self.TEST_RES = res

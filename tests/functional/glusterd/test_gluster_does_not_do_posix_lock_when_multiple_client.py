@@ -36,10 +36,9 @@ class TestCase(NdParentTest):
          while running this script it should not hang
         4. Wait till 300 iteration on both the node
         """
-        # NOTE: This test case should be run with 2 clients
-        if len(self.client_list) < 2:
-            self.TEST_RES = None
-            raise Exception("Insufficient client systems")
+        # Check client requirements
+        redant.check_hardware_requirements(clients=self.client_list,
+                                           clients_count=2)
 
         # Shell Script to be run on mount point
         script = """

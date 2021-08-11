@@ -45,10 +45,9 @@ class TestFuseAuthRejectAllow(DParentTest):
 
     @DParentTest.setup_custom_enable
     def setup_test(self):
-        # Check for 2 clients
-        if len(self.client_list) < 2:
-            self.TEST_RES = None
-            raise Exception("The test case require 2 clients to run the test")
+        # Check server requirements
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
 
         # Create and start the volume
         conf_hash = self.vol_type_inf[self.volume_type]

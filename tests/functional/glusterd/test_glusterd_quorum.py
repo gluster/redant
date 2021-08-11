@@ -64,9 +64,8 @@ class TestCase(DParentTest):
         self.vol_exist = False
 
         # Exit if cluster size less than 4
-        if len(self.server_list) < 4:
-            self.TEST_RES = None
-            raise Exception("Minimum 4 nodes required for this TC to run")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 4)
 
         # Peer probe first 3 servers
         redant.create_cluster(self.server_list[:3])

@@ -24,7 +24,7 @@ class DParentTest(metaclass=abc.ABCMeta):
         server_details = param_obj.get_server_config()
         client_details = param_obj.get_client_config()
 
-        self.TEST_RES = True
+        self.TEST_RES = [True]
         self.setup_done = False
         self.volume_type = volume_type
         self.vol_type_inf = param_obj.get_volume_types()
@@ -39,7 +39,8 @@ class DParentTest(metaclass=abc.ABCMeta):
     def _configure(self, mname: str, server_details: dict,
                    client_details: dict, env_obj, log_path: str,
                    log_level: str):
-        self.redant = RedantMixin(server_details, client_details, env_obj)
+        self.redant = RedantMixin(server_details, client_details, env_obj,
+                                  self.TEST_RES)
         self.redant.init_logger(mname, log_path, log_level)
         self.redant.establish_connection()
 
@@ -89,10 +90,10 @@ class DParentTest(metaclass=abc.ABCMeta):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-            if self.TEST_RES is None:
+            if self.TEST_RES[0] is None:
                 self.SKIP_REASON = str(error)
             else:
-                self.TEST_RES = False
+                self.TEST_RES[0] = False
 
     def terminate(self):
         """

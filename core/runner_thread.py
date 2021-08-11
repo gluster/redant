@@ -48,7 +48,7 @@ class RunnerThread:
             self.run_test_func()
             self.terminate_test_func()
             self.test_stats['testResult'] = self.tc_obj.TEST_RES
-            if self.test_stats['testResult'] is None:
+            if self.test_stats['testResult'][0] is None:
                 self.test_stats['skipReason'] = self.tc_obj.SKIP_REASON
         except Exception as error:
             tb = traceback.format_exc()

@@ -56,9 +56,9 @@ class TestCase(NdParentTest):
         -> Execute IO command
         -> Mount the volume
         '''
-        if len(self.server_list) < 3:
-            self.TEST_RES = None
-            raise Exception("This test case requires at least 3 servers")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 3)
+
         self.volume_type1 = 'dist-rep'
         self.volume_name1 = "test_create_vol_with_fresh_bricks"
         conf_dict = self.vol_type_inf[self.volume_type1]

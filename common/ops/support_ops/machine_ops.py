@@ -363,3 +363,41 @@ class MachineOps(AbstractOps):
                 del snap_lv_dict[node]
 
         self.remove_lv_paths_from_servers(snap_lv_dict)
+
+    def check_hardware_requirements(self, servers: list = None,
+                                    servers_count: int = 0,
+                                    brick_roots: dict = None,
+                                    bricks_count: int = 0,
+                                    clients: list = None,
+                                    clients_count: int = 0):
+        """
+        Method to check if the hardware requirements for the TC to run
+        successfully are satisfied
+
+        Args:
+            servers (list): List of server nodes
+            servers_count (int): Minimum number of servers required
+            brick_roots (dict): Dictionary having the {[node]:[bricks]} data
+            bricks_count (int): Minimum number of bricks required per node
+            clients (list): List of client nodes
+            clients_count (int): Minimum number of clients required
+        """
+        # Check server requirements
+        if servers and len(servers) < servers_count:
+            self.TEST_RES[0] = None
+            raise Exception(f"The test case requires {servers_count} servers"
+                            " to run the test")
+
+        # Check client requirements
+        if clients and len(clients) < clients_count:
+            self.TEST_RES[0] = None
+            raise Exception(f"The test case requires {clients_count} clients"
+                            " to run the test")
+
+        # Check brick requirements
+        if brick_roots:
+            for node in brick_roots.keys():
+                if len(brick_roots[node]) < bricks_count:
+                    self.TEST_RES[0] = None
+                    raise Exception(f"The test case requires {bricks_count}"
+                                    " bricks per node to run the test")

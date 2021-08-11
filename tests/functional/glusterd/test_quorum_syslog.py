@@ -75,7 +75,7 @@ class TestCase(DParentTest):
         """
 
         if redant.check_os("fedora", nodes=self.server_list):
-            self.TEST_RES = None
+            self.TEST_RES[0] = None
             raise Exception("This test cannot be run on Fedora servers.")
 
         self.log_messages = "/var/log/messages"

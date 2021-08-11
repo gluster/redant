@@ -32,10 +32,11 @@ class TestCase(DParentTest):
 
     def terminate(self):
         try:
-            ret = self.redant.rebalance_stop(self.vol_name,
-                                             self.server_list[0])
-            if not ret:
-                raise Exception("Rebalance operation failed to stop")
+            if self.do_rebalance:
+                ret = self.redant.rebalance_stop(self.vol_name,
+                                                 self.server_list[0])
+                if not ret:
+                    raise Exception("Rebalance operation failed to stop")
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -60,10 +61,10 @@ class TestCase(DParentTest):
         11.Create a new directory from the client on the mount point.
         12.Check for directory in both replica sets.
         """
-        # Check if servers are sufficient to run the test case.
-        if len(self.server_list) < 4:
-            self.TEST_RES = None
-            raise Exception("Servers are not sufficient to run the test")
+        self.do_rebalance = False
+
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 4)
 
         # Creating 100 files.
         command = ('for number in `seq 1 100`;do touch '
@@ -93,6 +94,7 @@ class TestCase(DParentTest):
 
         # Start rebalance for volume.
         redant.rebalance_start(self.vol_name, self.server_list[0])
+        self.do_rebalance = True
 
         # Creating 100 files.
         command = ('for number in `seq 201 300`;do touch '

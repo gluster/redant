@@ -54,11 +54,8 @@ class TestCase(DParentTest):
         """
         self.check_for_remount = False
 
-        # TODO: Update this check when get_brick_roots is fixed
-        # Exit if server/brick requirements not met
-        if len(self.server_list) < 6:
-            self.TEST_RES = None
-            raise Exception("Server/Brick requirements not met")
+        # Check server requirements
+        redant.check_hardware_requirements(self.server_list, 6)
 
         # Fetching the brick list
         brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
