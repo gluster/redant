@@ -1,82 +1,33 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+    Test for conservative merge between two bricks.
+"""
+
+# disruptive;rep
 
 from time import sleep
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.brick_libs import (get_all_bricks, are_bricks_offline,
-                                           bring_bricks_offline,
-                                           get_online_bricks_list,
-                                           are_bricks_online)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.gluster_init import restart_glusterd
-from glustolibs.gluster.glusterfile import set_fattr, get_fattr
-from glustolibs.gluster.heal_libs import (is_volume_in_split_brain,
-                                          monitor_heal_completion)
-from glustolibs.gluster.lib_utils import collect_bricks_arequal
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated'], ['glusterfs']])
-class TestHealForConservativeMergeWithTwoBricksBlame(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def setUp(self):
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup volume and mount it.
-        if not self.setup_volume_and_mount_volume([self.mounts[0]]):
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-
-    def tearDown(self):
-        # Unmount and cleanup the volume
-        if not self.unmount_volume_and_cleanup_volume([self.mounts[0]]):
-            raise ExecutionError("Unable to unmount and cleanup volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def _bring_brick_offline_and_check(self, brick):
-        """Brings brick offline an checks if it is offline or not"""
-        ret = bring_bricks_offline(self.volname, [brick])
-        self.assertTrue(ret, "Unable to bring brick: {} offline".format(brick))
-
-        # Validate the brick is offline
-        ret = are_bricks_offline(self.mnode, self.volname, [brick])
-        self.assertTrue(ret, "Brick:{} is still online".format(brick))
-
-    def _get_fattr_for_the_brick(self, brick):
-        """Get xattr of trusted.afr.volname-client-0 for the given brick"""
-        host, fqpath = brick.split(":")
-        fqpath = fqpath + "/dir1"
-        fattr = "trusted.afr.{}-client-0".format(self.volname)
-        return get_fattr(host, fqpath, fattr, encode="hex")
-
-    def _check_peers_status(self):
-        """Validates peers are connected or not"""
-        count = 0
-        while count < 4:
-            if self.validate_peers_are_connected():
-                return
-            sleep(5)
-            count += 1
-        self.fail("Peers are not in connected state")
-
-    def test_heal_for_conservative_merge_with_two_bricks_blame(self):
+    def run_test(self, redant):
         """
         1) Create 1x3 volume and fuse mount the volume
         2) On mount created a dir dir1
@@ -94,82 +45,96 @@ class TestHealForConservativeMergeWithTwoBricksBlame(GlusterBaseClass):
         12) Do restart glusterd on node2 hosting b2 to bring all bricks online
         13) Check for heal info, split-brain and arequal for the bricks
         """
-        # pylint: disable=too-many-locals
-        # Create dir `dir1/` on mountpont
-        path = self.mounts[0].mountpoint + "/dir1"
-        ret = mkdir(self.mounts[0].client_system, path, parents=True)
-        self.assertTrue(ret, "Directory {} creation failed".format(path))
 
-        all_bricks = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(all_bricks, "Unable to fetch bricks of volume")
+        # Create dir `dir1/` on mountpoiint
+        cmd = f"mkdir {self.mountpoint}/dir1"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
+
+        all_bricks = redant.get_online_bricks_list(self.vol_name,
+                                                   self.server_list[0])
         brick1, brick2, brick3 = all_bricks
 
         # Bring first brick offline
-        self._bring_brick_offline_and_check(brick1)
+        redant.bring_bricks_offline(self.vol_name, [brick1])
+        if not redant.are_bricks_offline(self.vol_name,
+                                         [brick1],
+                                         self.server_list[0]):
+            raise Exception(f'Brick {brick1} is not offline')
 
-        # touch f{1..10} files on the mountpoint
-        cmd = ("cd {mpt}; for i in `seq 1 10`; do touch f$i"
-               "; done".format(mpt=path))
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Unable to create files on mountpoint")
+        # Create f{1..10} files on the mountpoint
+        cmd = (f"cd {self.mountpoint}/dir1; for i in `seq 1 10`;"
+               "do touch f$i; done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check b2 and b3 xattrs are blaming b1 and are same
-        self.assertEqual(self._get_fattr_for_the_brick(brick2),
-                         self._get_fattr_for_the_brick(brick3),
-                         "Both the bricks xattrs are not blaming "
-                         "brick: {}".format(brick1))
+        first_xattr_to_reset = f"trusted.afr.{self.vol_name}-client-0"
+
+        host, brick_path = brick2.split(":")
+        fattr_from_br2 = redant.get_fattr(f'{brick_path}/dir1',
+                                          first_xattr_to_reset, host)
+
+        host, brick_path = brick3.split(":")
+        fattr_from_br3 = redant.get_fattr(f'{brick_path}/dir1',
+                                          first_xattr_to_reset, host)
+
+        if (fattr_from_br2[1] != fattr_from_br3[1]):
+            raise Exception("Both the bricks xattrs are not blaming"
+                            " brick {brick1}")
 
         # Reset the xattrs of dir1 on b3 for brick b1
-        first_xattr_to_reset = "trusted.afr.{}-client-0".format(self.volname)
         xattr_value = "0x000000000000000000000000"
-        host, brick_path = brick3.split(":")
-        brick_path = brick_path + "/dir1"
-        ret = set_fattr(host, brick_path, first_xattr_to_reset, xattr_value)
-        self.assertTrue(ret, "Unable to set xattr for the directory")
+        redant.set_fattr(f'{brick_path}/dir1', first_xattr_to_reset,
+                         host, xattr_value)
 
         # Kill brick2 on the node2
-        self._bring_brick_offline_and_check(brick2)
+        redant.bring_bricks_offline(self.vol_name, [brick2])
+        if not redant.are_bricks_offline(self.vol_name,
+                                         [brick2],
+                                         self.server_list[1]):
+            raise Exception(f'Brick {brick2} is not offline')
 
-        # Restart glusterd on node1 to bring the brick1 online
-        self.assertTrue(restart_glusterd([brick1.split(":")[0]]), "Unable to "
-                        "restart glusterd")
-        # checking for peer status post glusterd restart
-        self._check_peers_status()
+        # Bring the brick1 online
+        redant.restart_glusterd(self.server_list[0])
 
+        sleep(10)
         # Check if the brick b1 on node1 is online or not
-        online_bricks = get_online_bricks_list(self.mnode, self.volname)
-        self.assertIsNotNone(online_bricks, "Unable to fetch online bricks")
-        self.assertIn(brick1, online_bricks, "Brick:{} is still offline after "
-                                             "glusterd restart".format(brick1))
+        if not redant.are_bricks_online(self.vol_name, brick1,
+                                        self.server_list[0]):
+            raise Exception(f"Brick:{brick1} is still offline after "
+                            "glusterd restart")
 
         # Create 10 files under dir1 naming x{1..10}
-        cmd = ("cd {mpt}; for i in `seq 1 10`; do touch x$i"
-               "; done".format(mpt=path))
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Unable to create files on mountpoint")
+        cmd = (f"cd {self.mountpoint}/dir1; for i in `seq 1 10`;"
+               "do touch x$i; done")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Reset the xattrs from brick3 on to brick2
-        second_xattr_to_reset = "trusted.afr.{}-client-1".format(self.volname)
-        ret = set_fattr(host, brick_path, second_xattr_to_reset, xattr_value)
-        self.assertTrue(ret, "Unable to set xattr for the directory")
+        second_xattr_to_reset = f"trusted.afr.{self.vol_name}-client-1"
+        redant.set_fattr(f'{brick_path}/dir1', second_xattr_to_reset,
+                         host, xattr_value)
 
         # Bring brick2 online
-        self.assertTrue(restart_glusterd([brick2.split(":")[0]]), "Unable to "
-                        "restart glusterd")
-        self._check_peers_status()
-
-        self.assertTrue(are_bricks_online(self.mnode, self.volname, [brick2]))
+        redant.restart_glusterd(self.server_list[1])
+        
+        sleep(10)
+        # Check if the brick b2 on node2 is online or not
+        if not redant.are_bricks_online(self.vol_name, brick2,
+                                        self.server_list[1]):
+            raise Exception(f"Brick:{brick2} is still offline after "
+                            "glusterd restart")
 
         # Check are there any files in split-brain and heal completion
-        self.assertFalse(is_volume_in_split_brain(self.mnode, self.volname),
-                         "Some files are in split brain for "
-                         "volume: {}".format(self.volname))
-        self.assertTrue(monitor_heal_completion(self.mnode, self.volname),
-                        "Conservative merge of files failed")
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Conservative merge of files failed")
+
+        # Check are there any files in split-brain and heal completion
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Some files are in split brain")
 
         # Check arequal checksum of all the bricks is same
-        ret, arequal_from_the_bricks = collect_bricks_arequal(all_bricks)
-        self.assertTrue(ret, "Arequal is collected successfully across the"
-                        " bricks in the subvol {}".format(all_bricks))
-        self.assertEqual(len(set(arequal_from_the_bricks)), 1, "Arequal is "
-                         "same on all the bricks in the subvol")
+        arequal = redant.collect_bricks_arequal(all_bricks)
+        if len(set(tuple(x) for x in arequal)) != 1:
+            raise Exception("Arequal is not same on all the bricks "
+                            "in the subvol")
