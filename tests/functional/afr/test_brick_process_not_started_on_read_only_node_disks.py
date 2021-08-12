@@ -36,9 +36,10 @@ class TestCase(DParentTest):
         """
         try:
             if self.is_unmounted:
+                _rc = True
                 if not self.redant.wait_for_io_to_complete(self.procs_list,
                                                            self.mounts):
-                    raise Exception("Failed to wait fore IO to complete")
+                    _rc = False
 
                 self.redant.volume_stop(self.vol_name, self.server_list[0],
                                         force=True)
@@ -47,6 +48,9 @@ class TestCase(DParentTest):
                                                      self.brick_node, False)
                 self.redant.execute_abstract_op_node(f'mount {self.brick}',
                                                      self.brick_node, False)
+
+                if not _rc:
+                    raise Exception("Failed to wait for IO to complete")
 
         except Exception as err:
             tb = traceback.format_exc()
