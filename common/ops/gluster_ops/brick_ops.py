@@ -1020,6 +1020,9 @@ class BrickOps(AbstractOps):
         if not isinstance(brick_list, list):
             brick_list = [brick_list]
 
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+
         if not disrup_method:
             self.logger.info(f"Getting bricks {brick_list} online by forced"
                              f" volume start of {volname}")
