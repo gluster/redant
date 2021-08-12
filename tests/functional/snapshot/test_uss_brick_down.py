@@ -52,11 +52,10 @@ class TestCase(DParentTest):
         * Enable USS
         * Validate USS is enabled
         * Bring the brick online using gluster v start force
-        * Create 2 snapshots snapy1 & snapy2
+        * Create 2 snapshots.
         * Validate snap created
-        * Activate snapy1 & snapy2
-        * List snaps under .snap directory
-          -- snap1 and snap2 should be listed under .snaps
+        * Activate both the snapshots.
+        * Validate whether both the snapshots are listed under .snaps
         """
 
         # Perform I/O
@@ -112,7 +111,7 @@ class TestCase(DParentTest):
             raise Exception("Snap list should have 2 snap volumes. But instead"
                             f" is {snap_list}")
 
-        # Activate snapshot snapy1 & snapy2
+        # Activate the snapshots
         for i in range(0, 2):
             snap_name = f"{self.vol_name}-snap{i}"
             redant.snap_activate(snap_name, self.server_list[0])
