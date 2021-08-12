@@ -84,8 +84,7 @@ class PeerOps(AbstractOps):
                 if 'output' not in ret['msg']:
                     return False
                 if (ret['error_code'] != 0
-                        or ret['msg']['output'] != 'success'
-                        or ret['msg']['opRet'] != '0'):
+                   or ret['msg']['opRet'] != '0'):
                     self.logger.error("Failed to peer probe the node"
                                       f" {server}")
                     return False
@@ -171,8 +170,7 @@ class PeerOps(AbstractOps):
         for server in servers:
             ret = self.peer_detach(server, node, force, False)
             if (ret['error_code'] != 0
-                    or ret['msg']['output'] != 'success'
-                    or ret['msg']['opRet'] != '0'):
+               or ret['msg']['opRet'] != '0'):
                 self.logger.error(f"Failed to detach the node {server}")
                 return False
 
