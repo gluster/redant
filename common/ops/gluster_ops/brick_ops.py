@@ -219,8 +219,6 @@ class BrickOps(AbstractOps):
             if not dst_brick:
                 self.logger.error("Failed to get a new brick to replace")
 
-            dst_brick = f"{src_brick.split(':')[0]}:{dst_brick.split(':')[1]}"
-
         # Bring src brick offline
         if not self.bring_bricks_offline(volname, src_brick):
             self.logger.error("Failed to bring source brick offline")

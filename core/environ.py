@@ -558,6 +558,11 @@ class FrameworkEnv:
         self._validate_volname(volname)
         s_node, s_path = src_brick.split(":")
         d_node, d_path = dest_brick.split(":")
+
+        # Add the new node in the brickdata dict if not already present
+        if d_node not in self.volds[volname]["brickdata"].keys():
+            self.volds[volname]["brickdata"][d_node] = []
+
         self.volds[volname]["brickdata"][d_node].append(d_path)
         self.volds[volname]["brickdata"][s_node].remove(s_path)
 
