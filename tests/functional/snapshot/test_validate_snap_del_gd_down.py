@@ -21,7 +21,6 @@ Description:
 
 """
 
-# disruptive;rep
 # disruptive;rep,disp,dist,dist-rep,dist-disp
 
 from time import sleep
@@ -59,7 +58,7 @@ class TestCase(DParentTest):
         if not redant.wait_for_glusterd_to_stop(self.server_list[1]):
             raise Exception(f"Glusterd didn't stop at {self.server_list[1]}")
 
-        # Delete one snapshot snapy1
+        # Delete one snapshot snap1
         self.snap_name = f"{self.vol_name}-snap1"
         redant.snap_delete(self.snap_name, self.server_list[0])
 
@@ -68,7 +67,6 @@ class TestCase(DParentTest):
         if len(snap_list) != 4:
             raise Exception("Snap list should have 4 snap volumes. But instead"
                             f" is {snap_list}")
-        print(snap_list)
 
         # Starting glusterd services on server[1]
         redant.start_glusterd(self.server_list[1])
@@ -79,12 +77,12 @@ class TestCase(DParentTest):
         if not redant.wait_till_all_peers_connected(self.server_list):
             raise Exception("Peers are not in connected state.")
 
-        # Check for no of snaps using snap_list it should be 4 now
-        for _ in range(60):
+        # Check for no of snaps using snap_list it should be 4
+        for _ in range(30):
             snap_list = redant.get_snap_list(self.server_list[1],
                                              self.vol_name)
             if len(snap_list) == 4:
-                 break
+                break
             sleep(5)
         if len(snap_list) != 4:
             raise Exception("Snap list should have 4 snap volumes. But instead"
