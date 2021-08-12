@@ -87,8 +87,8 @@ class TestCase(DParentTest):
                             f"to {self.server_list[1]}")
 
         # clean up all volumes
-        volnames = redant.es.get_volnames()
-        redant.cleanup_volumes(self.server_list, volnames)
+        redant.volume_delete(volume_name1, self.server_list[0])
+        redant.volume_delete(volume_name3, self.server_list[1])
 
         # Perform peer probe from N1 to N2 should success
         redant.peer_probe(self.server_list[1], self.server_list[0])
