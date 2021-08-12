@@ -36,13 +36,17 @@ class TestCase(DParentTest):
         """
         try:
             if self.is_unmounted:
-                self.redant.execute_abstract_op_node(f'umount {self.brick}',
-                                                     self.brick_node)
-                self.redant.execute_abstract_op_node(f'mount {self.brick}',
-                                                     self.brick_node)
                 if not self.redant.wait_for_io_to_complete(self.procs_list,
                                                            self.mounts):
                     raise Exception("Failed to wait fore IO to complete")
+
+                self.redant.volume_stop(self.vol_name, self.server_list[0],
+                                        force=True)
+
+                self.redant.execute_abstract_op_node(f'umount {self.brick}',
+                                                     self.brick_node, False)
+                self.redant.execute_abstract_op_node(f'mount {self.brick}',
+                                                     self.brick_node, False)
 
         except Exception as err:
             tb = traceback.format_exc()
@@ -102,7 +106,7 @@ class TestCase(DParentTest):
 
         # get time before remount the directory and checking logs for error
         time_before_checking_logs = (redant.execute_abstract_op_node(
-                                     f'date -u +{self.brick_node}'))
+                                     'date -u +%s', self.brick_node))
         time_before_checking_logs = (time_before_checking_logs['msg'][0].
                                      rstrip("\n"))
 
@@ -133,7 +137,7 @@ class TestCase(DParentTest):
 
         # get time after remount the directory checking logs for error
         time_after_checking_logs = (redant.execute_abstract_op_node(
-                                    f'date -u +{self.brick_node}'))
+                                    'date -u +%s', self.brick_node))
         time_after_checking_logs = (time_after_checking_logs['msg'][0].
                                     rstrip("\n"))
 
