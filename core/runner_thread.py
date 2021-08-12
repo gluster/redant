@@ -33,7 +33,7 @@ class RunnerThread:
             tb = traceback.format_exc()
             self.logger.error(f"{self.tname} : {error}")
             self.logger.error(f"{self.tname}: {tb}")
-            self.test_stats['testResult'] = False
+            self.test_stats['testResult'] = [False]
             self.skip_run_thread = True
 
     def run_thread(self):
@@ -54,5 +54,5 @@ class RunnerThread:
             tb = traceback.format_exc()
             self.logger.error(f"{self.tname} : {error}")
             self.logger.error(f"{self.tname} : {tb}")
-            self.test_stats['testResult'] = False
+            self.test_stats['testResult'] = [False]
         return self.test_stats
