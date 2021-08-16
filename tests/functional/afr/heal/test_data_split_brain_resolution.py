@@ -51,8 +51,8 @@ class TestCase(DParentTest):
         """
         Collects arequal for all bricks and compare
         """
-        all_bricks = self.redant.get_online_bricks_list(
-                self.vol_name, self.server_list[0])
+        all_bricks = (self.redant.get_online_bricks_list(
+                      self.vol_name, self.server_list[0]))
         arequal = self.redant.collect_bricks_arequal(all_bricks)
         if len(set(tuple(x) for x in arequal)) != 1:
             raise Exception("Arequal is not same on all the bricks "
