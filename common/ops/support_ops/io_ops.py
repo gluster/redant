@@ -619,12 +619,15 @@ class IoOps(AbstractOps):
         return _rc
 
     # TODO: Test the below function when snaphot library is added.
-    def view_snaps_from_mount(self, mounts: list, snaps: list) -> list:
+    def view_snaps_from_mount(self, mounts: list, snaps: list,
+                              excep: bool) -> list:
         """
         View snaps from the mountpoint under ".snaps" directory
         Args:
             mounts (list): List of all  mountpoints.
             snaps (list): List of snaps to be viewed from '.snaps' directory
+            excep (bool): Whether to bypass the exception handling in
+                          abstract ops.
         Returns:
             bool: True, if viewing all snaps under '.snaps' directory is
                         successful from all mounts.
@@ -634,7 +637,9 @@ class IoOps(AbstractOps):
         if isinstance(mounts, dict):
             mounts = [mounts]
 
+        nl_flag = False
         if isinstance(snaps, str):
+            nl_flag = True
             snaps = [snaps]
 
         all_mounts_async_objs = []
@@ -655,7 +660,10 @@ class IoOps(AbstractOps):
                                   f"{ret['error_msg']}")
                 _rc = False
             else:
-                snap_list = ret['msg'].splitlines()
+                if nl_flag:
+                    snap_list = [ret['msg']]
+                else:
+                    snap_list = ret['msg'].splitlines()
                 if not snap_list:
                     self.logger.error(f"No snaps present in the '.snaps' "
                                       f"dir on {mounts[i]['client']}:"
@@ -671,7 +679,7 @@ class IoOps(AbstractOps):
                                           f"{mounts[i]['mountpath']}"
                                           f" - {snap_list}")
                         _rc = False
-        if not _rc:
+        if excep and not _rc:
             raise Exception("Failed to list snaps for some mountpoints")
         return _rc
 
