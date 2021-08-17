@@ -75,9 +75,9 @@ class TestVerifySelfHealTriggersHealCommand(DParentTest):
             redant.logger.info(f"Generating data for {mount_obj['client']}"
                                f":{mount_obj['mountpath']}")
             # Create files
-            command = (f"cd {mount_obj['mountpoint']}; dd if=/dev/urandom "
+            command = (f"cd {mount_obj['mountpath']}; dd if=/dev/urandom "
                        "of=test_file bs=1M count=2020")
-            proc = redant.execute_command_async(mount_obj['client'], command)
+            proc = redant.execute_command_async(command, mount_obj['client'])
             self.all_mounts_procs.append(proc)
             self.io_validation_complete = False
 
@@ -87,7 +87,7 @@ class TestVerifySelfHealTriggersHealCommand(DParentTest):
             command = ("python3 /tmp/file_dir_ops.py read "
                        f"{mount_obj['mountpath']}")
 
-            proc = redant.execute_command_async(mount_obj['client'], command)
+            proc = redant.execute_command_async(command, mount_obj['client'])
             self.all_mounts_procs_read.append(proc)
             self.read_complete = False
 
@@ -169,7 +169,7 @@ class TestVerifySelfHealTriggersHealCommand(DParentTest):
         brick_list = data_brick_list
 
         for brick in brick_list:
-            arequal = redant.collect_bricks_arequal(brick)[0]
+            arequal = redant.collect_bricks_arequal(brick)
             brick_total = arequal[0][-1].split(':')[-1]
             if brick_total != mount_point_total:
                 raise Exception(f"Arequals for mountpoint and {brick}"
