@@ -83,6 +83,11 @@ class TestCase(DParentTest):
         snap_name = f"{self.vol_name}-snap3"
         redant.snap_create(self.vol_name, snap_name, self.server_list[0])
 
+        # Create snap with force option.
+        snap_name = f"{self.vol_name}-snap4"
+        redant.snap_create(self.vol_name, snap_name, self.server_list[0],
+                           force=True)
+
         # Delete all snaps
         redant.snap_delete_all(self.server_list[0])
 
