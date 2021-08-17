@@ -58,9 +58,9 @@ class TestCase(DParentTest):
     def run_test(self, redant):
         """
         Testcase steps:
-        1. Start kernel untar on the mount
-        2. While untar is going on, kill a brick of the replica.
-        3. Wait for the untar to be over, resulting in pending heals.
+        1. Perform I/O on mounts
+        2. While IO is going on, kill a brick of the replica.
+        3. Wait for the IO to be over, resulting in pending heals.
         4. Get the approx. number of pending heals and save it
         5. Bring the brick back online.
         6. Trigger heal
