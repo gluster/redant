@@ -1,101 +1,50 @@
-#  Copyright (C) 2015-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2015-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           bring_bricks_online,
-                                           are_bricks_offline,
-                                           get_all_bricks)
-from glustolibs.gluster.heal_libs import (monitor_heal_completion,
-                                          is_heal_complete,
-                                          is_volume_in_split_brain)
-from glustolibs.gluster.heal_ops import trigger_heal
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (collect_mounts_arequal, validate_io_procs,
-                                 wait_for_io_to_complete)
-from glustolibs.gluster.volume_ops import (get_volume_info)
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to verify self-heal Triggers with self heal with heal command
+"""
+
+# disruptive;rep,arb
+# TODO: NFS, CIFS
+
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'arbiter'],
-          ['glusterfs', 'cifs', 'nfs']])
-class VerifySelfHealTriggersHealCommand(GlusterBaseClass):
-    """
-    Description:
-        Verify self-heal Triggers with self heal with heal command
-    """
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+class TestVerifySelfHealTriggersHealCommand(DParentTest):
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on mounts",
-                   cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
+    def terminate(self):
+        try:
+            if not self.io_validation_complete:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    raise Exception("IO failed on some of the clients")
+            if not self.read_complete:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs_read, self.mounts)):
+                    raise Exception("Reading failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def setUp(self):
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        self.all_mounts_procs = []
-        self.io_validation_complete = False
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def tearDown(self):
-        """
-        If test method failed before validating IO, tearDown waits for the
-        IO's to complete and checks for the IO exit status
-
-        Cleanup and umount volume
-        """
-        if not self.io_validation_complete:
-            g.log.info("Wait for IO to complete as IO validation did not "
-                       "succeed in test method")
-            ret = wait_for_io_to_complete(self.all_mounts_procs, self.mounts)
-            if not ret:
-                raise ExecutionError("IO failed on some of the clients")
-            g.log.info("IO is successful on all mounts")
-
-        # Cleanup and umount volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass teardown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_multiple_clients_dd_on_same_file_default(self):
+    def run_test(self, redant):
         """
         - Create 2GB file
         - While creating file, start reading file
@@ -111,158 +60,117 @@ class VerifySelfHealTriggersHealCommand(GlusterBaseClass):
         - Check for split-brain
         - Calculate arequals on all the bricks and compare with mountpoint
         """
-        # pylint: disable=too-many-statements,too-many-locals
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(bricks_list, 'Brick list is None')
+        self.all_mounts_procs = []
+        self.io_validation_complete = True
+        self.read_complete = True
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
+        # Get brick list
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if brick_list is None:
+            raise Exception("Brick list is None")
 
         # Creating files on client side
         for mount_obj in self.mounts:
-            g.log.info("Generating data for %s:%s",
-                       mount_obj.client_system, mount_obj.mountpoint)
+            redant.logger.info(f"Generating data for {mount_obj['client']}"
+                               f":{mount_obj['mountpath']}")
             # Create files
-            g.log.info('Creating files...')
-            command = ("cd %s ; "
-                       "dd if=/dev/urandom of=test_file bs=1M count=2020"
-                       % mount_obj.mountpoint)
-
-            proc = g.run_async(mount_obj.client_system, command,
-                               user=mount_obj.user)
+            command = (f"cd {mount_obj['mountpoint']}; dd if=/dev/urandom "
+                       "of=test_file bs=1M count=2020")
+            proc = redant.execute_command_async(mount_obj['client'], command)
             self.all_mounts_procs.append(proc)
-        self.io_validation_complete = False
+            self.io_validation_complete = False
 
         # Reading files on client side
-        all_mounts_procs_read = []
+        self.all_mounts_procs_read = []
         for mount_obj in self.mounts:
-            g.log.info("Reading data for %s:%s",
-                       mount_obj.client_system, mount_obj.mountpoint)
-            # Create files
-            g.log.info('Reading files...')
-            command = "/usr/bin/env python %s read %s" % (
-                self.script_upload_path,
-                mount_obj.mountpoint)
+            command = ("python3 /tmp/file_dir_ops.py read "
+                       f"{mount_obj['mountpath']}")
 
-            proc = g.run_async(mount_obj.client_system, command,
-                               user=mount_obj.user)
-            all_mounts_procs_read.append(proc)
+            proc = redant.execute_command_async(mount_obj['client'], command)
+            self.all_mounts_procs_read.append(proc)
+            self.read_complete = False
 
         # Bring brick1 offline
-        g.log.info('Bringing bricks %s offline...', bricks_list[1])
-        ret = bring_bricks_offline(self.volname, [bricks_list[1]])
-        self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-                        bricks_list[1])
+        redant.bring_bricks_offline(self.vol_name, brick_list[1])
 
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 [bricks_list[1]])
-        self.assertTrue(ret, 'Bricks %s are not offline'
-                        % bricks_list[1])
-        g.log.info('Bringing bricks %s offline is successful',
-                   bricks_list[1])
+        if not redant.are_bricks_offline(self.vol_name, brick_list[1],
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {brick_list[1]} is not offline")
 
         # Bring brick1 online
-        g.log.info('Bringing bricks %s online...', bricks_list[1])
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  [bricks_list[1]])
-        self.assertTrue(ret, 'Failed to bring bricks %s online' %
-                        bricks_list[1])
-        g.log.info('Bringing bricks %s online is successful',
-                   bricks_list[1])
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
+                                          brick_list[1]):
+            raise Exception(f"Failed to bring bricks {brick_list[1]} online")
 
         # Start healing
-        ret = trigger_heal(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal is not started')
-        g.log.info('Healing is started')
+        if not redant.trigger_heal(self.vol_name, self.server_list[0]):
+            raise Exception('Heal is not started')
 
         # Bring brick1 offline
-        g.log.info('Bringing bricks %s offline...', bricks_list[1])
-        ret = bring_bricks_offline(self.volname, [bricks_list[1]])
-        self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-                        bricks_list[1])
+        redant.bring_bricks_offline(self.vol_name, brick_list[1])
 
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 [bricks_list[1]])
-        self.assertTrue(ret, 'Bricks %s are not offline'
-                        % bricks_list[1])
-        g.log.info('Bringing bricks %s offline is successful',
-                   bricks_list[1])
+        if not redant.are_bricks_offline(self.vol_name, brick_list[1],
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {brick_list[1]} is not offline")
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
-
-        # Validate reading
-        self.assertTrue(
-            validate_io_procs(all_mounts_procs_read, self.mounts),
-            "Reading failed on some of the clients"
-        )
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed on some of the clients")
         self.io_validation_complete = True
 
+        # Validate reading
+        if not redant.validate_io_procs(self.all_mounts_procs_read,
+                                        self.mounts):
+            raise Exception("Reading failed on some of the clients")
+        self.read_complete = True
+
         # Bring brick1 online
-        g.log.info('Bringing bricks %s online...', bricks_list[1])
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  [bricks_list[1]])
-        self.assertTrue(ret, 'Failed to bring bricks %s online' %
-                        bricks_list[1])
-        g.log.info('Bringing bricks %s online is successful',
-                   bricks_list[1])
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
+                                          brick_list[1]):
+            raise Exception(f"Failed to bring bricks {brick_list[1]} online")
 
         # Start healing
-        ret = trigger_heal(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal is not started')
-        g.log.info('Healing is started')
+        if not redant.trigger_heal(self.vol_name, self.server_list[0]):
+            raise Exception('Heal is not started')
 
         # Monitor heal completion
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal has not yet completed')
+        if not self.redant.monitor_heal_completion(self.server_list[0],
+                                                   self.vol_name):
+            raise Exception("Heal is not yet completed")
 
         # Check if heal is completed
-        ret = is_heal_complete(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal is not complete')
-        g.log.info('Heal is completed successfully')
+        if not self.redant.is_heal_complete(self.server_list[0],
+                                            self.vol_name):
+            raise Exception("Heal is not completed")
 
         # Check for split-brain
-        ret = is_volume_in_split_brain(self.mnode, self.volname)
-        self.assertFalse(ret, 'Volume is in split-brain state')
-        g.log.info('Volume is not in split-brain state')
+        if redant.is_volume_in_split_brain(self.server_list[0],
+                                           self.vol_name):
+            raise Exception("Volume is in split-brain state")
 
         # Get arequal for mount
-        g.log.info('Getting arequal...')
-        ret, arequals = collect_mounts_arequal(self.mounts)
-        self.assertTrue(ret, 'Failed to get arequal')
-        g.log.info('Getting arequal after healing is successful')
-        mount_point_total = arequals[0].splitlines()[-1].split(':')[-1]
+        arequals = redant.collect_mounts_arequal(self.mounts)
+        mount_point_total = arequals[0][-1].split(':')[-1]
 
         # Get arequal on bricks and compare with mount_point_total
         # It should be the same
-        g.log.info('Getting arequal on bricks...')
-        arequals_after_heal = {}
+        vol_info = redant.get_volume_info(self.server_list[0],
+                                          self.vol_name)
+        if vol_info is None:
+            raise Exception("Unable to get volume info")
 
-        if self.volume_type == "arbiter":
-            vol_info = get_volume_info(self.mnode, self.volname)
-            self.assertIsNotNone(vol_info, 'Unable to get volume info')
-            data_brick_list = []
-            for brick in bricks_list:
-                for brick_info in vol_info[self.volname]["bricks"]["brick"]:
-                    if brick_info["name"] == brick:
-                        if brick_info["isArbiter"] == "0":
-                            data_brick_list.append(brick)
-            bricks_list = data_brick_list
+        data_brick_list = []
+        for brick in brick_list:
+            for brick_info in vol_info[self.vol_name]["bricks"]:
+                if brick_info["name"] == brick:
+                    if brick_info["isArbiter"] == "0":
+                        data_brick_list.append(brick)
+        brick_list = data_brick_list
 
-        for brick in bricks_list:
-            g.log.info('Getting arequal on bricks %s...', brick)
-            node, brick_path = brick.split(':')
-            command = ('arequal-checksum -p %s '
-                       '-i .glusterfs -i .landfill -i .trashcan'
-                       % brick_path)
-            ret, arequal, _ = g.run(node, command)
-            self.assertFalse(ret, 'Failed to get arequal on brick %s'
-                             % brick)
-            g.log.info('Getting arequal for %s is successful', brick)
-            brick_total = arequal.splitlines()[-1].split(':')[-1]
-            arequals_after_heal[brick] = brick_total
-            self.assertEqual(mount_point_total, brick_total,
-                             'Arequals for mountpoint and %s are not equal'
-                             % brick)
-            g.log.info('Arequals for mountpoint and %s are equal', brick)
-        g.log.info('All arequals are equal')
+        for brick in brick_list:
+            arequal = redant.collect_bricks_arequal(brick)[0]
+            brick_total = arequal[0][-1].split(':')[-1]
+            if brick_total != mount_point_total:
+                raise Exception(f"Arequals for mountpoint and {brick}"
+                                " is not equal")
