@@ -33,8 +33,6 @@ class TestCase(DParentTest):
                 option_disable = {'activate-on-create': 'disable'}
                 self.redant.set_snap_config(option_disable,
                                             self.server_list[0])
-            else:
-                print("Option reset!")
         except Exception as e:
             tb = traceback.format_exc()
             self.redant.logger.error(e)
