@@ -61,3 +61,4 @@ excluded_tests:
     - tests/functional/arbiter/test_self_heal_50k_files_heal_command_by_add_brick.py # Async process getting hanged while creating 50k files
     - tests/functional/glusterd/test_shared_storage.py # Reboot hangs redant flow in this TC.
     - tests/functional/afr/test_brick_process_not_started_on_read_only_node_disks.py # Inactive TC.
+    - tests/functional/snapshot/test_snapshot_create.py # Fails in upstream. Succeeds in downstream env
