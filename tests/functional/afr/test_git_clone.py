@@ -1,63 +1,58 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.misc.misc_libs import git_clone_and_compile
-from glustolibs.gluster.volume_ops import set_volume_options
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check git clone on client on multiple directories
+    with performance options set to OFF
+"""
+
+# disruptive;rep,dist-rep,disp,dist-disp,arb,dist-arb
+
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed', 'arbiter', 'distributed-arbiter'],
-          ['glusterfs']])
-class TestGitCloneOnGlusterVolume(GlusterBaseClass):
-
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-
-        # Setup volume and mount it on one client
-        if not self.setup_volume_and_mount_volume([self.mounts[0]]):
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def tearDown(self):
-        self.get_super_method(self, 'tearDown')()
-
-        # Unmount from the one client and cleanup the volume
-        if not self.unmount_volume_and_cleanup_volume([self.mounts[0]]):
-            raise ExecutionError("Unable to unmount and cleanup volume")
-        g.log.info("Unmount and volume cleanup is successful")
+class TestGitCloneOnGlusterVolume(DParentTest):
 
     def _run_git_clone(self, options):
         """Run git clone on the client"""
 
-        repo = 'https://github.com/gluster/glusterfs.git'
-        cloned_repo_dir = (self.mounts[0].mountpoint + '/' +
-                           repo.split('/')[-1].rstrip('.git'))
+        repo = "https://github.com/gluster/glusterfs.git"
+        cloned_repo_dir = (f"{self.mountpoint}/"
+                           f"{repo.split('/')[-1].rstrip('.git')}")
         if options:
-            cloned_repo_dir = (self.mounts[0].mountpoint + '/' + "perf-" +
-                               repo.split('/')[-1].rstrip('.git'))
-        ret = git_clone_and_compile(self.mounts[0].client_system,
-                                    repo, cloned_repo_dir, False)
-        self.assertTrue(ret, "Unable to clone {} repo on {}".
-                        format(repo, cloned_repo_dir))
-        g.log.info("Repo %s cloned successfully ", repo)
+            cloned_repo_dir = (f"{self.mountpoint}/perf-"
+                               f"{repo.split('/')[-1].rstrip('.git')}")
 
-    def test_git_clone_on_gluster_volume(self):
+        cmd = f"cd /root; git clone {repo} {cloned_repo_dir}"
+        if options:
+            cmd += f"cd /root/{cloned_repo_dir}; make"
+
+        ret = self.redant.execute_abstract_op_node(cmd, self.client_list[0],
+                                                   False)
+        if ret['error_code'] != 0:
+            self.redant.logger.error("Cloning/Compiling repo failed on "
+                                     f"{self.client_list[0]}")
+            raise Exception(f"Unable to clone {repo} repo on "
+                            f"{cloned_repo_dir}")
+        else:
+            self.redant.logger.info("Successfully cloned/compiled repo on "
+                                    f"{self.client_list[0]}")
+
+    def run_test(self, redant):
         """
         Test Steps:
         1. Create a volume and mount it on one client
@@ -68,13 +63,12 @@ class TestGitCloneOnGlusterVolume(GlusterBaseClass):
         self._run_git_clone(False)
 
         # Disable the performance cache options on the volume
-        self.options = {'performance.quick-read': 'off',
-                        'performance.stat-prefetch': 'off',
-                        'performance.open-behind': 'off',
-                        'performance.write-behind': 'off',
-                        'performance.client-io-threads': 'off'}
-        ret = set_volume_options(self.mnode, self.volname, self.options)
-        self.assertTrue(ret, "Unable to set the volume options")
-        g.log.info("Volume options set successfully")
+        options = {'performance.quick-read': 'off',
+                   'performance.stat-prefetch': 'off',
+                   'performance.open-behind': 'off',
+                   'performance.write-behind': 'off',
+                   'performance.client-io-threads': 'off'}
+        redant.set_volume_options(self.vol_name, options, self.server_list[0],
+                                  multi_option=True)
 
         self._run_git_clone(True)
