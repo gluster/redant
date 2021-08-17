@@ -63,7 +63,7 @@ class TestAFRSelfHeal(DParentTest):
         self.procs_list = []
 
         # Create dirs with files
-        proc = redant.create_files("10K", self.mountpoint,
+        proc = redant.create_files("10k", self.mountpoint,
                                    self.client_list[0], 1500)
         self.procs_list.append(proc)
         self.io_validation_complete = False
