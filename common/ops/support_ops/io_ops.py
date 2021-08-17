@@ -627,7 +627,7 @@ class IoOps(AbstractOps):
             mounts (list): List of all  mountpoints.
             snaps (list): List of snaps to be viewed from '.snaps' directory
             excep (bool): Whether to bypass the exception handling in
-                          abstract ops.
+                          this function in case of empty snaps or not.
         Returns:
             bool: True, if viewing all snaps under '.snaps' directory is
                         successful from all mounts.
