@@ -618,9 +618,8 @@ class IoOps(AbstractOps):
             raise Exception(error_msg)
         return _rc
 
-    # TODO: Test the below function when snaphot library is added.
     def view_snaps_from_mount(self, mounts: list, snaps: list,
-                              excep: bool) -> list:
+                              excep: bool=True) -> list:
         """
         View snaps from the mountpoint under ".snaps" directory
         Args:
@@ -628,6 +627,7 @@ class IoOps(AbstractOps):
             snaps (list): List of snaps to be viewed from '.snaps' directory
             excep (bool): Whether to bypass the exception handling in
                           this function in case of empty snaps or not.
+                          Default value being True.
         Returns:
             bool: True, if viewing all snaps under '.snaps' directory is
                         successful from all mounts.
