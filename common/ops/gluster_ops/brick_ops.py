@@ -279,7 +279,8 @@ class BrickOps(AbstractOps):
             if dst_brick is None:
                 dst_brick = src_brick
 
-            cmd = f"gluster vol reset-brick {src_brick} {dst_brick} {option}"
+            cmd = (f"gluster vol reset-brick {volname} {src_brick} {dst_brick}"
+                   f" {option}")
 
             if force:
                 cmd = f"{cmd} force"
