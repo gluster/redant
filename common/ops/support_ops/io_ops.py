@@ -619,7 +619,7 @@ class IoOps(AbstractOps):
         return _rc
 
     def view_snaps_from_mount(self, mounts: list, snaps: list,
-                              excep: bool=True) -> list:
+                              excep: bool = True) -> list:
         """
         View snaps from the mountpoint under ".snaps" directory
         Args:
