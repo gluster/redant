@@ -111,7 +111,12 @@ class TestAfrResetBrickHeal(DParentTest):
         # Check arequal of the back-end bricks after heal completion
         all_subvols = redant.get_subvols(self.vol_name, self.server_list[0])
         for subvol in all_subvols:
+            new_arequal = []
             arequal_from_subvol = redant.collect_bricks_arequal(subvol)
-            if len(set(arequal_from_subvol)) != 1:
+            for item in arequal_from_subvol:
+                item = " ".join(item)
+                new_arequal.append(item)
+
+            if len(set(new_arequal)) != 1:
                 raise Exception("Arequal is not same on all the bricks in "
                                 "the subvol")
