@@ -395,12 +395,14 @@ class BrickOps(AbstractOps):
                     nodes.remove(server_val)
 
                 index += 1
-                if index >= len(nodes):
+                iteration += 1
+                if len(nodes) > 0 and index >= len(nodes):
                     server_val = nodes[0]
                     index = 0
-                else:
+                elif len(nodes) > 0:
                     server_val = nodes[index]
-                iteration += 1
+                else:
+                    break
 
         index = 0
         if brick_cmd:
