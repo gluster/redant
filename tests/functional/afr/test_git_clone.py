@@ -38,18 +38,15 @@ class TestGitCloneOnGlusterVolume(DParentTest):
                                f"{repo.split('/')[-1].rstrip('.git')}")
 
         cmd = f"cd /root; git clone {repo} {cloned_repo_dir}"
-        if options:
-            cmd += f"cd /root/{cloned_repo_dir}; make"
-
         ret = self.redant.execute_abstract_op_node(cmd, self.client_list[0],
                                                    False)
         if ret['error_code'] != 0:
-            self.redant.logger.error("Cloning/Compiling repo failed on "
+            self.redant.logger.error("Cloning repo failed on "
                                      f"{self.client_list[0]}")
             raise Exception(f"Unable to clone {repo} repo on "
                             f"{cloned_repo_dir}")
         else:
-            self.redant.logger.info("Successfully cloned/compiled repo on "
+            self.redant.logger.info("Successfully cloned repo on "
                                     f"{self.client_list[0]}")
 
     def run_test(self, redant):
