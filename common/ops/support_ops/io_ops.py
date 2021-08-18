@@ -743,7 +743,8 @@ class IoOps(AbstractOps):
 
     # TODO: Add check for other mount type
     def is_io_procs_fail_with_error(self, all_mounts_async_objs: list,
-                                    mounts: list, timeout: None) -> tuple:
+                                    mounts: list,
+                                    timeout: int = None) -> tuple:
         """
         Check whether IO failed with connection error.
 
@@ -761,8 +762,8 @@ class IoOps(AbstractOps):
             IO failed with connection error on all mount procs. False
             otherwise.
 
-            The second element 'io_results' is of type dictonary and it
-            contains the proc and corresponding result for IO. If IO failed
+            The second element 'io_results' is of type dict and it contains
+            the proc number and corresponding result for IO. If IO fails
             with connection error, then proc value contains True else False.
         """
         if not isinstance(all_mounts_async_objs, list):
@@ -785,16 +786,16 @@ class IoOps(AbstractOps):
                    or "Transport endpoint is not connected" in ret['msg']):
                     self.logger.info("Expected: Transport endpoint is not "
                                      "connected in output")
-                    io_results[async_obj] = True
+                    io_results[i] = True
                 else:
                     self.logger.info("Unexpected: Transport endpoint is not "
                                      "connected error not found in output")
-                    io_results[async_obj] = False
+                    io_results[i] = False
             else:
                 self.logger.info("Unexpected: IO successfull on not connected"
                                  f" mountpoint {mounts[i]['client']}:"
                                  f"{mounts[i]['mountpath']}")
-                io_results[async_obj] = False
+                io_results[i] = False
 
         _rc = all(io_results.values())
 

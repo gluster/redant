@@ -61,7 +61,7 @@ class TestClientSideQuorumTests(DParentTest):
         option = "cluster.quorum-count"
         ret = redant.get_volume_options(self.vol_name, option,
                                         self.server_list[0])
-        if ret['cluster.quorum-count'] != "(null)":
+        if ret['cluster.quorum-count'].split(" ")[0] != "(null)":
             raise Exception(f"Default value for {option} is not (null)"
                             f" for volume {self.vol_name}")
 
