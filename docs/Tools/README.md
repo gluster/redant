@@ -8,4 +8,4 @@ The design idea and as to how the operations happen inside the tools is
 documented in the following markdown files.
 
 * [glusto_redant_parser.md](./glusto_redant_parser.md)
-* [migrate_tc.md](./migrate_tc.md)
+* [migratingTC.md](./migratingTC.md)

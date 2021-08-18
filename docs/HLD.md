@@ -93,5 +93,5 @@ such as 'Glusterd', 'Geo-replication', 'Snapshot', etc. Each sub-component will 
 component figures in. All these test components are dependent upon the Common. Also, every test case derives some basic operational capability from a common
 abstract test which lifts much of the repeated tasks usually done when a test case run begins and ends.
 
-[Back to Red Pill Index](../RPIndex.md)
+[Back to main menu](./README.md)
 

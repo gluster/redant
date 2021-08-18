@@ -1,5 +1,11 @@
 # Doc Index
 
-* [Blue Pill Index](./BPIndex.md)
-* [Red Pill Index](./RPIndex.md)
-* [Known Issues](./known_issues.md)
+* [Common](./Common)
+* [Core](./Core)
+* [Ops](./Ops)
+* [Tools](./Tools)
+* [CatchAllException](./CatchAllException.md)
+* [HLD](./HLD.md)
+* [known_issues](./known_issues.md)
+* [WIRA](./WIRA.md)
+* [TestNature](./TestNature.md)
