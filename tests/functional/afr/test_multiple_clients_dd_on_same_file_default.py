@@ -160,13 +160,14 @@ class TestVerifySelfHealTriggersHealCommand(DParentTest):
         if vol_info is None:
             raise Exception("Unable to get volume info")
 
-        data_brick_list = []
-        for brick in brick_list:
-            for brick_info in vol_info[self.vol_name]["bricks"]:
-                if brick_info["name"] == brick:
-                    if brick_info["isArbiter"] == "0":
-                        data_brick_list.append(brick)
-        brick_list = data_brick_list
+        if self.volume_type == "arb":
+            data_brick_list = []
+            for brick in brick_list:
+                for brick_info in vol_info[self.vol_name]["bricks"]:
+                    if brick_info["name"] == brick:
+                        if brick_info["isArbiter"] == "0":
+                            data_brick_list.append(brick)
+            brick_list = data_brick_list
 
         for brick in brick_list:
             arequal = redant.collect_bricks_arequal(brick)
