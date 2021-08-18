@@ -59,12 +59,35 @@ class TestCase(DParentTest):
                             "in the subvol")
 
     def run_test(self, redant):
+        """
+        Test steps:
+        1.Turn off the data, metadata and entry self heal options
+        2.Create IO
+        3.Calculate arequal of the bricks
+        4.Turn off the option self heal daemon
+        5.Bring down "brick1" process
+        6.Change the permissions of the directories and files
+        7.Bring back the brick "brick1" process
+        8.Bring down "brick1" process
+        9.Change the permissions of the directories and files
+        10.Bring back the brick "brick1" process
+        11.Turn on the option self heal daemon
+        12.Check if there any files in split-brain
+        13.Trigger heal and wait for it to complete
+        14.Do lookup on the files from mount
+        15.Check if files are not in split-brain
+        16.Calculate arequal of the bricks
+        17.Change metadata of same files
+        18.Do lookup on the files from mount
+        19.Calculate arequal of the bricks
+        """
         # Setting options
         options = {"metadata-self-heal": "off",
                    "entry-self-heal": "off",
                    "data-self-heal": "off"}
         redant.set_volume_options(self.vol_name, options,
-                                  self.server_list[0])
+                                  self.server_list[0],
+                                  True)
 
         # Creating files and directories on client side
         cmd = (f"mkdir {self.mountpoint}/test_metadata_sb && "
