@@ -82,4 +82,4 @@ engine humms, has to peer into these docs to understand why it is so.
 We solemly swear that there is no more essays on history, computes and other things
 unless and until required.
 
-Continuing ahead one can go over to the [High Level Design](https://github.com/srijan-sivakumar/redant/blob/main/doc/RP/HLD.md)
+Continuing ahead one can go over to the [High Level Design](./HLD.md)

@@ -26,7 +26,7 @@ referred to as volds ).
 ## Where is volds created.
 
 volds is instantiated when a mixin mixn object is created by a test case run.
-If anyone wants to take a peek at how it looks like -> [Mixin](../../../common/mixin.py)
+If anyone wants to take a peek at how it looks like -> [Mixin](../../common/mixin.py)
 
 ## Structure of volds.
 

@@ -9,7 +9,7 @@ Now if one checks the dependency flow without mixin ( Refer the image below ), i
 that the Rexe object ( i.e. remote executioner ) was created by the runner thread and then
 passed to the test case to be used.
 
-![](https://github.com/srijan-sivakumar/Redant/raw/main/images/without_mixin.jpg)
+![](../../images/without_mixin.jpg)
 
 But we also know that the ops libraries extensively use the rexe and log objects and method.
 This implies we have to import those modules into all these ops libraries and then pass the 

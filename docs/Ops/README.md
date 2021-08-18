@@ -12,6 +12,4 @@
 10. [Shared Storage Ops](./shared_storage_ops.md)
 11. [Snapshot Ops](./snap_ops.md)
 12. [Rebalance Ops](./rebalance_ops.md)
-13. [Remore execution functions](./rexe.md)
-14. [Blue Pill Index](../../BPIndex.md)
-15. [Red Pill Index](../../RPIndex.md)
+13. [Remote execution functions](./rexe.md)

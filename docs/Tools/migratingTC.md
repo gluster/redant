@@ -15,12 +15,15 @@ It will be a little extra step, but that extra step is what defines an open
 source idealogy.
 
 ## Cool, but what needs to be done ?
+We need to pluck test cases from the glusto-tests and place it on the redant
+repository and while doing so, also copy the patch details available in
+the said file.
 
 ## Automatic migration.
 
 There are couple of tools which have been created.
-1. One for the migration of test case from glusto-test to redant repo.[migrate_tc.py](../../../tools/migrate_tc.py)
-2. Seconds script for converting the glusto-test test file into redantish model. [glusto_redant_parser.py](../../../tools/glusto_redant_parser.py)
+1. One for the migration of test case from glusto-test to redant repo.[migrate_tc.py](../../tools/migrate_tc.py)
+2. Seconds script for converting the glusto-test test file into redantish model. [glusto_redant_parser.py](../../tools/glusto_redant_parser.py)
 
 ## Manual migration.
 

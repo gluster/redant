@@ -1,6 +1,6 @@
 # Environ Methods:
 
-The code can be found at [environ.py](../../../core/environ.py). This documentation contains the references
+The code can be found at [environ.py](../../core/environ.py). This documentation contains the references
 to the Framework Environ methods.
 
 Before moving on to methods, let's take a look at the data structures.
