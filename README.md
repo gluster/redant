@@ -54,15 +54,7 @@ For those who want a pure markdown experience and a deeper dive...
 
 
 # Readme Docs
-For those who want to take the red pill, this is where you go, the Readme index
-contains all the thought process, decision making and everything documented 
-right from a variable, data structure to why some things are the way they are.
-So if you are ready to take the leap to learn the ugly truth ( kidding! ),
-this is where you go. But on the other hand, if you just want to learn about
-how to get things running and that's it, take the blue pill.
-
-* [Red Pill Index](./docs/RPIndex.md)
-* [Blue Pill Index](./docs/BPIndex.md)
+The Documentation index can be found at [Docs](./docs/README.md)
 
 # Contents
 * [Set up](#set-up)
