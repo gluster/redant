@@ -21,13 +21,12 @@ Description:
 
 from tests.d_parent_test import DParentTest
 
-# disruptive;rep
 # disruptive;rep,dist,disp,dist-rep,dist-disp
 
 
 class TestCase(DParentTest):
 
-    def test_snap_list_glusterd_restart(self, redant):
+    def run_test(self, redant):
         """
         Verify snapshot list before and after glusterd restart
 
