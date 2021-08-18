@@ -1,20 +1,20 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
+  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Description:
 
 Test Cases in this module tests the
@@ -22,78 +22,27 @@ uss functionality while io is going on.
 
 """
 
-from glusto.core import Glusto as g
+import traceback
+from tests.d_parent_test import DParentTest
 
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.gluster_base_class import runs_on
-from glustolibs.io.utils import (validate_io_procs,
-                                 view_snaps_from_mount)
-from glustolibs.gluster.snap_ops import (snap_create,
-                                         snap_activate,
-                                         snap_list)
-from glustolibs.gluster.uss_ops import (disable_uss,
-                                        enable_uss, is_uss_enabled,
-                                        is_snapd_running)
-from glustolibs.misc.misc_libs import upload_scripts
+# disruptive;rep,dist,disp,dist-rep,dist-disp
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed', 'distributed-dispersed'],
-          ['glusterfs', 'nfs', 'cifs']])
-class SnapshotUssWhileIo(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.snap_count = 10
-        cls.get_super_method(cls, 'setUpClass')()
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts "
-                                 "to clients ")
-        g.log.info("Successfully uploaded IO scripts to clients %s")
-
-    def setUp(self):
-
-        # SettingUp volume and Mounting the volume
-        self.get_super_method(self, 'setUp')()
-        g.log.info("Starting to SetUp Volume and mount volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-        g.log.info("Volume %s has been setup successfully", self.volname)
-
-    def tearDown(self):
-
-        # Validate USS running
-        g.log.info("Validating USS enabled or disabled")
-        ret = is_uss_enabled(self.mnode, self.volname)
-        if not ret:
-            # Disable USS
-            ret, _, _ = disable_uss(self.mnode, self.volname)
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_proc,
+                                                      self.mounts)
             if not ret:
-                raise ExecutionError("Failed to disable USS on volume"
-                                     "%s" % self.volname)
-            g.log.info("Successfully disabled USS on volume %s",
-                       self.volname)
+                raise Exception("IO failed on some of the clients")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.redant.logger.error(e)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Unmount and cleanup original volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_snap_uss_while_io(self):
-        # pylint: disable=too-many-statements
+    def run_test(self, redant):
         """
         Steps:
         1. Create volume
@@ -109,88 +58,49 @@ class SnapshotUssWhileIo(GlusterBaseClass):
         10. validate snapshots under .snaps directory
         """
         # Enable USS
-        g.log.info("Enable USS for volume")
-        ret, _, _ = enable_uss(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to enable USS on volume"
-                         "%s" % self.volname)
-        g.log.info("Successfully enabled USS on volume %s",
-                   self.volname)
+        redant.enable_uss(self.vol_name, self.server_list[0])
 
         # Validate USS running
-        g.log.info("Validating USS enabled or disabled")
-        ret = is_uss_enabled(self.mnode, self.volname)
-        self.assertTrue(ret, "Failed to validate USS for volume "
-                        "%s" % self.volname)
-        g.log.info("Successfully validated USS for Volume"
-                   "%s", self.volname)
+        if not redant.is_uss_enabled(self.vol_name, self.server_list[0]):
+            raise Exception(f"USS is not enabled in {self.server_list[0]}")
 
         # Validate snapd running
-        for server in self.servers:
-            g.log.info("Validating snapd daemon on:%s", server)
-            ret = is_snapd_running(server, self.volname)
-            self.assertTrue(ret, "Snapd is Not running on "
-                            "%s" % server)
-            g.log.info("Snapd Running on node: %s", server)
+        for server in self.server_list:
+            if not redant.is_snapd_running(self.vol_name, server):
+                raise Exception(f"Snapd is not running in {server}")
 
         # Perform I/O
-        g.log.info("Starting to Perform I/O")
-        all_mounts_procs = []
-        for mount_obj in self.mounts:
-            g.log.info("Generating data for %s:"
-                       "%s", mount_obj.client_system, mount_obj.mountpoint)
-            # Create files
-            g.log.info('Creating files...')
-            command = ("/usr/bin/env python %s create_files -f 100 "
-                       "--fixed-file-size 1M %s" % (
-                           self.script_upload_path,
-                           mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, command,
-                               user=mount_obj.user)
-            all_mounts_procs.append(proc)
-        self.io_validation_complete = False
+        self.all_mounts_proc = []
+        counter = 1
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        for mount in self.mounts:
+            proc = redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                      counter, 2, 3, 4, 10,
+                                                      mount['client'])
+            self.all_mounts_proc.append(proc)
+            counter += 10
 
         # Creating snapshot with description
-        g.log.info("Starting to Create snapshot")
-        for count in range(0, self.snap_count):
-            self.snap = "snap%s" % count
-            ret, _, _ = snap_create(self.mnode, self.volname,
-                                    self.snap,
-                                    description='$p3C!@l C#@R@cT#R$')
-            self.assertEqual(ret, 0, ("Failed to create snapshot for volume %s"
-                                      % self.volname))
-            g.log.info("Snapshot %s created successfully"
-                       " for volume %s", self.snap, self.volname)
+        for count in range(0, 10):
+            snap_name = f"{self.vol_name}-snap{count}"
+            desc = '$p3C!@l C#@R@cT#R$'
+            redant.snap_create(self.vol_name, snap_name, self.server_list[0],
+                               description=desc)
 
         # Validate snapshot list
-        g.log.info("Starting to list all snapshots")
-        ret, out, _ = snap_list(self.mnode)
-        self.assertEqual(ret, 0, ("Failed to list snapshot of volume %s"
-                                  % self.volname))
-        s_list = out.strip().split('\n')
-        self.assertEqual(len(s_list), self.snap_count, "Failed to validate "
-                         "all snapshots")
-        g.log.info("Snapshot listed and  Validated for volume %s"
-                   " successfully", self.volname)
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 10:
+            raise Exception(f"Expected 10 snapshots but got {snap_list}")
 
         # Activating snapshot
-        g.log.info("Activating snapshot")
-        for count in range(0, self.snap_count):
-            self.snap = "snap%s" % count
-            ret, _, _ = snap_activate(self.mnode, self.snap)
-            self.assertEqual(ret, 0, "Failed to Activate snapshot "
-                             "%s" % self.snap)
-            g.log.info("snapshot %s activated successfully", self.snap)
+        for count in range(0, 10):
+            snap_name = f"{self.vol_name}-snap{count}"
+            redant.snap_activate(snap_name, self.server_list[0])
 
         # Validate IO is completed
-        self.assertTrue(
-            validate_io_procs(all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
-        self.io_validation_complete = True
+        if not redant.validate_io_procs(self.all_mounts_proc, self.mounts):
+            raise Exception("IO failed")
 
         # validate snapshots are listed under .snaps directory
-        g.log.info("Validating snaps under .snaps")
-        ret = view_snaps_from_mount(self.mounts, s_list)
-        self.assertTrue(ret, "Failed to list snaps under .snaps"
-                        "directory")
-        g.log.info("Snapshots Validated successfully")
+        if not redant.view_snap_from_mount(self.mounts, snap_list):
+            raise Exception("Snap in .snaps doesn't match snap list provided")
