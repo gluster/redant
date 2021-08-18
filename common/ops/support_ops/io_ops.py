@@ -741,6 +741,65 @@ class IoOps(AbstractOps):
 
         return _rc
 
+    # TODO: Add check for other mount type
+    def is_io_procs_fail_with_error(self, all_mounts_async_objs: list,
+                                    mounts: list, timeout: None) -> tuple:
+        """
+        Check whether IO failed with connection error.
+
+        Args:
+            all_mounts_async_objs (list): List of open connection descriptor
+                                          as returned by g.run_async method.
+            mounts (list): List of all mountpoints on which process were
+                           started.
+            timeout (int) : Time until which the async command status shall
+                            be checked
+
+        Returns:
+            tuple : Tuple containing two elements (ret, io_results).
+            The first element 'ret' is of type 'bool', True if
+            IO failed with connection error on all mount procs. False
+            otherwise.
+
+            The second element 'io_results' is of type dictonary and it
+            contains the proc and corresponding result for IO. If IO failed
+            with connection error, then proc value contains True else False.
+        """
+        if not isinstance(all_mounts_async_objs, list):
+            all_mounts_async_objs = [all_mounts_async_objs]
+
+        if isinstance(mounts, dict):
+            mounts = [mounts]
+
+        io_results = {}
+        _rc = True
+        for i, async_obj in enumerate(all_mounts_async_objs):
+            self.logger.info(f"Validating IO on {mounts[i]['client']}:"
+                             f"{mounts[i]['mountpath']}")
+            ret = self.wait_till_async_command_ends(async_obj, timeout)
+            if ret['error_code'] != 0:
+                self.logger.info("Expected: IO failed on "
+                                 f"{mounts[i]['client']}:"
+                                 f"{mounts[i]['mountpath']}")
+                if ("Transport endpoint is not connected" in ret['error_msg']
+                   or "Transport endpoint is not connected" in ret['msg']):
+                    self.logger.info("Expected: Transport endpoint is not "
+                                     "connected in output")
+                    io_results[async_obj] = True
+                else:
+                    self.logger.info("Unexpected: Transport endpoint is not "
+                                     "connected error not found in output")
+                    io_results[async_obj] = False
+            else:
+                self.logger.info("Unexpected: IO successfull on not connected"
+                                 f" mountpoint {mounts[i]['client']}:"
+                                 f"{mounts[i]['mountpath']}")
+                io_results[async_obj] = False
+
+        _rc = all(io_results.values())
+
+        return _rc, io_results
+
     def cleanup_mounts(self, mounts: list) -> bool:
         """
         Removes all the data from all the mountpoints
