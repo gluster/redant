@@ -190,8 +190,9 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Do lookup on the mount
-        cmd = (f"find {self.mountpoint} | xargs stat")
-        redant.execute_abstract_op_node(cmd, self.client_list[0])
+        self.mounts = {"client": self.client_list[0],
+                       "mountpath": self.mountpoint}
+        redant.get_mounts_stat(self.mounts)
 
         # Check arequals for all the bricks
         self._verify_brick_arequals()

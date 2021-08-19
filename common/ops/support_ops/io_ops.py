@@ -563,6 +563,9 @@ class IoOps(AbstractOps):
         """
 
         self.logger.info("Start getting stat of the mountpoint recursively")
+        if not isinstance(mounts, list):
+            mounts = [mounts]
+
         _rc = True
         for mount in mounts:
             self.logger.info(
