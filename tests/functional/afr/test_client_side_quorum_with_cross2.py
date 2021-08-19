@@ -88,7 +88,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         all_mounts_procs.append(proc)
 
         # Validate IO
-        ret = self.redant.is_io_procs_fail_with_rofs(all_mounts_procs, mounts)
+        ret, _ = self.redant.is_io_procs_fail_with_rofs(all_mounts_procs, mounts)
         if not ret:
             raise Exception("Unexpected Error and IO successful"
                             " on Read-Only File System")
@@ -101,7 +101,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         all_mounts_procs.append(proc)
 
         # Validate IO
-        ret, _ = self.redant.validate_io_procs(all_mounts_procs, mounts)
+        ret = self.redant.validate_io_procs(all_mounts_procs, mounts)
         if not ret:
             raise Exception("Reading failed")
 
@@ -237,7 +237,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
                             "online")
 
         # Clearing out the mountpoint for the next test
-        cmd = f"rm -rf {self.mountpoint}"
+        cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         """
