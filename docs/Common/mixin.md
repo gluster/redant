@@ -46,7 +46,7 @@ multiple different objects for different libraries.
 
 The following is a sample template for adding a support or ops module.
 
-```
+```python
 # Required imports
 #
 
@@ -68,7 +68,7 @@ I would've simply added them in imports but NO! It won't be imported by us. For 
 Once the above support library is created, one needs to add the module inside the `mixin` and 
 let the `mixin` class inherit from this newly added class.
 
-```
+```python
 from common.ops.support_ops.rexe import Rexe
 from common.ops.gluster_ops.sample_ops1 import sample_ops_class # the newly added module
 from common.ops.gluster_ops.sample_ops2 import sample_ops2_class 

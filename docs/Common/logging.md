@@ -3,7 +3,7 @@
 Redant logging is achieved with the help of the `Logger` class which currently
 consists of three methods,
 1. set_logging_options
-3. get_logger_handle
+2. get_logger_handle
 
 Following are certain design decisions taken,
 1. The default logging level be it during the intitialization or logging is Info
@@ -48,21 +48,18 @@ All log messages MUST include:
 
 Ex: 
 
-```js
+```python
 self.logger.info(msg)
 
 ```
-On starting the execution of cmd on a node:<br>
-```js
+On starting the execution of cmd on a node:
+```python
  self.logger.info( f"Running { cmd } on node { node }")
 ```
 On completing the execution:
-```js
+```python
  self.logger.info( f"Successfully ran { cmd } on { node } ")
 ```
 ## Log levels
 =============
-
-* Everything in the ops library has to be in info mode.
-* Everything in the test cases has to be in error mode.
-* Use debug in remote command executioner.
+ Currently the best practice is to use info logs judiciously so that only required information is added to the logs most of the times. Repeated data and big data dumps need to be put under debug log
