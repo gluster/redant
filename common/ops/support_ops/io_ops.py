@@ -804,6 +804,63 @@ class IoOps(AbstractOps):
 
         return _rc, io_results
 
+    def is_io_procs_fail_with_rofs(self, all_mounts_async_objs: list,
+                                   mounts: list,
+                                   timeout: int = None) -> tuple:
+        """Check whether IO failed with Read-only file system error.
+
+        Args:
+            all_mounts_async_objs (list): List of open connection descriptor
+                                          as returned by g.run_async method.
+            mounts (list): List of all mountpoints on which process were
+                           started.
+            timeout (int) : Time until which the async command status shall
+                            be checked.
+
+        Returns:
+            tuple : Tuple containing two elements (ret, io_results).
+            The first element 'ret' is of type 'bool', True if
+            IO failed with ROFS on all mount procs. False otherwise.
+
+            The second element 'io_results' is of type dictonary and it
+            contains the proc and corresponding result for IO. If IO failed
+            with ROFS, then proc value contains True else False.
+        """
+        if not isinstance(all_mounts_async_objs, list):
+            all_mounts_async_objs = [all_mounts_async_objs]
+
+        if isinstance(mounts, dict):
+            mounts = [mounts]
+
+        io_results = {}
+        _rc = True
+        for i, async_obj in enumerate(all_mounts_async_objs):
+            self.logger.info(f"Validating IO on {mounts[i]['client']}:"
+                             f"{mounts[i]['mountpath']}")
+            ret = self.wait_till_async_command_ends(async_obj, timeout)
+            if ret['error_code'] != 0:
+                self.logger.info("Expected: IO failed on "
+                                 f"{mounts[i]['client']}:"
+                                 f"{mounts[i]['mountpath']}")
+                if ("Read-only file system" in ret['error_msg']
+                   or "Read-only file system" in ret['msg']):
+                    self.logger.info("EXPECTED : Read-only file system in "
+                                     "output")
+                    io_results[i] = True
+                else:
+                    self.logger.error("Read-only file system error not found"
+                                      " in output")
+                    io_results[i] = False
+            else:
+                self.logger.error("Unexpected: IO Successful on Read-only "
+                                  f"file system {mounts[i]['client']}:"
+                                  f"{mounts[i]['mountpath']}")
+                io_results[i] = False
+
+        _rc = all(io_results.values())
+
+        return _rc, io_results
+
     def cleanup_mounts(self, mounts: list) -> bool:
         """
         Removes all the data from all the mountpoints
