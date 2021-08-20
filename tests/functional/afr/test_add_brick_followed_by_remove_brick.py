@@ -1,113 +1,65 @@
-#  Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.dht_test_utils import is_layout_complete
-from glustolibs.gluster.glusterfile import (file_exists,
-                                            occurences_of_pattern_in_file)
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              wait_for_rebalance_to_complete)
-from glustolibs.gluster.volume_libs import expand_volume, shrink_volume
-from glustolibs.io.utils import (validate_io_procs, wait_for_io_to_complete)
-from glustolibs.misc.misc_libs import upload_scripts
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along`
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC verifies brick layout after add-brick followed by remove brick
+"""
+
+# disruptive;rep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated'], ['glusterfs']])
-class TestAddBrickFollowedByRemoveBrick(GlusterBaseClass):
+class TestAddBrickFollowedByRemoveBrick(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-
-        cls.first_client = cls.mounts[0].client_system
-        cls.mountpoint = cls.mounts[0].mountpoint
-        cls.is_io_running = False
-
-        # Upload IO scripts for running IO on mounts
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        if not file_exists(cls.first_client, cls.script_upload_path):
-            if not upload_scripts(cls.first_client, cls.script_upload_path):
-                raise ExecutionError(
-                    "Failed to upload IO scripts to client %s"
-                    % cls.first_client)
-
-    def setUp(self):
-
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        if not self.setup_volume_and_mount_volume([self.mounts[0]]):
-            raise ExecutionError("Failed to setup and mount volume")
-
-    def tearDown(self):
-
-        if self.is_io_running:
-            if not wait_for_io_to_complete(self.all_mounts_procs,
-                                           [self.mounts[0]]):
-                raise ExecutionError("IO failed on some of the clients")
-
-        if not self.unmount_volume_and_cleanup_volume([self.mounts[0]]):
-            raise ExecutionError("Failed to cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def _check_layout_of_bricks(self):
-        """Check the layout of bricks"""
-        ret = is_layout_complete(self.mnode, self.volname, "/")
-        self.assertTrue(ret, ("Volume %s: Layout is not complete",
-                              self.volname))
-        g.log.info("Volume %s: Layout is complete", self.volname)
-
-    def _add_brick_and_wait_for_rebalance_to_complete(self):
+    def _add_brick_and_rebalance_and_check_layout(self):
         """Add brick and wait for rebalance to complete"""
 
         # Add brick to volume
-        ret = expand_volume(self.mnode, self.volname, self.servers,
-                            self.all_servers_info)
-        self.assertTrue(ret, "Failed to add brick on volume %s"
-                        % self.volname)
+        ret = self.redant.expand_volume(self.server_list[0], self.vol_name,
+                                        self.server_list, self.brick_roots)
+        if not ret:
+            raise Exception(f"Failed to add brick on volume {self.vol_name}")
 
         # Trigger rebalance and wait for it to complete
-        ret, _, _ = rebalance_start(self.mnode, self.volname,
+        self.redant.rebalance_start(self.vol_name, self.server_list[0],
                                     force=True)
-        self.assertEqual(ret, 0, "Failed to start rebalance on the volume %s"
-                         % self.volname)
 
         # Wait for rebalance to complete
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname,
-                                             timeout=1200)
-        self.assertTrue(ret, "Rebalance is not yet complete on the volume "
-                             "%s" % self.volname)
-        g.log.info("Rebalance successfully completed")
+        ret = self.redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                         self.server_list[0],
+                                                         timeout=1200)
+        if not ret:
+            raise Exception("Rebalance is not yet complete on the volume "
+                            f"{self.vol_name}")
 
-        self._check_layout_of_bricks()
+        # Check the layout of bricks
+        ret = self.redant.is_layout_complete(self.server_list[0],
+                                             self.vol_name, "/")
+        if not ret:
+            raise Exception(f"Volume {self.vol_name}: Layout is not complete")
 
     def _remove_brick_from_volume(self):
         """Remove bricks from volume"""
-        # Remove bricks from the volume
-        ret = shrink_volume(self.mnode, self.volname, rebalance_timeout=2000)
-        self.assertTrue(ret, "Failed to remove-brick from volume")
-        g.log.info("Remove-brick rebalance successful")
+        ret = self.redant.shrink_volume(self.server_list[0], self.vol_name,
+                                        rebal_timeout=2000)
+        if not ret:
+            raise Exception("Failed to remove-brick from volume")
 
-    def test_add_brick_followed_by_remove_brick(self):
+    def run_test(self, redant):
         """
         Test case:
         1. Create a volume, start it and mount it to a client.
@@ -122,49 +74,55 @@ class TestAddBrickFollowedByRemoveBrick(GlusterBaseClass):
            both client and rebalance logs.
         """
         # Start I/O on mount point
+        self.is_io_running = False
         self.all_mounts_procs = []
-        cmd = ("/usr/bin/env python {} create_deep_dirs_with_files "
-               "--dirname-start-num {} --dir-depth 5 --dir-length 5 "
-               "--max-num-of-dirs 5 --num-of-files 5 {}"
-               .format(self.script_upload_path, 10, self.mountpoint))
-        proc = g.run_async(self.first_client, cmd)
+        proc = redant.create_deep_dirs_with_files(self.mountpoint, 10, 5, 5,
+                                                  5, 5, self.client_list[0])
         self.all_mounts_procs.append(proc)
         self.is_io_running = True
 
         # Convert 1x3 to 2x3 and then convert 2x3 to 3x3
         for _ in range(0, 2):
-            self._add_brick_and_wait_for_rebalance_to_complete()
+            self._add_brick_and_rebalance_and_check_layout()
 
         # Convert 3x3 to 2x3 and then convert 2x3 to 1x3
         for _ in range(0, 2):
             self._remove_brick_from_volume()
 
         # Validate I/O processes running on the nodes
-        ret = validate_io_procs(self.all_mounts_procs, [self.mounts[0]])
+        self.mounts = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
+        ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
+        if not ret:
+            raise Exception("IO failed on some of the clients")
         self.is_io_running = False
-        self.assertTrue(ret, "IO failed on some of the clients")
-        g.log.info("IO on all mounts: Complete")
 
         # Check for Input/output errors in rebalance logs
         particiapting_nodes = []
-        for brick in get_all_bricks(self.mnode, self.volname):
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if not brick_list:
+            raise Exception("Failed to get the brick list")
+
+        for brick in brick_list:
             node, _ = brick.split(':')
             particiapting_nodes.append(node)
 
+        rebal_file = f"/var/log/glusterfs/{self.vol_name}-rebalance.log"
         for server in particiapting_nodes:
-            ret = occurences_of_pattern_in_file(
-                server, "Input/output error",
-                "/var/log/glusterfs/{}-rebalance.log".format(self.volname))
-            self.assertEqual(ret, 0,
-                             "[Input/output error] present in rebalance log"
-                             " file")
+            ret = redant.occurences_of_pattern_in_file(server,
+                                                       "Input/output error",
+                                                       rebal_file)
+            if ret != 0 or ret == -1:
+                raise Exception("[Input/output error] present in rebalance "
+                                "log file or failed to find pattern in file")
 
         # Check for Input/output errors in client logs
-        ret = occurences_of_pattern_in_file(
-            self.first_client, "Input/output error",
-            "/var/log/glusterfs/mnt-{}_{}.log".format(self.volname,
-                                                      self.mount_type))
-        self.assertEqual(ret, 0,
-                         "[Input/output error] present in client log file")
-        g.log.info("Expanding and shrinking volume successful and no I/O "
-                   "errors see in rebalance and client logs")
+        mnt_file = f"/var/log/glusterfs/mnt-{self.vol_name}.log"
+        ret = redant.occurences_of_pattern_in_file(self.client_list[0],
+                                                   "Input/output error",
+                                                   mnt_file)
+        if ret != 0 or ret == -1:
+            raise Exception("[Input/output error] present in client log "
+                            "file or failed to find pattern in file")

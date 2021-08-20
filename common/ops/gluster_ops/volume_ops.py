@@ -891,6 +891,50 @@ class VolumeOps(AbstractOps):
 
         return volume_type_info
 
+    def get_volume_type_from_brickpath(self, brickdir_path: str) -> str:
+        """
+        Get the type of volume from a brick path.
+
+        Args:
+            brickdir_path(str): The complete brick path.
+            (e.g., server1.example.com:/bricks/brick1/testvol_brick0/)
+
+        Returns:
+            volume type(str): The volume type in str.
+            NoneType : None on failure
+        """
+        host, brick_path_info = brickdir_path.split(':')
+        path_info = (brick_path_info[:-2] if brick_path_info.endswith("//")
+                     else brick_path_info[:-1])
+
+        volume_list = self.get_volume_list(host)
+        for volume in volume_list:
+            brick_list = self.get_all_bricks(volume, host)
+            if brick_list is None:
+                self.logger.error("Failed to get the brick list for volume")
+                return None
+
+            brick_paths = [brick.split(':')[1] for brick in brick_list]
+            if path_info in brick_paths:
+                ret = self.get_volume_info(host, volume)
+                if not ret:
+                    self.logger.error("Failed to get volume type for "
+                                      f"{volume}")
+                    return None
+                list_of_replica = ('Replicate', 'Distributed-Replicate')
+                if (ret[volume]['typeStr'] in list_of_replica
+                   and int(ret[volume]['arbiterCount']) == 1):
+                    if int(ret[volume]['distCount']) >= 2:
+                        return 'Distributed-Arbiter'
+                    else:
+                        return 'Arbiter'
+                else:
+                    return ret[volume]['typeStr']
+
+        self.logger.error("Failed to find volume type for brick-path "
+                          f"{brickdir_path}")
+        return None
+
     def get_replica_count(self, node: str, volname: str) -> int:
         """Get the replica count of the volume
 
