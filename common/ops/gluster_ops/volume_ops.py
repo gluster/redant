@@ -857,7 +857,6 @@ class VolumeOps(AbstractOps):
                             'typeStr': 'Disperse',
                             'replicaCount': '1',
                             'arbiterCount': '0',
-                            'stripeCount': '1',
                             'disperseCount': '3',
                             'redundancyCount': '1'
                         }
@@ -877,7 +876,6 @@ class VolumeOps(AbstractOps):
             'typeStr': '',
             'replicaCount': '',
             'arbiterCount': '',
-            'stripeCount': '',
             'disperseCount': '',
             'redundancyCount': ''
         }
