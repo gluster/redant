@@ -20,10 +20,26 @@
 """
 
 # disruptive;rep
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestAddBrickFollowedByRemoveBrick(DParentTest):
+
+    def terminate(self):
+        """
+        Wait for IO to complete if the TC fails early
+        """
+        try:
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    raise Exception("IO failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _add_brick_and_rebalance_and_check_layout(self):
         """Add brick and wait for rebalance to complete"""
