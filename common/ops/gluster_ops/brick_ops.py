@@ -476,8 +476,11 @@ class BrickOps(AbstractOps):
 
             i = 0
             while i < len(server_list):
-                if len(brick_root[server_list[index]]) >= brick_iter:
+                if len(brick_root[server_list[index]]) - 1 >= brick_iter:
                     break
+                index += 1
+                if index == len(server_list):
+                    index = 0
                 i += 1
 
             # If all the bricks in the brick_root is exhausted sttart from
