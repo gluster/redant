@@ -111,7 +111,7 @@ class BrickOps(AbstractOps):
             brick_list = [brick_list]
 
         replica = ''
-        if replica_count is not None and replica_count != 1:
+        if replica_count is not None:
             replica = (f"replica {replica_count}")
 
         brick_cmd = " ".join(brick_list)

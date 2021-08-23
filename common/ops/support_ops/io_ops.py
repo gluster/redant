@@ -1115,7 +1115,7 @@ class IoOps(AbstractOps):
 
         cmd = f"cat {fqpath} | grep {flag} \"{pattern}\""
         ret = self.execute_abstract_op_node(cmd, node, False)
-        if ret['error_code'] != 0:
+        if ret['error_code'] != 0 and ret['error_msg'] != '':
             self.logger.error("Failed to check the pattern in file "
                               f"{fqpath}")
             return -1
