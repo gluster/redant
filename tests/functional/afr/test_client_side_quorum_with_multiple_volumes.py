@@ -37,7 +37,7 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
             conf_hash = self.vol_type_inf['dist-rep']
             if i < 3:
                 conf_hash['dist_count'] = 2
-            vol_name = f"testvol-{self.vol_type}-{i}"
+            vol_name = f"testvol-{self.volume_type}-{i}"
             self.redant.setup_volume(vol_name, self.server_list[0],
                                      conf_hash, self.server_list,
                                      self.brick_roots, force=True)
@@ -45,13 +45,13 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
             self.redant.execute_abstract_op_node(f"mkdir -p {mountpoint}",
                                                  self.client_list[0])
             self.redant.volume_mount(self.server_list[0],
-                                     self.vol_name,
+                                     vol_name,
                                      mountpoint, self.client_list[0])
             self.mounts_list.append(mountpoint)
             self.mount_points_and_volnames[vol_name] = mountpoint
 
         conf_hash = self.vol_type_inf['dist']
-        vol_name = f"testvol-{self.vol_type}-5"
+        vol_name = f"testvol-{self.volume_type}-5"
         self.redant.setup_volume(vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
                                  self.brick_roots, force=True)
@@ -59,7 +59,7 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
         self.redant.execute_abstract_op_node(f"mkdir -p {mountpoint}",
                                              self.client_list[0])
         self.redant.volume_mount(self.server_list[0],
-                                 self.vol_name,
+                                 vol_name,
                                  mountpoint, self.client_list[0])
         self.mounts_list.append(mountpoint)
         self.mount_points_and_volnames[vol_name] = mountpoint
@@ -114,10 +114,6 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
                 if ret['cluster.quorum-type'] != 'auto':
                     raise Exception("Option cluster.quorum-type is not AUTO"
                                     f" for {volume}")
-            else:
-                if ret['cluster.quorum-type'] != 'none':
-                    raise Exception("Option cluster.quorum-type is not NONE"
-                                    f" for {volume}")
 
         # Get first brick server and brick path
         # and get first file from filelist then delete it from volume
@@ -135,32 +131,18 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
                                             f"{file_from_vol}", brick_server)
             vols_file_list[volume] = file_from_vol
 
-        # bring bricks offline
-        # bring first brick for testvol_distributed-replicated_1
-        volname = 'testvol-dist-rep-1'
-        brick_list = redant.get_all_bricks(volname, self.server_list[0])
-        if not brick_list:
-            raise Exception("Failed to get the brick list")
-        bricks_to_bring_offline = brick_list[0]
-        redant.bring_bricks_offline(volname, bricks_to_bring_offline)
+        # bring brick offline of 'testvol-dist-rep-1' and 'testvol-dist-rep-3'
+        for volname in ('testvol-dist-rep-1', 'testvol-dist-rep-3'):
+            brick_list = redant.get_all_bricks(volname, self.server_list[0])
+            if not brick_list:
+                raise Exception("Failed to get the brick list")
+            bricks_to_bring_offline = brick_list[0:2]
+            redant.bring_bricks_offline(volname, bricks_to_bring_offline)
 
-        if not redant.are_bricks_offline(volname, bricks_to_bring_offline,
-                                         self.server_list[0]):
-            raise Exception(f"Bricks {bricks_to_bring_offline} are not"
-                            " offline")
-
-        # bring first two bricks for testvol_distributed-replicated_3
-        volname = 'testvol-dist-rep-3'
-        brick_list = redant.get_all_bricks(volname, self.server_list[0])
-        if not brick_list:
-            raise Exception("Failed to get the brick list")
-        bricks_to_bring_offline = brick_list[0:2]
-        redant.bring_bricks_offline(volname, bricks_to_bring_offline)
-
-        if not redant.are_bricks_offline(volname, bricks_to_bring_offline,
-                                         self.server_list[0]):
-            raise Exception(f"Bricks {bricks_to_bring_offline} are not"
-                            " offline")
+            if not redant.are_bricks_offline(volname, bricks_to_bring_offline,
+                                             self.server_list[0]):
+                raise Exception(f"Bricks {bricks_to_bring_offline} are not"
+                                " offline")
 
         # merge two dicts (volname: file_to_delete) and (volname: mountpoint)
         temp_dict = [vols_file_list, self.mount_points_and_volnames]
@@ -181,8 +163,8 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
             }
             # check for ROFS error for testvol-dist-rep-1 and
             # testvol-dist-rep-3
-            if (volume == 'testvol-dist-rep-1'
-               or volume == 'testvol-dist-rep-3'):
+            if (volname == 'testvol-dist-rep-1'
+               or volname == 'testvol-dist-rep-3'):
                 # create new file taken from vols_file_list
                 all_mounts_procs = []
                 cmd = f"touch {mountpoint}/{filename}"
@@ -205,6 +187,6 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
                 all_mounts_procs.append(proc)
 
                 # Validate IO
-                if not redant.validate_io_procs(self.all_mounts_procs,
+                if not redant.validate_io_procs(all_mounts_procs,
                                                 mounts):
                     raise Exception("IO failed on some of the clients")
