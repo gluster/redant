@@ -30,8 +30,8 @@ class TestClientIOThreadsOnReplicatedVolumes(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        conf_hash = self.vol_type_inf[self.volume_type]
         if self.volume_type == "dist":
-            conf_hash = self.vol_type_inf['dist']
             conf_hash['dist_count'] = 1
 
         self.redant.setup_volume(self.vol_name, self.server_list[0],
@@ -56,7 +56,7 @@ class TestClientIOThreadsOnReplicatedVolumes(DParentTest):
 
         # Check if io-threads is loaded or not based on enabled param value
         filename = (f"/var/lib/glusterd/vols/{self.vol_name}/trusted-"
-                    f"{self.vol_name}")
+                    f"{self.vol_name}.tcp-fuse.vol")
         ret = self.redant.occurences_of_pattern_in_file(self.server_list[0],
                                                         'io-threads',
                                                         filename)
