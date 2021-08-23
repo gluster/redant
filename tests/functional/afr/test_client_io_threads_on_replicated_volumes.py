@@ -1,53 +1,42 @@
-#  Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.glusterfile import occurences_of_pattern_in_file
-from glustolibs.gluster.volume_ops import (set_volume_options,
-                                           get_volume_options)
-from glustolibs.gluster.volume_libs import (expand_volume, shrink_volume,
-                                            form_bricks_list_to_add_brick)
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check client IO threads on replicated volume
+"""
+
+# disruptive;dist,rep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'replicated'], ['glusterfs']])
-class TestClientIOThreadsOnReplicatedVolumes(GlusterBaseClass):
+class TestClientIOThreadsOnReplicatedVolumes(DParentTest):
 
-    def setUp(self):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        if self.volume_type == "dist":
+            conf_hash = self.vol_type_inf['dist']
+            conf_hash['dist_count'] = 1
 
-        self.get_super_method(self, 'setUp')()
-
-        if self.volume_type == "distributed":
-            # Changing dist_count to 1
-            self.volume['voltype']['dist_count'] = 1
-
-        # Setup Volume
-        if not self.setup_volume():
-            raise ExecutionError("Failed to setup volume")
-
-    def tearDown(self):
-
-        if not self.cleanup_volume():
-            raise ExecutionError("Failed to cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
 
     def _check_value_of_performance_client_io_threads(self, enabled=True):
         """Check value of performance.client-io-threads"""
@@ -57,21 +46,24 @@ class TestClientIOThreadsOnReplicatedVolumes(GlusterBaseClass):
             value, instances = "on", 3
 
         # Check if output value is same as expected or not
-        ret = get_volume_options(self.mnode, self.volname,
-                                 option="performance.client-io-threads")
-        self.assertEqual(ret['performance.client-io-threads'], value,
-                         "performance.client-io-threads value {} instead "
-                         "of {}".format(ret['performance.client-io-threads'],
-                                        value))
+        option = "performance.client-io-threads"
+        ret = self.redant.get_volume_options(self.vol_name, option,
+                                             self.server_list[0])
+        if ret["performance.client-io-threads"] != value:
+            raise Exception("Unexpected: performance.client-io-threads value"
+                            f" {ret['performance.client-io-threads']} instead"
+                            f"of {value}")
 
         # Check if io-threads is loaded or not based on enabled param value
-        ret = occurences_of_pattern_in_file(
-            self.mnode, 'io-threads', "/var/lib/glusterd/vols/{}/trusted-{}."
-            "tcp-fuse.vol".format(self.volname, self.volname))
-        self.assertEqual(ret, instances, "Number of io-threads more than {}"
-                         .format(instances))
+        filename = (f"/var/lib/glusterd/vols/{self.vol_name}/trusted-"
+                    f"{self.vol_name}")
+        ret = self.redant.occurences_of_pattern_in_file(self.server_list[0],
+                                                        'io-threads',
+                                                        filename)
+        if ret != instances:
+            raise Exception(f"Number of io-threads not equal to {instances}")
 
-    def test_client_io_threads_on_replicate_volumes(self):
+    def run_test(self, redant):
         """
         Test case 1:
         1. Create distrubuted volume and start it.
@@ -99,33 +91,31 @@ class TestClientIOThreadsOnReplicatedVolumes(GlusterBaseClass):
             trusted-.tcp-fuse.vol.
         """
         # If volume type is distributed then run test case 1.
-        if self.volume_type == "distributed":
-
+        if self.volume_type == "dist":
             # Check the value of performance.client-io-threads it should be ON
             # and io-threads should be loaded in trusted-.tcp-fuse.vol
             self._check_value_of_performance_client_io_threads()
 
             # Add brick to convert to replicate volume
-            brick = form_bricks_list_to_add_brick(self.mnode, self.volname,
-                                                  self.servers,
-                                                  self.all_servers_info)
-            self.assertIsNotNone(brick,
-                                 "Failed to form brick list to add brick")
+            brick = redant.form_brick_cmd_to_add_brick(self.server_list[0],
+                                                       self.vol_name,
+                                                       self.server_list,
+                                                       self.brick_roots)
+            if brick is None:
+                raise Exception("Failed to form brick list to add brick")
 
-            ret, _, _ = add_brick(self.mnode, self.volname, brick,
-                                  force=True, replica_count=2)
-            self.assertFalse(ret, "Failed to add brick on volume %s"
-                             % self.volname)
-            g.log.info("Add-brick successful on volume")
+            redant.add_brick(self.vol_name, brick, self.server_list[0],
+                             force=True, replica_count=2)
 
             # Check the value of performance.client-io-threads it should be ON
             # and io-threads should be loaded in trusted-.tcp-fuse.vol
             self._check_value_of_performance_client_io_threads(enabled=False)
 
             # Remove brick so thate volume type is back to distributed
-            ret = shrink_volume(self.mnode, self.volname, replica_num=1)
-            self.assertTrue(ret, "Failed to remove-brick from volume")
-            g.log.info("Remove-brick successful on volume")
+            ret = redant.shrink_volume(self.server_list[0], self.vol_name,
+                                       replica_num=1)
+            if not ret:
+                raise Exception("Failed to remove-brick from volume")
 
             # Check the value of performance.client-io-threads it should be ON
             # and io-threads should be loaded in trusted-.tcp-fuse.vol
@@ -135,31 +125,28 @@ class TestClientIOThreadsOnReplicatedVolumes(GlusterBaseClass):
         else:
             # Set performance.client-io-threads to ON
             options = {"performance.client-io-threads": "on"}
-            ret = set_volume_options(self.mnode, self.volname, options)
-            self.assertTrue(ret, "Unable to set volume option %s for"
-                            "volume %s" % (options, self.volname))
-            g.log.info("Successfully set %s for volume %s",
-                       options, self.volname)
+            redant.set_volume_options(self.vol_name, options,
+                                      self.server_list[0])
 
             # Check the value of performance.client-io-threads it should be ON
             # and io-threads should be loaded in trusted-.tcp-fuse.vol
             self._check_value_of_performance_client_io_threads()
 
             # Add bricks to convert to make the volume 2x3
-            ret = expand_volume(self.mnode, self.volname, self.servers,
-                                self.all_servers_info)
-            self.assertTrue(ret, "Failed to add brick on volume %s"
-                            % self.volname)
-            g.log.info("Add-brick successful on volume")
+            ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                       self.server_list, self.brick_roots)
+            if not ret:
+                raise Exception("Failed to add brick on volume "
+                                f"{self.vol_name}")
 
             # Check the value of performance.client-io-threads it should be ON
             # and io-threads should be loaded in trusted-.tcp-fuse.vol
             self._check_value_of_performance_client_io_threads()
 
             # Remove brick to make the volume 1x3 again
-            ret = shrink_volume(self.mnode, self.volname)
-            self.assertTrue(ret, "Failed to remove-brick from volume")
-            g.log.info("Remove-brick successful on volume")
+            ret = redant.shrink_volume(self.server_list[0], self.vol_name)
+            if not ret:
+                raise Exception("Failed to remove-brick from volume")
 
             # Check the value of performance.client-io-threads it should be ON
             # and io-threads should be loaded in trusted-.tcp-fuse.vol
