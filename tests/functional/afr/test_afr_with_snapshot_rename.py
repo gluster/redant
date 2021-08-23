@@ -17,6 +17,7 @@
 
  Description:
     Test cases related to afr snapshot.
+    Third test for test_afr_with_snapshot.
 """
 
 # disruptive;rep,dist-rep
@@ -29,13 +30,14 @@ class TestAFRSnapshot(DParentTest):
 
     def run_test(self, redant):
         """
-        Test entry transaction crash consistency : create
+        Test entry transaction crash consistency : rename
 
         Description:
-        - Create IO
+        - Create IO of 50 files
+        - Rename 20 files
         - Calculate arequal before creating snapshot
         - Create snapshot
-        - Modify the data
+        - Rename 20 files more
         - Stop the volume
         - Restore snapshot
         - Start the volume
@@ -47,7 +49,7 @@ class TestAFRSnapshot(DParentTest):
         # Creating files on client side
         count = 1
         for mount_obj in self.mounts:
-            cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 200 "
+            cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 50 "
                    f"--base-file-name file_{count} {mount_obj['mountpath']}")
             proc = redant.execute_command_async(cmd, mount_obj['client'])
             self.all_mounts_procs.append(proc)
@@ -57,25 +59,37 @@ class TestAFRSnapshot(DParentTest):
         if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
             raise Exception("IO failed to complete on some of the clients")
 
+        # Rename files
+        self.all_mounts_procs = []
+        cmd = ("python3 /tmp/file_dir_ops.py mv -s FirstRename"
+               f" {self.mountpoint}")
+        proc = redant.execute_command_async(cmd, self.client_list[0])
+        self.all_mounts_procs.append(proc)
+
+        # Wait for IO to complete
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mounts[0]):
+            raise Exception("IO failed to complete on the client")
+
         # Get arequal before creating snapshot
-        result_before_snapshot = redant.collect_mounts_arequal(self.mounts)
+        result_before_snapshot = redant.collect_mounts_arequal(self.mounts[0])
 
         # Create snapshot
-        snapshot_name = ("entry_transaction_crash_consistency_create-"
+        snapshot_name = ("entry_transaction_crash_consistency_rename-"
                          f"{self.vol_name}-fuse")
         redant.snap_create(self.vol_name, snapshot_name, self.server_list[0])
 
-        # Modify the data
+        # Rename files
         self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            cmd = ("python3 /tmp/file_dir_ops.py append "
-                   f"{mount_obj['mountpath']}")
-            proc = redant.execute_command_async(cmd, mount_obj['client'])
-            self.all_mounts_procs.append(proc)
+        cmd = ("python3 /tmp/file_dir_ops.py mv -s SecondRename "
+               f" {self.mountpoint}")
+        proc = redant.execute_command_async(cmd, self.client_list[0])
+        self.all_mounts_procs.append(proc)
 
         # Wait for IO to complete
-        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
-            raise Exception("IO failed to complete on some of the clients")
+        if not redant.validate_io_procs(self.all_mounts_procs,
+                                        self.mounts[0]):
+            raise Exception("IO failed to complete on the client")
 
         # Restore snapshot
         ret = redant.snap_restore_complete(self.vol_name, snapshot_name,
@@ -91,7 +105,7 @@ class TestAFRSnapshot(DParentTest):
         sleep(10)
 
         # Get arequal after restoring snapshot
-        result_after_restoring = redant.collect_mounts_arequal(self.mounts)
+        result_after_restoring = redant.collect_mounts_arequal(self.mounts[0])
 
         # Checking arequal before creating snapshot
         # and after restoring snapshot

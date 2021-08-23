@@ -308,7 +308,7 @@ class SnapshotOps(AbstractOps):
         if not excep and ret['msg']['opRet'] != '0':
             return False
 
-        ret = self.snap_restore(volname, snapname, node, excep)
+        ret = self.snap_restore(snapname, node, excep)
 
         if not excep and ret['msg']['opRet'] != '0':
             return False
