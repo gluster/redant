@@ -24,7 +24,7 @@
 from tests.d_parent_test import DParentTest
 
 
-class ClientSideQuorumTests(DParentTest):
+class TestClientSideQuorumTests(DParentTest):
 
     def run_test(self, redant):
         """
