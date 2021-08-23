@@ -310,7 +310,7 @@ class BrickOps(AbstractOps):
     @staticmethod
     def _get_index(server_list, brick_cmd):
         """
-        Get the index oof the server in the server list
+        Get the index of the server in the server list
         """
         ind = 0
         index = 0
@@ -430,6 +430,12 @@ class BrickOps(AbstractOps):
             # extra nodes
             if brick_cmd:
                 index = self._get_index(nodes, brick_cmd)
+                if index == 1:
+                    server_val = nodes[1]
+                    index = -1
+                else:
+                    server_val = nodes[0]
+                    index = 0
             else:
                 if last_node == nodes[0] and len(nodes) > 1:
                     server_val = nodes[1]
