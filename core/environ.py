@@ -131,9 +131,14 @@ class environ:
         self.spinner.start("Setting up environment")
         self.redant.hard_terminate(self.server_list, self.client_list,
                                    self.brick_root)
-        if clear_logs:
+        if clear_logs == "Yes":
             self.redant.delete_glusterfs_logs(self.server_list,
                                               self.client_list)
+        elif clear_logs == "No":
+            self.redant.logger.debug("Not clearing the old glusterfs logs")
+        else:
+            self.redant.logger.error("Incorrect argument passed to "
+                                     "'--clear-old-logs'")
         try:
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
