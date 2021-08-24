@@ -34,8 +34,9 @@ class TestHealWithExpandVolume(DParentTest):
                 ret = self.redant.del_user(self.client_list[0], user)
                 if not ret:
                     raise Exception(f"Failed to delette the user: {user}")
-                ret = (self.redant.execute_abstract_op_node(
-                       f"rm -rf /home/{user}", self.client_list[0]), False)
+                cmd = f"rm -rf /home/{user}"
+                node = self.client_list[0]
+                ret = self.redant.execute_abstract_op_node(cmd, node, False)
                 if ret['error_code'] != 0:
                     raise Exception("Failed to delete the home directory of"
                                     f" user: {user}")
