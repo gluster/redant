@@ -51,7 +51,7 @@ def pars_args():
     parser.add_argument("--show-backtrace",
                         help="Show full backtrace on error",
                         dest="show_backtrace", action='store_true')
-    parser.add_argument("--clear-old-logs",
+    parser.add_argument("-cold", "--clear-old-logs",
                         help="Clear glusterfs logs directory during "
                         "environment setup. Default is Yes",
                         dest="clear_logs", default="Yes", type=str)
