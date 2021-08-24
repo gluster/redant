@@ -159,7 +159,8 @@ class TestArbiterToReplicatedConversion(DParentTest):
             raise Exception('Unable to trigger full heal on the volume')
 
         if not redant.monitor_heal_completion(self.server_list[0],
-                                              self.vol_name):
+                                              self.vol_name,
+                                              timeout_period=2000):
             raise Exception("Heal is not yet completed")
 
         # Validate IO
