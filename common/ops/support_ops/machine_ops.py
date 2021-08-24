@@ -401,3 +401,23 @@ class MachineOps(AbstractOps):
                     self.TEST_RES[0] = None
                     raise Exception(f"The test case requires {bricks_count}"
                                     " bricks per node to run the test")
+
+    def delete_glusterfs_logs(self, server_list: list, client_list: list):
+        """
+        Delete all the log files under '/var/logs/glusterfs/' directory
+
+        Args:
+            server_list (list): List of servers
+            client_list (list): List of clients
+        """
+        if not isinstance(server_list, list):
+            server_list = [server_list]
+        if not isinstance(client_list, list):
+            client_list = [client_list]
+
+        total_nodes = server_list + client_list
+        self.logger.debug("Clearing old glusterfs logs on the nodes: "
+                          f"{total_nodes}")
+        for node in total_nodes:
+            cmd = "rm -rf /var/log/glusterfs/*"
+            self.execute_abstract_op_node(cmd, node, False)

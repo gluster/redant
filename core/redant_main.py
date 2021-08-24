@@ -51,6 +51,10 @@ def pars_args():
     parser.add_argument("--show-backtrace",
                         help="Show full backtrace on error",
                         dest="show_backtrace", action='store_true')
+    parser.add_argument("--clear-old-logs",
+                        help="Clear glusterfs logs directory during "
+                        "environment setup",
+                        dest="clear_logs", default=True, type=bool)
     return parser.parse_args()
 
 
@@ -124,7 +128,7 @@ def main():
                       args.log_level)
     logger_obj = env_set.get_framework_logger()
     logger_obj.debug("Running env setup.")
-    env_set.setup_env()
+    env_set.setup_env(args.clear_logs)
 
     # invoke the test_runner.
     logger_obj.debug("Running the test cases.")
