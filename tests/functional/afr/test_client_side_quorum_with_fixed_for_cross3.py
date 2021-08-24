@@ -1,105 +1,94 @@
-#  Copyright (C) 2016-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-""" Description:
-        Test Cases in this module tests the client side quorum.
 """
-from time import sleep
+ Copyright (C) 2016-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.gluster.volume_ops import (set_volume_options,
-                                           reset_volume_option)
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           bring_bricks_online)
-from glustolibs.io.utils import (validate_io_procs,
-                                 is_io_procs_fail_with_error)
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    Test Cases in this module tests the client side quorum in cross 3 volume
+"""
+
+# disruptive;rep,dist-rep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated'],
-          ['glusterfs']])
-class ClientSideQuorumTestsWithSingleVolumeCross3(GlusterBaseClass):
-    """
-    ClientSideQuorumTestsWithSingleVolumeCross3 contains tests which
-    verifies the client side quorum Test Cases with cross 3 volume.
-    """
-    @classmethod
-    def setUpClass(cls):
+class TestClientSideQuorumTestsWithSingleVolumeCross3(DParentTest):
+
+    def _perform_read_write_io(self, filename, mounts):
         """
-        Upload the necessary scripts to run tests.
+        Perform write and read IO on mountpoint
         """
-        # calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+        # Start IO (write/read), must succeed
+        all_mounts_procs = []
+        self.redant.logger.info("Creating new file on mountpoint...")
+        cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 10"
+               f" --base-file-name {filename} {self.mounts['mountpath']}")
+        proc = self.redant.execute_command_async(cmd, self.mounts['client'])
+        all_mounts_procs.append(proc)
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
+        # Validate IO
+        ret = self.redant.validate_io_procs(all_mounts_procs, mounts)
         if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients")
+            raise Exception("IO validation failed")
 
-    def setUp(self):
-        """
-        setUp method for every test
-        """
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+        # Read files on mountpoint
+        self.redant.logger.info("Starting reading files on mountpoint")
+        all_mounts_procs = []
+        cmd = f"python3 /tmp/file_dir_ops.py read {self.mounts['mountpath']}"
+        proc = self.redant.execute_command_async(cmd, self.mounts['client'])
+        all_mounts_procs.append(proc)
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume %s", self.volname)
-        ret = self.setup_volume_and_mount_volume(self.mounts)
+        # Validate IO
+        ret = self.redant.validate_io_procs(all_mounts_procs, mounts)
         if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
+            raise Exception("Reading failed")
 
-    def tearDown(self):
+    def _perform_read_write_io_with_error(self, filename, mounts):
         """
-        tearDown for every test
+        Perform write and read IO on mountpoint, in which must fail
+        with not connected transport endpoint.
         """
+        # Start IO (write/read), should fail
+        all_mounts_procs = []
+        self.redant.logger.info("Creating new file on mountpoint...")
+        cmd = (f"dd if=/dev/urandom of={self.mounts['mountpath']}/{filename}"
+               " bs=1M count=1")
+        proc = self.redant.execute_command_async(cmd, self.mounts['client'])
+        all_mounts_procs.append(proc)
 
-        # Reset the volume options set inside the test
-        g.log.info("Reset the volume options")
-        vol_options = ['cluster.self-heal-daemon', 'cluster.quorum-type',
-                       'cluster.quorum-count']
-        for opt in vol_options:
-            ret, _, _ = reset_volume_option(self.mnode, self.volname, opt)
-            if ret != 0:
-                raise ExecutionError("Failed to reset the volume option %s"
-                                     % opt)
-            sleep(2)
-        g.log.info("Successfully reset the volume options")
-
-        # stopping the volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
+        # Validate IO
+        ret, _ = self.redant.is_io_procs_fail_with_error(all_mounts_procs,
+                                                         mounts)
         if not ret:
-            raise ExecutionError("Failed to Unmount Volume "
-                                 "and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
+            raise Exception("Unexpected Error and IO successful"
+                            " on not connected transport endpoint")
 
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        # Read files on mountpoint should fail
+        self.redant.logger.info("Starting reading files on mountpoint")
+        all_mounts_procs = []
+        cmd = f"cat {self.mounts['mountpath']}/file1.txt"
+        proc = self.redant.execute_command_async(cmd, self.mounts['client'])
+        all_mounts_procs.append(proc)
 
-    def test_client_side_quorum_with_fixed_for_cross3(self):
+        # Validate IO
+        ret, _ = self.redant.is_io_procs_fail_with_error(all_mounts_procs,
+                                                         mounts)
+        if not ret:
+            raise Exception("Unexpected Error and Read successful"
+                            " on not connected transport endpoint")
+
+    def run_test(self, redant):
         """
         Test Script to verify the Client Side Quorum with fixed
         for cross 3 volume
@@ -129,552 +118,123 @@ class ClientSideQuorumTestsWithSingleVolumeCross3(GlusterBaseClass):
         * start I/0 ( write and read ) - read and write will fail
         * set the quorum-type to none
         * start I/0 ( write and read ) - must succeed
-
         """
-        # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+        self.mounts = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
         # Disable self heal daemon
         options = {"cluster.self-heal-daemon": "off"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, ("Unable to set %s for volume %s"
-                              % (options, self.volname)))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # set cluster.quorum-type to fixed
         options = {"cluster.quorum-type": "fixed"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, ("Unable to set %s for volume %s"
-                              % (options, self.volname)))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/O( write ) - must succeed
-        all_mounts_procs = []
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name file %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on some of the clients")
+        self._perform_read_write_io("file", self.mounts)
 
         # get the subvolumes
-        g.log.info("Starting to get sub-volumes for volume %s", self.volname)
-        subvols_dict = get_subvols(self.mnode, self.volname)
-        num_subvols = len(subvols_dict['volume_subvols'])
-        g.log.info("Number of subvolumes in volume %s:", num_subvols)
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        num_subvols = len(subvols)
 
         # bring down brick1 for all the subvolumes
         offline_brick1_from_replicasets = []
         for i in range(0, num_subvols):
-            subvol_brick_list = subvols_dict['volume_subvols'][i]
-            g.log.info("sub-volume %s brick list : %s",
-                       i, subvol_brick_list)
+            subvol_brick_list = subvols[i]
             brick_to_bring_offline1 = subvol_brick_list[0]
-            g.log.info("Going to bring down the brick process "
-                       "for %s", brick_to_bring_offline1)
-            ret = bring_bricks_offline(self.volname, brick_to_bring_offline1)
-            self.assertTrue(ret, ("Failed to bring down the bricks. Please "
-                                  "check the log file for more details."))
-            g.log.info("Brought down the brick process "
-                       "for %s successfully", brick_to_bring_offline1)
+            if not redant.bring_bricks_offline(self.vol_name,
+                                               brick_to_bring_offline1):
+                raise Exception("Failed to bring down the bricks. Please "
+                                "check the log file for more details.")
             offline_brick1_from_replicasets.append(brick_to_bring_offline1)
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name testfile %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("testfile", self.mounts)
 
         # bring down brick2 for all the subvolumes
         offline_brick2_from_replicasets = []
         for i in range(0, num_subvols):
-            subvol_brick_list = subvols_dict['volume_subvols'][i]
-            g.log.info("sub-volume %s brick list : %s", i, subvol_brick_list)
-            brick_to_bring_offline2 = subvol_brick_list[1]
-            g.log.info("Going to bring down the brick process "
-                       "for %s", brick_to_bring_offline2)
-            ret = bring_bricks_offline(self.volname, brick_to_bring_offline2)
-            self.assertTrue(ret, ("Failed to bring down the bricks. Please "
-                                  "check the log file for more details."))
-            g.log.info("Brought down the brick process "
-                       "for %s successfully", brick_to_bring_offline2)
+            subvol_brick_list = subvols[i]
+            brick_to_bring_offline2 = subvol_brick_list[0]
+            if not redant.bring_bricks_offline(self.vol_name,
+                                               brick_to_bring_offline2):
+                raise Exception("Failed to bring down the bricks. Please "
+                                "check the log file for more details.")
             offline_brick2_from_replicasets.append(brick_to_bring_offline2)
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name newfile %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("newfile", self.mounts)
 
         # set the cluster.quorum-count to 1
         options = {"cluster.quorum-count": "1"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, "Unable to set %s for volume %s"
-                        % (options, self.volname))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name filename %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("filename", self.mounts)
 
         # set the cluster.quorum-count to 2
         options = {"cluster.quorum-count": "2"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, ("Unable to set %s for volume %s"
-                              % (options, self.volname)))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/0 ( write and read ) - read and write will fail
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("dd if=/dev/urandom of=%s/test_file bs=1M count=1"
-               % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected Error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while creating file")
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("cat %s/file1.txt" % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while reading file")
+        self._perform_read_write_io_with_error("test_file", self.mounts)
 
         # bring back the brick1 online for all subvolumes
-        g.log.info("bringing up the brick : %s online",
-                   offline_brick1_from_replicasets)
-        ret = bring_bricks_online(
-            self.mnode, self.volname, offline_brick1_from_replicasets,
-            bring_bricks_online_methods='glusterd_restart')
-        self.assertTrue(ret, ("Failed to brought the brick %s online"
-                              % offline_brick1_from_replicasets))
-        g.log.info("Successfully brought the brick %s online",
-                   offline_brick1_from_replicasets)
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
+                                          offline_brick1_from_replicasets):
+            raise Exception("Failed to bring the brick "
+                            f"{offline_brick1_from_replicasets} online")
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name newfilename %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("newfilename", self.mounts)
 
         # Bring back brick2 online
-        g.log.info("bringing up the brick : %s online",
-                   offline_brick2_from_replicasets)
-        ret = bring_bricks_online(
-            self.mnode, self.volname, offline_brick2_from_replicasets,
-            bring_bricks_online_methods='glusterd_restart')
-        self.assertTrue(ret, ("Failed to brought the brick %s online"
-                              % offline_brick2_from_replicasets))
-        g.log.info("Successfully brought the brick %s online",
-                   offline_brick2_from_replicasets)
+        if not redant.bring_bricks_online(self.vol_name, self.server_list,
+                                          offline_brick2_from_replicasets):
+            raise Exception("Failed to bring the brick "
+                            f"{offline_brick2_from_replicasets} online")
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name textfile %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("textfile", self.mounts)
 
         # set cluster.quorum-type to auto
         options = {"cluster.quorum-type": "auto"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, ("Unable to set %s for volume %s"
-                              % (options, self.volname)))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name newtextfile %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("newtextfile", self.mounts)
 
         # bring down brick1 and brick2 for all the subvolumes
+        brick_to_bring_offline = []
         for i in range(0, num_subvols):
-            subvol_brick_list = subvols_dict['volume_subvols'][i]
-            g.log.info("sub-volume %s brick list : %s", i, subvol_brick_list)
-            bricks_to_bring_offline = subvol_brick_list[0:2]
-            g.log.info("Going to bring down the brick process for %s",
-                       bricks_to_bring_offline)
-            ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-            self.assertTrue(ret, "Failed to bring down the bricks. Please "
-                                 "check the log file for more details.")
-            g.log.info("Brought down the brick process "
-                       "for %s successfully", bricks_to_bring_offline)
+            subvol_brick_list = subvols[i]
+            brick_to_bring_offline = subvol_brick_list[0:2]
+            if not redant.bring_bricks_offline(self.vol_name,
+                                               brick_to_bring_offline):
+                raise Exception("Failed to bring down the bricks. Please "
+                                "check the log file for more details.")
 
         # start I/0 ( write and read ) - read and write will fail
-        all_mounts_procs = []
-        g.log.info("Start creating file on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        cmd = ("dd if=/dev/urandom of=%s/new_test_file bs=1M count=1"
-               % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while creating files")
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        g.log.info("Starting reading file")
-        cmd = ("cat %s/file1.txt" % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while reading file")
+        self._perform_read_write_io_with_error("new_test_file", self.mounts)
 
         # set the cluster.quorum-count to 1
         options = {"cluster.quorum-count": "1"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, "Unable to set %s for volume %s"
-                        % (options, self.volname))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/0 ( write and read ) - read and write will fail
-        g.log.info("Start creating files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("dd if=/dev/urandom of=%s/new_test_file bs=1M count=1"
-               % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while creating files")
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("cat %s/file1.txt" % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while reading file")
+        self._perform_read_write_io_with_error("new_test_file", self.mounts)
 
         # set the cluster.quorum-count to 3
         options = {"cluster.quorum-count": "3"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, "Unable to set %s for volume %s"
-                        % (options, self.volname))
-        g.log.info("Successfully set %s for volume %s", options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/0 ( write and read ) - read and write will fail
-        g.log.info("Start creating files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("dd if=/dev/urandom of=%s/new_test_file bs=1M count=1"
-               % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while creating files")
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("cat %s/file1.txt" % self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        g.log.info("Validating whether IO failed with "
-                   "Transport endpoint is not connected")
-        ret, _ = is_io_procs_fail_with_error(self, all_mounts_procs,
-                                             self.mounts, self.mount_type)
-        self.assertTrue(ret, ("Unexpected error and IO successful"
-                              " on not connected transport endpoint"))
-        g.log.info("EXPECTED: Transport endpoint is not connected"
-                   " while reading file")
+        self._perform_read_write_io_with_error("new_test_file", self.mounts)
 
         # set the quorum-type to none
         options = {"cluster.quorum-type": "none"}
-        g.log.info("setting %s for the volume %s", options, self.volname)
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, "Unable to set %s for volume %s"
-                        % (options, self.volname))
-        g.log.info("Successfully set %s for volume %s",
-                   options, self.volname)
+        redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # start I/0 ( write and read ) - must succeed
-        g.log.info("Starting IO on mountpoint %s", self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = ("/usr/bin/env python %s create_files "
-               "-f 10 --base-file-name lastfile %s" % (
-                   self.script_upload_path,
-                   self.mounts[0].mountpoint))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "IO failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
-
-        # read the file
-        g.log.info("Start reading files on mountpoint %s",
-                   self.mounts[0].mountpoint)
-        all_mounts_procs = []
-        cmd = "/usr/bin/env python %s read %s" % (
-            self.script_upload_path,
-            self.mounts[0].mountpoint)
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
-        all_mounts_procs.append(proc)
-
-        # Validate IO
-        self.assertTrue(validate_io_procs(all_mounts_procs, self.mounts),
-                        "Reads failed on mountpoint %s"
-                        % self.mounts[0].mountpoint)
+        self._perform_read_write_io("lastfile", self.mounts)
