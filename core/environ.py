@@ -123,7 +123,7 @@ class environ:
             self.redant.execute_abstract_op_multinode(cmd,
                                                       arequal_machines)
 
-    def setup_env(self, clear_logs):
+    def setup_env(self, keep_logs):
         """
         Setting up of the environment before the TC execution begins.
         """
@@ -131,7 +131,7 @@ class environ:
         self.spinner.start("Setting up environment")
         self.redant.hard_terminate(self.server_list, self.client_list,
                                    self.brick_root)
-        if not clear_logs:
+        if not keep_logs:
             self.redant.delete_glusterfs_logs(self.server_list,
                                               self.client_list)
         else:

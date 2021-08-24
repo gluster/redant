@@ -54,7 +54,7 @@ def pars_args():
     parser.add_argument("-kold", "--keep-old-logs",
                         help="Don't clear the old glusterfs logs directory "
                         "during environment setup",
-                        dest="clear_logs", action='store_true')
+                        dest="keep_logs", action='store_true')
     return parser.parse_args()
 
 
@@ -128,7 +128,7 @@ def main():
                       args.log_level)
     logger_obj = env_set.get_framework_logger()
     logger_obj.debug("Running env setup.")
-    env_set.setup_env(args.clear_logs)
+    env_set.setup_env(args.keep_logs)
 
     # invoke the test_runner.
     logger_obj.debug("Running the test cases.")
