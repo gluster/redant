@@ -92,8 +92,8 @@ class TestAddBrickFollowedByRemoveBrick(DParentTest):
         # Start I/O on mount point
         self.is_io_running = False
         self.all_mounts_procs = []
-        proc = redant.create_deep_dirs_with_files(self.mountpoint, 10, 5, 5,
-                                                  5, 5, self.client_list[0])
+        proc = redant.create_deep_dirs_with_files(self.mountpoint, 10, 5, 3,
+                                                  4, 4, self.client_list[0])
         self.all_mounts_procs.append(proc)
         self.is_io_running = True
 
