@@ -156,7 +156,7 @@ class TestClientSideQuorumTestsWithSingleVolumeCross3(DParentTest):
         offline_brick2_from_replicasets = []
         for i in range(0, num_subvols):
             subvol_brick_list = subvols[i]
-            brick_to_bring_offline2 = subvol_brick_list[0]
+            brick_to_bring_offline2 = subvol_brick_list[1]
             if not redant.bring_bricks_offline(self.vol_name,
                                                brick_to_bring_offline2):
                 raise Exception("Failed to bring down the bricks. Please "
