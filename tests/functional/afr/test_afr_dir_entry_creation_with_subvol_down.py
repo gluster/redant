@@ -14,79 +14,64 @@
 #  with this program; if not, write to the Free Software Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+# disruptive;dist-arb,dist-rep
 from time import sleep
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           are_bricks_offline)
-from glustolibs.gluster.dht_test_utils import (create_brickobjectlist,
-                                               find_specific_hashed)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.glusterfile import file_exists
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              wait_for_rebalance_to_complete)
-from glustolibs.gluster.volume_ops import volume_start
-from glustolibs.gluster.volume_libs import (
-    verify_all_process_of_volume_are_online, get_subvols)
-from glustolibs.gluster.mount_ops import umount_volume, mount_volume
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-arbiter', 'distributed-replicated'], ['glusterfs']])
-class TestAfrDirEntryCreationWithSubvolDown(GlusterBaseClass):
+class TestAfrDirEntryCreationWithSubvolDown(DParentTest):
 
-    def setUp(self):
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Changing the distrubte count to 3 as per the test.
-        self.volume['voltype']['dist_count'] = 3
-        # Setup volume and mount it on three clients.
-        if not self.setup_volume_and_mount_volume(mounts=[self.mounts[0]]):
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-
-    def tearDown(self):
-
-        # Unmount and cleanup the volume
-        if not self.unmount_volume_and_cleanup_volume(mounts=[self.mounts[0]]):
-            raise ExecutionError("Unable to unmount and cleanup volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        conf_hash = self.vol_type_inf[self.volume_type]
+        conf_hash['dist_count'] = 3
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0],
+                                     self.vol_name,
+                                     self.mountpoint, client)
 
     def _check_file_exists(self, subvol, directory, exists=True):
         """ Validates given directory present on brick path of each subvol """
         for each_brick in subvol:
             node, brick_path = each_brick.split(":")
             path = brick_path + directory
-            ret = file_exists(node, path)
-            self.assertEqual(exists, ret, "Unexpected behaviour, existence "
-                             "check of directory {} on brick returned"
-                             " {}".format(directory, each_brick))
+            ret = self.redant.path_exists(node, path)
+            if ret != exists:
+                raise Exception("Unexpected behaviour on existence "
+                                f"check of directory {directory} on brick "
+                                f"{each_brick}")
 
     def _create_file(self, location, file_name):
         """ Creates a file with file_name on the specified location"""
-        source_file = "{}/{}".format(location, file_name)
-        ret, _, err = g.run(self.mounts[0].client_system,
-                            ("touch %s" % source_file))
-        self.assertEqual(ret, 0, ("Failed to create {} on {}: err"
-                                  " {}".format(source_file, location, err)))
-        g.log.info("Successfully created %s on: %s", file_name, location)
+        source_file = f"{location}/{file_name}"
+        self.redant.execute_abstract_op_node(f"touch {source_file}",
+                                             self.client_list[0])
 
-    def _create_number_of_files_on_the_subvol(self, subvol_object, directory,
+    def _create_number_of_files_on_the_subvol(self, subvol, directory,
                                               number_of_files, mountpath):
         """Creates number of files specified on the given subvol"""
         name = None
         for _ in range(number_of_files):
-            hashed = find_specific_hashed(self.subvols, directory,
-                                          subvol_object, existing_names=name)
-            self.assertIsNotNone(hashed, "Couldn't find a subvol to "
-                                 "create a file.")
-            self._create_file(mountpath, hashed.newname)
-            name = hashed.newname
+            hashed = self.redant.find_specific_hashed(self.subvols, directory,
+                                                      subvol, name)
+            if hashed is None:
+                raise Exception("Couldn't find a subvol to "
+                                "create a file.")
 
-    def test_afr_dir_entry_creation_with_subvol_down(self):
+            self._create_file(mountpath, hashed[0])
+            name = hashed[0]
+
+    def run_test(self, redant):
         """
         1. Create a distributed-replicated(3X3)/distributed-arbiter(3X(2+1))
            and mount it on one client
@@ -107,88 +92,86 @@ class TestAfrDirEntryCreationWithSubvolDown(GlusterBaseClass):
         13. Check if files are getting created on the subvol which was offline
         """
         # Bring down first subvol of bricks offline
-        self.subvols = get_subvols(self.mnode, self.volname)['volume_subvols']
+        self.subvols = redant.get_subvols(self.vol_name, self.server_list[0])
         first_subvol = self.subvols[0]
-        ret = bring_bricks_offline(self.volname, first_subvol)
-        self.assertTrue(ret, "Unable to bring {} bricks offline".
-                        format(first_subvol))
+        redant.bring_bricks_offline(self.vol_name, first_subvol)
 
         # Check bricks are offline or not
-        ret = are_bricks_offline(self.mnode, self.volname, first_subvol)
-        self.assertTrue(ret, "Bricks {} are still online".format(first_subvol))
+        if not redant.are_bricks_offline(self.vol_name, first_subvol,
+                                         self.server_list[0]):
+            raise Exception(f"Bricks {first_subvol} are still online")
 
         # Unmount and remount the volume
-        ret, _, _ = umount_volume(
-            self.mounts[0].client_system, self.mounts[0].mountpoint)
-        self.assertFalse(ret, "Failed to unmount volume.")
-        ret, _, _ = mount_volume(self.volname, self.mount_type,
-                                 self.mounts[0].mountpoint, self.mnode,
-                                 self.mounts[0].client_system)
-        self.assertFalse(ret, "Failed to remount volume.")
-        g.log.info('Successfully umounted and remounted volume.')
+        redant.volume_unmount(self.vol_name, self.mountpoint,
+                              self.client_list[0])
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[0])
 
         # At this step, sleep is must otherwise file creation will fail
         sleep(2)
 
         # Create dir `dir1/subdir1/deepdir1` on mountpont
         directory1 = "dir1/subdir1/deepdir1"
-        path = self.mounts[0].mountpoint + "/" + directory1
-        ret = mkdir(self.mounts[0].client_system, path, parents=True)
-        self.assertTrue(ret, "Directory {} creation failed".format(path))
+        path = f"{self.mountpoint}/{directory1}"
+        redant.create_dir(self.mountpoint, directory1, self.client_list[0])
 
         # Create files on the 2nd and 3rd subvols which are online
-        brickobject = create_brickobjectlist(self.subvols, directory1)
-        self.assertIsNotNone(brickobject, "Failed to get brick object list")
+        bricklist = redant.create_brickpathlist(self.subvols, directory1)
+        if not bricklist:
+            raise Exception("Failed to get brickpath list")
+
         self._create_number_of_files_on_the_subvol(
-            brickobject[1], directory1, 5, mountpath=path)
+            bricklist[1], directory1, 5, mountpath=path)
         self._create_number_of_files_on_the_subvol(
-            brickobject[2], directory1, 5, mountpath=path)
+            bricklist[2], directory1, 5, mountpath=path)
 
         # Bring bricks online using volume start force
-        ret, _, err = volume_start(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, err)
-        g.log.info("Volume: %s started successfully", self.volname)
+        redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Check all bricks are online
-        ret = verify_all_process_of_volume_are_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Few process after volume start are offline for "
-                             "volume: {}".format(self.volname))
+        if not (redant.verify_all_process_of_volume_are_online(self.vol_name,
+                self.server_list[0])):
+            raise Exception("Few process after volume start are offline for "
+                            f"volume: {self.vol_name}")
 
         # Validate Directory is not created on the bricks of the subvol which
         # is offline
         for subvol in self.subvols:
-            self._check_file_exists(subvol, "/" + directory1,
+            self._check_file_exists(subvol, f"/{directory1}",
                                     exists=(subvol != first_subvol))
 
         # Trigger heal from the client
-        cmd = "cd {}; find . | xargs stat".format(self.mounts[0].mountpoint)
-        ret, _, err = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, err)
+        self.mounts = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
+        ret = redant.get_mounts_stat(self.mounts)
+        if not ret:
+            raise Exception("Failed to do stat on mountpoint")
 
         # Validate the directory1 is present on all the bricks
         for subvol in self.subvols:
-            self._check_file_exists(subvol, "/" + directory1, exists=True)
+            self._check_file_exists(subvol, f"/{directory1}", exists=True)
 
         # Create new dir (dir2) on location dir1/subdir1/deepdir1
-        directory2 = "/" + directory1 + '/dir2'
-        path = self.mounts[0].mountpoint + directory2
-        ret = mkdir(self.mounts[0].client_system, path, parents=True)
-        self.assertTrue(ret, "Directory {} creation failed".format(path))
+        directory2 = f"/{directory1}/dir2"
+        path = f"{self.mountpoint}/{directory2}"
+        redant.create_dir(self.mountpoint, directory2, self.client_list[0])
 
         # Trigger rebalance and validate the completion
-        ret, _, err = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, err)
-        g.log.info("Rebalance on volume %s started successfully", self.volname)
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname)
-        self.assertTrue(ret, "Rebalance didn't complete on the volume: "
-                             "{}".format(self.volname))
+        redant.rebalance_start(self.vol_name, self.server_list[0])
+        ret = redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                    self.server_list[0])
+        if not ret:
+            raise Exception("Rebalance didn't complete on the volume: "
+                            f"{self.vol_name}")
 
         # Validate all dirs are present on all bricks in each subvols
         for subvol in self.subvols:
-            for each_dir in ("/" + directory1, directory2):
+            for each_dir in (f"/{directory1}", directory2):
                 self._check_file_exists(subvol, each_dir, exists=True)
 
         # Validate if files are getting created on the subvol which was
         # offline
         self._create_number_of_files_on_the_subvol(
-            brickobject[0], directory1, 5, mountpath=path)
+            bricklist[0], directory1, 5, mountpath=path)

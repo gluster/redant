@@ -74,18 +74,19 @@ class environ:
                                                  dpath, node,
                                                  remove)
 
-    def _check_and_copy_io_script(self):
+    def _check_and_copy_scripts(self):
         """
         Check if the I/O script exists in the client
         machines. If not transfer it there.
         """
-        io_script_dpath = '/tmp/file_dir_ops.py'
-        io_script_spath = f'{os.getcwd()}/tools/file_dir_ops.py'
+        scripts_dpath = ['/tmp/file_dir_ops.py', '/tmp/compute_hash.py']
+        scripts_spath = ['tools/file_dir_ops.py', 'tools/compute_hash.py']
 
-        self._transfer_files_to_machines(
-            list(set(self.client_list + self.server_list)),
-            io_script_spath,
-            io_script_dpath)
+        total_nodes = list(set(self.client_list + self.server_list))
+        for ind, script in enumerate(scripts_spath):
+            self._transfer_files_to_machines(total_nodes,
+                                             f'{os.getcwd()}/{script}',
+                                             scripts_dpath[ind])
 
     def _list_of_machines_without_arequal(self, machines: list):
         """
@@ -134,7 +135,7 @@ class environ:
         try:
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
-            self._check_and_copy_io_script()
+            self._check_and_copy_scripts()
             self._check_and_install_arequal_checksum()
             self.redant.logger.info("Environment setup success.")
             self.spinner.succeed("Environment setup successful.")
