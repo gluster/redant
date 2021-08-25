@@ -381,6 +381,11 @@ class TestCase(DParentTest):
         1.Test case for selfheal on hard links
         2.Test case for selfheal on soft links
         """
+        self.mounts = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
+
         self._test_self_heal_of_hard_links()
         redant.logger.info("Test Case for selfheal on hard links "
                            "is successful")
