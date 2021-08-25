@@ -268,12 +268,12 @@ class DHTOps(AbstractOps):
             for brickdir in bricklist:
                 count += 1
                 _, subvol_path = subvol.split(':')
-                _, brickpath = brickdir.split(':')
+                brickhost, brickpath = brickdir.split(':')
                 if (subvol_path == brickpath and item not in existing_names):
                     ret = self.hashrange_contains_hash(brickdir, newhash)
                     if ret:
-                        self.logger.debug(f"oldhashed {subvol} new {brickdir}"
-                                          f" count {count}")
+                        self.logger.debug(f"oldhashed {subvol_path} new "
+                                          f"{brickhost} count {count}")
                         return (item, brickdir, count)
             count = -1
         return None
