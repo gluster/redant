@@ -28,8 +28,8 @@ class TestCase(DParentTest):
 
     def terminate(self):
         # Delete non-root users and group if created
-        if self.user_group_created:
-            try:
+        try:
+            if self.user_group_created:
                 # Delete non-root users
                 for user in self.users:
                     if not self.redant.del_user(self.client_list[0],
@@ -42,15 +42,13 @@ class TestCase(DParentTest):
                                              'qa_all'):
                     raise Exception(f"Unable to delete group 'qa_all'"
                                     f"on {self.client_list[0]}")
-            except Exception as error:
-                tb = traceback.format_exc()
-                self.redant.logger.error(error)
-                self.redant.logger.error(tb)
-            super().terminate()
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _setup_user(self):
-        self.user_group_created = False
-
         # Create non-root group
         if not self.redant.group_add(self.client_list[0], 'qa_all'):
             raise Exception("Failed to create group qa_all")
@@ -583,6 +581,8 @@ class TestCase(DParentTest):
             "client": self.client_list[0],
             "mountpath": self.mountpoint
         }
+        self.user_group_created = False
+
         self._test_self_heal_entry_heal()
         redant.logger.info("Test Case for entry heal is successful")
         self._test_self_heal_meta_data()
