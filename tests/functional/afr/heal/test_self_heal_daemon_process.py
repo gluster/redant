@@ -1,120 +1,53 @@
-#  Copyright (C) 2016-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2016-2020  Red Hat, Inc. <http://www.redhat.com>
 
-""" Description:
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
         Test Cases in this module tests the self heal daemon process.
 """
 
+# disruptive;rep,dist-rep,disp,dist-disp
+# TODO: NFS, CIFS
 import calendar
 import time
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_libs import (
-    expand_volume, shrink_volume, log_volume_info_and_status,
-    wait_for_volume_process_to_be_online)
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              wait_for_rebalance_to_complete,
-                                              rebalance_status)
-from glustolibs.gluster.brick_libs import (
-    get_all_bricks, bring_bricks_offline, bring_bricks_online,
-    are_bricks_online, select_bricks_to_bring_offline, are_bricks_offline)
-from glustolibs.gluster.heal_libs import (get_self_heal_daemon_pid,
-                                          do_bricks_exist_in_shd_volfile,
-                                          is_shd_daemonized,
-                                          are_all_self_heal_daemons_are_online)
-from glustolibs.gluster.volume_ops import (volume_stop, volume_start)
-from glustolibs.gluster.gluster_init import (
-    restart_glusterd, wait_for_glusterd_to_start)
-from glustolibs.io.utils import validate_io_procs
-from glustolibs.misc.misc_libs import upload_scripts
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-# pylint: disable=too-many-lines
-
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed'], ['glusterfs', 'nfs', 'cifs']])
-class SelfHealDaemonProcessTests(GlusterBaseClass):
+class TestCase(DParentTest):
     """
     SelfHealDaemonProcessTests contains tests which verifies the
-    self-heal daemon process of the nodes
+    self-heal daemon process of the nodes for different scenerios
     """
-
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on mounts",
-                   cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
+    def terminate(self):
         """
-        setup volume, mount volume and initialize necessary variables
-        which is used in tests
+        Wait for IO to complete, if the TC fails early
         """
+        try:
+            if not self.io_validation_complete:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    raise Exception("IO failed on some of the clients")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # calling GlusterBaseClass setUpClass
-        self.get_super_method(self, 'setUp')()
-
-        self.all_mounts_procs = []
-        self.io_validation_complete = False
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-        # Verfiy glustershd process releases its parent process
-        ret = is_shd_daemonized(self.servers)
-        if not ret:
-            raise ExecutionError("Self Heal Daemon process was still"
-                                 " holding parent process.")
-        g.log.info("Self Heal Daemon processes are online")
-
-        self.glustershd = "/var/lib/glusterd/glustershd/glustershd-server.vol"
-
-    def tearDown(self):
-        """
-        Clean up the volume and umount volume from client
-        """
-        # stopping the volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # calling GlusterBaseClass tearDownClass
-        self.get_super_method(self, 'tearDown')()
-
-    def test_glustershd_with_add_remove_brick(self):
+    def _test_glustershd_with_add_remove_brick(self):
         """
         Test script to verify glustershd process with adding and
         removing bricks
@@ -134,187 +67,166 @@ class SelfHealDaemonProcessTests(GlusterBaseClass):
           in glustershd-server.vol file
 
         """
-        # pylint: disable=too-many-statements
-        nodes = self.volume['servers']
-        bricks_list = []
-        glustershd_pids = {}
+        # Verfiy glustershd process releases its parent process
+        if not self.redant.is_shd_daemonized(self.server_list):
+            raise Exception("Self Heal Daemon process was still"
+                            " holding parent process.")
+
+        self.GLUSTERSHD = "/var/lib/glusterd/glustershd/glustershd-server.vol"
 
         # check the self-heal daemon process
-        g.log.info("Starting to get self-heal daemon process on "
-                   "nodes %s", nodes)
-        ret, pids = get_self_heal_daemon_pid(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process "
-                              "found : %s", pids))
-        g.log.info("Successful in getting Single self heal daemon process"
-                   " on all nodes %s", nodes)
-        glustershd_pids = pids
+        ret, glustershd_pids = (self.redant.
+                                get_self_heal_daemon_pid(self.server_list))
+
+        if not ret:
+            raise Exception("Either No self heal daemon process found "
+                            "or more than One self heal daemon process"
+                            f" found : {glustershd_pids}")
 
         # get the bricks for the volume
-        g.log.info("Fetching bricks for the volume : %s", self.volname)
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List : %s", bricks_list)
+        bricks_list = self.redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Failed to get the bricks list")
 
         # validate the bricks present in volume info with
         # glustershd server volume file
-        g.log.info("Starting parsing file %s on "
-                   "node %s", self.glustershd, self.mnode)
-        ret = do_bricks_exist_in_shd_volfile(self.mnode, self.volname,
-                                             bricks_list)
-        self.assertTrue(ret, ("Brick List from volume info is different "
-                              "from glustershd server volume file. "
-                              "Please check log file for details"))
-        g.log.info("Successfully parsed %s file", self.glustershd)
+        ret = self.redant.do_bricks_exist_in_shd_volfile(self.vol_name,
+                                                         bricks_list,
+                                                         self.server_list[0])
+        if not ret:
+            raise Exception("Brick List from volume info is "
+                            "different from glustershd server "
+                            "volume file. Please check log "
+                            "file for details")
 
         # expanding volume
-        g.log.info("Start adding bricks to volume %s", self.volname)
-        ret = expand_volume(self.mnode, self.volname, self.servers,
-                            self.all_servers_info)
-        self.assertTrue(ret, ("Failed to add bricks to "
-                              "volume %s " % self.volname))
-        g.log.info("Add brick successful")
+        force = False
+        if self.volume_type == "dist-disp":
+            force = True
+        if not self.redant.expand_volume(self.server_list[0], self.vol_name,
+                                         self.server_list,
+                                         self.brick_roots, force):
+            raise Exception("Failed to add bricks to volume "
+                            f"{self.vol_name}")
 
         # Log Volume Info and Status after expanding the volume
-        g.log.info("Logging volume info and Status after expanding volume")
-        ret = log_volume_info_and_status(self.mnode, self.volname)
-        self.assertTrue(ret, ("Logging volume info and status failed "
-                              "on volume %s", self.volname))
-        g.log.info("Successful in logging volume info and status "
-                   "of volume %s", self.volname)
+        if not (self.redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Verify volume's all process are online for 60 sec
-        g.log.info("Verifying volume's all process are online")
-        ret = wait_for_volume_process_to_be_online(self.mnode, self.volname,
-                                                   60)
-        self.assertTrue(ret, ("Volume %s : All process are not "
-                              "online", self.volname))
-        g.log.info("Successfully Verified volume %s processes are online",
-                   self.volname)
+        if not (self.redant.wait_for_volume_process_to_be_online(
+                self.vol_name, self.server_list[0],
+                self.server_list, 60)):
+            raise Exception("Failed to wait for volume processes to "
+                            "be online")
 
         # Start Rebalance
-        g.log.info("Starting Rebalance on the volume")
-        ret, _, err = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to start rebalance on "
-                                  "the volume %s with error %s" %
-                                  (self.volname, err)))
-        g.log.info("Successfully started rebalance on the "
-                   "volume %s", self.volname)
+        self.redant.rebalance_start(self.vol_name, self.server_list[0],
+                                    force=True)
 
         # Log Rebalance status
-        g.log.info("Log Rebalance status")
-        _, _, _ = rebalance_status(self.mnode, self.volname)
+        ret = self.redant.get_rebalance_status(self.vol_name,
+                                               self.server_list[0])
+        if ret is None:
+            raise Exception("Rebalance status command has returned None")
 
         # Wait for rebalance to complete
-        g.log.info("Waiting for rebalance to complete")
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname)
-        self.assertTrue(ret, ("Rebalance is not yet complete "
-                              "on the volume %s", self.volname))
-        g.log.info("Rebalance is successfully complete on "
-                   "the volume %s", self.volname)
+        ret = (self.redant.
+               wait_for_rebalance_to_complete(self.vol_name,
+                                              self.server_list[0]))
+        if not ret:
+            raise Exception("Rebalance is not yet complete on the volume "
+                            f"{self.vol_name}")
 
         # Check Rebalance status after rebalance is complete
-        g.log.info("Checking Rebalance status")
-        ret, _, _ = rebalance_status(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to get rebalance status for "
-                                  "the volume %s", self.volname))
-        g.log.info("Successfully got rebalance status of the "
-                   "volume %s", self.volname)
+        ret = self.redant.get_rebalance_status(self.vol_name,
+                                               self.server_list[0])
+        if ret is None:
+            raise Exception("Rebalance status command has returned None")
 
         # Check the self-heal daemon process after adding bricks
-        g.log.info("Starting to get self-heal daemon process on "
-                   "nodes %s", nodes)
-        glustershd_pids_after_expanding = {}
-        ret, pids = get_self_heal_daemon_pid(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
-        g.log.info("Successful in getting self-heal daemon process "
-                   "on nodes %s", nodes)
+        ret, pid_after_add = (self.redant.
+                              get_self_heal_daemon_pid(self.server_list))
+        if not ret:
+            raise Exception("Either No self heal daemon process found "
+                            "or more than One self heal daemon process"
+                            f" found : {pid_after_add}")
 
-        glustershd_pids_after_expanding = pids
-        g.log.info("Self Heal Daemon Process ID's after expanding "
-                   "volume: %s", glustershd_pids_after_expanding)
-
-        self.assertNotEqual(glustershd_pids,
-                            glustershd_pids_after_expanding,
-                            "Self Daemon process is same before and"
+        # Compare before and after pids
+        if glustershd_pids != pid_after_add:
+            raise Exception("Self Daemon process is same before and"
                             " after adding bricks")
-        g.log.info("Self Heal Daemon Process is different before and "
-                   "after adding bricks")
 
         # get the bricks for the volume after expanding
-        bricks_list_after_expanding = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List after expanding "
-                   "volume: %s", bricks_list_after_expanding)
+        brick_after_add = self.redant.get_all_bricks(self.vol_name,
+                                                     self.server_list[0])
+        if brick_after_add is None:
+            raise Exception("Failed to get the bricks list")
 
         # validate the bricks present in volume info
         # with glustershd server volume file after adding bricks
-        g.log.info("Starting parsing file %s", self.glustershd)
-        ret = do_bricks_exist_in_shd_volfile(self.mnode, self.volname,
-                                             bricks_list_after_expanding)
-
-        self.assertTrue(ret, ("Brick List from volume info is different "
-                              "from glustershd server volume file after "
-                              "expanding bricks. Please check log file "
-                              "for details"))
-        g.log.info("Successfully parsed %s file", self.glustershd)
+        ret = (self.redant.do_bricks_exist_in_shd_volfile(self.vol_name,
+               brick_after_add, self.server_list[0]))
+        if not ret:
+            raise Exception("Brick List from volume info is "
+                            "different from glustershd server "
+                            "volume file after expanding bricks. "
+                            "Please check log file for details")
 
         # shrink the volume
-        g.log.info("Starting volume shrink")
-        ret = shrink_volume(self.mnode, self.volname)
-        self.assertTrue(ret, ("Failed to shrink the volume on "
-                              "volume %s", self.volname))
-        g.log.info("Shrinking volume is successful on "
-                   "volume %s", self.volname)
+        ret = self.redant.shrink_volume(self.server_list[0],
+                                        self.vol_name)
+        if not ret:
+            raise Exception("Failed to remove-brick from volume")
 
         # Log Volume Info and Status after shrinking the volume
-        g.log.info("Logging volume info and Status after shrinking volume")
-        ret = log_volume_info_and_status(self.mnode, self.volname)
-        self.assertTrue(ret, ("Logging volume info and status failed on "
-                              "volume %s", self.volname))
-        g.log.info("Successful in logging volume info and status "
-                   "of volume %s", self.volname)
+        if not (self.redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # get the bricks after shrinking the volume
-        bricks_list_after_shrinking = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List after shrinking "
-                   "volume: %s", bricks_list_after_shrinking)
+        brick_after_shrink = self.redant.get_all_bricks(self.vol_name,
+                                                        self.server_list[0])
+        if brick_after_shrink is None:
+            raise Exception("Failed to get brick list")
 
-        self.assertEqual(len(bricks_list_after_shrinking), len(bricks_list),
-                         "Brick Count is mismatched after "
-                         "shrinking the volume %s" % self.volname)
-        g.log.info("Brick Count matched before before expanding "
-                   "and after shrinking volume")
+        if len(brick_after_shrink) != len(bricks_list):
+            raise Exception("Brick Count is mismatched after "
+                            "shrinking the volume self.vol_name")
 
         # Verfiy glustershd process releases its parent process
-        ret = is_shd_daemonized(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
+        if not self.redant.is_shd_daemonized(self.server_list):
+            raise Exception("Self Heal Daemon process was still"
+                            " holding parent process.")
 
         # check the self-heal daemon process after removing bricks
-        g.log.info("Starting to get self-heal daemon process "
-                   "on nodes %s", nodes)
-        glustershd_pids_after_shrinking = {}
-        ret, pids = get_self_heal_daemon_pid(nodes)
-        glustershd_pids_after_shrinking = pids
-        self.assertNotEqual(glustershd_pids_after_expanding,
-                            glustershd_pids_after_shrinking,
-                            "Self Heal Daemon process is same "
-                            "after adding bricks and shrinking volume")
-        g.log.info("Self Heal Daemon Process is different after adding bricks "
-                   "and shrinking volume")
+        ret, pid_after_shrink = (self.redant.get_self_heal_daemon_pid(
+                                 self.server_list))
+        if not ret:
+            raise Exception("Either No self heal daemon process found "
+                            "or more than One self heal daemon process"
+                            f" found : {pid_after_shrink}")
+
+        # Compare before and after pids
+        if pid_after_shrink != pid_after_add:
+            raise Exception("Self Daemon process is same before and"
+                            " after adding bricks")
 
         # validate bricks present in volume info
         # with glustershd server volume file after removing bricks
-        g.log.info("Starting parsing file %s", self.glustershd)
-        ret = do_bricks_exist_in_shd_volfile(self.mnode, self.volname,
-                                             bricks_list_after_shrinking)
-        self.assertTrue(ret, ("Brick List from volume info is different "
-                              "from glustershd server volume file after "
-                              "removing bricks. Please check log file "
-                              "for details"))
-        g.log.info("Successfully parsed %s file", self.glustershd)
+        ret = (self.redant.do_bricks_exist_in_shd_volfile(self.vol_name,
+               brick_after_shrink, self.server_list[0]))
+        if not ret:
+            raise Exception("Brick List from volume info is "
+                            "different from glustershd server "
+                            "volume file after expanding bricks. "
+                            "Please check log file for details")
 
-    def test_glustershd_with_restarting_glusterd(self):
+    def _test_glustershd_with_restarting_glusterd(self):
         """
         Test Script to verify the self heal daemon process with restarting
         glusterd and rebooting the server
@@ -328,192 +240,152 @@ class SelfHealDaemonProcessTests(GlusterBaseClass):
         * bring down brick and restart glusterd
         * self heal daemon pid will change and its different from previous
         * brought up the brick
-
         """
-        # pylint: disable=too-many-statements
-        nodes = self.volume['servers']
 
         # stop the volume
-        g.log.info("Stopping the volume %s", self.volname)
-        ret = volume_stop(self.mnode, self.volname)
-        self.assertTrue(ret, ("Failed to stop volume %s" % self.volname))
-        g.log.info("Successfully stopped volume %s", self.volname)
+        self.redant.volume_stop(self.vol_name, self.server_list[0])
 
-        # check the self heal daemon process after stopping the volume
-        g.log.info("Verifying the self heal daemon process for "
-                   "volume %s", self.volname)
-        ret = are_all_self_heal_daemons_are_online(self.mnode, self.volname)
-        self.assertFalse(ret, ("Self Heal Daemon process is still running "
-                               "even after stopping volume %s" % self.volname))
-        g.log.info("Self Heal Daemon is not running after stopping  "
-                   "volume %s", self.volname)
+        # this isn't a valid check as no process will be online for a volume
+        # after volume stop
+        # check the self heal daemon process after stopping volume
+        if (self.redant.
+            are_all_self_heal_daemons_online(self.vol_name,
+                                             self.server_list[0])):
+            raise Exception("Self Heal Daemon process is still running "
+                            "even after stopping volume")
 
         # restart glusterd service on all the servers
-        g.log.info("Restarting glusterd on all servers %s", nodes)
-        ret = restart_glusterd(nodes)
-        self.assertTrue(ret, ("Failed to restart glusterd on all nodes %s",
-                              nodes))
-        g.log.info("Successfully restarted glusterd on all nodes %s",
-                   nodes)
+        self.redant.restart_glusterd(self.server_list)
+        if not self.redant.wait_for_glusterd_to_start(self.server_list):
+            raise Exception("Failed to start glusterd")
 
-        self.assertTrue(
-            wait_for_glusterd_to_start(self.servers),
-            "Failed to start glusterd on %s" % self.servers)
-
+        # this isn't a valid check as no process will be online for a volume
+        # after after glusterd restart if a volume is stopped
         # check the self heal daemon process after restarting glusterd process
-        g.log.info("Starting to get self-heal daemon process on"
-                   " nodes %s", nodes)
-        ret = are_all_self_heal_daemons_are_online(self.mnode, self.volname)
-        self.assertFalse(ret, ("Self Heal Daemon process is running after "
-                               "glusterd restart with volume %s in "
-                               "stop state" % self.volname))
-        g.log.info("Self Heal Daemon is not running after stopping  "
-                   "volume and restarting glusterd %s", self.volname)
+        if (self.redant.
+            are_all_self_heal_daemons_online(self.vol_name,
+                                             self.server_list[0])):
+            raise Exception("Self Heal Daemon process is running after "
+                            f"glusterd restart with volume {self.vol_name} in"
+                            "stop state")
 
         # start the volume
-        g.log.info("Starting the volume %s", self.volname)
-        ret = volume_start(self.mnode, self.volname)
-        self.assertTrue(ret, ("Failed to start volume %s" % self.volname))
-        g.log.info("Volume %s started successfully", self.volname)
+        self.redant.volume_start(self.vol_name, self.server_list[0])
 
         # Verfiy glustershd process releases its parent process
-        g.log.info("Checking whether glustershd process is daemonized or not")
-        ret = is_shd_daemonized(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
-        g.log.info("Single self heal daemon process on all nodes %s", nodes)
+        if not self.redant.is_shd_daemonized(self.server_list):
+            raise Exception("Self Heal Daemon process was still"
+                            " holding parent process.")
 
         # get the self heal daemon pids after starting volume
-        g.log.info("Starting to get self-heal daemon process "
-                   "on nodes %s", nodes)
-        ret, pids = get_self_heal_daemon_pid(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
-        g.log.info("Successful in getting self heal daemon pids")
-        glustershd_pids = pids
+        ret, pid_after_start = (self.redant.
+                                get_self_heal_daemon_pid(
+                                    self.server_list))
+        if not ret:
+            raise Exception("Either No self heal daemon process found "
+                            "or more than One self heal daemon process"
+                            f" found : {pid_after_start}")
 
         # get the bricks for the volume
-        g.log.info("Fetching bricks for the volume : %s", self.volname)
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List : %s", bricks_list)
+        bricks_list = self.redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
+        if bricks_list is None:
+            raise Exception("Failed to get the bricks list")
 
         # validate the bricks present in volume info
         # with glustershd server volume file
-        g.log.info("Starting parsing file %s on "
-                   "node %s", self.glustershd, self.mnode)
-        ret = do_bricks_exist_in_shd_volfile(self.mnode, self.volname,
-                                             bricks_list)
-        self.assertTrue(ret, ("Brick List from volume info is different from "
-                              "glustershd server volume file. "
-                              "Please check log file for details."))
-        g.log.info("Successfully parsed %s file", self.glustershd)
+        ret = (self.redant.do_bricks_exist_in_shd_volfile(self.vol_name,
+               bricks_list, self.server_list[0]))
+        if not ret:
+            raise Exception("Brick List from volume info is "
+                            "different from glustershd server "
+                            "volume file after expanding bricks. "
+                            "Please check log file for details")
 
         # restart glusterd service on all the servers
-        g.log.info("Restarting glusterd on all servers %s", nodes)
-        ret = restart_glusterd(nodes)
-        self.assertTrue(ret, ("Failed to restart glusterd on all nodes %s",
-                              nodes))
-        g.log.info("Successfully restarted glusterd on all nodes %s",
-                   nodes)
+        self.redant.restart_glusterd(self.server_list)
 
         # Verify volume's all process are online for 60 sec
-        g.log.info("Verifying volume's all process are online")
-        ret = wait_for_volume_process_to_be_online(self.mnode, self.volname,
-                                                   60)
-        self.assertTrue(ret, ("Volume %s : All process are not "
-                              "online", self.volname))
-        g.log.info("Successfully Verified volume %s processes are online",
-                   self.volname)
+        if not (self.redant.wait_for_volume_process_to_be_online(
+                self.vol_name, self.server_list[0],
+                self.server_list, 60)):
+            raise Exception("Failed to wait for volume processes to "
+                            "be online")
 
         # Verfiy glustershd process releases its parent process
-        ret = is_shd_daemonized(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
+        if not self.redant.is_shd_daemonized(self.server_list):
+            raise Exception("Self Heal Daemon process was still"
+                            " holding parent process.")
 
         # check the self heal daemon process after starting volume and
         # restarting glusterd process
-        g.log.info("Starting to get self-heal daemon process "
-                   "on nodes %s", nodes)
-        ret, pids = get_self_heal_daemon_pid(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
-        glustershd_pids_after_glusterd_restart = pids
+        ret, pid_after_restart = (self.redant.get_self_heal_daemon_pid(
+                                  self.server_list))
+        if not ret:
+            raise Exception("Either No self heal daemon process found "
+                            "or more than One self heal daemon process"
+                            f" found : {pid_after_restart}")
 
-        self.assertNotEqual(glustershd_pids,
-                            glustershd_pids_after_glusterd_restart,
-                            ("Self Heal Daemon pids are same after "
-                             "restarting glusterd process"))
-        g.log.info("Self Heal Daemon process are different before and "
-                   "after restarting glusterd process")
+        # Compare before and after pids
+        if pid_after_start == pid_after_restart:
+            raise Exception("Self Daemon process is same before and"
+                            " after adding bricks")
 
-        # select bricks to bring offline
-        bricks_to_bring_offline_dict = (select_bricks_to_bring_offline(
-            self.mnode, self.volname))
-        bricks_to_bring_offline = bricks_to_bring_offline_dict['volume_bricks']
-
-        # bring bricks offline
-        g.log.info("Going to bring down the brick process "
-                   "for %s", bricks_to_bring_offline)
-        ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        self.assertTrue(ret, ("Failed to bring down the bricks. Please "
-                              "check the log file for more details."))
-        g.log.info("Brought down the brick process "
-                   "for %s successfully", bricks_to_bring_offline)
+        # select the bricks to bring offline
+        bricks_to_bring_offline = (self.redant.
+                                   select_volume_bricks_to_bring_offline(
+                                       self.vol_name, self.server_list[0]))
+        # Bring down the selected bricks
+        self.redant.bring_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline)
+        if not self.redant.are_bricks_offline(self.vol_name,
+                                              bricks_to_bring_offline,
+                                              self.server_list[0]):
+            raise Exception("Failed to bring down the bricks. Please "
+                            "check the log file for more details.")
 
         # restart glusterd after brought down the brick
-        g.log.info("Restart glusterd on all servers %s", nodes)
-        ret = restart_glusterd(nodes)
-        self.assertTrue(ret, ("Failed to restart glusterd on all nodes %s",
-                              nodes))
-        g.log.info("Successfully restarted glusterd on all nodes %s",
-                   nodes)
+        self.redant.restart_glusterd(self.server_list)
+        if not self.redant.wait_for_glusterd_to_start(self.server_list):
+            raise Exception("Failed to start glusterd")
 
         # Verify volume's all process are online for 60 sec
-        g.log.info("Verifying volume's all process are online")
-        ret = wait_for_volume_process_to_be_online(self.mnode, self.volname,
-                                                   60)
-        self.assertTrue(ret, ("Volume %s : All process are not "
-                              "online", self.volname))
-        g.log.info("Successfully Verified volume %s processes are online",
-                   self.volname)
+        if not (self.redant.wait_for_volume_process_to_be_online(
+                self.vol_name, self.server_list[0],
+                self.server_list, 60)):
+            raise Exception("Failed to wait for volume processes to "
+                            "be online")
 
         # Verfiy glustershd process releases its parent process
-        ret = is_shd_daemonized(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
+        if not self.redant.is_shd_daemonized(self.server_list):
+            raise Exception("Self Heal Daemon process was still"
+                            " holding parent process.")
 
         # check the self heal daemon process after killing brick and
         # restarting glusterd process
-        g.log.info("Starting to get self-heal daemon process "
-                   "on nodes %s", nodes)
-        ret, pids = get_self_heal_daemon_pid(nodes)
-        self.assertTrue(ret, ("Either No self heal daemon process found or "
-                              "more than One self heal daemon process found"))
-        glustershd_pids_after_killing_brick = pids
+        ret, pid_after_brick_kill = (self.redant.get_self_heal_daemon_pid(
+                                     self.server_list))
+        if not ret:
+            raise Exception("Either No self heal daemon process found "
+                            "or more than One self heal daemon process"
+                            f" found : {pid_after_brick_kill}")
 
-        self.assertNotEqual(glustershd_pids_after_glusterd_restart,
-                            glustershd_pids_after_killing_brick,
-                            ("Self Heal Daemon process are same from before "
-                             "killing the brick,restarting glusterd process"))
-        g.log.info("Self Heal Daemon process are different after killing the "
-                   "brick, restarting the glusterd process")
+        # Compare before and after pids
+        if pid_after_brick_kill == pid_after_restart:
+            raise Exception("Self Heal Daemon process are same from before "
+                            "killing the brick,restarting glusterd process")
 
         # brought the brick online
-        g.log.info("bringing up the bricks : %s online",
-                   bricks_to_bring_offline)
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  bricks_to_bring_offline)
-        self.assertTrue(ret, ("Failed to brought the bricks online"))
-        g.log.info("Successfully brought the bricks online")
+        self.redant.bring_bricks_online(self.vol_name,
+                                        self.server_list,
+                                        bricks_to_bring_offline, True)
+        if not self.redant.are_bricks_online(self.vol_name,
+                                             bricks_to_bring_offline,
+                                             self.server_list[0]):
+            raise Exception("Failed to bring bricks: "
+                            f"{bricks_to_bring_offline} online")
 
-        # check all bricks are online
-        g.log.info("Verifying all bricka are online or not.....")
-        ret = are_bricks_online(self.mnode, self.volname,
-                                bricks_to_bring_offline)
-        self.assertTrue(ret, ("Not all bricks are online"))
-        g.log.info("All bricks are online.")
-
-    def test_brick_process_not_started_on_read_only_node_disks(self):
+    def _test_brick_process_not_started_on_read_only_node_disks(self):
         """
         * create volume and start
         * kill one brick
@@ -526,130 +398,114 @@ class SelfHealDaemonProcessTests(GlusterBaseClass):
         * start the volume with "force" option
         * validate IO
         """
-        # pylint: disable=too-many-locals,too-many-statements
+        self.io_validation_complete = True
         # Select bricks to bring offline
-        bricks_to_bring_offline_dict = (select_bricks_to_bring_offline(
-            self.mnode, self.volname))
-        bricks_to_bring_offline = bricks_to_bring_offline_dict['volume_bricks']
-
-        # Bring brick offline
-        g.log.info('Bringing bricks %s offline...', bricks_to_bring_offline)
-        ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        self.assertTrue(ret, 'Failed to bring bricks %s offline' %
-                        bricks_to_bring_offline)
-
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 bricks_to_bring_offline)
-        self.assertTrue(ret, 'Bricks %s are not offline'
-                        % bricks_to_bring_offline)
-        g.log.info('Bringing bricks %s offline is successful',
-                   bricks_to_bring_offline)
+        bricks_to_bring_offline = \
+            (self.redant.
+             select_volume_bricks_to_bring_offline(self.vol_name,
+                                                   self.server_list[0]))
+        # Bring down the selected bricks
+        self.redant.bring_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline)
+        if not self.redant.are_bricks_offline(self.vol_name,
+                                              bricks_to_bring_offline,
+                                              self.server_list[0]):
+            raise Exception("Failed to bring down the bricks. Please "
+                            "check the log file for more details.")
 
         # Creating files for all volumes
+        self.mounts = (self.redant.es.
+                       get_mnt_pts_dict_in_list(self.vol_name))
+
         self.all_mounts_procs = []
         for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s",
-                       mount_obj.client_system, mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_files -f 100 "
-                   "%s/test_dir" % (
-                       self.script_upload_path,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+            # Create files
+            self.redant.logger.info("Modifying files on "
+                                    f"{mount_obj['client']}:"
+                                    f"{mount_obj['mountpath']}")
+            proc = self.redant.create_files(num_files=100,
+                                            fix_fil_size="1k",
+                                            path=mount_obj['mountpath'],
+                                            node=mount_obj['client'])
             self.all_mounts_procs.append(proc)
+        self.io_validation_complete = False
 
         # umount brick
-        brick_node, volume_brick = bricks_to_bring_offline[0].split(':')
-        node_brick = '/'.join(volume_brick.split('/')[0:3])
-        g.log.info('Start umount brick %s...', node_brick)
-        ret, _, _ = g.run(brick_node, 'umount %s' % node_brick)
-        self.assertFalse(ret, 'Failed to umount brick %s' % node_brick)
-        g.log.info('Successfully umounted %s', node_brick)
+        self.brick_node, volume_brick = bricks_to_bring_offline[0].split(':')
+        self.brick = '/'.join(volume_brick.split('/')[0:3])
+        self.redant.execute_abstract_op_node(f'umount -l {self.brick}',
+                                             self.brick_node)
 
         # get time before remount the directory and checking logs for error
-        g.log.info('Getting time before remount the directory and '
-                   'checking logs for error...')
-        _, time_before_checking_logs, _ = g.run(brick_node, 'date -u +%s')
-        g.log.info('Time before remount the directory and checking logs - %s',
-                   time_before_checking_logs)
+        time_before_checking_logs = (self.redant.execute_abstract_op_node(
+                                     'date -u +%s', self.brick_node))
+        time_before_checking_logs = (time_before_checking_logs['msg'][0].
+                                     rstrip("\n"))
 
         # remount the directory with read-only option
-        g.log.info('Start remount brick %s with read-only option...',
-                   node_brick)
-        ret, _, _ = g.run(brick_node, 'mount -o ro %s' % node_brick)
-        self.assertFalse(ret, 'Failed to remount brick %s' % node_brick)
-        g.log.info('Successfully remounted %s with read-only option',
-                   node_brick)
+        self.redant.execute_abstract_op_node(f'mount -o ro {self.brick}',
+                                             self.brick_node)
 
         # start volume with "force" option
-        g.log.info('starting volume with "force" option...')
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertFalse(ret, 'Failed to start volume %s with "force" option'
-                         % self.volname)
-        g.log.info('Successfully started volume %s with "force" option',
-                   self.volname)
+        self.redant.volume_start(self.vol_name, self.server_list[0],
+                                 force=True)
 
+        # Such errors is not found in gluster upstream/downstream
         # check logs for an 'initializing translator failed' error
-        g.log.info("Checking logs for an 'initializing translator failed' "
-                   "error for %s brick...", node_brick)
         error_msg = 'posix: initializing translator failed'
-        cmd = ("cat /var/log/glusterfs/bricks/bricks-%s-%s.log | "
-               "grep '%s'"
-               % (volume_brick.split('/')[-2], volume_brick.split('/')[-1],
-                  error_msg))
-        ret, log_msgs, _ = g.run(brick_node, cmd)
-        log_msg = log_msgs.rstrip().split('\n')[-1]
-
-        self.assertTrue(error_msg in log_msg, 'No errors in logs')
-        g.log.info('EXPECTED: %s', error_msg)
+        volume_brick = volume_brick.split('/')
+        cmd = ("cat /var/log/glusterfs/bricks/"
+               f"{volume_brick[-4]}-"
+               f"{volume_brick[-3]}-{volume_brick[-2]}-"
+               f"{volume_brick[-1]}.log | grep '{error_msg}'")
+        ret = self.redant.execute_abstract_op_node(cmd, self.brick_node)
+        log_msg = ret['msg'][0].rstrip().split('\n')[-1]
+        if error_msg not in log_msg:
+            raise Exception("Unexpected:: No errros found in log file")
 
         # get time from log message
         log_time_msg = log_msg.split('E')[0][1:-2].split('.')[0]
         log_time_msg_converted = calendar.timegm(time.strptime(
             log_time_msg, '%Y-%m-%d %H:%M:%S'))
-        g.log.info('Time_msg from logs - %s ', log_time_msg)
-        g.log.info('Time from logs - %s ', log_time_msg_converted)
 
         # get time after remount the directory checking logs for error
-        g.log.info('Getting time after remount the directory and '
-                   'checking logs for error...')
-        _, time_after_checking_logs, _ = g.run(brick_node, 'date -u +%s')
-        g.log.info('Time after remount the directory and checking logs - %s',
-                   time_after_checking_logs)
+        time_after_checking_logs = (self.redant.execute_abstract_op_node(
+                                    'date -u +%s', self.brick_node))
+        time_after_checking_logs = (time_after_checking_logs['msg'][0].
+                                    rstrip("\n"))
 
         # check time periods
-        g.log.info('Checking if an error is in right time period...')
-        self.assertTrue(int(time_before_checking_logs) <=
-                        int(log_time_msg_converted) <=
-                        int(time_after_checking_logs),
-                        'Expected error is not in right time period')
-        g.log.info('Expected error is in right time period')
+        if (int(time_before_checking_logs) > int(log_time_msg_converted)
+           or int(log_time_msg_converted) > int(time_after_checking_logs)):
+            raise Exception('Expected error is not in right time period')
 
         # umount brick
-        g.log.info('Start umount brick %s...', node_brick)
-        ret, _, _ = g.run(brick_node, 'umount %s' % node_brick)
-        self.assertFalse(ret, 'Failed to umount brick %s' % node_brick)
-        g.log.info('Successfully umounted %s', node_brick)
+        self.redant.execute_abstract_op_node(f'umount -l {self.brick}',
+                                             self.brick_node)
 
         # remount the directory with read-write option
-        g.log.info('Start remount brick %s with read-write option...',
-                   node_brick)
-        ret, _, _ = g.run(brick_node, 'mount %s' % node_brick)
-        self.assertFalse(ret, 'Failed to remount brick %s' % node_brick)
-        g.log.info('Successfully remounted %s with read-write option',
-                   node_brick)
+        self.redant.execute_abstract_op_node(f'mount {self.brick}',
+                                             self.brick_node)
 
         # start volume with "force" option
-        g.log.info('starting volume with "force" option...')
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertFalse(ret, 'Failed to start volume %s with "force" option'
-                         % self.volname)
-        g.log.info('Successfully started volume %s with "force" option',
-                   self.volname)
+        self.redant.volume_start(self.vol_name, self.server_list[0],
+                                 force=True)
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
+        ret = self.redant.validate_io_procs(self.procs_list, self.mounts)
+        if not ret:
+            raise Exception("IO validation failed")
         self.io_validation_complete = True
+
+    def run_test(self, redant):
+        """
+        1.Test shd with add-remove brick
+        2.Test shd with restart glusterd
+        3.Test brick process not started on read only node
+        """
+        self._test_glustershd_with_add_remove_brick()
+        redant.logger.info("Test for add remove brick successful")
+        self._test_glustershd_with_restarting_glusterd()
+        redant.logger.info("Test for restart glusterd successful")
+        self._test_brick_process_not_started_on_read_only_node_disks()
+        redant.logger.info("Test for brick process successful")
