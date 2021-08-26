@@ -277,3 +277,43 @@ class DHTOps(AbstractOps):
                         return (item, brickdir, count)
             count = -1
         return None
+
+    def find_hashed_subvol(self, subvols_list: list, parent_path: str,
+                           name: str) -> tuple:
+        """
+        Args:
+            subvols_list (list):  Subvols list
+            parent_path (str): Immediate parent path of "name" relative from
+                         mount point
+                         e.g. if your mount is "/mnt" and the path from mount
+                         is "/mnt/directory" then just pass "directory" as
+                         parent_path
+            name (str): file or directory name
+
+        Return Values:
+            A tuple (hashed_subvol, subvol_count) where the values are
+                hashed_subvol: The hashed subvolume
+                subvol_count: The subvol index in the subvol list
+            Or, None on failure
+        """
+        if not isinstance(subvols_list, list):
+            subvols_list = [subvols_list]
+
+        bricklist = self.create_brickpathlist(subvols_list, parent_path)
+        if not bricklist:
+            self.logger.error("Could not form brickpath list")
+            return None
+
+        host, _ = bricklist[0].split(':')
+        hash_num = self.calculate_hash(host, name)
+
+        count = -1
+        for brickdir in bricklist:
+            count += 1
+            ret = self.hashrange_contains_hash(brickdir, hash_num)
+            if ret:
+                self.logger.debug(f"Hash subvolume is {host}")
+                hashed_subvol = brickdir
+                break
+
+        return hashed_subvol, count
