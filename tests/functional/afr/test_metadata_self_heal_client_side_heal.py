@@ -20,10 +20,26 @@
 """
 
 # disruptive;rep,dist-rep
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
+
+    def terminate(self):
+        """
+        Delete the users created in the test"
+        """
+        try:
+            for mount_obj in self.mounts:
+                for user in self.users:
+                    if not self.redant.del_user(mount_obj['client'], user):
+                        raise Exception(f"Failed to delete user {user}")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def trigger_heal_from_mount_point(self):
         """
@@ -115,10 +131,10 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                 if ret['error_code'] != 0:
                     raise Exception("Failed to stat path")
 
-                if ret['msg']['permission'] != "555":
+                if ret['msg']['permission'] != 555:
                     raise Exception(f"Permissions mismatch on node {node}")
 
-                if ret['msg']['st_gid'] != "1003":
+                if ret['msg']['st_gid'] != (1003 + self.is_user_present):
                     raise Exception(f"Group id mismatch on node {node}")
 
                 # Get list of files for each dir
@@ -133,7 +149,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['st_gid'] != "1003":
+                    if ret['msg']['st_gid'] != (1003 + self.is_user_present):
                         raise Exception(f"Group id mismatch on node {node}"
                                         f" for file {file_name}")
 
@@ -150,7 +166,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['permission'] != "666":
+                    if ret['msg']['permission'] != 666:
                         raise Exception(f"Permissions mismatch on node {node}")
 
             # Verify permissions for files in dirs 51..100
@@ -166,7 +182,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['permission'] != "444":
+                    if ret['msg']['permission'] != 444:
                         raise Exception(f"Permissions mismatch on node {node}")
 
             # Verify ownership for dirs 1..35
@@ -175,7 +191,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                 ret = self.redant.get_file_stat(node, dir_path)
                 if ret['error_code'] != 0:
                     raise Exception("Failed to stat path")
-                if ret['msg']['st_uid'] != "1000":
+                if ret['msg']['st_uid'] != (1000 + self.is_user_present):
                     raise Exception(f"User id mismatch on node {node}")
 
                 # Verify ownership for files in dirs
@@ -189,7 +205,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['st_uid'] != "1000":
+                    if ret['msg']['st_uid'] != (1000 + self.is_user_present):
                         raise Exception(f"Permissions mismatch on node {node}")
 
             # Verify ownership for dirs 36..70
@@ -198,7 +214,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                 ret = self.redant.get_file_stat(node, dir_path)
                 if ret['error_code'] != 0:
                     raise Exception("Failed to stat path")
-                if ret['msg']['st_uid'] != "1001":
+                if ret['msg']['st_uid'] != (1001 + self.is_user_present):
                     raise Exception(f"User id mismatch on node {node}")
 
                 # Verify ownership for files in dirs
@@ -212,7 +228,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['st_uid'] != "1001":
+                    if ret['msg']['st_uid'] != (1001 + self.is_user_present):
                         raise Exception(f"Permissions mismatch on node {node}")
 
             # Verify ownership for dirs 71..100
@@ -221,7 +237,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                 ret = self.redant.get_file_stat(node, dir_path)
                 if ret['error_code'] != 0:
                     raise Exception("Failed to stat path")
-                if ret['msg']['st_uid'] != "1002":
+                if ret['msg']['st_uid'] != (1002 + self.is_user_present):
                     raise Exception(f"User id mismatch on node {node}")
 
                 # Verify ownership for files in dirs
@@ -235,7 +251,7 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['st_uid'] != "1002":
+                    if ret['msg']['st_uid'] != (1002 + self.is_user_present):
                         raise Exception(f"Permissions mismatch on node {node}")
 
     def run_test(self, redant):
@@ -268,6 +284,13 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
         """
         self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
+        # Checking if we have a non-root user already
+        self.is_user_present = 0
+        cmd = "id -un 1000"
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0], False)
+        if ret['error_code'] == 0:
+            self.is_user_present = 1
 
         # Create new users on clients
         self.users = ['qa_func', 'qa_system', 'qa_perf', 'qa_all']
@@ -306,7 +329,8 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
         bricks_to_be_online = []
         for subvol in subvols:
             bricks_to_bring_offline.append(subvol[0])
-            bricks_to_be_online.append(brick for brick in subvol[1:])
+            for brick in subvol[1:]:
+                bricks_to_be_online.append(brick)
 
         # Bring bricks offline
         redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
@@ -383,13 +407,13 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                 if ret['error_code'] != 0:
                     raise Exception("Failed to stat path")
 
-                if ret['msg']['permission'] != "755":
+                if ret['msg']['permission'] != 755:
                     raise Exception(f"Permissions mismatch on node {node}")
 
-                if ret['msg']['user'] != "root":
+                if ret['msg']['user'] != 'root':
                     raise Exception(f"User mismatch on node {node}")
 
-                if ret['msg']['group'] != "root":
+                if ret['msg']['group'] != 'root':
                     raise Exception(f"Group mismatch on node {node}")
 
                 # Get list of files for each dir
@@ -403,15 +427,15 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                     if ret['error_code'] != 0:
                         raise Exception("Failed to stat path")
 
-                    if ret['msg']['permission'] != "644":
+                    if ret['msg']['permission'] != 644:
                         raise Exception(f"Permissions mismatch on node {node}"
                                         f" for file {file_name}")
 
-                    if ret['msg']['user'] != "root":
+                    if ret['msg']['user'] != 'root':
                         raise Exception(f"User mismatch on node {node}"
                                         f" for file {file_name}")
 
-                    if ret['msg']['group'] != "root":
+                    if ret['msg']['group'] != 'root':
                         raise Exception(f"Group mismatch on node {node}"
                                         f" for file {file_name}")
 
