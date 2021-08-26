@@ -34,7 +34,7 @@ class TestHealWithIO(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         conf_hash = self.vol_type_inf[self.volume_type]
-        if conf_hash['dist_count'] > 1:
+        if self.volume_type.find("dist") >= 0:
             conf_hash['dist_count'] = 6
 
         self.redant.setup_volume(self.vol_name, self.server_list[0],
