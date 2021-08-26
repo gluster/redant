@@ -3,6 +3,7 @@ DHT ops contain methods which deals with DHT operations like
 hashing, layout and so on.
 """
 
+import ctypes
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -85,6 +86,28 @@ class DHTOps(AbstractOps):
             hash_range_high = ret[1]
             return [hash_range_low, hash_range_high]
 
+    def hashrange_contains_hash(self, brickdir_path: str,
+                                filehash: int) -> bool:
+        """
+        Check if a hash number falls between the brick hashrange
+
+        Args:
+            brickdir_path (str): Brickpath for which hashrange is to be
+                                 checked
+            filehash (int): hash being checked against range
+
+        Returns:
+            True if hash is in range. False if hash is out of range
+        """
+        hashrange = self.get_hashrange(brickdir_path)
+        if hashrange is None:
+            return False
+
+        if hashrange[0] <= filehash <= hashrange[1]:
+            return True
+
+        return False
+
     def is_layout_complete(self, node: str, volname: str,
                            dirpath: str) -> bool:
         """
@@ -155,3 +178,102 @@ class DHTOps(AbstractOps):
                 return False
 
         return True
+
+    @staticmethod
+    def create_brickpathlist(subvols: list, path: str) -> list:
+        """
+        Args:
+            subvols(list): List of subvols
+            path (str): Path/name of file under brick
+
+        Return Value:
+            List of brick path to the file
+            Note: Only one brick is accounted from one subvol.
+        """
+        secondary_bricks = []
+        for subvol in subvols:
+            secondary_bricks.append(subvol[0])
+
+        brickpathlist = []
+        for item in secondary_bricks:
+            brickpathlist.append(f"{item}/{path}")
+
+        return brickpathlist
+
+    def calculate_hash(self, host: str, filename: str) -> int:
+        """
+        Function to import DHT Hash library.
+
+        Args:
+            host (str): Node on which hash will be calculated
+            filename (str): the name of the file
+
+        Returns:
+            An integer representation of the hash
+
+        TODO: For testcases specifically testing hashing routine
+              consider using a baseline external Davies-Meyer hash_value.c
+              Creating comparison hash from same library we are testing
+              may not be best practice here. (Holloway)
+        """
+        try:
+            # Check if libglusterfs.so.0 is available locally
+            glusterfs = ctypes.cdll.LoadLibrary("libglusterfs.so.0")
+            self.logger.debug("Library libglusterfs.so.0 loaded locally")
+            computed_hash = (ctypes.c_uint32(glusterfs.gf_dm_hashfn(filename,
+                             len(filename))))
+            hash_value = int(computed_hash.value)
+        except OSError:
+            cmd = f"python3 /tmp/compute_hash.py {filename}"
+            ret = self.execute_abstract_op_node(cmd, host, False)
+            if ret['error_code'] != 0:
+                self.logger.error(f"Unable to run the script on node: {host}")
+                return 0
+
+            out = " ".join(ret['msg'])
+            hash_value = int(out.split('\n')[0])
+        return hash_value
+
+    def find_specific_hashed(self, subvols_list: list, parent_path: str,
+                             subvol: str, existing_names=None) -> tuple:
+        """
+        Finds filename that hashes to a specific subvol.
+
+        Args:
+            subvols_list(list): list of subvols
+            parent_path(str): parent path (relative to mount) of "oldname"
+            subvol(str): The subvol to which the new name has to be hashed
+            existing_names(int|list): The name(s) already hashed to subvol
+
+        Returns:
+            A tuple (name, brickdir_path, count) containing
+                name: Newname of hashed object
+                brickdir_path: Brick path for which new hash was calculated
+                count: Subvol count
+            Or, None in case of failure or if hash not found
+        Note: The new hash will be searched under the same parent
+        """
+        if not isinstance(existing_names, list):
+            existing_names = [existing_names]
+
+        bricklist = self.create_brickpathlist(subvols_list, parent_path)
+        if not bricklist:
+            self.logger.error("Could not form brickpath list")
+            return None
+
+        count = -1
+        for item in range(1, 5000):
+            host, _ = bricklist[0].split(':')
+            newhash = self.calculate_hash(host, str(item))
+            for brickdir in bricklist:
+                count += 1
+                _, subvol_path = subvol.split(':')
+                brickhost, brickpath = brickdir.split(':')
+                if (subvol_path == brickpath and item not in existing_names):
+                    ret = self.hashrange_contains_hash(brickdir, newhash)
+                    if ret:
+                        self.logger.debug(f"oldhashed {subvol_path} new "
+                                          f"{brickhost} count {count}")
+                        return (item, brickdir, count)
+            count = -1
+        return None
