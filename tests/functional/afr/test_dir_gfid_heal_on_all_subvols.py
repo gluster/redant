@@ -60,10 +60,11 @@ class TestCase(DParentTest):
         - Do lookup from the mount.
         - Check whether all the bricks have the same gfid assigned.
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
 
         # Create a directory on the mount
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
-        cmd = ("python3 /tmp/file_dir_ops.py create_deep_dir -d 0 -l 0 "
+        cmd = (f"python3 {script_file_path} create_deep_dir -d 0 -l 0 "
                f"{self.mountpoint}/dir1")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
