@@ -56,6 +56,8 @@ class TestClientSideQuorumRestored(DParentTest):
         - creating files on nodes after rebooting
         - validate IO
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
+
         # set cluster.quorum-type to auto
         options = {"cluster.quorum-type": "auto"}
         redant.set_volume_options(self.vol_name, options, self.server_list[0])
@@ -66,7 +68,7 @@ class TestClientSideQuorumRestored(DParentTest):
         # Creating files on client side
         for mount_obj in self.mounts:
             # Creating files
-            cmd = ("python3 /tmp/file_dir_ops.py create_files -f 30 "
+            cmd = (f"python3 {script_file_path} create_files -f 30 "
                    f"{mount_obj['mountpath']}")
 
             proc = redant.execute_command_async(cmd, mount_obj['client'])
