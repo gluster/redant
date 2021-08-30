@@ -31,15 +31,15 @@ from tests.d_parent_test import DParentTest
 class TestCase(DParentTest):
 
     def terminate(self):
-        for node in self.nodes:
-            try:
+        try:
+            for node in self.nodes:
                 if not self.redant.del_user(node,
                                             self.user):
                     raise Exception("Failed to delete user")
-            except Exception as error:
-                tb = traceback.format_exc
-                self.logger.error(error)
-                self.logger.error(tb)
+        except Exception as error:
+            tb = traceback.format_exc
+            self.logger.error(error)
+            self.logger.error(tb)
         super().terminate()
 
     def _verify_stat_info(self, nodes_to_check: list, test_file: str):
@@ -84,9 +84,9 @@ class TestCase(DParentTest):
             should be same.
         """
         self.user = "qa"
-        self.nodes = []
         self.nodes = copy.deepcopy(self.server_list)
-        self.nodes.append(self.client_list[0])
+        client = self.client_list[0]
+        self.nodes.extend(cn for cn in [client] if cn not in self.nodes)
         self.mounts = [{'client': self.client_list[0],
                         'mountpath': self.mountpoint}]
 
@@ -100,8 +100,6 @@ class TestCase(DParentTest):
                                             self.server_list[0])
         if bricks_list is None:
             raise Exception("Brick list is None")
-
-        client = self.client_list[0]
 
         # Create test executable file on mount point
         m_point = self.mountpoint
