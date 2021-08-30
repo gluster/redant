@@ -282,7 +282,7 @@ class IoOps(AbstractOps):
         Returns:
             async_object
         """
-        cmd = (f"python3 /usr/share/redant/share/file_dir_ops.py"
+        cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py"
                f" create_deep_dirs_with_files --dirname-start-num"
                f" {dir_start_no} --dir-depth {dir_depth}"
                f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
