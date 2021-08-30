@@ -103,17 +103,17 @@ class TestClientSideQuorumRestored(DParentTest):
             redant.reboot_nodes(nodes_to_reboot)
 
             # Creating files on nodes while rebooting
-            self.all_mounts_proc = []
             for mount_obj in self.mounts:
+                all_mounts_proc = []
                 # Creating files
                 cmd = (f"cd {mount_obj['mountpath']}/ ;"
                        f"touch {' '.join(file_list)}")
                 proc = redant.execute_command_async(cmd, mount_obj['client'])
-                self.all_mounts_proc.append(proc)
+                all_mounts_proc.append(proc)
 
                 # Validate IO
-                ret = redant.is_io_procs_fail_with_error(self.all_mounts_proc,
-                                                         self.mounts)
+                ret, _ = redant.is_io_procs_fail_with_error(all_mounts_proc,
+                                                            self.mounts)
                 if not ret:
                     raise Exception("Unexpected error and IO successful"
                                     " on read-only filesystem")
@@ -141,7 +141,7 @@ class TestClientSideQuorumRestored(DParentTest):
                 cmd = (f"cd {mount_obj['mountpath']}/ ;"
                        f"touch {' '.join(file_list)}")
                 proc = redant.execute_command_async(cmd, mount_obj['client'])
-                self.all_mounts_proc.append(proc)
+                self.all_mounts_procs.append(proc)
 
             # Validate IO
             ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
@@ -180,13 +180,13 @@ class TestClientSideQuorumRestored(DParentTest):
             redant.reboot_nodes(nodes_to_reboot)
 
             # Creating files on nodes while rebooting
-            self.all_mounts_procs = []
             for mount_obj in self.mounts:
+                self.all_mounts_procs = []
                 # Creating files
                 cmd = (f"cd {mount_obj['mountpath']}/ ;"
                        f"touch {' '.join(file_list)}")
                 proc = redant.execute_command_async(cmd, mount_obj['client'])
-                self.all_mounts_proc.append(proc)
+                self.all_mounts_procs.append(proc)
 
                 # Validate IO
                 ret = redant.validate_io_procs(self.all_mounts_procs,
@@ -258,8 +258,8 @@ class TestClientSideQuorumRestored(DParentTest):
 
         for mounts_procs in all_mounts_procs:
             # Validate IO
-            ret = redant.is_io_procs_fail_with_error(mounts_procs,
-                                                     self.mounts)
+            ret, _ = redant.is_io_procs_fail_with_error(mounts_procs,
+                                                        self.mounts)
             if not ret:
                 raise Exception("Unexpected error and IO successful"
                                 " on read-only filesystem")
