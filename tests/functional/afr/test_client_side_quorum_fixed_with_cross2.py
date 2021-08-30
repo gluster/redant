@@ -100,7 +100,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         self.redant.logger.info("Starting reading files on mountpoint")
         all_mounts_procs = []
         cmd = (f"python3 {self.script_file_path} read"
-               f" {self.mounts['mountpath']}"
+               f" {self.mounts['mountpath']}")
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
 
