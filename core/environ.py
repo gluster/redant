@@ -65,6 +65,9 @@ class environ:
         path
         """
         remove = False
+        for node in machines:
+            self.redant.create_dir('/usr/share/', 'redant/script', node)
+
         if self.redant.path_exists(machines,
                                    [dpath]):
             remove = True
@@ -79,7 +82,8 @@ class environ:
         Check if the I/O script exists in the client
         machines. If not transfer it there.
         """
-        scripts_dpath = ['/tmp/file_dir_ops.py', '/tmp/compute_hash.py']
+        scripts_dpath = ['/usr/share/redant/script/file_dir_ops.py',
+                         '/usr/share/redant/script/compute_hash.py']
         scripts_spath = ['tools/file_dir_ops.py', 'tools/compute_hash.py']
 
         total_nodes = list(set(self.client_list + self.server_list))
@@ -109,7 +113,7 @@ class environ:
         the servers and clients and if not present
         installs it.
         """
-        arequal_dpath = '/tmp/arequal_install.sh'
+        arequal_dpath = '/usr/share/redant/script/arequal_install.sh'
         arequal_spath = f'{os.getcwd()}/tools/arequal_install.sh'
         arequal_machines = self._list_of_machines_without_arequal(
             self.client_list + self.server_list

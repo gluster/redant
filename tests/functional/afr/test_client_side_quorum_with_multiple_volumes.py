@@ -81,8 +81,9 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
         # Creating files for all volumes
         for mount_point in self.mounts_list:
             self.all_mounts_procs = []
-            command = ("python3 /tmp/file_dir_ops.py create_files -f 50 "
-                       f"--fixed-file-size 1k {mount_point}")
+            command = (f"python3 /usr/share/redant/script/file_dir_ops.py "
+                       "create_files -f 50 --fixed-file-size 1k"
+                       f" {mount_point}")
             proc = redant.execute_command_async(command, self.client_list[0])
             self.all_mounts_procs.append(proc)
 

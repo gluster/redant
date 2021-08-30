@@ -69,15 +69,16 @@ class TestSelfHeal(DParentTest):
         if not ret:
             raise Exception("IO validation failed")
 
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         # Command list to do different operations with data -
         # create, rename, copy and delete
         cmds = (
-            ("python3 /tmp/file_dir_ops.py create_files -f 20 "
+            ("python3 {script_file_path} create_files -f 20 "
              f"{self.mountpoint}/files"),
-            f"python3 /tmp/file_dir_ops.py mv {self.mountpoint}/files",
-            ("python3 /tmp/file_dir_ops.py copy --dest-dir "
+            f"python3 {script_file_path} mv {self.mountpoint}/files",
+            ("python3 {script_file_path} copy --dest-dir "
              f"{self.mountpoint}/new_dir {self.mountpoint}/files"),
-            f"python3 /tmp/file_dir_ops.py delete {self.mountpoint}",
+            f"python3 {script_file_path} delete {self.mountpoint}",
         )
         for cmd in cmds:
             # Get arequal before getting bricks offline

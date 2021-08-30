@@ -53,6 +53,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         * kill 2-nd brick process from the each and every replica set
         * perform ops
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         # set cluster.quorum-type to auto
         options = {"cluster.quorum-type": "auto"}
         redant.set_volume_options(self.vol_name, options, self.server_list[0])
@@ -60,8 +61,8 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # Start IO on mounts
         all_mounts_procs = []
         redant.logger.info("Starting IO on mountpoint...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
-               f"-f 10 --base-file-name file {self.mountpoint}")
+        cmd = (f"python3 {script_file_path} create_files -f 10"
+               f" --base-file-name file {self.mountpoint}")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         all_mounts_procs.append(proc)
         self.mounts = {
@@ -92,8 +93,8 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # create new file named newfile0.txt
         all_mounts_procs = []
         redant.logger.info("Creating new file on mountpoint...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
-               f"-f 1 --base-file-name newfile {self.mountpoint}")
+        cmd = (f"python3 {script_file_path} create_files -f 1 --base-file-name"
+               f" newfile {self.mountpoint}")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         all_mounts_procs.append(proc)
 
@@ -105,8 +106,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # create directory user1
         all_mounts_procs = []
         redant.logger.info("Start creating directory on mountpoint...")
-        cmd = ("python3 /tmp/file_dir_ops.py create_deep_dir "
-               f"{self.mountpoint}")
+        cmd = f"python3 {script_file_path} create_deep_dir {self.mountpoint}"
         proc = redant.execute_command_async(cmd, self.client_list[0])
         all_mounts_procs.append(proc)
 
@@ -146,7 +146,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # read the file
         redant.logger.info("Starting reading files on mountpoint")
         all_mounts_procs = []
-        cmd = f"python3 /tmp/file_dir_ops.py read {self.mountpoint}"
+        cmd = f"python3 {script_file_path} read {self.mountpoint}"
         proc = redant.execute_command_async(cmd, self.client_list[0])
         all_mounts_procs.append(proc)
 

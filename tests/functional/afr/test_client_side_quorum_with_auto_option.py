@@ -41,8 +41,8 @@ class TestClientSideQuorumTests(DParentTest):
 
         # write files on all mounts
         redant.logger.info("Starting IO on all mounts...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
-               f"-f 10 --base-file-name file {self.mountpoint}")
+        cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py create_files"
+               f" -f 10 --base-file-name file {self.mountpoint}")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # get the subvolumes

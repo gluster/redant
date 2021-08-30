@@ -38,7 +38,8 @@ def pars_args():
                         dest="test_dir", default=None, type=str, required=True)
     parser.add_argument("-l", "--log-dir",
                         help="The directory wherein log will be stored.",
-                        dest="log_dir", default="/tmp/redant", type=str)
+                        dest="log_dir", default="/var/log/redant",
+                        type=str)
     parser.add_argument("-ll", "--log-level",
                         help="The log level. Default log level is Info",
                         dest="log_level", default="I", type=str)
@@ -165,9 +166,9 @@ if __name__ == '__main__':
     if failure:
         time_now = time.time()
         try:
-            f = open(f"/tmp/redant/redant-{time_now}", 'w')
+            f = open(f"/var/log/redant/redant-{time_now}", 'w')
             f.write(error_string)
             f.close()
-            print(f"Traceback put into /tmp/redant/redant-{time_now}")
+            print(f"Traceback put into /var/log/redant/redant-{time_now}")
         except Exception as err:
             print(f"Couldn't write main exception {error_string} due to {err}")

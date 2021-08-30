@@ -44,12 +44,13 @@ class TestAFRSnapshot(DParentTest):
         - Get arequal after restoring snapshot
         - Compare arequals
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Creating files on client side
         count = 1
         for mount_obj in self.mounts:
-            cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 50 "
+            cmd = (f"python3 {script_file_path} create_files -f 50 "
                    f"--base-file-name file_{count} {mount_obj['mountpath']}")
             proc = redant.execute_command_async(cmd, mount_obj['client'])
             self.all_mounts_procs.append(proc)
@@ -120,7 +121,7 @@ class TestAFRSnapshot(DParentTest):
         # Creating files on client side
         count = 1
         for mount_obj in self.mounts:
-            cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 50 "
+            cmd = (f"python3 {script_file_path} create_files -f 50 "
                    f"--base-file-name file_{count} {mount_obj['mountpath']}")
             proc = redant.execute_command_async(cmd, mount_obj['client'])
             self.all_mounts_procs.append(proc)
@@ -132,7 +133,7 @@ class TestAFRSnapshot(DParentTest):
 
         # Rename files
         self.all_mounts_procs = []
-        cmd = ("python3 /tmp/file_dir_ops.py mv -s FirstRename"
+        cmd = (f"python3 {script_file_path} mv -s FirstRename"
                f" {self.mountpoint}")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.all_mounts_procs.append(proc)
@@ -152,7 +153,7 @@ class TestAFRSnapshot(DParentTest):
 
         # Rename files
         self.all_mounts_procs = []
-        cmd = ("python3 /tmp/file_dir_ops.py mv -s SecondRename "
+        cmd = (f"python3 {script_file_path} mv -s SecondRename "
                f" {self.mountpoint}")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.all_mounts_procs.append(proc)

@@ -54,8 +54,9 @@ class TestAFRSelfHeal(DParentTest):
         - Calculate arequals of the mount point and all the bricks
         """
         self.io_validation_complete = True
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         # Create dirs with files
-        command = ("python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
+        command = (f"python3 {script_file_path} create_deep_dirs_with_files "
                    f"-d 2 -l 2 -n 2 -f 10 {self.mountpoint}")
         redant.execute_abstract_op_node(command, self.client_list[0])
 

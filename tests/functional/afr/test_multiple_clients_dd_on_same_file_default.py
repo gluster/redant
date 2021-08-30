@@ -84,8 +84,8 @@ class TestVerifySelfHealTriggersHealCommand(DParentTest):
         # Reading files on client side
         self.all_mounts_procs_read = []
         for mount_obj in self.mounts:
-            command = ("python3 /tmp/file_dir_ops.py read "
-                       f"{mount_obj['mountpath']}")
+            command = (f"python3 /usr/share/redant/script/file_dir_ops.py"
+                       f" read {mount_obj['mountpath']}")
 
             proc = redant.execute_command_async(command, mount_obj['client'])
             self.all_mounts_procs_read.append(proc)
