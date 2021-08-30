@@ -224,7 +224,8 @@ class DHTOps(AbstractOps):
                              len(filename))))
             hash_value = int(computed_hash.value)
         except OSError:
-            cmd = f"python3 /tmp/compute_hash.py {filename}"
+            cmd = ("python3 /usr/share/redant/script/compute_hash.py "
+                   f"{filename}")
             ret = self.execute_abstract_op_node(cmd, host, False)
             if ret['error_code'] != 0:
                 self.logger.error(f"Unable to run the script on node: {host}")

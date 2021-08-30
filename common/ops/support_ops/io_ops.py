@@ -206,7 +206,7 @@ class IoOps(AbstractOps):
             }
         """
         ret_val = {'error_code': 0, 'msg': ''}
-        cmd = (f"python3 /tmp/file_dir_ops.py stat {path}")
+        cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py stat {path}")
         ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
             ret_val['error_code'] = ret['error_code']
@@ -256,8 +256,8 @@ class IoOps(AbstractOps):
         Returns:
             async_object
         """
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
-               f"-f {num_files} --fixed-file-size {fix_fil_size} "
+        cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py create_files"
+               f" -f {num_files} --fixed-file-size {fix_fil_size} "
                f"--base-file-name {base_file_name} "
                f"--file-types {file_type} {path}")
         return self.execute_command_async(cmd, node)
@@ -282,8 +282,9 @@ class IoOps(AbstractOps):
         Returns:
             async_object
         """
-        cmd = (f"python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
-               f"--dirname-start-num {dir_start_no} --dir-depth {dir_depth}"
+        cmd = (f"python3 /usr/share/redant/share/file_dir_ops.py"
+               f" create_deep_dirs_with_files --dirname-start-num"
+               f" {dir_start_no} --dir-depth {dir_depth}"
                f" --dir-length {dir_length} --max-num-of-dirs {max_no_dirs} "
                f"--num-of-files {no_files} {path}")
         return self.execute_command_async(cmd, node)
@@ -570,7 +571,8 @@ class IoOps(AbstractOps):
         for mount in mounts:
             self.logger.info(
                 f"Stat of mount {mount['client']}:{mount['mountpath']}")
-            cmd = f"python3 /tmp/file_dir_ops.py stat -R {mount['mountpath']}"
+            cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py stat -R"
+                   f" {mount['mountpath']}")
             ret = self.execute_abstract_op_node(cmd, mount['client'], False)
             if ret['error_code'] != 0:
                 _rc = False
