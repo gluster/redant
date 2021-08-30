@@ -85,8 +85,8 @@ class IoOps(AbstractOps):
             list_of_nodes (list): Nodes on which dirs has to be created.
             list_of_dir_paths (list): List of dirs abs path.
         Returns:
-            bool: True of creation of all dirs on all nodes is successful.
-                False otherwise.
+            bool: True if creation of all dirs on all nodes is successful.
+                  False otherwise.
         """
         if not isinstance(list_of_nodes, list):
             list_of_nodes = [list_of_nodes]
