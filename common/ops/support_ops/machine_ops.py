@@ -71,16 +71,27 @@ class MachineOps(AbstractOps):
         """
         Wait for a node to come up online.
         Arg:
-            node (str)
+            node (str/list): Node which has to be checked for status
         Returns:
             bool value: True if node is online or False.
         """
+        node_status = {}
         iter_v = 0
         while iter_v < timeout:
             status = self.check_node_power_status(node)
-            if status[node]:
-                self.logger.info(f"{node} online.")
-                return True
+            if isinstance(node, list):
+                for n in node:
+                    if status[n]:
+                        self.logger.debug(f"{n} online.")
+                        node_status[n] = True
+                    else:
+                        node_status[n] = False
+                if all(node_status.values()):
+                    return True
+            else:
+                if status[node]:
+                    self.logger.debug(f"{node} online.")
+                    return True
             time.sleep(1)
             iter_v += 1
 
@@ -91,16 +102,27 @@ class MachineOps(AbstractOps):
         """
         Wait for a node to come down offline.
         Arg:
-            node (str)
+            node (str/list): Node which has to be checked for status
         Returns:
             bool value: True if node is offline or False.
         """
+        node_status = {}
         iter_v = 0
         while iter_v < timeout:
             status = self.check_node_power_status(node)
-            if not status[node]:
-                self.logger.info(f"{node} offline.")
-                return True
+            if isinstance(node, list):
+                for n in node:
+                    if not status[n]:
+                        self.logger.debug(f"{n} offline.")
+                        node_status[n] = True
+                    else:
+                        node_status[n] = False
+                if all(node_status.values()):
+                    return True
+            else:
+                if not status[node]:
+                    self.logger.debug(f"{node} offline.")
+                    return True
             time.sleep(1)
             iter_v += 1
 
