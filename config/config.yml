@@ -66,4 +66,4 @@ excluded_tests:
     - tests/functional/afr/test_arb_to_repl_conversion_with_io.py # Heal not completing even after increasing the timeout and the IO is completed
     - tests/functional/afr/heal/test_self_heal_daemon_process.py # TC is checking for conditions that doesn't happen in glusterfs. It is failing in glusto too
     - tests/functional/afr/test_write_io_mount_point_resumed_quorum_restored.py # Probability of the TC passing is very less as the TC depends on the time of reboot, which varies
-    - tests/functional/snapshot/test_256_snapshots.py # Requires baremetal servers with big disks to create these many snapshots
+    - tests/functional/snapshot/test_256_snapshots.py # Requires baremetal servers with multiple disks and good amount of RAM, to create these many snapshots
