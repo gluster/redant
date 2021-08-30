@@ -31,6 +31,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        self.script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         conf_hash = self.vol_type_inf[self.volume_type]
         conf_hash['replica_count'] = 2
         self.redant.setup_volume(self.vol_name, self.server_list[0],
@@ -52,8 +53,8 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # Start IO (write/read), must succeed
         all_mounts_procs = []
         self.redant.logger.info("Creating new file on mountpoint...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 10"
-               f" --base-file-name {filename} {self.mounts['mountpath']}")
+        cmd = (f"python3 {self.script_file_path} create_files "
+               f"-f 10 --base-file-name {filename} {self.mounts['mountpath']}")
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
 
@@ -65,7 +66,8 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # Read files on mountpoint
         self.redant.logger.info("Starting reading files on mountpoint")
         all_mounts_procs = []
-        cmd = f"python3 /tmp/file_dir_ops.py read {self.mounts['mountpath']}"
+        cmd = (f"python3 {self.script_file_path} read"
+               f" {self.mounts['mountpath']}")
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
 
@@ -82,7 +84,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # Start IO (write/read), read must succeed, but write should fail
         all_mounts_procs = []
         self.redant.logger.info("Creating new file on mountpoint...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 10"
+        cmd = (f"python3 {self.script_file_path} create_files -f 10"
                f" --base-file-name {filename} {self.mounts['mountpath']}")
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
@@ -97,7 +99,8 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         # Read files on mountpoint
         self.redant.logger.info("Starting reading files on mountpoint")
         all_mounts_procs = []
-        cmd = f"python3 /tmp/file_dir_ops.py read {self.mounts['mountpath']}"
+        cmd = (f"python3 {self.script_file_path} read"
+               f" {self.mounts['mountpath']}"
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
 

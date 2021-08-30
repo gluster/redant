@@ -42,12 +42,13 @@ class TestAFRSnapshot(DParentTest):
         - Get arequal after restoring snapshot
         - Compare arequals
         """
+        script_file_path = "/usr/share/redant/file_dir_ops.py"
         self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Creating files on client side
         count = 1
         for mount_obj in self.mounts:
-            cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 200 "
+            cmd = (f"python3 {script_file_path} create_files -f 200 "
                    f"--base-file-name file_{count} {mount_obj['mountpath']}")
             proc = redant.execute_command_async(cmd, mount_obj['client'])
             self.all_mounts_procs.append(proc)
@@ -68,7 +69,7 @@ class TestAFRSnapshot(DParentTest):
         # Modify the data
         self.all_mounts_procs = []
         for mount_obj in self.mounts:
-            cmd = ("python3 /tmp/file_dir_ops.py append "
+            cmd = (f"python3 {script_file_path} append "
                    f"{mount_obj['mountpath']}")
             proc = redant.execute_command_async(cmd, mount_obj['client'])
             self.all_mounts_procs.append(proc)

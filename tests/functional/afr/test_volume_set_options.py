@@ -154,7 +154,7 @@ class TestVolumeSetDataSelfHealTests(DParentTest):
         # Trigger heal from mount point
         redant.logger.info('Starting heal from mount point...')
         for mount_obj in self.mounts:
-            cmd = ("python3 /tmp/file_dir_ops.py stat -R "
+            cmd = ("python3 /usr/share/redant/script/file_dir_ops.py stat -R "
                    f"{mount_obj['mountpath']}/test_data_self_heal")
             ret = redant.execute_abstract_op_node(cmd, mount_obj['client'])
             if ret['error_code'] != 0:

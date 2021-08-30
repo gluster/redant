@@ -29,10 +29,11 @@ class TestClientSideQuorumTestsWithSingleVolumeCross3(DParentTest):
         """
         Perform write and read IO on mountpoint
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         # Start IO (write/read), must succeed
         all_mounts_procs = []
         self.redant.logger.info("Creating new file on mountpoint...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files -f 10"
+        cmd = (f"python3 {script_file_path} create_files -f 10"
                f" --base-file-name {filename} {self.mounts['mountpath']}")
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
@@ -45,7 +46,7 @@ class TestClientSideQuorumTestsWithSingleVolumeCross3(DParentTest):
         # Read files on mountpoint
         self.redant.logger.info("Starting reading files on mountpoint")
         all_mounts_procs = []
-        cmd = f"python3 /tmp/file_dir_ops.py read {self.mounts['mountpath']}"
+        cmd = f"python3 {script_file_path} read {self.mounts['mountpath']}"
         proc = self.redant.execute_command_async(cmd, self.mounts['client'])
         all_mounts_procs.append(proc)
 

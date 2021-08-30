@@ -194,7 +194,7 @@ class TestCase(DParentTest):
 
         # Start heal from mount point
         for mount_obj in self.mounts:
-            command = ("python3 /tmp/file_dir_ops.py "
+            command = ("python3 /usr/share/redant/script/file_dir_ops.py "
                        f"read {mount_obj['mountpath']}")
             redant.execute_abstract_op_node(command,
                                             mount_obj['client'])
