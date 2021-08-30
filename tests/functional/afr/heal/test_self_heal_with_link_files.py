@@ -30,12 +30,12 @@ class TestCase(DParentTest):
                                    'test_link_self_heal',
                                    self.client_list[0])
 
-        # Create dirctories and files inside directory test_link_self_heal
-        io_cmd = (f"cd {self.mountpoint}/test_link_self_heal;"
-                  "for i in `seq 1 5`; do mkdir dir.$i; "
-                  "for j in `seq 1 10`; do dd if=/dev/random "
-                  "of=dir.$i/file.$j bs=1k count=$j; done; done")
-        if second_attempt:
+            # Create dirctories and files inside directory test_link_self_heal
+            io_cmd = (f"cd {self.mountpoint}/test_link_self_heal;"
+                      "for i in `seq 1 5`; do mkdir dir.$i; "
+                      "for j in `seq 1 10`; do dd if=/dev/random "
+                      "of=dir.$i/file.$j bs=1k count=$j; done; done")
+        else:
             io_cmd = (f"cd {self.mountpoint}/test_link_self_heal;"
                       "for i in `seq 1 5` ; do for j in `seq 1 10`; "
                       "do dd if=/dev/random "
