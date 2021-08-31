@@ -38,17 +38,12 @@ class TestSnapshotInfoGlusterdRestart(DParentTest):
                                                         self.server_list[0])
             if not ret:
                 raise Exception("Failed to get snap info")
-            if ret['name'] != snap:
-                raise Exception(f"Failed to show snapshot info for {snap}")
 
         # Check snapshot info using volname
         ret = self.redant.get_snap_info_by_volname(self.vol_name,
                                                    self.server_list[0])
         if not ret:
             raise Exception("Failed to get snap info")
-        if ret['originVolume']['name'] != self.vol_name:
-            raise Exception("Failed to show snapshot info for "
-                            f"{self.vol_name}")
 
         # Validate snapshot information without using snapname or volname
         ret = self.redant.get_snap_info(self.server_list[0])
@@ -56,7 +51,7 @@ class TestSnapshotInfoGlusterdRestart(DParentTest):
             raise Exception("Failed to get snap info")
 
         for i, snap in enumerate(self.snapshots):
-            if ret[i]['name'] != snap:
+            if snap not in ret.keys():
                 raise Exception("Failed to validate snap information")
 
     def run_test(self, redant):
