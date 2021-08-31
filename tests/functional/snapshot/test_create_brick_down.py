@@ -73,8 +73,11 @@ class TestCreateSnapwhenBricksareDown(DParentTest):
             raise Exception("Failed to get the online brick list")
 
         # Create snapshot of volume
-        redant.snap_create(self.vol_name, "snap1", self.server_list[0],
-                           False, "Description with $p3c1al characters!")
+        ret = redant.snap_create(self.vol_name, "snap1", self.server_list[0],
+                                 False, "Description with $p3c1al character!",
+                                 excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Snapshot creation is successful")
 
         # Volume status
         redant.get_volume_status(self.vol_name, self.server_list[0])
