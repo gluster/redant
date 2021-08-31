@@ -21,10 +21,30 @@
 
 # disruptive;rep,dist,dist-rep,disp,dist-disp
 # TODO: NFS,CIFS
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestDeleteSnapshotTests(DParentTest):
+
+    def terminate(self):
+        """
+        Reset snapshot config options
+        """
+        try:
+            # Disable auto-delete for snapshots
+            cmd = "gluster snapshot config auto-delete disable"
+            self.redant.execute_abstract_op_node(cmd, self.server_list[0])
+
+            # Setting max-soft-limit back to 90%
+            option = {'snap-max-soft-limit': '90'}
+            self.redant.set_snap_config(option, self.server_list[0])
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -63,8 +83,8 @@ class TestDeleteSnapshotTests(DParentTest):
             raise Exception("Failed to Validate max-hard-limit")
 
         # setting max-soft-limit
-        option = {'snap-max-soft-limit': '8'}
-        redant.set_snap_config(option, self.server_list[0], self.vol_name)
+        option = {'snap-max-soft-limit': '80'}
+        redant.set_snap_config(option, self.server_list[0])
 
         # Validating max-soft-limit
         softlimit = redant.get_snap_config(self.server_list[0], self.vol_name)
