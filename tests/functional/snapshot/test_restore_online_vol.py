@@ -1,86 +1,47 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
+  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Description:
     This test case will validate snap restore on online volume.
     When we try to restore online volume it should fail.
 """
 
+# disruptive;rep,dist,disp,dist-rep,dist-disp
+# TODO:nfs,cifs
 
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass
-from glustolibs.gluster.gluster_base_class import runs_on
-from glustolibs.io.utils import validate_io_procs, get_mounts_stat
-from glustolibs.gluster.snap_ops import (snap_create, snap_delete_all,
-                                         get_snap_list, snap_restore)
-from glustolibs.misc.misc_libs import upload_scripts
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed', 'distributed-dispersed'],
-          ['glusterfs', 'nfs', 'cifs']])
-class SnapRSOnline(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
+    def terminate(self):
+        try:
+            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
+                                                      self.mounts)
+            if not ret:
+                raise Exception("IO failed on some of the clients")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.redant.logger.error(e)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts "
-                                 "to clients ")
-        g.log.info("Successfully uploaded IO scripts to clients %s")
-
-    def setUp(self):
-
-        # SettingUp and Mounting the volume
-        self.get_super_method(self, 'setUp')()
-        g.log.info("Starting to SetUp Volume and mount volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-        g.log.info("Volume %s has been setup successfully", self.volname)
-
-    def tearDown(self):
-
-        # Deleting all snapshot
-        g.log.info("Deleting all snapshots created")
-        ret, _, _ = snap_delete_all(self.mnode)
-        if ret != 0:
-            raise ExecutionError("Snapshot Delete Failed")
-        g.log.info("Successfully deleted all snapshots")
-
-        # Unmount and cleanup original volume
-        g.log.info("Starting to Unmount and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount and cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-    def test_restore_online_vol(self):
-
-        # pylint: disable=too-many-statements
+    def run_test(self, redant):
         """
         Steps:
         1. Create volume
@@ -94,67 +55,50 @@ class SnapRSOnline(GlusterBaseClass):
           -- Restore should fail with message
              "volume needs to be stopped before restore"
         """
-
+        self.io_validation_complete = True
         # Performing step 3 to 7 in loop here
         for i in range(1, 3):
             # Perform I/O
-            g.log.info("Starting IO on all mounts...")
             self.counter = 1
+            self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
             self.all_mounts_procs = []
             for mount_obj in self.mounts:
-                g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                           mount_obj.mountpoint)
-                cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                       "--dirname-start-num %d "
-                       "--dir-depth 2 "
-                       "--dir-length 2 "
-                       "--max-num-of-dirs 2 "
-                       "--num-of-files 2 %s" % (
-                           self.script_upload_path,
-                           self.counter, mount_obj.mountpoint))
-                proc = g.run_async(mount_obj.client_system, cmd,
-                                   user=mount_obj.user)
+                redant.logger.info(f"Starting IO on {mount_obj['client']}:"
+                                   f"{mount_obj['mountpath']}")
+                proc = (redant.create_deep_dirs_with_files(
+                        mount_obj['mountpath'], self.counter, 2, 2, 2, 2,
+                        mount_obj['client']))
+
                 self.counter += 100
                 self.all_mounts_procs.append(proc)
             self.io_validation_complete = False
 
             # Validate IO
-            self.assertTrue(
-                validate_io_procs(self.all_mounts_procs, self.mounts),
-                "IO failed on some of the clients"
-            )
+            if not redant.validate_io_procs(self.all_mounts_procs,
+                                            self.mounts):
+                raise Exception("IO failed on client")
             self.io_validation_complete = True
 
             # Get stat of all the files/dirs created.
-            g.log.info("Get stat of all the files/dirs created.")
-            ret = get_mounts_stat(self.mounts)
-            self.assertTrue(ret, "Stat failed on some of the clients")
-            g.log.info("Successfully got stat of all files/dirs created")
+            if not redant.get_mounts_stat(self.mounts):
+                raise Exception("Stat on mountpoints failed.")
 
             # Create snapshot
-            g.log.info("Creating snapshot for volume %s", self.volname)
-            ret, _, _ = snap_create(self.mnode, self.volname, "snapy%s" % i)
-            self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                      % self.volname))
-            g.log.info("Snapshot created successfully for volume  %s",
-                       self.volname)
+            snapname = f"{self.vol_name}-snap{i}"
+            redant.snap_create(self.vol_name, snapname, self.server_list[0])
 
             # Check for no of snaps using snap_list
-            snap_list = get_snap_list(self.mnode)
-            self.assertEqual(i, len(snap_list), "No of snaps not consistent "
-                             "for volume %s" % self.volname)
-            g.log.info("Successfully validated number of snaps.")
+            snap_list = redant.get_snap_list(self.server_list[0])
+            if len(snap_list) != i:
+                raise Exception("Number of snaps not consistent for volume"
+                                f" {self.vol_name}")
 
             # Increase counter for next iteration
             self.counter = 1000
 
         # Restore volume to snapshot snapy2, it should fail
         i = 2
-        g.log.info("Starting to restore volume to snapy%s", i)
-        ret, _, err = snap_restore(self.mnode, "snapy%s" % i)
-        errmsg = ("snapshot restore: failed: Volume (%s) has been started. "
-                  "Volume needs to be stopped before restoring a snapshot.\n" %
-                  self.volname)
-        log_msg = ("Expected : %s, but Returned : %s", errmsg, err)
-        self.assertEqual(err, errmsg, log_msg)
-        g.log.info("Expected : Failed to restore volume to snapy%s", i)
+        snapname = f"{self.vol_name}-snap{i}"
+        ret = redant.snap_restore(snapname, self.server_list[0])
+        if ret['error_code'] == 0:
+            raise Exception("Expected : Failed to restore volume to snap")
