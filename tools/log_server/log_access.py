@@ -12,15 +12,15 @@ def main():
             config.read('log_access.ini')
     except IOError:
         print("log_access.ini doesn't exist. Hence taking a default dict."
-              " with path : /tmp/redant and port : 5000")
-        config = {"serverdata": {"path": "/tmp/redant", "port": 5000}}
+              " with path : /var/log/redant and port : 5000")
+        config = {"serverdata": {"path": "/var/log/redant", "port": 5000}}
 
     # Path extraction and validation.
     try:
         ppath = config['serverdata']['path']
     except Exception as KeyError:
-        print("Key error in path. Defaulting to /tmp/redant as log path.")
-        ppath = "/tmp/redant"
+        print("Key error in path. Defaulting to /var/log/redant as log path.")
+        ppath = "/var/log/redant"
 
     # Port extraction and validation.
     try:

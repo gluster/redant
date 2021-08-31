@@ -54,8 +54,8 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
                                  self.mountpoint, self.client_list[0])
 
         # Trigger heal from client side
-        cmd = (f"python3 /tmp/file_dir_ops.py read {self.mountpoint}/"
-               f"{self.self_heal_folder}")
+        cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py read"
+               f"{self.mountpoint}/{self.self_heal_folder}")
         self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
     def validate_io_on_clients(self):

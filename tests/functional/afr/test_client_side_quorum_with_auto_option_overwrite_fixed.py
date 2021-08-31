@@ -39,6 +39,7 @@ class TestClientSideQuorumTests(DParentTest):
         * set cluster.quorum-type to auto
 
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         # check the default value of cluster.quorum-type
         option = "cluster.quorum-type"
         ret = redant.get_volume_options(self.vol_name, option,
@@ -73,7 +74,7 @@ class TestClientSideQuorumTests(DParentTest):
 
         # create files
         redant.logger.info("Starting IO on all mounts...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
+        cmd = (f"python3 {script_file_path} create_files "
                f"-f 10 --base-file-name file {self.mountpoint}")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
@@ -92,7 +93,7 @@ class TestClientSideQuorumTests(DParentTest):
 
         # create files
         redant.logger.info("Starting IO on all mounts...")
-        cmd = (f"python3 /tmp/file_dir_ops.py create_files "
+        cmd = (f"python3 {script_file_path} create_files "
                f"-f 10 --base-file-name second_file {self.mountpoint}")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 

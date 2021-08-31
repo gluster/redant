@@ -39,13 +39,14 @@ class TestSelfHeal(DParentTest):
         - calculate arequal and compare with arequal before bringing bricks
         offline and after bringing bricks online
         """
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         # Setting options
         options = {"data-self-heal-algorithm": "diff"}
         redant.set_volume_options(self.vol_name, options, self.server_list[0])
 
         # Creating files on client side
         mount_dict = []
-        cmd = ("python3 /tmp/file_dir_ops.py create_files -f 100 "
+        cmd = (f"python3 {script_file_path} create_files -f 100 "
                f"{self.mountpoint}")
 
         proc = redant.execute_command_async(cmd, self.client_list[0])
@@ -72,7 +73,7 @@ class TestSelfHeal(DParentTest):
             raise Exception(f"Bricks {offline_brick_list} are not offline")
 
         # Modify the data
-        cmd = ("python3 /tmp/file_dir_ops.py create_files -f 100 "
+        cmd = (f"python3 {script_file_path} create_files -f 100 "
                f" --fixed-file-size 1M {self.mountpoint}")
 
         proc = redant.execute_command_async(cmd, self.client_list[0])

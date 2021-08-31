@@ -69,10 +69,11 @@ class TestArbiterToReplicatedConversion(DParentTest):
         - Validate heal completes with no errors and arequal of first dir
           matches against initial checksum
         """
+        script_file_path = "usr/share/redant/script/file_dir_ops.py"
         self.proc_list = []
 
         # Fill IO in first directory
-        cmd = ("python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
+        cmd = (f"python3 {script_file_path} create_deep_dirs_with_files "
                "--dir-depth 10 --fixed-file-size 1M --num-of-files 100 "
                f"--dirname-start-num 1 {self.mountpoint}")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
@@ -85,7 +86,7 @@ class TestArbiterToReplicatedConversion(DParentTest):
         exp_arequal = redant.collect_mounts_arequal(self.mounts, "user1")
 
         # Start continuous IO from second directory
-        cmd = ("python3 /tmp/file_dir_ops.py create_deep_dirs_with_files "
+        cmd = (f"python3 {script_file_path} create_deep_dirs_with_files "
                "--dir-depth 10 --fixed-file-size 1M --num-of-files 250 "
                f"--dirname-start-num 2 {self.mountpoint}")
         proc = redant.execute_command_async(cmd, self.client_list[0])
