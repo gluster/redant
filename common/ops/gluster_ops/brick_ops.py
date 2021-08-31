@@ -422,6 +422,8 @@ class BrickOps(AbstractOps):
             # unused bricks dict as well
             unused_servers.remove(server_val)
             unused_bricks[server_val].remove(brick)
+            if not unused_bricks[server_val]:
+                unused_bricks.pop(server_val)
             iteration += 1
 
         # If we have unused bricks in some node, use them
@@ -469,7 +471,7 @@ class BrickOps(AbstractOps):
         # brick_root
         index = 0
         if brick_cmd:
-            index = self._get_index(nodes, brick_cmd)
+            index = self._get_index(server_list, brick_cmd)
         elif last_node == server_list[index]:
             index += 1
 
