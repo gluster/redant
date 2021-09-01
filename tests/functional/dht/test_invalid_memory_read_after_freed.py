@@ -56,10 +56,14 @@ class TestCase(NdParentTest):
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         ret = redant.get_dir_contents(self.mountpoint, self.client_list[0])
+        if ret:
+            raise Exception("Mountpoint is not empty")
 
         for brick in redant.get_all_bricks(self.vol_name, self.server_list[0]):
             node, brick_path = brick.split(":")
             ret = redant.get_dir_contents(brick_path, node)
+            if ret:
+                raise Exception("Bricks are not empty")
 
         # Check for core file on servers and clients
         servers = self.server_list + self.client_list
