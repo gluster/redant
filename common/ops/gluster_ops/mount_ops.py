@@ -232,30 +232,3 @@ class MountOps(AbstractOps):
             for client in snap_mnt_dict[snap].keys():
                 for mntpath in snap_mnt_dict[snap][client]:
                     self.unmount_snap(snap, mntpath, client)
-
-    def view_snap_from_mount(self, mounts_obj: list, snaps: list) -> bool:
-        """
-        Method to verify if the stated snaps are present under the .snaps
-        directory.
-
-        Args:
-            mount_obj (list): The mount_obj consists of client and mountpath
-            combination of dictionaries in a list.
-            snaps (list/str): List of snap names.
-
-        Returns:
-            bool: True if all the said snapnames in the snaps list are present
-            under the .snaps dir, else False.
-        """
-        if not isinstance(snaps, list):
-            snaps = [snaps]
-
-        ret_list = []
-        for mountob in mounts_obj:
-            cmd = f'ls {mountob["mountpath"]}/.snaps/'
-            ret = self.execute_abstract_op_node(cmd, mountob["client"])
-            listing = [listval.strip() for listval in ret['msg']]
-            ret_list.append(listing)
-            if set(listing) != set(snaps):
-                return False
-        return True

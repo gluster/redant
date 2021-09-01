@@ -677,7 +677,7 @@ class IoOps(AbstractOps):
                                           f" - {snap_list}")
                         _rc = False
         if not _rc:
-            raise Exception("Failed to list snaps for some mountpoints")
+            self.logger.error("Failed to list snaps for some mountpoints")
         return _rc
 
     def validate_io_procs(self, all_mounts_async_objs: list,

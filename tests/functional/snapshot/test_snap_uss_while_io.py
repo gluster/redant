@@ -102,5 +102,5 @@ class TestCase(DParentTest):
             raise Exception("IO failed")
 
         # validate snapshots are listed under .snaps directory
-        if not redant.view_snap_from_mount(self.mounts, snap_list):
+        if not redant.view_snaps_from_mount(self.mounts, snap_list):
             raise Exception("Snap in .snaps doesn't match snap list provided")
