@@ -145,10 +145,10 @@ class TestSnapshotCloneDeleteMultiple(DParentTest):
         self._mount_clone_and_io(self.clone1, self.mpoint1)
 
         # Perform IO on mountpoint of clone1
-        self.mounts = {
+        self.mounts = [{
             "client": self.client_list[0],
             "mountpath": self.mpoint1
-        }
+        }]
         self._io_operation("first")
 
         # Clone and start clone2
@@ -161,10 +161,10 @@ class TestSnapshotCloneDeleteMultiple(DParentTest):
         self._mount_clone_and_io(self.clone2, self.mpoint2)
 
         # Perform IO on mountpoint of clone1
-        self.mounts = {
+        self.mounts = [{
             "client": self.client_list[0],
             "mountpath": self.mpoint2
-        }
+        }]
         self._io_operation("second")
 
         # Create 10 more snapshots
