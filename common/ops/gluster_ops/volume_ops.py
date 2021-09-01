@@ -474,6 +474,46 @@ class VolumeOps(AbstractOps):
             self.volume_delete(volname, vol_nodes[0])
             self.delete_bricks(brick_list)
 
+    def cleanup_volume(self, node: str, volname: str) -> bool:
+        """
+        Deletes snapshots in the volume, stops and deletes the gluster
+        volume if given volume exists in gluster and deletes the
+        directories in the bricks associated with the given volume
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            volname (str): volume name
+
+        Returns:
+            bool: True, if volume is deleted successfully
+                  False, otherwise
+
+        Example:
+            cleanup_volume("abc.xyz.com", "testvol")
+        """
+        volinfo = self.get_volume_info(node, volname)
+        if not volinfo or volname not in volinfo:
+            self.logger.info(f"Volume {volname} does not exist on {node}")
+            return True
+
+        ret = self.snap_delete_by_volumename(volname, node, excep=False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error(f"Failed to delete the snapshots in {volname}")
+            return False
+
+        ret = self.volume_stop(volname, node, force=True, excep=False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error(f"Failed to stop volume {volname}")
+            return False
+
+        ret = self.volume_delete(volname, node, excep=False)
+        if ret['msg']['opRet'] != '0':
+            self.logger.error(f"Unable to cleanup the volume {volname}")
+            return False
+
+        self.logger.debug(f"Successfully cleaned the volume: {volname}")
+        return True
+
     def expand_volume(self, node: str, volname: str, server_list: list,
                       brick_root: dict, force: bool = False,
                       **kwargs) -> bool:
