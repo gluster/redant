@@ -31,9 +31,8 @@ class TestSnapshotCloneDeleteMultiple(DParentTest):
         Disable activate-on-create option in snapshot config
         """
         try:
-            option = {'activate-on-create': 'enable'}
-            self.redant.set_snap_config(option, self.server_list[0],
-                                        self.vol_name)
+            option = {'activate-on-create': 'disable'}
+            self.redant.set_snap_config(option, self.server_list[0])
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -131,45 +130,45 @@ class TestSnapshotCloneDeleteMultiple(DParentTest):
 
         # Enable Activate on create
         option = {'activate-on-create': 'enable'}
-        redant.set_snap_config(option, self.server_list[0], self.vol_name)
+        redant.set_snap_config(option, self.server_list[0])
 
         value1 = list(range(0, 20))
         value2 = list(range(20, 30))
         value3 = list(range(30, 40))
         # Clone and start clone1
-        ret1 = redant._create_and_clone_snap(value1, self.snap1, self.clone1,
-                                             counter=20)
+        ret1 = self._create_and_clone_snap(value1, self.snap1, self.clone1,
+                                           counter=20)
         if ret1 != 30:
             raise Exception("Failed to create and clone snap")
 
         # Mount clone1
-        redant._mount_clone_and_io(self.clone1, self.mpoint1)
+        self._mount_clone_and_io(self.clone1, self.mpoint1)
 
         # Perform IO on mountpoint of clone1
         self.mounts = {
             "client": self.client_list[0],
             "mountpath": self.mpoint1
         }
-        redant._io_operation("first")
+        self._io_operation("first")
 
         # Clone and start clone2
-        ret3 = redant._create_and_clone_snap(value2, self.snap2, self.clone2,
-                                             ret1)
+        ret3 = self._create_and_clone_snap(value2, self.snap2, self.clone2,
+                                           ret1)
         if ret3 != 40:
             raise Exception("Failed to create and clone snap")
 
         # Mount clone2
-        redant._mount_clone_and_io(self.clone2, self.mpoint2)
+        self._mount_clone_and_io(self.clone2, self.mpoint2)
 
         # Perform IO on mountpoint of clone1
         self.mounts = {
             "client": self.client_list[0],
             "mountpath": self.mpoint2
         }
-        redant._io_operation("second")
+        self._io_operation("second")
 
         # Create 10 more snapshots
-        ret1 = redant._create_and_clone_snap(value3, self.snap2, self.clone2,
-                                             ret3)
+        ret1 = self._create_and_clone_snap(value3, self.snap2, self.clone2,
+                                           ret3)
         if ret1 != 0:
             raise Exception("Failed to create snapshots")
