@@ -53,8 +53,8 @@ class TestSnapshotGlusterdRestart(DParentTest):
         # Check snapshot status using snap name
         snap_status = redant.get_snap_status_by_snapname(self.snapshots[0],
                                                          self.server_list[0])
-        if self.snapshots[0] not in snap_status:
-            raise Exception("Failed to show snapshot "
+        if not snap_status:
+            raise Exception("Failed to get snapshot "
                             f"status for {self.snapshots[0]}")
 
         # Check snapshot status using volname
@@ -82,8 +82,8 @@ class TestSnapshotGlusterdRestart(DParentTest):
         # Check snapshot status using snap name
         snap_status = redant.get_snap_status_by_snapname(self.snapshots[0],
                                                          self.server_list[0])
-        if self.snapshots[0] not in snap_status:
-            raise Exception("Failed to show snapshot "
+        if not snap_status:
+            raise Exception("Failed to get snapshot "
                             f"status for {self.snapshots[0]}")
 
         # Check snapshot status using volname

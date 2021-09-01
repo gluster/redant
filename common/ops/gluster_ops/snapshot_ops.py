@@ -430,13 +430,13 @@ class SnapshotOps(AbstractOps):
             Dictionary of the snap status for the said volume or Nonetype
             object.
         """
-        cmd = f"gluster snapshot status volume {volname} --xml --mode=script"
+        cmd = f"gluster snapshot status volume {volname} --mode=script"
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        return ret
-        # ret = ret['msg']['snapStatus']['snapshots']['snapshot']
+        if not excep:
+            return ret
 
-        # if not excep:
-        #    return ret
+        snap_stats = "".join(ret['msg']).strip('\n')
+        return snap_stats
 
     def snap_info(self, node: str, snapname: str = None, volname: str = None,
                   excep: bool = True) -> dict:
