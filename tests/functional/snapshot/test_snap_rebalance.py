@@ -32,7 +32,7 @@ class TestSnapshotRebalance(DParentTest):
         Check arequals for the bricks
         """
         # Get the subvolumes
-        subvols = self.redant.get_subvols(self.clone1, self.server_list[0])
+        subvols = self.redant.get_subvols(self.clone, self.server_list[0])
         if not subvols:
             raise Exception("Failed to get the subvols for the volume")
         num_subvols = len(subvols)
