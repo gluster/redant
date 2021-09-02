@@ -1,49 +1,34 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-Description : The purpose of this test is to validate snapshot create
-              during rebalance
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    The purpose of this test is to validate snapshot create during rebalance
 """
 
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import validate_io_procs, get_mounts_stat
-from glustolibs.gluster.volume_libs import (
-    expand_volume, log_volume_info_and_status,
-    wait_for_volume_process_to_be_online)
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              wait_for_rebalance_to_complete,
-                                              rebalance_status)
-from glustolibs.gluster.snap_ops import get_snap_list, snap_delete_all
+# disruptive;rep,dist-rep,disp,dist,dist-disp
+# TODO: NFS,CIFS
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'replicated', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs', 'nfs', 'cifs']])
-class SnapCreateRebal(GlusterBaseClass):
-    """
-    Test for snapshot create during rebalance
-    Steps:
+class TestSnapCreateRebal(DParentTest):
+
+    def run_test(self, redant):
+        """
+        Steps:
         1. Create and start a volume
         2. Mount the volume on client
         3. Perform some heavy IO
@@ -59,194 +44,101 @@ class SnapCreateRebal(GlusterBaseClass):
            in Step 7
            -- this operation should be successful
         10. Cleanup
-
-    """
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts "
-                                 "to clients %s" % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to "
-                   "clients %s", cls.clients)
-
-    def setUp(self):
         """
-        setUp method
-        """
-        # Setup_Volume
-        self.get_super_method(self, 'setUp')()
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=True)
-        if not ret:
-            raise ExecutionError("Failed to setup and mount volume")
-        g.log.info("Volume %s has been setup successfully", self.volname)
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-    def tearDown(self):
-        """
-        tearDown
-        """
-        ret, _, _ = snap_delete_all(self.mnode)
-        if not ret:
-            raise ExecutionError("Failed to delete all snaps")
-        self.get_super_method(self, 'tearDown')()
-
-        # Clean up the volume & mount
-        g.log.info("Starting volume and  mount cleanup")
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to cleanup volume and mount")
-        g.log.info("Cleanup successful for the volume and mount")
-
-    def test_snapshot_while_rebalance(self):
-        # pylint: disable=too-many-statements, missing-docstring
         # Start IO on all mounts.
         all_mounts_procs = []
         count = 1
         for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 10 "
-                   "--max-num-of-dirs 5 "
-                   "--num-of-files 5 %s" % (
-                       self.script_upload_path, count,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      count, 2, 5, 5, 5,
+                                                      mount_obj['client'])
             all_mounts_procs.append(proc)
             count = count + 10
 
         # Validate IO
-        g.log.info("Validating IO's")
-        ret = validate_io_procs(all_mounts_procs, self.mounts)
-        self.assertTrue(ret, "IO failed on some of the clients")
-        g.log.info("Successfully validated all io's")
+        if not redant.validate_io_procs(all_mounts_procs, self.mounts):
+            raise Exception("IO failed.")
 
         # Get stat of all the files/dirs created.
-        g.log.info("Get stat of all the files/dirs created.")
-        ret = get_mounts_stat(self.mounts)
-        self.assertTrue(ret, "Stat failed on some of the clients")
-        g.log.info("Successfully got stat of all files/dirs created")
+        ret = redant.get_mounts_stat(self.mounts)
+        if not ret:
+            raise Exception("Stat failed on some of the clients")
 
         # Create one snapshot of volume using no-timestamp option
-        cmd_str = ("gluster snapshot create %s %s %s"
-                   % ("snapy", self.volname, "no-timestamp"))
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                  % self.volname))
-        g.log.info("Snapshot snapy created successfully "
-                   "for volume %s", self.volname)
+        redant.snap_create(self.vol_name, "snapy", self.server_list[0])
 
         # Check for no of snaps using snap_list it should be 1
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(1, len(snap_list), "Expected 1 snapshot "
-                         "found %s snapshots" % len(snap_list))
-        g.log.info("Successfully validated number of snaps.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 1:
+            raise Exception(f"Expected 1 snapshots. Found {len(snap_list)}"
+                            " snapshots")
 
         # validate snap name
-        self.assertIn("snapy", snap_list, " snap not found")
-        g.log.info("Successfully validated names of snap")
+        if "snapy" not in snap_list:
+            raise Exception(f"snapy snap not found in {snap_list}")
 
         # get the bricks for the volume
-        g.log.info("Fetching bricks for the volume : %s", self.volname)
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List : %s", bricks_list)
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        if not bricks_list:
+            raise Exception("Failed to get brick list")
 
         # expanding volume
-        g.log.info("Start adding bricks to volume %s", self.volname)
-        ret = expand_volume(self.mnode, self.volname, self.servers,
-                            self.all_servers_info)
-        self.assertTrue(ret, ("Failed to add bricks to "
-                              "volume %s " % self.volname))
-        g.log.info("Add brick successful")
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots)
+        if not ret:
+            raise Exception("Failed to add bricks to "
+                            f"volume {self.vol_name}")
 
         # Log Volume Info and Status after expanding the volume
-        g.log.info("Logging volume info and Status after expanding volume")
-        ret = log_volume_info_and_status(self.mnode, self.volname)
-        self.assertTrue(ret, ("Logging volume info and status failed "
-                              "on volume %s", self.volname))
-        g.log.info("Successful in logging volume info and status "
-                   "of volume %s", self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Verify volume's all process are online for 60 sec
-        g.log.info("Verifying volume's all process are online")
-        ret = wait_for_volume_process_to_be_online(self.mnode, self.volname,
-                                                   60)
-        self.assertTrue(ret, ("Volume %s : All process are not "
-                              "online", self.volname))
-        g.log.info("Successfully Verified volume %s "
-                   "processes are online", self.volname)
+        if not (redant.wait_for_volume_process_to_be_online(self.vol_name,
+                self.server_list[0], self.server_list, 60)):
+            raise Exception("Failed to wait for volume processes to "
+                            "be online")
 
         # Start Rebalance
-        g.log.info("Starting Rebalance on the volume")
-        ret, _, err = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to start rebalance on "
-                                  "the volume %s with error %s" %
-                                  (self.volname, err)))
-        g.log.info("Successfully started rebalance on the "
-                   "volume %s", self.volname)
+        redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Log Rebalance status
-        g.log.info("Log Rebalance status")
-        ret, _, _ = rebalance_status(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to log rebalance status")
-        g.log.info("successfully logged rebalance status")
+        redant.get_rebalance_status(self.vol_name, self.server_list[0])
 
         # Create one snapshot of volume during rebalance
-        cmd_str = ("gluster snapshot create %s %s %s"
-                   % ("snapy_rebal", self.volname, "no-timestamp"))
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertNotEqual(ret, 0, ("successfully created 'snapy_rebal'"
-                                     " for %s" % self.volname))
-        g.log.info("Snapshot 'snapy_rebal' not created as rebalance is in "
-                   "progress check log")
+        ret = redant.snap_create(self.vol_name, "snapy_rebal",
+                                 self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully created snapshot "
+                            "while rebalance is in progress")
+
         # Check for no of snaps using snap_list it should be 1
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(1, len(snap_list), "Expected 1 snapshot "
-                         "found %s snapshot" % len(snap_list))
-        g.log.info("Successfully validated number of snaps.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 1:
+            raise Exception(f"Expected 1 snapshots. Found {len(snap_list)}"
+                            " snapshots")
 
         # Wait for rebalance to complete
-        g.log.info("Waiting for rebalance to complete")
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname)
-        self.assertTrue(ret, ("Rebalance is not yet complete "
-                              "on the volume %s", self.volname))
-        g.log.info("Rebalance is successfully complete on "
-                   "the volume %s", self.volname)
-
-        # Check Rebalance status after rebalance is complete
-        g.log.info("Checking Rebalance status")
-        ret, _, _ = rebalance_status(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to get rebalance status for "
-                                  "the volume %s", self.volname))
-        g.log.info("Successfully got rebalance status of the "
-                   "volume %s", self.volname)
+        ret = redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                    self.server_list[0])
+        if not ret:
+            raise Exception("Rebalance is not yet complete "
+                            f"on the volume {self.vol_name}")
 
         # Create one snapshot of volume post rebalance with same name
-        cmd_str = ("gluster snapshot create %s %s %s"
-                   % ("snapy_rebal", self.volname, "no-timestamp"))
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                  % self.volname))
-        g.log.info("Snapshot snapy_rebal created successfully "
-                   "for volume  %s", self.volname)
+        redant.snap_create(self.vol_name, "snapy_rebal", self.server_list[0])
 
         # Check for no of snaps using snap_list it should be 2
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(2, len(snap_list), "Expected 2 snapshots "
-                         "found %s snapshot" % len(snap_list))
-        g.log.info("Successfully validated number of snaps.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 2:
+            raise Exception(f"Expected 2 snapshots. Found {len(snap_list)}"
+                            " snapshots")
 
         # validate snap name
-        self.assertIn("snapy_rebal", snap_list, " snap not found")
-        g.log.info("Successfully validated names of snap")
+        if "snapy_rebal" not in snap_list:
+            raise Exception(f"snapy_rebal snap not found in {snap_list}")
