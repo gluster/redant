@@ -86,8 +86,13 @@ class TestSnapCreateRebal(DParentTest):
             raise Exception("Failed to get brick list")
 
         # expanding volume
+        # Use force for dist-dsip volume, due to fault tolerance limitation
+        force = False
+        if self.volume_type == "dist-disp":
+            force = True
+
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
-                                   self.server_list, self.brick_roots)
+                                   self.server_list, self.brick_roots, force)
         if not ret:
             raise Exception("Failed to add bricks to "
                             f"volume {self.vol_name}")
