@@ -1,65 +1,35 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-Description : The purpose of this test is to validate snapshot
-              hard and soft max-limt options.
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
-Steps :
-    1. Create and start a volume
-    2. Mount the volume on a client
-    3. Perform some heavy IO
-    4. Varify IO
-    5. modify max snap limit to default to 10.
-    6. modify soft-limit to 50%
-    6. Create 5 snapshots
-    7. Varify 5 created successfully
-    8. Create 6th snapshot -  check for warning
-       -- it should not fail.
-    9. modify soft-limit to 100%
-    10. Create 7th snapshot -  check for warning
-       -- it should not show warning.
-    11. Reach the snap-max-hard-limit by creating more snapshots
-    12. Create 11th snapshot - check for failure
-       -- it shoul fail.
-    13. varify the no. of snpas it should be 10.
-    14. modify max snap limit to 20
-    15. create 10 more snaps
-    16. varify the no. of snpas it should be 20
-    14. Cleanup
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    The purpose of this test is to validate snapshot
+    hard and soft max-limt options.
 """
 
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import validate_io_procs, get_mounts_stat
-from glustolibs.gluster.snap_ops import get_snap_list, snap_delete_all
+# disruptive;rep,dist-rep,disp,dist,dist-disp
+# TODO: NFS,CIFS
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed-dispersed', 'distributed'],
-          ['glusterfs', 'nfs', 'cifs']])
-class SnapCreateMax(GlusterBaseClass):
-    """
-    Test for snapshot create max limits
-    Steps :
+class TestSnapCreateMax(DParentTest):
+
+    def run_test(self, redant):
+        """
+        Steps :
         1. Create and start a volume
         2. Mount the volume on a client
         3. Perform some heavy IO
@@ -80,203 +50,103 @@ class SnapCreateMax(GlusterBaseClass):
         14. modify max snap limit to 20
         15. create 10 more snaps
         16. varify the no. of snpas it should be 20
-        14. Cleanup
-
-    """
-    @classmethod
-    def setUpClass(cls):
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts "
-                                 "to clients %s" % cls.clients)
-        g.log.info("Successfully uploaded IO scripts "
-                   "to clients %s", cls.clients)
-
-    def setUp(self):
         """
-        setUp method
-        """
-        # Setup_Volume
-        self.get_super_method(self, 'setUp')()
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=True)
-        if not ret:
-            raise ExecutionError("Failed to setup and mount volume")
-        g.log.info("Volume %s has been setup successfully", self.volname)
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-    def tearDown(self):
-        """
-        tearDown
-        """
-        ret, _, _ = snap_delete_all(self.mnode)
-        if ret != 0:
-            raise ExecutionError("Failed to delete all snapshots.")
-        self.get_super_method(self, 'tearDown')()
-
-        # Clean up the volume & mount
-        g.log.info("Starting volume and  mount cleanup")
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to cleanup volume and mount")
-        g.log.info("Cleanup successful for the volume and mount")
-
-    def test_validate_snaps_max_limit(self):
-        # pylint: disable=too-many-statements
         # Start IO on all mounts.
         all_mounts_procs = []
         count = 1
         for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 10 "
-                   "--max-num-of-dirs 5 "
-                   "--num-of-files 5 %s" % (
-                       self.script_upload_path, count,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      count, 2, 5, 5, 5,
+                                                      mount_obj['client'])
             all_mounts_procs.append(proc)
             count = count + 10
 
         # Validate IO
-        g.log.info("Validating IO's")
-        ret = validate_io_procs(all_mounts_procs, self.mounts)
-        self.assertTrue(ret, "IO failed on some of the clients")
-        g.log.info("Successfully validated all io's")
+        if not redant.validate_io_procs(all_mounts_procs, self.mounts):
+            raise Exception("IO failed.")
 
         # Get stat of all the files/dirs created.
-        g.log.info("Get stat of all the files/dirs created.")
-        ret = get_mounts_stat(self.mounts)
-        self.assertTrue(ret, "Stat failed on some of the clients")
-        g.log.info("Successfully got stat of all files/dirs created")
+        ret = redant.get_mounts_stat(self.mounts)
+        if not ret:
+            raise Exception("Stat failed on some of the clients")
 
         # set config snap-max-hard-limit for 10 snpas
-        cmd_str = ("gluster snapshot config snap-max-hard-limit 10"
-                   " --mode=script")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, "Failed to set snap-max-hard-limit to 10.")
-        g.log.info("snap-max-hard-limit successfully set for 10.")
+        max_hard_limit = {'snap-max-hard-limit': '10'}
+        redant.set_snap_config(max_hard_limit, self.server_list[0],
+                               self.vol_name)
 
         # set config snap-max-soft-limit to 50%
-        cmd_str = ("gluster snapshot config snap-max-soft-limit 50"
-                   " --mode=script")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, "Failed to set snap-max-soft-limit to 50%.")
-        g.log.info("snap-max-soft-limit successfully set for 50%.")
+        max_soft_limit = {'snap-max-soft-limit': '50'}
+        redant.set_snap_config(max_soft_limit, self.server_list[0])
 
         # Create 5 snaps
         for i in range(1, 6):
-            cmd_str = "gluster snapshot create %s %s %s" % ("snapy%s" % i,
-                                                            self.volname,
-                                                            "no-timestamp")
-            ret, _, _ = g.run(self.mnode, cmd_str)
-            self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                      % self.volname))
-            g.log.info("Snapshot snapy%s created successfully"
-                       " for volume  %s", i, self.volname)
+            redant.snap_create(self.vol_name, f"snapy{i}",
+                               self.server_list[0])
 
         # Check for no. of snaps using snap_list it should be 5
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(5, len(snap_list), "Expected 5 snapshots. "
-                         "Found %s snapshots" % len(snap_list))
-        g.log.info("Successfully validated number of snapshots.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 5:
+            raise Exception(f"Expected 5 snapshots. Found {len(snap_list)}"
+                            " snapshots")
 
-        # Validate all 5 snap names created during
+        # Validate all 5 snap names present in snap_list
         for i in range(1, 6):
-            self.assertTrue(("snapy%s" % i in snap_list), "%s snap not "
-                            "found " % ("snapy%s" % i))
-        g.log.info("Successfully validated names of snapshots")
+            if f"snapy{i}" not in snap_list:
+                raise Exception(f"snapy{i} snap not found in {snap_list}")
 
         # create 6th snapshot
-        cmd_str = "gluster snapshot create %s %s %s" % ("snapy6", self.volname,
-                                                        "no-timestamp")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, ("Failed to create snap6 "
-                                  "for %s" % self.volname))
-        g.log.info("Snapshot 'snapy6' created as it is 6th snap")
+        redant.snap_create(self.vol_name, "snapy6", self.server_list[0])
 
         # set config snap-max-soft-limit to 100%
-        cmd_str = ("gluster snapshot config snap-max-soft-limit 100"
-                   " --mode=script")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, "Failed to set snap-max-soft-limit to 100%.")
-        g.log.info("snap-max-soft-limit successfully set for 100%.")
+        max_soft_limit = {'snap-max-soft-limit': '100'}
+        redant.set_snap_config(max_soft_limit, self.server_list[0])
 
         # create 7th snapshot
-        cmd_str = "gluster snapshot create %s %s %s" % ("snapy7", self.volname,
-                                                        "no-timestamp")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, ("Failed to create "
-                                  "snap7 for %s" % self.volname))
-        g.log.info("Snapshot 'snapy7' created as it is 7th snap")
+        redant.snap_create(self.vol_name, "snapy7", self.server_list[0])
 
         # Create 3 snaps
         for i in range(8, 11, 1):
-            cmd_str = "gluster snapshot create %s %s %s" % ("snapy%s" % i,
-                                                            self.volname,
-                                                            "no-timestamp")
-            ret, _, _ = g.run(self.mnode, cmd_str)
-            self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                      % self.volname))
-            g.log.info("Snapshot snapy%s created successfully "
-                       "for volume  %s", i, self.volname)
+            redant.snap_create(self.vol_name, f"snapy{i}",
+                               self.server_list[0])
 
         # Check for no. of snaps using snap_list it should be 10
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(len(snap_list), 10, "Expected 10 snapshots. "
-                         "found %s snapshots" % len(snap_list))
-        g.log.info("Successfully validated number of snapshots.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 10:
+            raise Exception(f"Expected 10 snapshots. Found {len(snap_list)}"
+                            " snapshots")
 
         # Validate all 10 snap names created
         for i in range(1, 11, 1):
-            self.assertTrue(("snapy%s" % i in snap_list), "%s snap not "
-                            "found " % ("snapy%s" % i))
-        g.log.info("Successfully validated names of snapshots")
+            if f"snapy{i}" not in snap_list:
+                raise Exception(f"snapy{i} snap not found in {snap_list}")
 
         # create 11th snapshot
-        cmd_str = "gluster snapshot create %s %s %s" % ("snap", self.volname,
-                                                        "no-timestamp")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertNotEqual(ret, 0, ("Unexpected: successfully created 'snap' "
-                                     "for %s" % self.volname))
-        g.log.info("Expected: Snapshot 'snap' not created as it is 11th snap")
+        ret = redant.snap_create(self.vol_name, "snapy11",
+                                 self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully created 11th snapshot")
 
         # Check for no. of snaps using snap_list it should be 10
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(len(snap_list), 10, "Expected 10 snapshots. "
-                         "found %s snapshots" % len(snap_list))
-        g.log.info("Successfully validated number of snapshots.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 10:
+            raise Exception(f"Expected 10 snapshots. Found {len(snap_list)}"
+                            " snapshots")
 
         # modify config snap-max-hard-limit for 20 snpas
-        cmd_str = ("gluster snapshot config snap-max-hard-limit 20"
-                   " --mode=script")
-        ret, _, _ = g.run(self.mnode, cmd_str)
-        self.assertEqual(ret, 0, "Failed to set snap-max-hard-limit to 20.")
-        g.log.info("snap-max-hard-limit successfully set for 20.")
+        max_hard_limit = {'snap-max-hard-limit': '20'}
+        redant.set_snap_config(max_hard_limit, self.server_list[0],
+                               self.vol_name)
 
         # Create 10 snaps
         for i in range(11, 21, 1):
-            cmd_str = "gluster snapshot create %s %s %s" % ("snapy%s" % i,
-                                                            self.volname,
-                                                            "no-timestamp")
-            ret, _, _ = g.run(self.mnode, cmd_str)
-            self.assertEqual(ret, 0, ("Failed to create snapshot for %s"
-                                      % self.volname))
-            g.log.info("Snapshot snapy%s created successfully for "
-                       "volume  %s", i, self.volname)
+            redant.snap_create(self.vol_name, f"snapy{i}",
+                               self.server_list[0])
 
         # Check for no. of snaps using snap_list it should be 20
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(len(snap_list), 20, "Expected 20 snapshots. "
-                         "found %s snapshots" % len(snap_list))
-        g.log.info("Successfully validated number of snaps.")
+        snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
+        if len(snap_list) != 20:
+            raise Exception(f"Expected 10 snapshots. Found {len(snap_list)}"
+                            " snapshots")
