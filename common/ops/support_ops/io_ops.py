@@ -623,7 +623,6 @@ class IoOps(AbstractOps):
             raise Exception(error_msg)
         return _rc
 
-    # TODO: Test the below function when snaphot library is added.
     def view_snaps_from_mount(self, mounts: list, snaps: list) -> list:
         """
         View snaps from the mountpoint under ".snaps" directory
@@ -660,7 +659,7 @@ class IoOps(AbstractOps):
                                   f"{ret['error_msg']}")
                 _rc = False
             else:
-                snap_list = ret['msg'].splitlines()
+                snap_list = " ".join(ret['msg']).strip().split()
                 if not snap_list:
                     self.logger.error(f"No snaps present in the '.snaps' "
                                       f"dir on {mounts[i]['client']}:"
@@ -677,7 +676,7 @@ class IoOps(AbstractOps):
                                           f" - {snap_list}")
                         _rc = False
         if not _rc:
-            raise Exception("Failed to list snaps for some mountpoints")
+            self.logger.error("Failed to list snaps for some mountpoints")
         return _rc
 
     def validate_io_procs(self, all_mounts_async_objs: list,

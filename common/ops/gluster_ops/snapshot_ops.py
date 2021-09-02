@@ -116,6 +116,28 @@ class SnapshotOps(AbstractOps):
 
         return False
 
+    def uss_list_snaps(self, client: str, mount: str,
+                       excep: bool = True) -> dict:
+        """
+        List snapshots under .snaps directory
+        Args:
+            client(str):client on which commands has to be executed
+            mount(str): Mount points to be executed
+            excep (bool): Whether to handle exception or not.
+                          By default it is True.
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        """
+        cmd = f"ls -R {mount}/.snaps"
+        return self.execute_abstract_op_node(cmd, client, excep)
+
     def is_snapd_running(self, volname: str, node: str) -> bool:
         """
         Checks if snapd is running on the given node

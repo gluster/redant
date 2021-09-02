@@ -83,8 +83,7 @@ class TestCase(DParentTest):
         self.mnt_list = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         self.snap_list = redant.get_snap_list(self.server_list[0],
                                               self.vol_name)
-        if not redant.view_snap_from_mount(self.mnt_list,
-                                           self.snap_list):
+        if not redant.view_snaps_from_mount(self.mnt_list, self.snap_list):
             raise Exception("Snap in .snaps doesn't match snap list provided")
 
         redant.snap_deactivate(self.snap_name, self.server_list[0])
