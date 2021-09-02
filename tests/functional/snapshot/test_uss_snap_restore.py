@@ -22,6 +22,7 @@
 
 # disruptive;rep,dist-rep,disp,dist,dist-disp
 # TODO: NFS
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -132,6 +133,10 @@ class TestUssSnapRestore(DParentTest):
         if not ret:
             raise Exception("Failed: snapd is not running for volume "
                             f"{self.vol_name}")
+
+        # Sleep is needed because, sometimes the .snaps directory is not
+        # accessible instantly
+        sleep(5)
 
         # List activated snapshots under the .snaps directory
         ret = redant.uss_list_snaps(self.client_list[0], self.mountpoint,
