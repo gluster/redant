@@ -55,12 +55,12 @@ class TestCase(DParentTest):
           -- Restore should fail with message
              "volume needs to be stopped before restore"
         """
-        self.io_validation_complete = True
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.counter = 1
+
         # Performing step 3 to 7 in loop here
         for i in range(1, 3):
             # Perform I/O
-            self.counter = 1
-            self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
             self.all_mounts_procs = []
             for mount_obj in self.mounts:
                 redant.logger.info(f"Starting IO on {mount_obj['client']}:"
@@ -71,13 +71,11 @@ class TestCase(DParentTest):
 
                 self.counter += 100
                 self.all_mounts_procs.append(proc)
-            self.io_validation_complete = False
 
             # Validate IO
             if not redant.validate_io_procs(self.all_mounts_procs,
                                             self.mounts):
                 raise Exception("IO failed on client")
-            self.io_validation_complete = True
 
             # Get stat of all the files/dirs created.
             if not redant.get_mounts_stat(self.mounts):
@@ -96,9 +94,14 @@ class TestCase(DParentTest):
             # Increase counter for next iteration
             self.counter = 1000
 
-        # Restore volume to snapshot snapy2, it should fail
+        # Restore volume to snapshot snap2, it should fail
         i = 2
         snapname = f"{self.vol_name}-snap{i}"
-        ret = redant.snap_restore(snapname, self.server_list[0])
-        if ret['error_code'] == 0:
-            raise Exception("Expected : Failed to restore volume to snap")
+        ret = redant.snap_restore(snapname, self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully restored snap")
+
+        errmsg = (f"Volume ({self.vol_name}) has been started. "
+                  "Volume needs to be stopped before restoring a snapshot.")
+        if errmsg != ret['msg']['opErrstr']:
+            raise Exception("Error msg not as expected")
