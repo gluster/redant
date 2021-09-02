@@ -1,219 +1,106 @@
-#  Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-    Description:
-        The purpose of this test case is to ensure that USS validation.
-        Where .snaps folder is only readable and is listing all the snapshots
-        and it's content. Also ensures that deactivated snapshot
-        doesn't get listed.
+ Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    The purpose of this test case is to ensure that USS validation.
+    Where .snaps folder is only readable and is listing all the snapshots
+    and it's content. Also ensures that deactivated snapshot doesn't
+    get listed.
 """
 
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (validate_io_procs,
-                                 view_snaps_from_mount)
-from glustolibs.gluster.uss_ops import (enable_uss, disable_uss,
-                                        is_uss_enabled,
-                                        uss_list_snaps)
-from glustolibs.gluster.snap_ops import (snap_create,
-                                         get_snap_list,
-                                         snap_delete_all,
-                                         snap_activate)
+# disruptive;rep,dist-rep,disp,dist,dist-disp
+# TODO: NFS,CIFS
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs', 'nfs', 'cifs']])
-class TestValidateUss(GlusterBaseClass):
-    @classmethod
-    def setUpClass(cls):
+class TestValidateUss(DParentTest):
+
+    def run_test(self, redant):
         """
-        setup volume and initialize necessary variables
+        Steps:
+        - Run IOs on mount and take 2 snapshot.
+        - Activate 1 snapshot and check directory listing.
+        - Try to write to .snaps should not allow.
+        - Try listing the other snapshot should fail.
         """
-
-        cls.get_super_method(cls, 'setUpClass')()
-        # Setup volume and mount
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = cls.setup_volume_and_mount_volume(mounts=cls.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts "
-                                 "to clients %s" % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def tearDown(self):
-        """
-        tearDown for every test
-        """
-
-        g.log.info("Deleting all snapshots created")
-        ret, _, _ = snap_delete_all(self.mnode)
-        if ret != 0:
-            raise ExecutionError("Snapshot Delete Failed")
-        g.log.info("Successfully deleted all snapshots")
-
-        # disable uss for volume
-        g.log.info("Disabling uss for volume")
-        ret, _, _ = disable_uss(self.mnode, self.volname)
-        if ret != 0:
-            raise ExecutionError("Failed to disable uss")
-        g.log.info("Successfully disabled uss for volume"
-                   "%s", self.volname)
-
-        # Unmount and cleanup-volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_validate_snaps_dir_over_uss(self):
-
-        # pylint: disable=too-many-statements
-        """
-        Run IOs on mount and take 2 snapshot.
-        Activate 1 snapshot and check directory listing.
-        Try to write to .snaps should not allow.
-        Try listing the other snapshot should fail.
-        """
-
-        # run IOs
-        self.counter = 1
-        g.log.info("Starting IO on all mounts...")
+        # Run IOs
+        counter = 1
         self.all_mounts_procs = []
-        for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 2 "
-                   "--max-num-of-dirs 2 "
-                   "--num-of-files 2 %s" % (
-                       self.script_upload_path,
-                       self.counter, mount_obj.mountpoint))
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+        for mount in self.mounts:
+            redant.logger.info(f"Starting IO on {mount['client']}:"
+                               f"{mount['mountpath']}")
+            proc = redant.create_deep_dirs_with_files(mount['mountpath'],
+                                                      counter, 2, 2, 2, 2,
+                                                      mount['client'])
             self.all_mounts_procs.append(proc)
-        self.io_validation_complete = False
+            counter += 10
 
         # Validate IO
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-        )
-        self.io_validation_complete = True
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed.")
 
         # get the snapshot list.
-        snap_list = get_snap_list(self.mnode)
-        self.assertEqual(len(snap_list), 0, "Unexpected: %s snapshots"
-                         "present" % len(snap_list))
-        g.log.info("Expected: No snapshots present")
+        snap_list = redant.get_snap_list(self.server_list[0])
+        if len(snap_list) != 0:
+            raise Exception(f"Unexpected: {snap_list} snapshots present")
 
         # Create 2 snapshot
-        g.log.info("Starting to Create Snapshots")
         for snap_num in range(0, 2):
-            ret, _, _ = snap_create(self.mnode, self.volname,
-                                    "snap-%s" % snap_num)
-            self.assertEqual(ret, 0, "Snapshot Creation failed"
-                             " for snap-%s" % snap_num)
-            g.log.info("Snapshot snap-%s of volume %s created"
-                       " successfully", snap_num, self.volname)
+            redant.snap_create(self.vol_name, f"snap-{snap_num}",
+                               self.server_list[0])
 
         # Activate snap-0
-        g.log.info("Activating snapshot snap-0")
-        ret, _, _ = snap_activate(self.mnode, "snap-0")
-        self.assertEqual(ret, 0, "Failed to activate "
-                         "Snapshot snap-0")
-        g.log.info("Snapshot snap-0 Activated Successfully")
+        redant.snap_activate("snap-0", self.server_list[0])
 
         # Enable USS for volume
-        g.log.info("Enable uss for volume")
-        ret, _, _ = enable_uss(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to enable USS for "
-                         " volume %s" % self.volname)
-        g.log.info("Successfully enabled USS "
-                   "for volume %s", self.volname)
+        redant.enable_uss(self.vol_name, self.server_list[0])
 
         # Validate uss enabled
-        g.log.info("Validating uss enabled")
-        ret = is_uss_enabled(self.mnode, self.volname)
-        self.assertTrue(ret, "Failed to validate uss enable")
-        g.log.info("Successfully validated uss enable for volume"
-                   "%s", self.volname)
+        if not redant.is_uss_enabled(self.vol_name, self.server_list[0]):
+            raise Exception(f"USS is not enabled in {self.server_list[0]}")
 
         # list activated snapshots directory under .snaps
-        g.log.info("Listing activated snapshots under .snaps")
         for mount_obj in self.mounts:
-            ret, out, _ = uss_list_snaps(mount_obj.client_system,
-                                         mount_obj.mountpoint)
-            self.assertEqual(ret, 0, "Directory Listing Failed for"
-                             " Activated Snapshot")
-            validate_dir = out.split('\n')
-            self.assertIn('snap-0', validate_dir, "Failed to "
-                          "validate snap-0 under .snaps directory")
-            g.log.info("Activated Snapshot Successfully listed")
-            self.assertNotIn('snap-1', validate_dir, "Unexpected: "
-                             "Successfully listed snap-1 under "
-                             ".snaps directory")
-            g.log.info("Expected: De-activated Snapshot not listed")
+            ret = redant.uss_list_snaps(mount_obj['client'],
+                                        mount_obj['mountpath'])
+            validate_dir = "".join(ret['msg']).strip().split('\n')
+            if "snap-0" not in validate_dir:
+                raise Exception("Failed to validate snap-0 under .snaps"
+                                " directory")
+            if "snap-1" in validate_dir:
+                raise Exception("Unexpected: Successfully listed snap-1 under"
+                                " .snaps directory")
 
         # start I/0 ( write and read )
-        g.log.info("Starting IO on all mounts...")
         all_mounts_procs = []
         for mount_obj in self.mounts:
-            cmd = ("/usr/bin/env python %s create_files "
-                   "-f 10 --base-file-name file %s/.snaps/abc/" % (
-                       self.script_upload_path,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            all_mounts_procs.append(proc)
+            pc = redant.create_files('1k',
+                                     f"{mount_obj['mountpath']}/.snaps/abc/",
+                                     mount_obj['client'], 10, 'file')
+            all_mounts_procs.append(pc)
 
         # IO should fail
-        g.log.info("IO should Fail with ROFS error.....")
-        self.assertFalse(
-            validate_io_procs(all_mounts_procs, self.mounts),
-            "Unexpected: IO successfully completed"
-        )
-        g.log.info("Expected: IO failed to complete")
+        if not redant.validate_io_procs(all_mounts_procs, self.mounts):
+            raise Exception("IO failed.")
 
         # validate snap-0 present in mountpoint
-        ret = view_snaps_from_mount(self.mounts, "snap-0")
-        self.assertTrue(ret, "UnExpected: Unable to list content "
-                        "in activated snapshot"
-                        " activated snapshot")
-        g.log.info("Expected: Successfully listed contents in"
-                   " activated snapshot")
+        ret = redant.view_snaps_from_mount(self.mounts, "snap-0")
+        if not ret:
+            raise Exception("UnExpected: Unable to list content in activated"
+                            " snapshot")
