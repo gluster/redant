@@ -55,7 +55,7 @@ class TestSnapshotSelfheal(DParentTest):
         redant.snap_list(self.server_list[0])
 
         # Creating a Clone volume from snapshot:
-        redant.snap_clone(self.clone, self.snap, self.server_list[0])
+        redant.snap_clone(self.snap, self.clone, self.server_list[0])
 
         #  start clone volumes
         redant.volume_start(self.clone, self.server_list[0])
@@ -91,7 +91,7 @@ class TestSnapshotSelfheal(DParentTest):
 
         # Select bricks to bring offline
         offline_bricks = (redant.select_volume_bricks_to_bring_offline(
-                          self.vol_name, self.server_list[0]))
+                          self.clone, self.server_list[0]))
 
         if not redant.bring_bricks_offline(self.clone, offline_bricks):
             raise Exception("Failed to bring the bricks offline")
