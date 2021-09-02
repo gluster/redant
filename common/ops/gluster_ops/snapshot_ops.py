@@ -267,11 +267,11 @@ class SnapshotOps(AbstractOps):
 
         # build the volume params for cloned volume.
         vol_param = {}
-        vol_param["dist_count"] = ret[clonename]["distCount"]
-        vol_param["replica_count"] = ret[clonename]["replicaCount"]
-        vol_param["disperse_count"] = ret[clonename]["disperseCount"]
-        vol_param["arbiter_count"] = ret[clonename]["arbiterCount"]
-        vol_param["redundancy_count"] = ret[clonename]["redundancyCount"]
+        vol_param["dist_count"] = int(ret[clonename]["distCount"])
+        vol_param["replica_count"] = int(ret[clonename]["replicaCount"])
+        vol_param["disperse_count"] = int(ret[clonename]["disperseCount"])
+        vol_param["arbiter_count"] = int(ret[clonename]["arbiterCount"])
+        vol_param["redundancy_count"] = int(ret[clonename]["redundancyCount"])
         vol_param["transport"] = "tcp"
 
         # create environ data
