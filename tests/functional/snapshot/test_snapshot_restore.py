@@ -105,14 +105,14 @@ class TestSnapRestore(DParentTest):
         ret = redant.shrink_volume(self.server_list[0], self.vol_name,
                                    force=True)
         if not ret:
-            raise Exception(f"Failed to shrink the volume {self.volname}")
+            raise Exception(f"Failed to shrink the volume {self.vol_name}")
 
         # Restore snapshot
         ret = redant.snap_restore_complete(self.vol_name, "snap1",
                                            self.server_list[0])
         if not ret:
             raise Exception("Failed to restore snap snap1 on the "
-                            f"volume {self.volname}")
+                            f"volume {self.vol_name}")
 
         # Validate volume is up and running
         if not (redant.verify_all_process_of_volume_are_online(self.vol_name,
