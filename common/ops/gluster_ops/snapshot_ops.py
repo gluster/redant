@@ -434,6 +434,32 @@ class SnapshotOps(AbstractOps):
             return snap_status_dict[snapname]
         return None
 
+    def get_snap_status_by_volname(self, volname: str, node: str,
+                                   excep: bool = True) -> dict:
+        """
+        Method to get a snap status using the volume.
+
+        Args:
+            volname (str): Name of the volume
+            node (str): node wherein the command is to be executed.
+
+        Optional:
+            excep (bool): Flag to control exception handling by the
+            abstract ops. If True, the exception is handled, or else
+            it isn't.
+
+        Returns:
+            Dictionary of the snap status for the said volume or Nonetype
+            object.
+        """
+        cmd = f"gluster snapshot status volume {volname} --mode=script"
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        if not excep:
+            return ret
+
+        snap_stats = "".join(ret['msg']).strip('\n')
+        return snap_stats
+
     def snap_info(self, node: str, snapname: str = None, volname: str = None,
                   excep: bool = True) -> dict:
         """
