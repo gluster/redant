@@ -148,5 +148,5 @@ class TestSnapCreateMax(DParentTest):
         # Check for no. of snaps using snap_list it should be 20
         snap_list = redant.get_snap_list(self.server_list[0], self.vol_name)
         if len(snap_list) != 20:
-            raise Exception(f"Expected 10 snapshots. Found {len(snap_list)}"
+            raise Exception(f"Expected 20 snapshots. Found {len(snap_list)}"
                             " snapshots")
