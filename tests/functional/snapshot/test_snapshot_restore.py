@@ -121,11 +121,12 @@ class TestSnapRestore(DParentTest):
                             f"volume: {self.vol_name}")
 
         # Get volume options post restore
+        option = "diagnostics.brick-log-level"
         option_aftr_restore = redant.get_volume_options(self.vol_name,
-                                                        option_before_restore,
+                                                        option,
                                                         self.server_list[0])
-        if option_aftr_restore == option_before_restore:
-            raise Exception("Unexpected: Volume Options are same after "
+        if option_aftr_restore != option_before_restore:
+            raise Exception("Unexpected: Volume Options are not same after "
                             "snap restore")
 
         # Get brick list post restore
@@ -134,8 +135,9 @@ class TestSnapRestore(DParentTest):
         if not bricks_after_snap_restore:
             raise Exception("Failed to get the brick list")
 
-        if bricks_after_snap_restore == brick_before_snap_restore:
-            raise Exception("Unexpected: Brick list same after snap restore")
+        if len(bricks_after_snap_restore) != len(brick_before_snap_restore):
+            raise Exception("Unexpected: Bricks count is not same after snap"
+                            " restore")
 
         # Creating snapshot
         redant.snap_create(self.vol_name, "snap2", self.server_list[0])
