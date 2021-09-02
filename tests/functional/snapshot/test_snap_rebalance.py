@@ -96,16 +96,14 @@ class TestSnapshotRebalance(DParentTest):
                             f"{self.mount1}")
 
         # write files to mountpoint
-        all_mounts_procs = []
         proc = redant.create_files('1k', self.mount1, self.client_list[0], 10)
-        all_mounts_procs.append(proc)
 
         # Validate IO
         self.mounts = {
             "client": self.client_list[0],
             "mountpath": self.mount1
         }
-        if not redant.validate_io_procs(all_mounts_procs, self.mounts):
+        if not redant.validate_io_procs(proc, self.mounts):
             raise Exception("IO failed on some of the clients")
 
         self._check_arequal()
