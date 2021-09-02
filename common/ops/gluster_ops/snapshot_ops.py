@@ -117,12 +117,15 @@ class SnapshotOps(AbstractOps):
         return False
 
     def uss_list_snaps(self, client: str, mount: str,
+                       recursive: bool = True,
                        excep: bool = True) -> dict:
         """
         List snapshots under .snaps directory
         Args:
             client(str):client on which commands has to be executed
             mount(str): Mount points to be executed
+            recursive (bool): Whether to recursively check all the
+                              files and directories on the given path
             excep (bool): Whether to handle exception or not.
                           By default it is True.
 
@@ -135,7 +138,11 @@ class SnapshotOps(AbstractOps):
                 - cmd : command that got executed
                 - node : node on which the command got executed
         """
-        cmd = f"ls -R {mount}/.snaps"
+        recur_check = ""
+        if recursive:
+            recur_check = "-R"
+
+        cmd = f"ls {recur_check} {mount}/.snaps"
         return self.execute_abstract_op_node(cmd, client, excep)
 
     def is_snapd_running(self, volname: str, node: str) -> bool:
