@@ -96,8 +96,8 @@ class TestValidateUss(DParentTest):
             all_mounts_procs.append(pc)
 
         # IO should fail
-        if not redant.validate_io_procs(all_mounts_procs, self.mounts):
-            raise Exception("IO failed.")
+        if redant.validate_io_procs(all_mounts_procs, self.mounts):
+            raise Exception("Unexpected: IO successfull.")
 
         # validate snap-0 present in mountpoint
         ret = redant.view_snaps_from_mount(self.mounts, "snap-0")
