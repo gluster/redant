@@ -76,7 +76,8 @@ class MountOps(AbstractOps):
         self.es.remove_mountpath(volname, node, path)
         return ret
 
-    def is_mounted(self, volname: str, mpath: str, mclient: str, mserver: str):
+    def is_mounted(self, volname: str, mpath: str, mclient: str, mserver: str,
+                   excep: bool = True):
         """
         Check if the volume is already mounted or not
         Args:
@@ -99,6 +100,8 @@ class MountOps(AbstractOps):
 
         cmd = f"mount | egrep '{volname} | {mpath}' | grep \'{mserver}\'"
         ret = self.execute_abstract_op_node(cmd, mclient, False)
+        if not excep:
+            return ret
         if ret['error_code'] == 0:
             self.logger.debug(f"Volume {volname} is mounted at"
                               f" {mclient}:{mpath}")
