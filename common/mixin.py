@@ -21,12 +21,13 @@ from .ops.gluster_ops.auth_ops import AuthOps
 from .ops.gluster_ops.snapshot_ops import SnapshotOps
 from .ops.gluster_ops.glusterfind_ops import GlusterfindOps
 from .ops.gluster_ops.dht_ops import DHTOps
+from .ops.gluster_ops.snap_scheduler_ops import SnapSchedulerOps
 
 
 class RedantMixin(GlusterdOps, VolumeOps, BrickOps, PeerOps,
                   IoOps, MachineOps, MountOps, ProfileOps, RebalanceOps,
                   HealOps, SharedStorageOps, AuthOps, BitrotOps, SnapshotOps,
-                  GlusterfindOps, DHTOps, Rexe, Logger):
+                  GlusterfindOps, DHTOps, SnapSchedulerOps, Rexe, Logger):
     """
     A mixin class for redant project to encompass all ops, support
     modules and encapsulates the object responsible for the framework
