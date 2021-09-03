@@ -801,7 +801,7 @@ class SnapshotOps(AbstractOps):
         cmd = (f"gluster snapshot deactivate {snapname} --mode=script --xml")
         return self.execute_abstract_op_node(cmd, node, excep)
 
-    def terminate_snapds_on_node(self, node: str) -> dict:
+    def terminate_snapd_on_node(self, node: str) -> dict:
         """
         Method to stop snapd processes on the specified node.
 
