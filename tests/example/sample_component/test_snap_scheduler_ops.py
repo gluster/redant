@@ -27,16 +27,17 @@ class TestCase(DParentTest):
                     count = 0
                     while count < 40:
                         ret = self.redant.scheduler_status(server, False)
-                        if ret['error_code'] != 0:
-                            break
-                        # status = status.strip().split(":")[2]
-                        # if ret == 0 and status == ' Enabled':
-                        #     break
+                        status = ret['msg'][0].split(':')
+                        if len(status) == 3:
+                            status = status[2].strip()
+                            if ret['error_code'] == 0 \
+                               and status == "Disabled":
+                                break
                         sleep(2)
                         count += 1
-                    if ret['error_code'] == 0:
-                        raise Exception("Unexpected: Status of scheduler"
-                                        f" on node {server} was successfull")
+                    if ret['error_code'] != 0:
+                        raise Exception("Failed to check status of scheduler"
+                                        f" on node {server}")
 
             # Check if shared storage is enabled
             # Disable if true
@@ -96,11 +97,11 @@ class TestCase(DParentTest):
             count = 0
             while count < 40:
                 ret = redant.scheduler_status(server, False)
-                if ret['error_code'] == 0:
-                    break
-                # status = status.strip().split(":")[2]
-                # if ret == 0 and status == ' Enabled':
-                #     break
+                status = ret['msg'][0].split(':')
+                if len(status) == 3:
+                    status = status[2].strip()
+                    if ret['error_code'] == 0 and status == "Enabled":
+                        break
                 sleep(2)
                 count += 1
             if ret['error_code'] != 0:
@@ -115,14 +116,14 @@ class TestCase(DParentTest):
         for server in self.server_list:
             count = 0
             while count < 40:
-                ret = redant.scheduler_status(server, False)
-                if ret['error_code'] != 0:
-                    break
-                # status = status.strip().split(":")[2]
-                # if ret == 0 and status == ' Enabled':
-                #     break
+                ret = self.redant.scheduler_status(server, False)
+                status = ret['msg'][0].split(':')
+                if len(status) == 3:
+                    status = status[2].strip()
+                    if ret['error_code'] == 0 and status == "Disabled":
+                        break
                 sleep(2)
                 count += 1
-            if ret['error_code'] == 0:
-                raise Exception("Unexpected: Status of scheduler"
-                                f" on node {server} was successfull")
+            if ret['error_code'] != 0:
+                raise Exception("Failed to check status of scheduler"
+                                f" on node {server}")
