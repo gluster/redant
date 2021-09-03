@@ -816,7 +816,8 @@ class SnapshotOps(AbstractOps):
         Args:
             node (str): node wherein the snapd processes have to be stopped
         """
-        cmd = "ps aux | grep 'process-name snapd' | awk '{print $2}'"
+        cmd = ("ps aux | grep -v grep | grep 'process-name snapd' | "
+               "awk '{print $2}'")
         ret = self.execute_abstract_op_node(cmd, node, True)
         snapd_pid = [pid.strip() for pid in ret['msg']]
         for pid in snapd_pid:
