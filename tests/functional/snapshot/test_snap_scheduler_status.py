@@ -49,8 +49,7 @@ class TestSnapshotSchedulerStatus(DParentTest):
                     sleep(2)
                     count += 1
                 if ret['error_code'] != 0:
-                    raise Exception("Failed to check status of scheduler"
-                                    f" on node {server}")
+                    snap_stat = False
 
             # Check if shared storage is enabled
             # Disable if true
@@ -58,7 +57,13 @@ class TestSnapshotSchedulerStatus(DParentTest):
             if ret:
                 ret = self.redant.disable_shared_storage(self.server_list[0])
                 if not ret:
-                    raise Exception("Failed to disable shared storage")
+                    shared_stor = False
+
+            if not snap_stat:
+                raise Exception("Failed to check status of scheduler")
+
+            if not shared_stor:
+                raise Exception("Failed to disable shared storage")
 
         except Exception as error:
             tb = traceback.format_exc()
