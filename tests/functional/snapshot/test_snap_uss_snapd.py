@@ -31,7 +31,8 @@ class TestSnapshotSnapdCloneVol(DParentTest):
     def _validate_snapd(self, check_condition=True):
         """ Validate snapd running """
         for server in self.brick_servers:
-            ret = self.redant.is_snapd_running(self.clone_vol1, server)
+            ret = self.redant.is_snapd_running(self.clone_vol1, server,
+                                               excep=False)
             if check_condition:
                 if not ret:
                     raise Exception("Unexpected: Snapd is Not running for "
@@ -91,8 +92,8 @@ class TestSnapshotSnapdCloneVol(DParentTest):
         """
         self.mount1 = []
         self.mpoint = "/mnt/clone1"
-        self.snap = 'test_snap_clone_snapd-snap'
-        self.clone_vol1 = 'clone-of-test_snap_clone_snapd-clone1'
+        self.snap = 'test_snap'
+        self.clone_vol1 = 'clone-of-test_snap'
 
         # Starting I/O
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
@@ -188,7 +189,7 @@ class TestSnapshotSnapdCloneVol(DParentTest):
             redant.snap_create(self.clone_vol1, snapname, self.server_list[0])
 
         # Validate USS running
-        self.validate_uss()
+        self._validate_uss()
 
         """ Check snapshots under .snaps folder """
         redant.uss_list_snaps(self.client_list[0], self.mpoint)
@@ -208,7 +209,7 @@ class TestSnapshotSnapdCloneVol(DParentTest):
             redant.terminate_snapd_on_node(server)
 
             # Check snapd running
-            if not redant.is_snapd_running(self.clone_vol1, server):
+            if redant.is_snapd_running(self.clone_vol1, server):
                 raise Exception("Unexpected: Snapd running on node: "
                                 f"{server}")
 

@@ -145,22 +145,30 @@ class SnapshotOps(AbstractOps):
         cmd = f"ls {recur_check} {mount}/.snaps"
         return self.execute_abstract_op_node(cmd, client, excep)
 
-    def is_snapd_running(self, volname: str, node: str) -> bool:
+    def is_snapd_running(self, volname: str, node: str,
+                         excep: bool = True) -> bool:
         """
         Checks if snapd is running on the given node
 
         Args:
             volname (str): volume name
             node (str): Node on which cmd has to be executed.
+            excep (bool): Whether to handle exception or not.
+                          By default it is True.
 
         Returns:
             bool: True on success, False otherwise
         """
-        vol_status = self.get_volume_status(volname, node)
+        vol_status = self.get_volume_status(volname, node, excep=excep)
 
         if vol_status is None:
             self.logger.error("Failed to get volume status in "
                               "is_snapd_running()")
+            return False
+
+        if not excep and 'msg' in vol_status \
+           and vol_status['msg']['opRet'] != '0':
+            self.logger.info(f"{vol_status['msg']['opErrstr']}")
             return False
 
         is_enabled = False
@@ -808,7 +816,7 @@ class SnapshotOps(AbstractOps):
         Args:
             node (str): node wherein the snapd processes have to be stopped
         """
-        cmd = "ps aux | grep -v grep | grep snapd | awk '{print $2}'"
+        cmd = "ps aux | grep 'process-name snapd' | awk '{print $2}'"
         ret = self.execute_abstract_op_node(cmd, node, True)
         snapd_pid = [pid.strip() for pid in ret['msg']]
         for pid in snapd_pid:
