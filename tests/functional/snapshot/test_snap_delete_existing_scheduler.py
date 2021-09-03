@@ -34,6 +34,7 @@ class TestSnapshotDeleteExistingScheduler(DParentTest):
         Disable snap_scheduler and shared_storage
         """
         try:
+            io_ret = True
             if self.is_io_running:
                 io_ret = (self.redant.wait_for_io_to_complete(
                           self.all_mounts_procs, self.mounts))
@@ -41,6 +42,7 @@ class TestSnapshotDeleteExistingScheduler(DParentTest):
             # Disable snap scheduler
             self.redant.scheduler_disable(self.server_list[0], False)
 
+            snap_stat = True
             # Check snapshot scheduler status
             for server in self.server_list:
                 count = 0
@@ -57,6 +59,7 @@ class TestSnapshotDeleteExistingScheduler(DParentTest):
                 if ret['error_code'] != 0:
                     snap_stat = False
 
+            shared_stor = True
             # Check if shared storage is enabled
             # Disable if true
             ret = self.redant.is_shared_volume_mounted(self.server_list)

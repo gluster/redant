@@ -36,6 +36,7 @@ class TestSnapshotSchedulerStatus(DParentTest):
             # Disable snap scheduler
             self.redant.scheduler_disable(self.server_list[0], False)
 
+            snap_stat = True
             # Check snapshot scheduler status
             for server in self.server_list:
                 count = 0
@@ -51,6 +52,7 @@ class TestSnapshotSchedulerStatus(DParentTest):
                 if ret['error_code'] != 0:
                     snap_stat = False
 
+            shared_stor = True
             # Check if shared storage is enabled
             # Disable if true
             ret = self.redant.is_shared_volume_mounted(self.server_list)
