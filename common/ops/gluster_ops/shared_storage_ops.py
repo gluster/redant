@@ -56,14 +56,15 @@ class SharedStorageOps(AbstractOps):
 
         return True
 
-    def is_shared_volume_mounted_or_unmounted(self, node: str,
-                                              is_mounted=True,
-                                              timeout: int = 20) -> bool:
+    def is_shared_volume_mounted(self, node: str, is_mounted=True,
+                                 timeout: int = 20) -> bool:
         """
         Checks if shared storage volume is mounted
 
         Args:
             node (str) : Node on which command is to be executed
+            is_mounted (bool): True, if the volume is expected to be mounted,
+                               False if it is not expected to be mounted.
         Optional:
             timeout(int) : Maximum time allowed to check for shared volume
 
