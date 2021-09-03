@@ -656,9 +656,13 @@ class SnapshotOps(AbstractOps):
         if not excep:
             return ret
 
-        if not isinstance(ret['msg']['snapList']['snapshot'], list):
-            return [ret['msg']['snapList']['snapshot']]
-        return ret['msg']['snapList']['snapshot']
+        if 'snapshot' in ret['msg']['snapList']:
+            if not isinstance(ret['msg']['snapList']['snapshot'], list):
+                return [ret['msg']['snapList']['snapshot']]
+            else:
+                return ret['msg']['snapList']['snapshot']
+        else:
+            return []
 
     def snap_delete(self, snapname: str, node: str,
                     excep: bool = True) -> dict:
