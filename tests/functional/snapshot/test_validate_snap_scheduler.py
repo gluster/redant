@@ -1,73 +1,82 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-Description:
+ Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
 
-This test cases will validate snapshot scheduler behaviour
-when we enable/disable scheduler.
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to validate snapshot scheduler behaviour when we enable/disable
+    scheduler.
 """
-import time
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-from glustolibs.gluster.volume_ops import get_volume_info
-from glustolibs.gluster.shared_storage_ops import (enable_shared_storage,
-                                                   is_shared_volume_mounted,
-                                                   disable_shared_storage)
-from glustolibs.gluster.snap_scheduler import (scheduler_init,
-                                               scheduler_enable,
-                                               scheduler_status,
-                                               scheduler_disable)
+
+# disruptive;rep,dist,dist-rep,disp,dist-disp
+import traceback
+from time import sleep
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed-replicated', 'dispersed',
-           'distributed', 'distributed-dispersed'],
-          ['glusterfs']])
-class SnapshotSchedulerBehaviour(GlusterBaseClass):
+class TestSnapshotSchedulerBehaviour(DParentTest):
 
-    def setUp(self):
+    def terminate(self):
+        """
+        Disable snap_scheduler (if TC failed midway)
+        and shared_storage
+        """
+        try:
+            snap_stat = True
+            if self.is_scheduler_enabled:
+                # Disable snap scheduler
+                self.redant.scheduler_disable(self.server_list[0], False)
 
-        # SettingUp volume and Mounting the volume
-        self.get_super_method(self, 'setUp')()
-        g.log.info("Starting to SetUp and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup volume %s" % self.volname)
-        g.log.info("Volume %s has been setup successfully", self.volname)
+                # Check snapshot scheduler status
+                for server in self.server_list:
+                    count = 0
+                    while count < 40:
+                        ret = self.redant.scheduler_status(server, False)
+                        status = ret['msg'][0].split(':')
+                        if len(status) == 3:
+                            status = status[2].strip()
+                            if ret['error_code'] == 0 \
+                               and status == "Disabled":
+                                break
+                        sleep(2)
+                        count += 1
+                    if ret['error_code'] != 0:
+                        snap_stat = False
 
-    def tearDown(self):
+            shared_stor = True
+            # Check if shared storage is enabled
+            # Disable if true
+            ret = self.redant.is_shared_volume_mounted(self.server_list)
+            if ret:
+                ret = self.redant.disable_shared_storage(self.server_list[0])
+                if not ret:
+                    shared_stor = False
 
-        # Disable shared storage
-        g.log.info("Disabling shared storage")
-        ret = disable_shared_storage(self.mnode)
-        self.assertTrue(ret, "Failed to disable shared storage")
-        g.log.info("Successfully disabled shared storage")
+            if not snap_stat:
+                raise Exception("Failed to check status of scheduler")
 
-        # Unmount and cleanup-volume
-        g.log.info("Starting to Unmount and cleanup-volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
+            if not shared_stor:
+                raise Exception("Failed to disable shared storage")
 
-    def test_snap_scheduler_behaviour(self):
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
+    def run_test(self, redant):
         """
         Steps:
         1. Create volumes
@@ -80,72 +89,67 @@ class SnapshotSchedulerBehaviour(GlusterBaseClass):
         8. Disable snapshot scheduler
         9. Validate snapshot scheduler status
         """
+        self.is_scheduler_enabled = False
 
         # Enable shared storage
-        g.log.info("Enable shared storage")
-        ret = enable_shared_storage(self.mnode)
-        self.assertTrue(ret, "Failed to enable shared storage")
-        g.log.info("Successfully enabled shared storage")
+        ret = redant.enable_shared_storage(self.server_list[0])
+        if not ret:
+            raise Exception("Failed to enable shared storage")
 
-        # Validate shared storage mounted
-        g.log.info("Starting to validate shared storage mounted")
-        for server in self.servers:
-            ret = is_shared_volume_mounted(server)
-            self.assertTrue(ret, "Failed to mount shared volume")
-        g.log.info("Successfully mounted shared volume")
-
-        # Validate shared storage is enabled
-        g.log.info("Starting to validate shared storage volume")
-        self.shared = "gluster_shared_storage"
-        volinfo = get_volume_info(self.mnode, self.shared)
-        self.assertEqual(volinfo['gluster_shared_storage']['options']
-                         ['cluster.enable-shared-storage'], 'enable',
-                         "shared storage is disabled")
-        g.log.info("Shared storage enabled successfully")
+        # Validate shared storage volume is mounted
+        ret = redant.is_shared_volume_mounted(self.server_list[0], timeout=10)
+        if not ret:
+            raise Exception("Failed to validate if shared volume is mounted")
 
         # Initialise snap scheduler
-        g.log.info("Initialising snapshot scheduler on all nodes")
-        ret = scheduler_init(self.servers)
-        self.assertTrue(ret, "Failed to initialize scheduler on all nodes")
-        g.log.info("Successfully initialized scheduler on all nodes")
+        count = 0
+        sleep(2)
+        while count < 40:
+            ret = redant.scheduler_init(self.server_list)
+            if ret:
+                break
+            sleep(2)
+            count += 1
+        if not ret:
+            raise Exception("Failed to initialize scheduler on all nodes")
 
         # Enable snap scheduler
-        g.log.info("Starting to enable snapshot scheduler on all nodes")
-        ret, _, _ = scheduler_enable(self.mnode)
-        self.assertEqual(ret, 0, "Failed to enable scheduler on all servers")
-        g.log.info("Successfully enabled scheduler on all nodes")
+        redant.scheduler_enable(self.server_list[0])
+        self.is_scheduler_enabled = True
 
-        # Check snapshot scheduler status
-        g.log.info("checking status of snapshot scheduler")
-        for server in self.servers:
+        # Validate snapshot scheduler status
+        for server in self.server_list:
             count = 0
             while count < 40:
-                ret, status, _ = scheduler_status(server)
-                if status.strip().split(":")[2] == ' Enabled':
-                    break
-                time.sleep(2)
-                count += 2
-        self.assertEqual(status.strip().split(":")[2], ' Enabled',
-                         "Failed to check status of scheduler")
-        g.log.info("Successfully checked scheduler status")
+                ret = redant.scheduler_status(server, False)
+                status = ret['msg'][0].split(':')
+                if len(status) == 3:
+                    status = status[2].strip()
+                    if ret['error_code'] == 0 and status == "Enabled":
+                        break
+                sleep(2)
+                count += 1
+            if ret['error_code'] != 0:
+                raise Exception("Failed to check status of scheduler"
+                                f" on node {server}")
 
         # Disable snap scheduler
-        g.log.info("Starting to disable snapshot scheduler on all nodes")
-        ret, _, _ = scheduler_disable(self.mnode)
-        self.assertEqual(ret, 0, "Failed to disable scheduler on node"
-                         " %s" % self.mnode)
-        g.log.info("Successfully disabled scheduler on all nodes")
+        self.redant.scheduler_disable(self.server_list[0], False)
 
         # Check snapshot scheduler status
-        g.log.info("checking status of snapshot scheduler")
-        for server in self.servers:
+        for server in self.server_list:
             count = 0
             while count < 40:
-                ret, status, _ = scheduler_status(server)
-                if status.strip().split(":")[2] == ' Disabled':
-                    break
-                time.sleep(2)
-                count += 2
-        self.assertEqual(status.strip().split(":")[2], ' Disabled',
-                         "Failed to check status of scheduler")
-        g.log.info("Successfully checked scheduler status")
+                ret = self.redant.scheduler_status(server, False)
+                status = ret['msg'][0].split(':')
+                if len(status) == 3:
+                    status = status[2].strip()
+                    if ret['error_code'] == 0 \
+                       and status == "Disabled":
+                        break
+                sleep(2)
+                count += 1
+            if ret['error_code'] != 0:
+                raise Exception("Failed to check status of scheduler"
+                                f" on node {server}")
+        self.is_scheduler_enabled = False
