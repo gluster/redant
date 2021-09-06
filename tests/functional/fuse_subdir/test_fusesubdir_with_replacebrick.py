@@ -1,229 +1,190 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-import copy
+"""
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.auth_ops import set_auth_allow
-from glustolibs.io.utils import validate_io_procs, get_mounts_stat
-from glustolibs.gluster.volume_libs import (
-    log_volume_info_and_status,
-    replace_brick_from_volume,
-    wait_for_volume_process_to_be_online)
-from glustolibs.gluster.heal_libs import monitor_heal_completion
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-@runs_on([['replicated', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class SubdirWithReplaceBrick(GlusterBaseClass):
-    """
-    This test case validates fuse subdir functionality when replace-brick
+ Description:
+    Test case validates fuse subdir functionality when replace-brick
     operation is performed
-    """
-    @classmethod
-    def setUpClass(cls):
-        """
-        setup volume and mount volume
-        calling GlusterBaseClass setUpClass
-        """
-        cls.get_super_method(cls, 'setUpClass')()
+"""
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup and Mount Volume %s",
-                   cls.volname)
-        ret = cls.setup_volume_and_mount_volume(mounts=cls.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume "
-                                 "and Mount_Volume %s" % cls.volname)
-        g.log.info("Successful in Setup and Mount Volume %s", cls.volname)
+# disruptive;rep,dist-rep,disp,dist-disp
+import traceback
+from tests.d_parent_test import DParentTest
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s" %
-                                 cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
 
-    def test_subdir_with_replacebrick(self):
+class TestSubdirWithReplaceBrick(DParentTest):
 
-        # pylint: disable=too-many-statements
+    def terminate(self):
         """
-        Mount the volume
-        Create 50 directories on mount point
-        Unmount volume
-        Auth allow - Client1(subdir25),Client2(subdir15)
-        Mount the subdir to their authorized respective clients
-        Start IO's on both subdirs
-        Perform replace-brick
-        Validate on client if subdir's are mounted post replace-brick
-        operation is performed
-        Stat data on subdirs
+        Unmount the subdirs mounted in the TC,
+        and wait for IO to complete if the TC fails midway
         """
+        try:
+            if self.is_mounted:
+                cmd = f"umount {self.mountpoint}"
+                for client in self.client_list[0:2]:
+                    self.redant.execute_abstract_op_node(cmd, client, False)
+
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.subdir_mounts)):
+                    raise Exception("Failed to wait for IO to complete")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        # Check server requirements
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
+
+        # Create and start the volume
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node("mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, client)
+
+    def run_test(self, redant):
+        """
+        Steps:
+        - Mount the volume
+        - Create 50 directories on mount point
+        - Unmount volume
+        - Auth allow - Client1(subdir25),Client2(subdir15)
+        - Mount the subdir to their authorized respective clients
+        - Start IO's on both subdirs
+        - Perform replace-brick
+        - Validate on client if subdir's are mounted post replace-brick
+          operation is performed
+        - Stat data on subdirs
+        """
+        self.is_mounted = False
+        self.is_io_running = False
+
         # Create  directories on mount point
         for i in range(0, 50):
-            ret = mkdir(self.mounts[0].client_system, "%s/subdir%s"
-                        % (self.mounts[0].mountpoint, i))
-            self.assertTrue(ret, ("Failed to create directory %s/subdir%s on"
-                                  "volume from client %s"
-                                  % (self.mounts[0].mountpoint, i,
-                                     self.mounts[0].client_system)))
-        g.log.info("Successfully created directories on mount point")
+            redant.create_dir(self.mountpoint, f"subdir{i}",
+                              self.client_list[0])
 
         # unmount volume
-        ret = self.unmount_volume(self.mounts)
-        self.assertTrue(ret, "Volumes Unmount failed")
-        g.log.info("Volumes Unmounted successfully")
+        for client in self.client_list:
+            redant.volume_unmount(self.vol_name, self.mountpoint, client)
 
         # Set authentication on the subdirectory subdir25 to access by
         # client1 and subdir15 to access by 2 clients
-        g.log.info('Setting authentication on subdir25 and subdir15'
-                   'for client %s and %s', self.clients[0], self.clients[1])
-        ret = set_auth_allow(self.volname, self.mnode,
-                             {'/subdir25': [self.mounts[0].client_system],
-                              '/subdir15': [self.mounts[1].client_system]})
-        self.assertTrue(ret,
-                        'Failed to set Authentication on volume %s'
-                        % self.volume)
-
-        # Creating mount list for mounting selected subdirs on authorized
-        # clients
-        self.subdir_mounts = [copy.deepcopy(self.mounts[0]),
-                              copy.deepcopy(self.mounts[1])]
-        self.subdir_mounts[0].volname = "%s/subdir25" % self.volname
-        self.subdir_mounts[1].volname = "%s/subdir15" % self.volname
+        auth_dict = {'/subdir25': [self.client_list[0]],
+                     '/subdir15': [self.client_list[1]]}
+        if not redant.set_auth_allow(self.vol_name, self.server_list[0],
+                                     auth_dict):
+            raise Exception("Failed to set authentication")
 
         # Mount Subdirectory subdir25 on client 1 and subdir15 on client 2
-        for mount_obj in self.subdir_mounts:
-            ret = mount_obj.mount()
-            self.assertTrue(ret, ("Failed to mount  %s on client"
-                                  " %s" % (mount_obj.volname,
-                                           mount_obj.client_system)))
-            g.log.info("Successfully mounted %s on client %s",
-                       mount_obj.volname,
-                       mount_obj.client_system)
-        g.log.info("Successfully mounted sub directories on"
-                   "authenticated clients")
+        volname = f"{self.vol_name}/subdir25"
+        redant.authenticated_mount(volname, self.server_list[0],
+                                   self.mountpoint, self.client_list[0])
+        volname = f"{self.vol_name}/subdir15"
+        redant.authenticated_mount(volname, self.server_list[0],
+                                   self.mountpoint, self.client_list[1])
+        self.is_mounted = True
 
         # Start IO on all the subdir mounts.
+        self.subdir_mounts = [{
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }, {
+            "client": self.client_list[1],
+            "mountpath": self.mountpoint
+        }]
         all_mounts_procs = []
         count = 1
         for mount_obj in self.subdir_mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 10 "
-                   "--max-num-of-dirs 5 "
-                   "--num-of-files 5 %s" % (
-                       self.script_upload_path, count,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      count, 2, 3, 4, 4,
+                                                      mount_obj['client'])
             all_mounts_procs.append(proc)
             count = count + 10
 
+        self.is_io_running = True
+
         # Get stat of all the files/dirs created.
-        g.log.info("Get stat of all the files/dirs created.")
-        ret = get_mounts_stat(self.subdir_mounts)
-        self.assertTrue(ret, "Stat failed on some of the clients")
-        g.log.info("Successfully got stat of all files/dirs created")
+        if not redant.get_mounts_stat(self.subdir_mounts):
+            raise Exception("Stat on mountpoints failed.")
 
         # Log Volume Info and Status before replacing brick from the volume.
-        g.log.info("Logging volume info and Status before replacing brick "
-                   "from the volume %s", self.volname)
-        ret = log_volume_info_and_status(self.mnode, self.volname)
-        self.assertTrue(ret, ("Logging volume info and status failed on "
-                              "volume %s", self.volname))
-        g.log.info("Successful in logging volume info and status of volume %s",
-                   self.volname)
+        if not redant.log_volume_info_and_status(self.server_list[0],
+                                                 self.vol_name):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.volname}")
 
         # Replace brick from a sub-volume
-        g.log.info("Replace a brick from the volume")
-        ret = replace_brick_from_volume(self.mnode, self.volname,
-                                        self.servers, self.all_servers_info)
-        self.assertTrue(ret, "Failed to replace  brick from the volume")
-        g.log.info("Successfully replaced brick from the volume")
+        sbrick = redant.get_all_bricks(self.vol_name, self.server_list[0])[0]
+        dbrick_host, dbrick_broot = \
+            sbrick[0:sbrick.split()[1].rfind("/")].split(':')
+        dbrick = f"{dbrick_host}:{dbrick_broot}/new_replaced_brick"
+        ret = redant.replace_brick_from_volume(self.vol_name,
+                                               self.server_list[0],
+                                               self.server_list,
+                                               sbrick, dbrick)
+        if not ret:
+            raise Exception("Failed to replace  brick from the volume")
 
         # Wait for volume processes to be online
-        g.log.info("Wait for volume processes to be online")
-        ret = wait_for_volume_process_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, ("All volume %s processes failed to come up "
-                              "online", self.volname))
-        g.log.info("All volume %s processes came up "
-                   "online successfully", self.volname)
+        if not (redant.wait_for_volume_process_to_be_online(self.vol_name,
+                self.server_list[0], self.server_list)):
+            raise Exception("Few volume processess are offline for the "
+                            f"volume: {self.vol_name}")
 
         # Log Volume Info and Status after replacing the brick
-        g.log.info("Logging volume info and Status after replacing brick "
-                   "from the volume %s", self.volname)
-        ret = log_volume_info_and_status(self.mnode, self.volname)
-        self.assertTrue(ret, ("Failed Logging volume info and status on "
-                              "volume %s", self.volname))
-        g.log.info("Successful in logging volume info and status of volume %s",
-                   self.volname)
+        if not redant.log_volume_info_and_status(self.server_list[0],
+                                                 self.vol_name):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.volname}")
 
         # Wait for self-heal to complete
-        g.log.info("Wait for self-heal to complete")
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal has not yet completed')
-        g.log.info("self-heal is successful after replace-brick operation")
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal has not yet completed")
 
         # Again validate if subdirectories are still mounted post replace-brick
-        for mount_obj in self.subdir_mounts:
-            ret = mount_obj.is_mounted()
-            self.assertTrue(ret, ("Subdirectory %s is not mounted on client"
-                                  " %s" % (mount_obj.volname,
-                                           mount_obj.client_system)))
-            g.log.info("Subdirectory %s is mounted on client %s",
-                       mount_obj.volname,
-                       mount_obj.client_system)
-        g.log.info("Successfully validated that subdirectories are mounted"
-                   "on client1 and clients 2 post replace-brick operation")
+        volname = "subdir25"
+        ret = redant.is_mounted(volname, self.mountpoint, self.client_list[0],
+                                self.server_list[0])
+        if not ret:
+            raise Exception("Subdir not mounted after replace-brick")
+
+        volname = "subdir15"
+        ret = redant.is_mounted(volname, self.mountpoint, self.client_list[1],
+                                self.server_list[0])
+        if not ret:
+            raise Exception("Subdir not mounted after replace-brick")
 
         # Validate IO
-        g.log.info("Validating IO's")
-        ret = validate_io_procs(all_mounts_procs, self.subdir_mounts)
-        self.assertTrue(ret, "IO failed on some of the clients")
-        g.log.info("Successfully validated all io's")
-
-    def tearDown(self):
-        """
-        Unmount subdirectories and cleanup the volume
-        """
-        # Unmount the sub-directories
-        # Test needs to continue if  unmount fail.Not asserting here.
-        ret = self.unmount_volume(self.subdir_mounts)
-        if ret:
-            g.log.info("Successfully unmounted all the subdirectories")
-        else:
-            g.log.error("Failed to unmount sub-directories")
-
-        # cleanup-volume
-        ret = self.cleanup_volume()
+        ret = redant.validate_io_procs(self.all_mounts_procs,
+                                       self.subdir_mounts)
         if not ret:
-            raise ExecutionError("Failed to Cleanup Volume")
-        g.log.info("Cleanup volume %s Completed Successfully", self.volname)
+            raise Exception("IO failed on some of the clients")
+        self.is_io_running = False
