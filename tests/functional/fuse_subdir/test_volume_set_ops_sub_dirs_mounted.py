@@ -21,10 +21,27 @@
 """
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestVolumeSetOpsSubDirsMounted(DParentTest):
+
+    def terminate(self):
+        """
+        Unmount the subdirs mounted in the TC
+        """
+        try:
+            if self.is_mounted:
+                cmd = f"umount {self.mountpoint}"
+                for client in self.client_list:
+                    self.redant.execute_abstract_op_node(cmd, client, False)
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     @DParentTest.setup_custom_enable
     def setup_test(self):
@@ -42,6 +59,8 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
             self.redant.execute_abstract_op_node("mkdir -p "
                                                  f"{self.mountpoint}",
                                                  client)
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, client)
 
     def run_test(self, redant):
         """
@@ -54,6 +73,7 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         6. Perform volume start operation.
         7. Perform volume reset operation.
         """
+        self.is_mounted = False
         # Creating two sub directories on mounted volume
         redant.create_dir(self.mountpoint, "d1", self.client_list[0])
         redant.create_dir(self.mountpoint, "d2", self.client_list[1])
@@ -64,11 +84,12 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
 
         # Mounting one sub directory on each client.
         volname = f"{self.vol_name}/d1"
-        redant.volume_mount(self.server_list[0], volname, self.mountpoint,
-                            self.client_list[0])
+        redant.authenticated_mount(volname, self.server_list[0],
+                                   self.mountpoint, self.client_list[0])
         volname = f"{self.vol_name}/d2"
-        redant.volume_mount(self.server_list[0], volname, self.mountpoint,
-                            self.client_list[1])
+        redant.authenticated_mount(volname, self.server_list[0],
+                                   self.mountpoint, self.client_list[1])
+        self.is_mounted = True
 
         # Start IO on all mounts.
         self.subdir_mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
@@ -81,7 +102,7 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
             count = count + 10
 
         # Validate IO
-        ret = redant.validate_io_procs(all_mounts_procs, self.subdir_mountss)
+        ret = redant.validate_io_procs(all_mounts_procs, self.subdir_mounts)
         if not ret:
             raise Exception("IO failed on some of the clients")
 
