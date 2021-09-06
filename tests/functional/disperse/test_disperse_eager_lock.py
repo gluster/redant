@@ -27,7 +27,8 @@ from tests.nd_parent_test import NdParentTest
 
 
 class TestCase(NdParentTest):
-    def get_random_string(self, chars, str_len=4):
+    @staticmethod
+    def get_random_string(chars, str_len=4):
         return ''.join((choice(chars) for _ in range(str_len)))
 
     def run_test(self, redant):
