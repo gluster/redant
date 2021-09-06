@@ -16,16 +16,16 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    Test Cases in this module tests the volume stop, start, reset
-    operations when sub-dirs are mounted
+    Test Cases in this module tests the failover operation when sub-dir
+    is mounted
 """
 
-# disruptive;dist,rep,dist-rep,disp,dist-disp
+# disruptive;rep,dist-rep,disp,dist-disp
 import traceback
 from tests.d_parent_test import DParentTest
 
 
-class TestVolumeSetOpsSubDirsMounted(DParentTest):
+class TestNodeRebootSubDirsMounted(DParentTest):
 
     def terminate(self):
         """
@@ -66,14 +66,18 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         """
         Steps:
         1. Create two sub-directories on mounted volume.
-        2. Unmount volume from clients.
-        3. Mount each sub-directory to two different clients.
-        4. Perform IO on mounts.
-        5. Perform volume stop operation.
-        6. Perform volume start operation.
-        7. Perform volume reset operation.
+        2. Un mount volume from clients.
+        3. Set auth.allow on sub dir d1 for client1 and d2 for client2.
+        4. Mount sub-dir d1 on client1 and d2 on client2.
+        5. Perform IO on mounts.
+        6. Reboot the node from which sub-dirs are
+           mounted and wait for node to come up.
+        7. Verify if peers are connected.
+        8. Check whether bricks are online.
+        9. Validate IO process.
         """
         self.is_mounted = False
+
         # Creating two sub directories on mounted volume
         redant.create_dir(self.mountpoint, "d1", self.client_list[0])
         redant.create_dir(self.mountpoint, "d2", self.client_list[1])
@@ -81,6 +85,13 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         # Unmounting volumes
         for client in self.client_list:
             redant.volume_unmount(self.vol_name, self.mountpoint, client)
+
+        # Setting authentication for directories
+        auth_dict = {'/d1': [self.client_list[0]],
+                     '/d2': [self.client_list[1]]}
+        if not redant.set_auth_allow(self.vol_name, self.server_list[0],
+                                     auth_dict):
+            raise Exception("Failed to set authentication")
 
         # Mounting one sub directory on each client.
         volname = f"{self.vol_name}/d1"
@@ -103,10 +114,34 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         count = 1
         for mount_obj in self.subdir_mounts:
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
-                                                      count, 2, 3, 4, 4,
+                                                      count, 2, 4, 4, 5,
                                                       mount_obj['client'])
             all_mounts_procs.append(proc)
             count = count + 10
+
+        # Reboot node and wait for node to come up.
+        redant.reboot_nodes(self.server_list[0])
+        if not redant.wait_node_power_up(self.server_list[0], 600):
+            raise Exception("Node not yet rebooted")
+
+        # Check whether peers are in connected state
+        ret = redant.wait_for_peers_to_connect(self.server_list,
+                                               self.server_list[0])
+        if not ret:
+            raise Exception("All peers are not in connected state")
+
+        # Get the bricks list of the volume
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        if not bricks_list:
+            raise Exception("Failed to get the brick list")
+
+        # Check whether all bricks are online
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list)
+        if not ret:
+            raise Exception("All bricks are not yet online")
 
         # Validate IO
         ret = redant.validate_io_procs(all_mounts_procs,
@@ -118,11 +153,7 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         if not redant.get_mounts_stat(self.subdir_mounts):
             raise Exception("Stat on mountpoints failed.")
 
-        # Stop volume
-        redant.volume_stop(self.vol_name, self.server_list[0])
-
-        # Start volume
-        redant.volume_start(self.vol_name, self.server_list[0])
-
-        # Reset volume
-        redant.volume_reset(self.vol_name, self.server_list[0])
+        # Unmount sub-directories
+        cmd = f"umount {self.mountpoint}"
+        for client in self.client_list[0:2]:
+            redant.execute_abstract_op_node(cmd, client, False)
