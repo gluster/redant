@@ -16,23 +16,29 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    TC to verify the snap_scheduler functionality WRT the status
-    and shared storage
+    TC to validate snapshot scheduler behavior when existing schedule
+    is deleted.
 """
 
-# disruptive;rep,dist-rep,disp,dist,dist-disp
+# disruptive;rep,dist,dist-rep,disp,dist-disp
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest
 
 
-class TestSnapshotSchedulerStatus(DParentTest):
+class TestSnapshotDeleteExistingScheduler(DParentTest):
 
     def terminate(self):
         """
-        Disable shared storage and snap_scheduler
+        Wait for IO to finish if the TC fails midway.
+        Disable snap_scheduler and shared_storage
         """
         try:
+            io_ret = True
+            if self.is_io_running:
+                io_ret = (self.redant.wait_for_io_to_complete(
+                          self.all_mounts_procs, self.mounts))
+
             # Disable snap scheduler
             self.redant.scheduler_disable(self.server_list[0], False)
 
@@ -45,7 +51,8 @@ class TestSnapshotSchedulerStatus(DParentTest):
                     status = ret['msg'][0].split(':')
                     if len(status) == 3:
                         status = status[2].strip()
-                        if ret['error_code'] == 0 and status == "Disabled":
+                        if ret['error_code'] == 0 \
+                           and status == "Disabled":
                             break
                     sleep(2)
                     count += 1
@@ -60,6 +67,9 @@ class TestSnapshotSchedulerStatus(DParentTest):
                 ret = self.redant.disable_shared_storage(self.server_list[0])
                 if not ret:
                     shared_stor = False
+
+            if not io_ret:
+                raise Exception("Failed to wait for IO to complete")
 
             if not snap_stat:
                 raise Exception("Failed to check status of scheduler")
@@ -76,23 +86,19 @@ class TestSnapshotSchedulerStatus(DParentTest):
     def run_test(self, redant):
         """
         Steps:
-        * Initialise snap_scheduler without enabling shared storage
-        * Enable shared storage
+        * Enable shared volume
+        * Create a volume
         * Initialise snap_scheduler on all nodes
-        * Check snap_scheduler status
+        * Enable snap_scheduler
+        * Validate snap_scheduler status
+        * Perform IO on mounts
+        * Schedule a job of creating snapshot every 30 mins
+        * Perform snap_scheduler list
+        * Delete scheduled job
+        * Validate IO is successful
+        * Perform snap_scheduler list
         """
-        # Validate shared storage is disabled
-        option = "cluster.enable-shared-storage"
-        volinfo = redant.get_volume_options(self.vol_name, option,
-                                            self.server_list[0])
-        if volinfo["cluster.enable-shared-storage"] == "disable":
-            # Initialise snapshot scheduler
-            ret = redant.scheduler_init(self.server_list)
-            if ret:
-                raise Exception("Unexpected: Successfully initialized "
-                                "scheduler on all nodes")
-        else:
-            raise Exception("Unexpected: Shared storage enabled on cluster")
+        self.is_io_running = False
 
         # Enable shared storage
         ret = redant.enable_shared_storage(self.server_list[0])
@@ -104,14 +110,7 @@ class TestSnapshotSchedulerStatus(DParentTest):
         if not ret:
             raise Exception("Failed to validate if shared volume is mounted")
 
-        # Validate shared storage volume is enabled
-        option = "cluster.enable-shared-storage"
-        volinfo = redant.get_volume_options(self.vol_name, option,
-                                            self.server_list[0])
-        if volinfo["cluster.enable-shared-storage"] != "enable":
-            raise Exception("Failed to validate if shared storage is enabled")
-
-        # Initialise snap_scheduler on all nodes
+        # Initialise snap scheduler
         count = 0
         sleep(2)
         while count < 40:
@@ -123,10 +122,10 @@ class TestSnapshotSchedulerStatus(DParentTest):
         if not ret:
             raise Exception("Failed to initialize scheduler on all nodes")
 
-        # Enable snap_scheduler
+        # Enable snap scheduler
         redant.scheduler_enable(self.server_list[0])
 
-        # Check snapshot scheduler status
+        # Validate snapshot scheduler status
         for server in self.server_list:
             count = 0
             while count < 40:
@@ -141,3 +140,36 @@ class TestSnapshotSchedulerStatus(DParentTest):
             if ret['error_code'] != 0:
                 raise Exception("Failed to check status of scheduler"
                                 f" on node {server}")
+
+        # Write files on all mounts
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.all_mounts_procs = []
+        for mount_obj in self.mounts:
+            proc = redant.create_files('1k', {mount_obj['mountpath']},
+                                       mount_obj['client'], 10, 'file')
+            self.all_mounts_procs.append(proc)
+            self.is_io_running = True
+
+        # Add a job to schedule snapshot every 30 mins
+        self.scheduler = r"*/30 * * * *"
+        self.job_name = "Job1"
+        redant.scheduler_add_jobs(self.server_list[0], self.job_name,
+                                  self.scheduler, self.vol_name)
+
+        # Perform snap_scheduler list
+        redant.scheduler_list(self.server_list[0])
+
+        # Delete scheduled job
+        redant.scheduler_delete(self.server_list[0], self.job_name)
+
+        # Validate IO
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed.")
+        self.is_io_running = False
+
+        # Perform snap_scheduler list (no active jobs should be present)
+        ret = redant.scheduler_list(self.server_list[0])
+        out = ret['msg'][0].split(":")[1].strip()
+        if out != "No snapshots scheduled":
+            raise Exception("Unexpected: Jobs are getting listed even after "
+                            "being deleted")
