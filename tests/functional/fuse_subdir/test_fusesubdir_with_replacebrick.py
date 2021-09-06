@@ -119,13 +119,13 @@ class TestSubdirWithReplaceBrick(DParentTest):
             "client": self.client_list[1],
             "mountpath": self.mountpoint
         }]
-        all_mounts_procs = []
+        self.all_mounts_procs = []
         count = 1
         for mount_obj in self.subdir_mounts:
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
                                                       count, 2, 3, 4, 4,
                                                       mount_obj['client'])
-            all_mounts_procs.append(proc)
+            self.all_mounts_procs.append(proc)
             count = count + 10
 
         self.is_io_running = True
@@ -142,9 +142,9 @@ class TestSubdirWithReplaceBrick(DParentTest):
 
         # Replace brick from a sub-volume
         sbrick = redant.get_all_bricks(self.vol_name, self.server_list[0])[0]
-        dbrick_host, dbrick_broot = \
-            sbrick[0:sbrick.split()[1].rfind("/")].split(':')
-        dbrick = f"{dbrick_host}:{dbrick_broot}/new_replaced_brick"
+        sbrick_host, sbrick_root = sbrick.split(':')
+        dbrick_root = sbrick_root[0:sbrick.split(':')[1].rfind("/")]
+        dbrick = f"{sbrick_host}:{dbrick_root}/new_replaced_brick"
         ret = redant.replace_brick_from_volume(self.vol_name,
                                                self.server_list[0],
                                                self.server_list,
