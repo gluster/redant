@@ -103,10 +103,16 @@ class TestNodeRebootSubDirsMounted(DParentTest):
         self.is_mounted = True
 
         # Start IO on all mounts.
-        self.subdir_mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.subdir_mounts = [{
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }, {
+            "client": self.client_list[1],
+            "mountpath": self.mountpoint
+        }]
         all_mounts_procs = []
         count = 1
-        for mount_obj in self.subdir_mounts[0:2]:
+        for mount_obj in self.subdir_mounts:
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
                                                       count, 2, 4, 4, 5,
                                                       mount_obj['client'])
@@ -115,12 +121,12 @@ class TestNodeRebootSubDirsMounted(DParentTest):
 
         # Reboot node and wait for node to come up.
         redant.reboot_nodes(self.server_list[0])
-        if not redant.wait_node_power_up(self.server_list[0]):
+        if not redant.wait_node_power_up(self.server_list[0], 600):
             raise Exception("Node not yet rebooted")
 
         # Check whether peers are in connected state
-        ret = redant.validate_peers_are_connected(self.server_list,
-                                                  self.server_list[0])
+        ret = redant.wait_for_peers_to_connect(self.server_list,
+                                               self.server_list[0])
         if not ret:
             raise Exception("All peers are not in connected state")
 
@@ -131,19 +137,20 @@ class TestNodeRebootSubDirsMounted(DParentTest):
             raise Exception("Failed to get the brick list")
 
         # Check whether all bricks are online
-        ret = redant.are_bricks_online(self.vol_name, bricks_list,
-                                       self.server_list[0])
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list)
         if not ret:
-            raise Exception("All bricks are not online")
+            raise Exception("All bricks are not yet online")
 
         # Validate IO
         ret = redant.validate_io_procs(all_mounts_procs,
-                                       self.subdir_mounts[0:2])
+                                       self.subdir_mounts)
         if not ret:
             raise Exception("IO failed on some of the clients")
 
         # Get stat of all the files/dirs created.
-        if not redant.get_mounts_stat(self.subdir_mounts[0:2]):
+        if not redant.get_mounts_stat(self.subdir_mounts):
             raise Exception("Stat on mountpoints failed.")
 
         # Unmount sub-directories
