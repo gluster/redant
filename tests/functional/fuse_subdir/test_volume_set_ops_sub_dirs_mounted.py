@@ -34,7 +34,7 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         try:
             if self.is_mounted:
                 cmd = f"umount {self.mountpoint}"
-                for client in self.client_list:
+                for client in self.client_list[0:2]:
                     self.redant.execute_abstract_op_node(cmd, client, False)
 
         except Exception as error:
@@ -95,7 +95,7 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
         self.subdir_mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         all_mounts_procs = []
         count = 1
-        for mount_obj in self.subdir_mounts:
+        for mount_obj in self.subdir_mounts[0:2]:
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
                                                       count, 2, 3, 4, 4,
                                                       mount_obj['client'])
@@ -103,12 +103,13 @@ class TestVolumeSetOpsSubDirsMounted(DParentTest):
             count = count + 10
 
         # Validate IO
-        ret = redant.validate_io_procs(all_mounts_procs, self.subdir_mounts)
+        ret = redant.validate_io_procs(all_mounts_procs,
+                                       self.subdir_mounts[0:2])
         if not ret:
             raise Exception("IO failed on some of the clients")
 
         # Get stat of all the files/dirs created.
-        if not redant.get_mounts_stat(self.subdir_mounts):
+        if not redant.get_mounts_stat(self.subdir_mounts[0:2]):
             raise Exception("Stat on mountpoints failed.")
 
         # Stop volume

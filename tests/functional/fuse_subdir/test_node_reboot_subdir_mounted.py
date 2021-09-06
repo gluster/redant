@@ -137,12 +137,13 @@ class TestNodeRebootSubDirsMounted(DParentTest):
             raise Exception("All bricks are not online")
 
         # Validate IO
-        ret = redant.validate_io_procs(all_mounts_procs, self.subdir_mounts)
+        ret = redant.validate_io_procs(all_mounts_procs,
+                                       self.subdir_mounts[0:2])
         if not ret:
             raise Exception("IO failed on some of the clients")
 
         # Get stat of all the files/dirs created.
-        if not redant.get_mounts_stat(self.subdir_mounts):
+        if not redant.get_mounts_stat(self.subdir_mounts[0:2]):
             raise Exception("Stat on mountpoints failed.")
 
         # Unmount sub-directories
