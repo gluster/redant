@@ -58,6 +58,3 @@ class TestCase(NdParentTest):
         for value in ('1', '0', 'off', 'on', 'disable', 'enable'):
             ret = redant.set_volume_options(self.vol_name, {key: value},
                                             self.server_list[0])
-            if ret['msg']['opRet'] != '0':
-                raise Exception(f"Unexpected: Boolean {value} to option "
-                                "Eagerlock shouldn't result in failure")
