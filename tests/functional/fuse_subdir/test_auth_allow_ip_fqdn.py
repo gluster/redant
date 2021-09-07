@@ -124,7 +124,7 @@ class TestCase(DParentTest):
         # Unmount sub-directory d1 from client1.
         redant.execute_abstract_op_node(f"umount {self.mountpoint}",
                                         self.client_list[0])
-        
+
         # Unmount sub-directory d1 from client2.
         redant.execute_abstract_op_node(f"umount {self.mountpoint}",
                                         self.client_list[1])
