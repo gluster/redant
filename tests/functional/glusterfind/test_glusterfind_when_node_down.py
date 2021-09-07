@@ -177,7 +177,7 @@ class TestGlusterFindNodeDown(DParentTest):
         while counter < timeout:
             ret = redant.are_nodes_online(self.random_server)
             if not ret:
-                self.logger.info("Node's offline, Retrying after 5 seconds..")
+                redant.logger.info("Node's offline, Retrying after 5 seconds..")
                 sleep(5)
                 counter += 5
             else:

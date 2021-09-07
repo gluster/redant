@@ -69,3 +69,4 @@ excluded_tests:
     - tests/functional/snapshot/test_256_snapshots.py # Requires baremetal servers with multiple disks and good amount of RAM, to create these many snapshots
     - tests/functional/snapshot/test_snap_delete_multiple.py # Requires good servers with high amount of RAM and multiple disks
     - tests/functional/snapshot/test_validate_snapshot_max_limit.py # Requires good servers with high amount of RAM and multiple disks
+    - tests/functional/snapshot/test_validate_snap_del_gd_down.py # Requires downstream RHGS installation
