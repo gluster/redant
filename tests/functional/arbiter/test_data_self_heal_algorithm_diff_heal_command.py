@@ -62,7 +62,7 @@ class TestSelfHeal(DParentTest):
 
         # Creating files on client side
         mount_dict = []
-        cmd = ("python3 {script_file_path} create_files -f 100 "
+        cmd = (f"python3 {script_file_path} create_files -f 100 "
                f"{self.mountpoint}")
 
         proc = redant.execute_command_async(cmd, self.client_list[0])
@@ -93,7 +93,7 @@ class TestSelfHeal(DParentTest):
             raise Exception(f"Bricks {offline_brick_list} are not offline")
 
         # Modify the data
-        cmd = ("python3 {script_file_path} create_files -f 100 "
+        cmd = (f"python3 {script_file_path} create_files -f 100 "
                f" --fixed-file-size 1M {self.mountpoint}")
 
         proc = redant.execute_command_async(cmd, self.client_list[0])

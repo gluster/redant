@@ -73,10 +73,10 @@ class TestSelfHeal(DParentTest):
         # Command list to do different operations with data -
         # create, rename, copy and delete
         cmds = (
-            ("python3 {script_file_path} create_files -f 20 "
+            (f"python3 {script_file_path} create_files -f 20 "
              f"{self.mountpoint}/files"),
             f"python3 {script_file_path} mv {self.mountpoint}/files",
-            ("python3 {script_file_path} copy --dest-dir "
+            (f"python3 {script_file_path} copy --dest-dir "
              f"{self.mountpoint}/new_dir {self.mountpoint}/files"),
             f"python3 {script_file_path} delete {self.mountpoint}",
         )
