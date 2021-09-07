@@ -5,6 +5,7 @@ Brick ops module deals with the functions related to brick related operations.
 
 from time import sleep
 import random
+import re
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -1424,3 +1425,53 @@ class BrickOps(AbstractOps):
         if volume_bricks_to_bring_offline == []:
             return None
         return volume_bricks_to_bring_offline
+
+    def get_extended_attributes_info(self, node: str, file_list: list,
+                                     encoding: str = 'hex',
+                                     attr_name: str = '') -> dict:
+        """
+        Function to get extended attribute info for the given file list
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            file_list (list): absolute file names for which extended
+                              attributes to be fetched
+
+        Optional:
+            encoding (str): encoding format
+            attr_name (str): extended attribute name
+
+        Returns:
+            NoneType: None if command execution fails, parse errors.
+            dict: extended attribute for each file in the given file list
+        """
+        if not isinstance(file_list, list):
+            file_list = [file_list]
+
+        if attr_name == '':
+            cmd = f"getfattr -d -m . -e {encoding} {' '.join(file_list)}"
+        else:
+            cmd = (f"getfattr -d -m . -e {encoding} -n {attr_name} "
+                   f"{' '.join(file_list)}")
+
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to execute getfattr command on server"
+                              f" {node}")
+            return None
+
+        attr_dict = {}
+        # for each_attr in ret['msg'].split('\n\n')[:-1]:
+        #     for line in each_attr.split('\n'):
+        #         if line.startswith('#'):
+        #             match = re.search(r'.*file:\s(\S+).*', line)
+        #             if match is None:
+        #                 self.logger.error("getfattr output is not in expected"
+        #                                   " format")
+        #                 return None
+        #             key = "/" + match.group(1)
+        #             attr_dict[key] = {}
+        #         else:
+        #             output = line.split('=')
+        #             attr_dict[key][output[0]] = output[1]
+        return attr_dict
