@@ -67,7 +67,7 @@ class TestFuseSubDirAuthReject(DParentTest):
         """
         cmd = f"mount.glusterfs {server}:/{volname} {mountpoint}"
         self.redant.execute_abstract_op_node(cmd, client, False)
-        cmd = f"mount | grep {volname}"
+        cmd = f"mount | grep '{volname}'"
         ret = self.redant.execute_abstract_op_node(cmd, client, False)
         if ret['error_code'] == 0:
             raise Exception("Mount operation did not fail as expected")
@@ -83,9 +83,9 @@ class TestFuseSubDirAuthReject(DParentTest):
         """
         self.is_mounted = False
 
-        # Create  directories subdir1 and subdir2 on mount point
+        # Create  directories d1 and d2 on mount point
         redant.create_dir(self.mountpoint, "d1", self.client_list[0])
-        redant.create_dir(self.mountpoint, "d2", self.client_list[1])
+        redant.create_dir(self.mountpoint, "d2", self.client_list[0])
 
         # Unmounting volumes
         for client in self.client_list[0:2]:
