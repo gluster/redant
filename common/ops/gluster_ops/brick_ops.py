@@ -1461,17 +1461,18 @@ class BrickOps(AbstractOps):
             return None
 
         attr_dict = {}
-        # for each_attr in ret['msg'].split('\n\n')[:-1]:
-        #     for line in each_attr.split('\n'):
-        #         if line.startswith('#'):
-        #             match = re.search(r'.*file:\s(\S+).*', line)
-        #             if match is None:
-        #                 self.logger.error("getfattr output is not in expected"
-        #                                   " format")
-        #                 return None
-        #             key = "/" + match.group(1)
-        #             attr_dict[key] = {}
-        #         else:
-        #             output = line.split('=')
-        #             attr_dict[key][output[0]] = output[1]
+        for each_attr in ret['msg'][:-1]:
+            line = each_attr.strip()
+            if line:
+                if line.startswith('#'):
+                    match = re.search(r'.*file:\s(\S+).*', line)
+                    if match is None:
+                        self.logger.error("getfattr output is not in expected"
+                                          " format")
+                        return None
+                    key = "/" + match.group(1)
+                    attr_dict[key] = {}
+                else:
+                    output = line.split('=')
+                    attr_dict[key][output[0]] = output[1].strip()
         return attr_dict
