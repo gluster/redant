@@ -1,77 +1,62 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
 
-""" Description:
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
         Test cases in this module tests mount operation on clients having
         authentication to mount using combination of  FQDN and IP address.
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.auth_ops import set_auth_allow
-from glustolibs.gluster.glusterdir import mkdir
+# disruptive;dist,rep,dist-rep,disp,dist-disp
+
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class AuthAllowIpFqdn(GlusterBaseClass):
+class TestCase(DParentTest):
     """
     Tests to verify authentication feature on fuse mount using a combination
     of IP and fqdn.
     """
-    @classmethod
-    def setUpClass(cls):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        Create and start volume
+        Create and start the volume
         """
-        cls.get_super_method(cls, 'setUpClass')()
-        # Create and start volume
-        g.log.info("Starting volume setup process %s", cls.volname)
-        ret = cls.setup_volume()
-        if not ret:
-            raise ExecutionError("Failed to setup "
-                                 "and start volume %s" % cls.volname)
-        g.log.info("Successfully created and started the volume: %s",
-                   cls.volname)
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
 
-    def mount_and_verify(self, mount_obj):
+    def terminate(self):
         """
-        Mount volume/sub-directory and verify whether it is mounted.
-
-        Args:
-            mount_obj(obj): Object of GlusterMount class
+        Unmount the subdirs mounted in the TC
         """
-        # Mount volume/sub-directory
-        ret = mount_obj.mount()
-        self.assertTrue(ret, ("Failed to mount %s on client %s" %
-                              (mount_obj.volname,
-                               mount_obj.client_system)))
-        g.log.info("Successfully mounted %s on client %s", mount_obj.volname,
-                   mount_obj.client_system)
+        try:
+            if self.is_mounted:
+                cmd = f"umount {self.mountpoint}"
+                for client in self.client_list:
+                    self.redant.execute_abstract_op_node(cmd, client, False)
 
-        # Verify mount
-        ret = mount_obj.is_mounted()
-        self.assertTrue(ret, ("%s is not mounted on client %s"
-                              % (mount_obj.volname, mount_obj.client_system)))
-        g.log.info("Verified: %s is mounted on client %s",
-                   mount_obj.volname, mount_obj.client_system)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def test_auth_allow_ip_fqdn(self):
+    def run_test(self, redant):
         """
         Verify auth.allow feature using a combination of client ip and fqdn.
         Steps:
@@ -85,78 +70,53 @@ class AuthAllowIpFqdn(GlusterBaseClass):
         8. Mount d1 on client1 and client2.
         9. Unmount d1 from client1 and client2.
         """
+        # Check client requirements
+        redant.check_hardware_requirements(clients=self.client_list,
+                                           clients_count=2)
+
+        self.is_mounted = False
         # Obtain hostname of client2
-        ret, hostname_client2, _ = g.run(self.mounts[1].client_system,
-                                         "hostname")
-        self.assertEqual(ret, 0, ("Failed to obtain hostname of client %s"
-                                  % self.mounts[1].client_system))
-        hostname_client2 = hostname_client2.strip()
-        g.log.info("Obtained hostname of client. IP- %s, hostname- %s",
-                   self.mounts[1].client_system, hostname_client2)
+        ret = redant.execute_abstract_op_node("hostname", self.client_list[1])
+        hostname_client2 = ret['msg'][0].rstrip('\n')
 
         # Setting authentication on volume using ip of client1 and hostname of
         # client2.
-        auth_dict = {'all': [self.mounts[0].client_system, hostname_client2]}
-        ret = set_auth_allow(self.volname, self.mnode, auth_dict)
-        self.assertTrue(ret, "Failed to set authentication")
-        g.log.info("Successfully set authentication on volume")
+        auth_dict = {'all': [self.client_list[0], hostname_client2]}
+        if not redant.set_auth_allow(self.vol_name, self.server_list[0],
+                                     auth_dict):
+            raise Exception("Failed to set authentication")
 
-        # Mount volume on client1
-        self.mount_and_verify(self.mounts[0])
-
-        # Mount volume on client2
-        self.mount_and_verify(self.mounts[1])
-
-        g.log.info("Successfully mounted volume on client1 and client2.")
+        # Mount volume on client1 and client2
+        self.mountpoint = f"/mnt/{self.vol_name}"
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            redant.volume_mount(self.server_list[0],
+                                self.vol_name,
+                                self.mountpoint, client)
 
         # Creating directory d1 on mounted volume
-        ret = mkdir(self.mounts[0].client_system, "%s/d1"
-                    % self.mounts[0].mountpoint)
-        self.assertTrue(ret, ("Failed to create directory 'd1' in volume %s "
-                              "from client %s"
-                              % (self.volname, self.mounts[0].client_system)))
+        redant.create_dir(self.mountpoint, 'd1', self.client_list[0])
 
-        # Unmount volume from client1.
-        ret = self.mounts[0].unmount()
-        self.assertTrue(ret, "Failed to unmount volume from client1.")
-
-        # Unmount volume from client2.
-        ret = self.mounts[1].unmount()
-        self.assertTrue(ret, "Failed to unmount volume from client2.")
+        # Unmount volume from client1 and client2
+        for client in self.client_list:
+            redant.volume_unmount(self.vol_name, self.mountpoint, client)
 
         # Setting authentication on d1 using ip of client1 and hostname of
         # client2.
-        auth_dict = {'/d1': [self.mounts[0].client_system, hostname_client2]}
-        ret = set_auth_allow(self.volname, self.mnode, auth_dict)
-        self.assertTrue(ret, "Failed to set authentication")
-        g.log.info("Successfully set authentication on volume")
+        auth_dict = {'/d1': [self.client_list[0], hostname_client2]}
+        if not redant.set_auth_allow(self.vol_name, self.server_list[0],
+                                     auth_dict):
+            raise Exception("Failed to set authentication")
 
-        # Modify GlusterMount objects for mounting sub-directory d1.
-        self.mounts[0].volname = "%s/d1" % self.volname
-        self.mounts[1].volname = "%s/d1" % self.volname
+        subdir_mount1 = f"{self.vol_name}/d1"
 
         # Mount sub-directory d1 on client1
-        self.mount_and_verify(self.mounts[0])
+        redant.authenticated_mount(subdir_mount1, self.server_list[0],
+                                   self.mountpoint, self.client_list[0])
 
         # Mount sub-directory d1 on client2
-        self.mount_and_verify(self.mounts[1])
-
-        g.log.info("Successfully mounted sub-dir d1 on client1 and client2.")
-
-        # Unmount sub-directory d1 from client1.
-        ret = self.mounts[0].unmount()
-        self.assertTrue(ret, "Failed to unmount volume from client1.")
-
-        # Unmount sub-directory d1 from client2.
-        ret = self.mounts[1].unmount()
-        self.assertTrue(ret, "Failed to unmount volume from client2.")
-
-    def tearDown(self):
-        """
-        Cleanup volume
-        """
-        g.log.info("Cleaning up volume")
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to cleanup volume.")
-        g.log.info("Volume cleanup was successful.")
+        redant.authenticated_mount(subdir_mount1, self.server_list[0],
+                                   self.mountpoint, self.client_list[1])
+        self.is_mounted = True
