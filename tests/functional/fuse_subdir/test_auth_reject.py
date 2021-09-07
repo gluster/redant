@@ -1,57 +1,79 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-""" Description:
-        Test Cases in this module tests the Fuse sub directory feature
 """
-import copy
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.auth_ops import set_auth_reject
+ Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    Test Cases in this module tests the Fuse sub directory feature
+"""
+
+# disruptive;dist,rep,dist-rep,disp,dist-disp
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class FuseSubDirAuthReject(GlusterBaseClass):
-    """
-    Tests to verify auth.reject functionality on Fuse subdir feature
-    """
-    @classmethod
-    def setUpClass(cls):
+class TestFuseSubDirAuthReject(DParentTest):
+
+    def terminate(self):
         """
-        Setup and mount volume
+        Unmount the subdirs mounted in the TC
         """
-        cls.get_super_method(cls, 'setUpClass')()
-        # Setup Volume and Mount Volume
-        g.log.info("Starting volume setup and mount %s",
-                   cls.volname)
-        ret = cls.setup_volume_and_mount_volume(cls.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup "
-                                 "and Mount_Volume %s" % cls.volname)
-        g.log.info("Successfully set and mounted the volume: %s", cls.volname)
+        try:
+            if self.is_mounted:
+                cmd = f"umount {self.mountpoint}"
+                for client in self.client_list[0:2]:
+                    self.redant.execute_abstract_op_node(cmd, client, False)
 
-    def test_auth_reject(self):
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        # Check client requirements
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
+
+        # Create and start the volume
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node("mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, client)
+
+    def _mount_and_verify(self, volname, mountpoint, server, client):
         """
-        Check sub dir auth.reject functionality
+        Mount volume on client and verify that the mount failed
+        """
+        cmd = f"mount.glusterfs {server}:/{volname} {mountpoint}"
+        self.redant.execute_abstract_op_node(cmd, client, False)
+        cmd = f"mount | grep {volname}"
+        ret = self.redant.execute_abstract_op_node(cmd, client, False)
+        if ret['error_code'] == 0:
+            raise Exception("Mount operation did not fail as expected")
 
+    def run_test(self, redant):
+        """
         Steps:
         1. Create two sub directories on mounted volume
         2. Unmount volume from clients
@@ -59,101 +81,51 @@ class FuseSubDirAuthReject(GlusterBaseClass):
         4. Mount d2 on client1 and d1 on client2. This should pass.
         5. Try to mount d2 on client2 and d1 on client1. This should fail.
         """
-        # Creating sub directories on mounted volume
-        ret = mkdir(self.mounts[0].client_system, "%s/d1"
-                    % self.mounts[0].mountpoint)
-        self.assertTrue(ret, ("Failed to create directory 'd1' in volume %s "
-                              "from client %s"
-                              % (self.volname,
-                                 self.mounts[0].client_system)))
-        ret = mkdir(self.mounts[0].client_system, "%s/d2"
-                    % self.mounts[0].mountpoint)
-        self.assertTrue(ret, ("Failed to create directory 'd2' in volume %s "
-                              "from client %s"
-                              % (self.volname,
-                                 self.mounts[0].client_system)))
+        self.is_mounted = False
+
+        # Create  directories subdir1 and subdir2 on mount point
+        redant.create_dir(self.mountpoint, "d1", self.client_list[0])
+        redant.create_dir(self.mountpoint, "d2", self.client_list[1])
 
         # Unmounting volumes
-        ret = self.unmount_volume(self.mounts)
-        self.assertTrue(ret, "Failed to unmount one or more volumes")
-        g.log.info("Successfully unmounted all volumes")
+        for client in self.client_list[0:2]:
+            redant.volume_unmount(self.vol_name, self.mountpoint, client)
 
         # Setting authentication (auth.reject) for directories
-        auth_dict = {'/d1': [self.mounts[0].client_system],
-                     '/d2': [self.mounts[1].client_system]}
-        ret = set_auth_reject(self.volname, self.mnode, auth_dict)
-        self.assertTrue(ret, "Failed to set authentication")
-        g.log.info("Successfully set authentication on sub directories")
-
-        # Creating mounts list for authenticated client
-        self.subdir_mounts = [copy.deepcopy(self.mounts[0]),
-                              copy.deepcopy(self.mounts[1])]
-        self.subdir_mounts[0].volname = "%s/d2" % self.volname
-        self.subdir_mounts[1].volname = "%s/d1" % self.volname
+        auth_dict = {'/d1': [self.client_list[0]],
+                     '/d2': [self.client_list[1]]}
+        if not redant.set_auth_allow(self.vol_name, self.server_list[0],
+                                     auth_dict):
+            raise Exception("Failed to set authentication")
 
         # Mounting sub directories on authenticated client
-        for mount_obj in self.subdir_mounts:
+        volname = f"{self.vol_name}/d1"
+        redant.authenticated_mount(volname, self.server_list[0],
+                                   self.mountpoint, self.client_list[0])
 
-            ret = mount_obj.mount()
-            self.assertTrue(ret, ("Failed to mount sub directory %s on client"
-                                  " %s" % (mount_obj.volname,
-                                           mount_obj.client_system)))
-            g.log.info("Successfully mounted sub directory %s on client %s",
-                       mount_obj.volname,
-                       mount_obj.client_system)
-        g.log.info("Successfully mounted sub directories to allowed clients")
+        volname = f"{self.vol_name}/d2"
+        redant.authenticated_mount(volname, self.server_list[0],
+                                   self.mountpoint, self.client_list[1])
+        self.is_mounted = True
 
-        # Creating mounts list for rejected client
-        self.unauth_subdir_mounts = [copy.deepcopy(self.mounts[0]),
-                                     copy.deepcopy(self.mounts[1])]
-        self.unauth_subdir_mounts[0].volname = "%s/d1" % self.volname
-        self.unauth_subdir_mounts[1].volname = "%s/d2" % self.volname
-        self.unauth_subdir_mounts[0].mountpoint \
-            = "%s_unauth" % self.unauth_subdir_mounts[0].mountpoint
-        self.unauth_subdir_mounts[1].mountpoint \
-            = "%s_unauth" % self.unauth_subdir_mounts[1].mountpoint
+        # Creating mountpoints for rejected client
+        redant.create_dir("/mnt", "unauth_d2", self.client_list[0])
+        redant.create_dir("/mnt", "unauth_d1", self.client_list[1])
 
         # Trying to mount sub directories on rejected client
-        for mount_obj in self.unauth_subdir_mounts:
-            if mount_obj.mount():
-                g.log.warning("Mount command did not fail as expected. "
-                              "sub-dir: %s, client: %s, mount point: %s",
-                              mount_obj.volname, mount_obj.client_system,
-                              mount_obj.mountpoint)
-                ret = mount_obj.is_mounted()
-                if ret:
-                    self.subdir_mounts.append(mount_obj)
-                    self.assertFalse(ret, ("Mount operation did not fail as "
-                                           "expected. Mount operation of sub "
-                                           "directory %s on client %s passed."
-                                           "Mount point: %s"
-                                           % (mount_obj.volname,
-                                              mount_obj.client_system,
-                                              mount_obj.mountpoint)))
-                g.log.info("Mount command passed. But sub directory "
-                           "is not mounted. This is expected. "
-                           "sub-dir: %s, client: %s, mount point: %s",
-                           mount_obj.volname, mount_obj.client_system,
-                           mount_obj.mountpoint)
-            g.log.info("Mount operation of sub directory %s on client %s "
-                       "failed as expected.", mount_obj.volname,
-                       mount_obj.client_system)
-        g.log.info("Verified mount operation of sub-dirs on "
-                   "rejected client. "
-                   "Mount operation failed as expected.")
+        volname = f"{self.vol_name}/d1"
+        mountpoint = "/mnt/unauth_d1"
+        self._mount_and_verify(volname, mountpoint, self.server_list[0],
+                               self.client_list[1])
+
+        volname = f"{self.vol_name}/d2"
+        mountpoint = "/mnt/unauth_d2"
+        self._mount_and_verify(volname, mountpoint, self.server_list[0],
+                               self.client_list[0])
 
         # Unmount sub directories
-        ret = self.unmount_volume(self.subdir_mounts)
-        self.assertTrue(ret, "Failed to unmount one or more sub-directories")
-        g.log.info("Successfully unmounted all sub-directories")
-
-    def tearDown(self):
-        """
-        Unmounting and cleaning up
-        """
-        g.log.info("Unmounting sub-dir mounts")
-        ret = self.cleanup_volume()
-        if not ret:
-            raise ExecutionError("Failed to Unmount and cleanup sub-dir "
-                                 "mounts")
-        g.log.info("Successfully unmounted sub-dir mounts and cleaned")
+        redant.execute_abstract_op_node(f"umount {self.mountpoint}",
+                                        self.client_list[0])
+        redant.execute_abstract_op_node(f"umount {self.mountpoint}",
+                                        self.client_list[1])
+        self.is_mounted = False
