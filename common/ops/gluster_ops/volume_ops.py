@@ -1787,7 +1787,7 @@ class VolumeOps(AbstractOps):
 
             # Case2: Replica > 2
             if int(replica_count) > 2:
-                if quorum_type == 'none':
+                if 'none' in quorum_type:
                     (client_quorum_dict['volume_quorum_info']
                         ['quorum_type']) = 'auto'
                 elif quorum_type == 'fixed':

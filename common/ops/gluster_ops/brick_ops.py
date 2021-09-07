@@ -1293,7 +1293,7 @@ class BrickOps(AbstractOps):
         # offline_bricks_limit: Maximum Number of bricks that can be offline
         # without affecting the cluster
         if is_quorum_applicable:
-            if 'fixed' in quorum_type:
+            if quorum_type and 'fixed' in quorum_type:
                 if quorum_count is None:
                     self.logger.error("Quorum type is 'fixed' for"
                                       " the volume. But Quorum "
@@ -1303,7 +1303,7 @@ class BrickOps(AbstractOps):
                     offline_bricks_limit = (
                         int(replica_count) - int(quorum_count))
 
-            elif 'auto' in quorum_type:
+            elif quorum_type and 'auto' in quorum_type:
                 offline_bricks_limit = int(replica_count) // 2
 
             elif quorum_type is None:
