@@ -28,6 +28,16 @@ class TestCase(DParentTest):
     """
     Tests to verify auth.allow using fqdn on Fuse subdir feature
     """
+    def _mount_and_verify(self, subdir, client):
+        # Trying to mount volume sub directories on unauthenticated clients
+        cmd = (f"mount.glusterfs {self.server_list[0]}:/{subdir} \
+               {self.mountpoint}")
+        self.redant.execute_abstract_op_node(cmd, client, False)
+        cmd = f"mount | grep {subdir}"
+        ret = self.redant.execute_abstract_op_node(cmd, client, False)
+        if ret['error_code'] == 0:
+            raise Exception("Mount operation did not fail as expected")
+
     def run_test(self, redant):
         """
         Check sub dir auth.allow functionality using FQDN
@@ -79,18 +89,5 @@ class TestCase(DParentTest):
                                    self.mountpoint, self.client_list[1])
 
         # Trying to mount volume sub directories on unauthenticated clients
-        cmd = (f"mount.glusterfs {self.server_list[0]}:/{subdir_mount2} \
-               {self.mountpoint}")
-        redant.execute_abstract_op_node(cmd, self.client_list[0], False)
-        cmd = f"mount | grep {subdir_mount2}"
-        ret = redant.execute_abstract_op_node(cmd, self.client_list[0], False)
-        if ret['error_code'] == 0:
-            raise Exception("Mount operation did not fail as expected")
-
-        cmd = (f"mount.glusterfs {self.server_list[0]}:/{subdir_mount1} \
-               {self.mountpoint}")
-        redant.execute_abstract_op_node(cmd, self.client_list[1], False)
-        cmd = f"mount | grep {subdir_mount1}"
-        ret = redant.execute_abstract_op_node(cmd, self.client_list[1], False)
-        if ret['error_code'] == 0:
-            raise Exception("Mount operation did not fail as expected")
+        self._mount_and_verify(subdir_mount2, self.client_list[0])
+        self._mount_and_verify(subdir_mount1, self.client_list[1])
