@@ -512,6 +512,12 @@ class VolumeOps(AbstractOps):
             self.logger.error(f"Unable to cleanup the volume {volname}")
             return False
 
+        brick_list = self.get_all_bricks(volname, node)
+        if not brick_list:
+            self.logger.error("Failed to get the brick list")
+            return False
+        self.delete_bricks(brick_list)
+
         self.logger.debug(f"Successfully cleaned the volume: {volname}")
         return True
 

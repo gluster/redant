@@ -44,7 +44,7 @@ class TestChangeReservcelimit(NdParentTest):
             self.redant.logger.error(tb)
         super().terminate()
 
-    def set_storage_reserve_value(self, redant, vol_name, storage_res_val):
+    def _set_storage_reserve_value(self, redant, vol_name, storage_res_val):
         """
         Test Case:
         1) Create a distributed-replicated volume and start it.
@@ -125,4 +125,4 @@ class TestChangeReservcelimit(NdParentTest):
 
         # change_reserve_limit_to_higher_value is a seperate test case
         # which is being merged into a single test case
-        self.set_storage_reserve_value(redant, self.volume_name1, "99")
+        self._set_storage_reserve_value(redant, self.volume_name1, "99")
