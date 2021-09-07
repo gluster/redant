@@ -32,7 +32,6 @@ class TestHealFull(DParentTest):
         - Delete data from backend from the EC volume
         - Trigger heal full
         - Check if heal is completed
-        - Check for split-brain
         - Calculate arequal checksum and compare it
         """
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
@@ -56,7 +55,7 @@ class TestHealFull(DParentTest):
         # Get areequal before deleting the files from brick
         result_before_klng_procs = redant.collect_mounts_arequal(self.mounts)
 
-        subvols = redant.get_subvols(self.vol_name, self.vol_name)
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
         if not subvols:
             raise Exception("Failed to get the subvols list")
 
@@ -79,11 +78,6 @@ class TestHealFull(DParentTest):
         # Check if heal is completed
         if not redant.is_heal_complete(self.server_list[0], self.vol_name):
             raise Exception('Heal is not complete')
-
-        # Check for split-brain
-        if redant.is_volume_in_split_brain(self.server_list[0],
-                                           self.vol_name):
-            raise Exception("Volume is in split-brain state")
 
         # Get areequal after healing
         result_after_healing = redant.collect_mounts_arequal(self.mounts)
