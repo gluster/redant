@@ -20,7 +20,7 @@
     exported subdir is renamed along with auth allow functionality
 """
 
-# disruptive;rep,dist-rep,disp,dist-disp
+# disruptive;dist,rep,dist-rep,disp,dist-disp
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -141,12 +141,11 @@ class TestSubdirWithRename(DParentTest):
         if not ret:
             raise Exception("Rename subdirectory failed")
 
-        # unmount volume and subdir from client
-        volname = f"{self.vol_name}/d1"
-        redant.volume_unmount(volname, self.mountpoint, self.client_list[0])
-
-        redant.volume_unmount(self.vol_name, self.mountpoint,
-                              self.client_list[1])
+        # unmount volume and subdir from clients
+        redant.execute_abstract_op_node(f"umount {self.mountpoint}",
+                                        self.client_list[0])
+        redant.execute_abstract_op_node(f"umount {self.mountpoint}",
+                                        self.client_list[1])
         self.is_mounted = False
 
         # Try mounting subdir "d1" on client1
