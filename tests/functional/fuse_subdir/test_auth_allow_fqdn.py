@@ -21,6 +21,7 @@ Description:
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp
 
+import traceback
 from tests.d_parent_test import DParentTest
 
 
@@ -28,6 +29,22 @@ class TestCase(DParentTest):
     """
     Tests to verify auth.allow using fqdn on Fuse subdir feature
     """
+    def terminate(self):
+        """
+        Unmount the subdirs mounted in the TC
+        """
+        try:
+            if self.is_mounted:
+                cmd = f"umount {self.mountpoint}"
+                for client in self.client_list:
+                    self.redant.execute_abstract_op_node(cmd, client, False)
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
     def _mount_and_verify(self, subdir, client):
         # Trying to mount volume sub directories on unauthenticated clients
         cmd = (f"mount.glusterfs {self.server_list[0]}:/{subdir} \
@@ -54,6 +71,7 @@ class TestCase(DParentTest):
         redant.check_hardware_requirements(clients=self.client_list,
                                            clients_count=2)
 
+        self.is_mounted = False
         # Creating sub directories on mounted volume
         redant.create_dir(self.mountpoint, 'd1', self.client_list[0])
         redant.create_dir(self.mountpoint, 'd2', self.client_list[0])
@@ -91,3 +109,4 @@ class TestCase(DParentTest):
         # Trying to mount volume sub directories on unauthenticated clients
         self._mount_and_verify(subdir_mount2, self.client_list[0])
         self._mount_and_verify(subdir_mount1, self.client_list[1])
+        self.is_mounted = True
