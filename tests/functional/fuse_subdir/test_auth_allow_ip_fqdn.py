@@ -35,6 +35,10 @@ class TestCase(DParentTest):
         """
         Create and start the volume
         """
+        # Check client requirements
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
+
         conf_hash = self.vol_type_inf[self.volume_type]
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
@@ -70,10 +74,6 @@ class TestCase(DParentTest):
         8. Mount d1 on client1 and client2.
         9. Unmount d1 from client1 and client2.
         """
-        # Check client requirements
-        redant.check_hardware_requirements(clients=self.client_list,
-                                           clients_count=2)
-
         self.is_mounted = False
         # Obtain hostname of client2
         ret = redant.execute_abstract_op_node("hostname", self.client_list[1])
