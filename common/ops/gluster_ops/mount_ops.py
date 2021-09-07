@@ -85,10 +85,6 @@ class MountOps(AbstractOps):
             mclient (str): The client node in the cluster where volume
                            is to be mounted
             mserver (str): Server to which volume is mounted to
-            excep (bool): exception flag to bypass the exception if the
-                          is_mounted command fails. If set to False
-                          the exception is bypassed and value from remote
-                          executioner is returned. Defaults to True
         Returns:
             bool: True if volume is mounted, False otherwise
         """
