@@ -25,23 +25,51 @@
 # disruptive;disp,dist-disp
 from copy import deepcopy
 from random import choice
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
 class TestEcVersionBrickdown(DParentTest):
 
+    def _get_xattr(self, xattr):
+        """
+        Function will get xattr and return true or false
+        """
+        _rc = True
+        time_counter = 240
+        self.redant.logger.info("The heal monitoring timeout is : "
+                                f"{(time_counter / 60)} minutes")
+        while time_counter > 0:
+            list1 = []
+            for brick in self.bricks_list1:
+                brick_node, brick_path = brick.split(":")
+                cmd = (f"getfattr -d -e hex -m. {brick_path}/dir1/ "
+                       f"| grep {xattr}")
+                ret = self.redant.execute_abstract_op_node(cmd, brick_node,
+                                                           False)
+                if ret['msg']:
+                    out = ret['msg'][0].strip()
+                    list1.append(out)
+            if list1 and len(self.bricks_list1) == list1.count(out):
+                _rc = True
+                return _rc
+            else:
+                sleep(20)
+                time_counter -= 20
+                _rc = False
+        return _rc
+
     def run_test(self, redant):
         """
         Steps:
-        Create a directory on the mountpoint
-        Create files on the mountpoint
-        Bring down a brick say b1
-        Create more files on the mountpoint
-        Bring down another brick b2
-        Bring up brick b1
-        Wait for healing to complete
-        Check if EC version is updated
-        Check is EC size is updated
+        - Create a directory on the mountpoint
+        - Create files on the mountpoint
+        - Bring down a brick say b1
+        - Create more files on the mountpoint
+        - Bring down another brick b2
+        - Bring up brick b1
+        - Wait for healing to complete
+        - Check if EC version is updated
         """
         # Creating dir1 on the mountpoint
         redant.create_dir(self.mountpoint, "dir1", self.client_list[0])
@@ -65,8 +93,8 @@ class TestEcVersionBrickdown(DParentTest):
         if not subvols:
             raise Exception("Failed to get the subvols")
 
-        bricks_list1 = choice(subvols)
-        brick_b1_down = choice(bricks_list1)
+        self.bricks_list1 = choice(subvols)
+        brick_b1_down = choice(self.bricks_list1)
         ret = redant.bring_bricks_offline(self.vol_name, brick_b1_down)
         if not ret:
             raise Exception(f"Brick {brick_b1_down} is not offline")
@@ -83,13 +111,16 @@ class TestEcVersionBrickdown(DParentTest):
 
         # Changing mode owner and group of files
         dir_file_range = '2..5'
-        cmd = f"chmod 777 {self.mountpoint}/dir1/file.{dir_file_range}"
+        cmd = (f"chmod 777 {self.mountpoint}/dir1/file."
+               "{%s}" % dir_file_range)
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        cmd = f"chown root {self.mountpoint}/dir1/file.{dir_file_range}"
+        cmd = (f"chown root {self.mountpoint}/dir1/file."
+               "{%s}" % dir_file_range)
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        cmd = f"chgrp root {self.mountpoint}/dir1/file.{dir_file_range}"
+        cmd = (f"chgrp root {self.mountpoint}/dir1/file."
+               "{%s}" % dir_file_range)
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Create softlink and hardlink of files in mountpoint.
@@ -102,7 +133,7 @@ class TestEcVersionBrickdown(DParentTest):
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Bringing brick b2 offline
-        bricks_list2 = deepcopy(bricks_list1)
+        bricks_list2 = deepcopy(self.bricks_list1)
         bricks_list2.remove(brick_b1_down)
         brick_b2_down = choice(bricks_list2)
         ret = redant.bring_bricks_offline(self.vol_name, brick_b2_down)
@@ -117,17 +148,9 @@ class TestEcVersionBrickdown(DParentTest):
 
         # Delete brick2 from brick list as we are not checking for heal
         # completion in brick 2 as it is offline
-
-        bricks_list1.remove(brick_b2_down)
+        self.bricks_list1.remove(brick_b2_down)
 
         # Check if EC version is same on all bricks which are up
-        ret = redant.validate_xattr_on_all_bricks(bricks_list1, "dir1",
-                                                  'trusted.ec.version')
+        ret = self._get_xattr('trusted.ec.version')
         if not ret:
             raise Exception("EC version is not same on all bricks")
-
-        # Check if EC size is same on all bricks which are up
-        ret = redant.validate_xattr_on_all_bricks(bricks_list1, "dir1",
-                                                  'trusted.ec.size')
-        if not ret:
-            raise Exception("EC size is not same on all bricks")
