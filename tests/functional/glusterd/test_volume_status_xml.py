@@ -19,7 +19,7 @@ Description:
     Test volume status before and after volume start.
 """
 
-
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 # disruptive;
@@ -45,7 +45,7 @@ class TestCase(DParentTest):
 
         # create a distributed volume with single node
         volume_type = 'dist'
-        conf_hash = self.vol_type_inf[volume_type].copy()
+        conf_hash = deepcopy(self.vol_type_inf[volume_type])
         conf_hash['dist_count'] = 1
         redant.volume_create(self.vol_name, self.server_list[0],
                              conf_hash, self.server_list,

@@ -19,6 +19,7 @@
   Validating various cases of peer probe between nodes with
   volume creation on different nodes.
 """
+from copy import deepcopy
 from time import sleep
 from tests.d_parent_test import DParentTest
 
@@ -50,7 +51,7 @@ class TestCase(DParentTest):
         # Create a distributed volume on Node1
         volume_type1 = 'dist'
         volume_name1 = f"{self.test_name}-{volume_type1}-1"
-        conf_hash = self.vol_type_inf[volume_type1].copy()
+        conf_hash = deepcopy(self.vol_type_inf[volume_type1])
         conf_hash['dist-count'] = 1
         ret = redant.volume_create(volume_name1, self.server_list[0],
                                    conf_hash, self.server_list[0],
@@ -59,7 +60,7 @@ class TestCase(DParentTest):
         # Create a replicate volume on Node2 without force should fail
         volume_type2 = 'rep'
         volume_name2 = f"{self.test_name}-{volume_type2}-2"
-        conf_hash = self.vol_type_inf[volume_type2].copy()
+        conf_hash = deepcopy(self.vol_type_inf[volume_type2])
         conf_hash['replica_count'] = 2
         ret = redant.volume_create(volume_name2, self.server_list[1],
                                    conf_hash, self.server_list[1],
@@ -72,7 +73,7 @@ class TestCase(DParentTest):
         # Create a replica volume on Node2 with force should succeed
         volume_type3 = 'rep'
         volume_name3 = f"{self.test_name}-{volume_type3}-3"
-        conf_hash = self.vol_type_inf[volume_type3].copy()
+        conf_hash = deepcopy(self.vol_type_inf[volume_type3])
         conf_hash['replica_count'] = 3
         ret = redant.volume_create(volume_name3, self.server_list[1],
                                    conf_hash, self.server_list[1],
@@ -116,7 +117,7 @@ class TestCase(DParentTest):
         # Create a replica volume on N1 and N2 with force
         volume_type4 = 'rep'
         volume_name4 = f"{self.test_name}-{volume_type4}-4"
-        conf_hash = self.vol_type_inf[volume_type4].copy()
+        conf_hash = deepcopy(self.vol_type_inf[volume_type4])
         conf_hash['replica_count'] = 2
         ret = redant.volume_create(volume_name4, self.server_list[0],
                                    conf_hash, self.server_list[0:2],
@@ -148,7 +149,7 @@ class TestCase(DParentTest):
         # Create a replica volume on N1, N2 and N3 with force
         volume_type5 = 'rep'
         volume_name5 = f"{self.test_name}-{volume_type5}-5"
-        conf_hash = self.vol_type_inf[volume_type5].copy()
+        conf_hash = deepcopy(self.vol_type_inf[volume_type5])
         conf_hash['replica_count'] = 3
         ret = redant.volume_create(volume_name5, self.server_list[0],
                                    conf_hash, self.server_list,

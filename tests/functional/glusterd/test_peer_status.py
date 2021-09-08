@@ -20,6 +20,7 @@
   and checking if the brick is correctly added.
 """
 
+from copy import deepcopy
 import socket
 from tests.d_parent_test import DParentTest
 
@@ -73,7 +74,7 @@ class TestPeerStatus(DParentTest):
                             f"{self.server_list[1]}")
 
         # create a distributed volume with 2 bricks
-        conf_hash = self.vol_type_inf['dist'].copy()
+        conf_hash = deepcopy(self.vol_type_inf['dist'])
         conf_hash['dist_count'] = 2
         redant.setup_volume(self.vol_name, self.server_list[0],
                             conf_hash, self.server_list[0:2],

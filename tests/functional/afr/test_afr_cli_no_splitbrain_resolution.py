@@ -25,7 +25,7 @@ Description:
 
 
 # disruptive;rep
-
+from copy import deepcopy
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -37,7 +37,7 @@ class TestCase(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        conf_hash = self.vol_type_inf['rep'].copy()
+        conf_hash = deepcopy(self.vol_type_inf['rep'])
         conf_hash['replica_count'] = 2
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,

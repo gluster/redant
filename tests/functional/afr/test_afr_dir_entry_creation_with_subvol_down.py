@@ -21,6 +21,7 @@
 
 # disruptive;dist-arb,dist-rep
 from time import sleep
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
@@ -31,7 +32,7 @@ class TestAfrDirEntryCreationWithSubvolDown(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        conf_hash = self.vol_type_inf[self.volume_type].copy()
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         conf_hash['dist_count'] = 3
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,

@@ -20,6 +20,7 @@
 """
 
 # disruptive;arb,dist-arb,rep,dist-rep
+from copy import deepcopy
 from random import choice
 from time import sleep, time
 import traceback
@@ -33,7 +34,7 @@ class TestHealWithIO(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        conf_hash = self.vol_type_inf[self.volume_type].copy()
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         if self.volume_type.find("dist") >= 0:
             conf_hash['dist_count'] = 6
 
@@ -276,7 +277,7 @@ class TestHealWithIO(DParentTest):
         redant.logger.info("Test heal info with IO and brick down completed")
 
         # Create, start and mount volume for rest of the tests
-        conf_hash = self.vol_type_inf[self.volume_type].copy()
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         self.vol_name = f"{self.vol_name}-1"
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,

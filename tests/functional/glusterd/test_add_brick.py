@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
 This test case tests various add brick scenarios
 """
+from copy import deepcopy
 import random
 from tests.d_parent_test import DParentTest
 
@@ -37,7 +38,7 @@ class TestCase(DParentTest):
            part of the cluster.
         """
         # form bricks list to test add brick functionality
-        rep_count = self.vol_type_inf['rep'].copy()
+        rep_count = deepcopy(self.vol_type_inf['rep'])
         rep_count = rep_count['replica_count']
         num_of_bricks = 4 * rep_count
 

@@ -20,6 +20,7 @@
     brick on a new node and checking volume status.
 """
 
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
@@ -41,7 +42,7 @@ class TestCase(DParentTest):
         # Create a distributed volume on Node1
         self.volume_type1 = 'dist'
         self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
-        conf_dict = self.vol_type_inf[self.volume_type1].copy()
+        conf_dict = deepcopy(self.vol_type_inf[self.volume_type1])
         conf_dict['dist_count'] = 1
         redant.setup_volume(self.volume_name1, self.server_list[0], conf_dict,
                             [self.server_list[0]], self.brick_roots, True)

@@ -20,6 +20,7 @@
 """
 
 # disruptive;dist-rep
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
@@ -34,7 +35,7 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
         self.mounts_list = []
         self.mount_points_and_volnames = {}
         for i in range(1, 5):
-            conf_hash = self.vol_type_inf['dist-rep'].copy()
+            conf_hash = deepcopy(self.vol_type_inf['dist-rep'])
             if i < 3:
                 conf_hash['dist_count'] = 2
             vol_name = f"testvol-{self.volume_type}-{i}"
@@ -50,7 +51,7 @@ class TestClientSideQuorumTestsMultipleVols(DParentTest):
             self.mounts_list.append(mountpoint)
             self.mount_points_and_volnames[vol_name] = mountpoint
 
-        conf_hash = self.vol_type_inf['dist'].copy()
+        conf_hash = deepcopy(self.vol_type_inf['dist'])
         vol_name = f"testvol-{self.volume_type}-5"
         self.redant.setup_volume(vol_name, self.server_list[0],
                                  conf_hash, self.server_list,

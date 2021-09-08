@@ -19,6 +19,7 @@ Description: Test case to check if the rebalance hangs after a node
 is stopped.
 """
 
+from copy import deepcopy
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -65,7 +66,7 @@ class TestCase(DParentTest):
         redant.create_cluster(self.server_list[:2])
         redant.wait_till_all_peers_connected(self.server_list[:2])
 
-        conf_hash = self.vol_type_inf['dist'].copy()
+        conf_hash = deepcopy(self.vol_type_inf['dist'])
         conf_hash['dist-count'] = 2
         redant.volume_create(self.vol_name, self.server_list[0],
                              conf_hash, self.server_list[:2],

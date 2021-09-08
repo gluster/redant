@@ -21,6 +21,7 @@
 """
 
 # disruptive;dist
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
@@ -31,7 +32,7 @@ class TestSelfHeal(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        conf_hash = self.vol_type_inf['dist'].copy()
+        conf_hash = deepcopy(self.vol_type_inf['dist'])
         conf_hash['dist_count'] = 1
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
