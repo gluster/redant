@@ -83,8 +83,10 @@ class environ:
         machines. If not transfer it there.
         """
         scripts_dpath = ['/usr/share/redant/script/file_dir_ops.py',
-                         '/usr/share/redant/script/compute_hash.py']
-        scripts_spath = ['tools/file_dir_ops.py', 'tools/compute_hash.py']
+                         '/usr/share/redant/script/compute_hash.py',
+                         '/usr/share/redant/script/file_lock.py']
+        scripts_spath = ['tools/file_dir_ops.py', 'tools/compute_hash.py',
+                         'tools/file_lock.py']
 
         total_nodes = list(set(self.client_list + self.server_list))
         for ind, script in enumerate(scripts_spath):
