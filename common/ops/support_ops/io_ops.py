@@ -1475,3 +1475,38 @@ class IoOps(AbstractOps):
                 return False
 
         return True
+
+    def open_file_fd(self, mountpoint: str, time: int, client: str,
+                     start_range: int = 0, end_range: int = 0) -> dict:
+        """
+        Open FD for a file and write to file.
+
+        Args:
+          mountpoint(str): The mount point where the FD of file is to
+                           be opened.
+          time(int): The time to wait after opening an FD.
+          client(str): The client from which FD is to be opened.
+
+        Optional:
+            start_range(int): The start range of the open FD.
+                              (Default: 0)
+            end_range(int): The end range of the open FD.
+                            (Default: 0)
+
+        Returns:
+            proc(object): Returns a process object
+
+        NOTE:
+        Before opening FD, check the currently used fds on the
+        system as only a limited number of fds can be opened on
+        a system at a given time for each process.
+        """
+        if not (start_range and end_range):
+            cmd = (f"cd {mountpoint}; exec 30<> file_openfd ; sleep {time};"
+                   "echo 'xyz' >&30")
+        else:
+            cmd = (f"cd {mountpoint}; for i in `seq {start_range} "
+                   f"{end_range}`; do eval 'exec $i<>file_openfd$i'; "
+                   f"sleep {time}; echo 'Write to open FD' >&$i; done")
+
+        return self.execute_command_async(cmd, client)
