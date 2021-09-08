@@ -22,14 +22,14 @@
     should complete and EC version should be updated
 """
 
-# disruptive;disp,dist-disp
+# nonDisruptive;disp,dist-disp
 from copy import deepcopy
 from random import choice
 from time import sleep
-from tests.d_parent_test import DParentTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestEcVersionBrickdown(DParentTest):
+class TestEcVersionBrickdown(NdParentTest):
 
     def _get_xattr(self, xattr):
         """
