@@ -375,8 +375,10 @@ class VolumeOps(AbstractOps):
             # Check if mount dir exists in the node.
             mountdir = f"/mnt/{volname}"
             for node in client_list:
-                self.execute_abstract_op_node(f"umount {mountdir}", node)
-                self.execute_abstract_op_node(f"mkdir -p {mountdir}", node)
+                self.execute_abstract_op_node(f"umount {mountdir}", node,
+                                              False)
+                self.execute_abstract_op_node(f"mkdir -p {mountdir}", node,
+                                              False)
                 self.volume_mount(server_list[0], volname, mountdir, node)
 
         # Clear out the mountpoint data.

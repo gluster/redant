@@ -19,12 +19,12 @@
     Test Cases in this module tests the Fuse sub directory feature
 """
 
-# disruptive;dist,rep,dist-rep,disp,dist-disp
+# nonDisruptive;dist,rep,dist-rep,disp,dist-disp
 import traceback
-from tests.d_parent_test import DParentTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestFuseSubDirMount(DParentTest):
+class TestFuseSubDirMount(NdParentTest):
 
     def terminate(self):
         """

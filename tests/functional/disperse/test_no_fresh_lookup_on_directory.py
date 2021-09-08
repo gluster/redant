@@ -20,29 +20,12 @@
     replicated and distributed-dispersed volumes
 """
 
-# disruptive;dist-disp,dist-rep,dist-arb
+# nonDisruptive;dist-disp,dist-rep,dist-arb
 from random import choice
-from tests.d_parent_test import DParentTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestNoFreshLookUpBrickDown(DParentTest):
-
-    @DParentTest.setup_custom_enable
-    def setup_test(self):
-        # Create and start the volume
-        conf_hash = self.vol_type_inf[self.volume_type]
-        self.redant.setup_volume(self.vol_name, self.server_list[0],
-                                 conf_hash, self.server_list,
-                                 self.brick_roots, force=True)
-        options = {'diagnostics.client-log-level': 'DEBUG'}
-        self.redant.set_volume_options(self.vol_name, options,
-                                       self.server_list[0])
-
-        self.mountpoint = (f"/mnt/{self.vol_name}")
-        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
-                                             self.client_list[0])
-        self.redant.volume_mount(self.server_list[0], self.vol_name,
-                                 self.mountpoint, self.client_list[0])
+class TestNoFreshLookUpBrickDown(NdParentTest):
 
     def _do_lookup(self, dirname):
         """
@@ -78,6 +61,11 @@ class TestNoFreshLookUpBrickDown(DParentTest):
         7. Bring down one brick from the online bricks and repeat step 4, 5
         8. Start the volume with force and wait for all process to be online.
         """
+        # Set client log level to DEBUG
+        options = {'diagnostics.client-log-level': 'DEBUG'}
+        self.redant.set_volume_options(self.vol_name, options,
+                                       self.server_list[0])
+
         # Distinct log file for the validation of this test
         filename = f"/var/log/glusterfs/mnt-{self.vol_name}.log"
 
