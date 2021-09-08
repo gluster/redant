@@ -41,6 +41,7 @@ class TestCase(DParentTest):
         # create a two node cluster
         cluster_nodes = self.server_list[:2]
         redant.create_cluster(cluster_nodes)
+        redant.wait_till_all_peers_connected(cluster_nodes)
 
         # create a distributed volume with single node
         volume_type = 'dist'

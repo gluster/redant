@@ -144,6 +144,7 @@ class environ:
         try:
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
+            self.wait_till_all_peers_connected(self.server_list)
             self._check_and_copy_scripts()
             self._check_and_install_arequal_checksum()
             self.redant.logger.info("Environment setup success.")

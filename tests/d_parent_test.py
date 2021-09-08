@@ -66,6 +66,7 @@ class DParentTest(metaclass=abc.ABCMeta):
         try:
             self.redant.start_glusterd(self.server_list)
             self.redant.create_cluster(self.server_list)
+            self.wait_till_all_peers_connected(self.server_list)
 
             # Call setup in case you want to override volume creation,
             # start, mounting in the TC

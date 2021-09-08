@@ -34,8 +34,13 @@ class TestCase(NdParentTest):
         destroyed
         """
         try:
-            vol_list = [self.volume_name1, self.volume_name]
-            self.redant.cleanup_volumes(self.server_list, vol_list)
+            # Cleanup the remaining volumes
+            curr_vol_list = self.redant.get_volume_list(self.server_list[0])
+            tc_vol_list = [self.volume_name1, self.volume_name]
+            for volume in tc_vol_list:
+                if volume in curr_vol_list:
+                    self.redant.cleanup_volumes(self.server_list, volume)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

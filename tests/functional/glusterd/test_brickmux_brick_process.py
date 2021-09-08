@@ -36,9 +36,9 @@ class TestCase(DParentTest):
         6. check for pidof glusterfsd single process should be visible
         """
 
-        redant.delete_cluster(self.server_list)
-
         redant.create_cluster(self.server_list[:3])
+        redant.wait_till_all_peers_connected(self.server_list[:3])
+
         conf_dict = self.vol_type_inf["rep"]
         volname = f"{self.test_name}"
         # Volume Creation

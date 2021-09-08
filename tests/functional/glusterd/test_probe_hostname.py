@@ -147,9 +147,3 @@ class TestCase(DParentTest):
 
         # perform the set of volume operations
         self._vol_operations(redant, "test-vol-fqdn")
-
-        # creating the cluster back again
-        ret = redant.create_cluster(self.server_list)
-
-        if not ret:
-            raise Exception("Cluster creation failed")

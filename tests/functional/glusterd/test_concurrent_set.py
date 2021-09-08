@@ -30,7 +30,7 @@ class TestCase(NdParentTest):
 
     def terminate(self):
         try:
-            self.redant.cleanup_volumes(self.server_list, self.volume_name1)
+            self.redant.cleanup_volume(self.server_list, self.volume_name1)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

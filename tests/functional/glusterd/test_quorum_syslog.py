@@ -50,7 +50,9 @@ class TestCase(DParentTest):
                 raise Exception("Servers are not in peer probed state")
 
             # stopping the volume and Cleaning up the volume
-            self.redant.cleanup_volumes(self.server_list, self.volume_name1)
+            if self.volume_name1:
+                self.redant.cleanup_volume(self.server_list,
+                                           self.volume_name1)
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -73,6 +75,7 @@ class TestCase(DParentTest):
         for both the volumes in /var/log/messages and
         /var/log/glusterfs/glusterd.log
         """
+        self.volume_name1 = ""
 
         if redant.check_os("fedora", nodes=self.server_list):
             self.TEST_RES[0] = None
