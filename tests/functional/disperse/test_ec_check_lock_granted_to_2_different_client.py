@@ -66,7 +66,7 @@ class TestCase(DParentTest):
         # Verifying OCL as ON
         option_dict = (redant.get_volume_options(self.vol_name,
                        'disperse.optimistic-change-log', self.server_list[0]))
-        if option_dict['disperse.optimistic-change-log'] != 'on (DEFAULT)':
+        if option_dict['disperse.optimistic-change-log'].split()[0] != 'on':
             raise Exception("optimistic-change-log is not ON for volume")
 
         # Repeat the test with eager-lock and other-eager-lock 'on' & 'off'
