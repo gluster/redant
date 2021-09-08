@@ -43,6 +43,9 @@ class TestCase(NdParentTest):
                 if volume in curr_vol_list:
                     self.redant.cleanup_volumes(self.server_list, volume)
 
+            # Delete the bricks created in the TC
+            self.redant.delete_bricks(self.bricks_list)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -111,9 +114,9 @@ class TestCase(NdParentTest):
                               mountpoint,
                               self.client_list[0])
         # get the list of all bricks
-        bricks_list = redant.get_all_bricks(self.volume_name1,
-                                            self.server_list[0])
-        if bricks_list is None:
+        self.bricks_list = redant.get_all_bricks(self.volume_name1,
+                                                 self.server_list[0])
+        if self.bricks_list is None:
             raise Exception("Failed to get the list of all the bricks")
 
         # Stop the volume
@@ -124,7 +127,7 @@ class TestCase(NdParentTest):
 
         self.volname = "test_create_vol_used_bricks"
 
-        brick_cmd = " ".join(bricks_list[0:6])
+        brick_cmd = " ".join(self.bricks_list[0:6])
 
         cmd = (f"gluster volume create {self.volname}"
                f" replica 3 {brick_cmd} --mode=script")
@@ -140,7 +143,7 @@ class TestCase(NdParentTest):
         # Checking failed message of volume creation
         err = ret['error_msg']
         msg = ' '.join(['volume create: test_create_vol_used_bricks: failed:',
-                        bricks_list[0].split(':')[1],
+                        self.bricks_list[0].split(':')[1],
                         'is already part of a volume'])
         if msg not in err:
             raise Exception("Incorrect error message for volume creation "

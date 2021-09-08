@@ -33,7 +33,7 @@ class TestHealWithIO(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        conf_hash = self.vol_type_inf[self.volume_type]
+        conf_hash = self.vol_type_inf[self.volume_type].copy()
         if self.volume_type.find("dist") >= 0:
             conf_hash['dist_count'] = 6
 
@@ -276,7 +276,7 @@ class TestHealWithIO(DParentTest):
         redant.logger.info("Test heal info with IO and brick down completed")
 
         # Create, start and mount volume for rest of the tests
-        conf_hash = self.vol_type_inf[self.volume_type]
+        conf_hash = self.vol_type_inf[self.volume_type].copy()
         self.vol_name = f"{self.vol_name}-1"
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,

@@ -93,7 +93,7 @@ class TestCase(DParentTest):
         # creating a volume with non existing brick path should fail
         self.volume_type3 = 'dist'
         self.volume_name3 = f"{self.test_name}-{self.volume_type3}-3"
-        conf_dict = self.vol_type_inf[self.volume_type2]
+        conf_dict = self.vol_type_inf[self.volume_type3]
         brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
                                                       self.brick_roots,
                                                       self.volume_name3, 2)

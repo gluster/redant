@@ -32,7 +32,7 @@ class TestClientSideQuorumCross2Tests(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         self.script_file_path = "/usr/share/redant/script/file_dir_ops.py"
-        conf_hash = self.vol_type_inf[self.volume_type]
+        conf_hash = self.vol_type_inf[self.volume_type].copy()
         conf_hash['replica_count'] = 2
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,

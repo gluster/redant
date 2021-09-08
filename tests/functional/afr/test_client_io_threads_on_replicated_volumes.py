@@ -30,7 +30,7 @@ class TestClientIOThreadsOnReplicatedVolumes(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
-        conf_hash = self.vol_type_inf[self.volume_type]
+        conf_hash = self.vol_type_inf[self.volume_type].copy()
         if self.volume_type == "dist":
             conf_hash['dist_count'] = 1
 

@@ -45,10 +45,11 @@ class TestCase(DParentTest):
 
         # create a distributed volume with single node
         volume_type = 'dist'
-        self.vol_type_inf[volume_type]['dist_count'] = 1
+        conf_hash = self.vol_type_inf[volume_type].copy()
+        conf_hash['dist_count'] = 1
         redant.volume_create(self.vol_name, self.server_list[0],
-                             self.vol_type_inf[volume_type],
-                             self.server_list, self.brick_roots, True)
+                             conf_hash, self.server_list,
+                             self.brick_roots, True)
 
         # Get volume status
         cmd = f'gluster vol status {self.vol_name}'
