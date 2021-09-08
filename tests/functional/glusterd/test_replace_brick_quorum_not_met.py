@@ -19,6 +19,7 @@
     Test replace brick when quorum not met
 """
 
+from copy import deepcopy
 import random
 from tests.d_parent_test import DParentTest
 
@@ -51,7 +52,7 @@ class TestCase(DParentTest):
         # Create Volume
         self.volume_type = "dist-rep"
         self.vol_name = (f"{self.test_name}-{self.volume_type}")
-        conf_hash = self.vol_type_inf[self.volume_type]
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         redant.volume_create(self.vol_name, self.server_list[0], conf_hash,
                              self.server_list, self.brick_roots)
 
