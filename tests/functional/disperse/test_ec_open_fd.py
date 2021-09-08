@@ -86,6 +86,7 @@ class TestEcOpenFd(DParentTest):
             raise Exception("Peers are not in connected state")
 
         # Check if write to FD is successful
+        redant.logger.info("Waiting for 'write to FD' process to complete")
         ret = redant.wait_till_async_command_ends(proc)
         if ret['error_code'] != 0:
             raise Exception("Write to FD is unsuccessful")
