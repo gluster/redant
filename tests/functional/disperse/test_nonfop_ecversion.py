@@ -20,11 +20,11 @@
     Don't send final version update if non data fop succeeded validation
 """
 
-# disruptive;disp
-from tests.d_parent_test import DParentTest
+# nonDisruptive;disp
+from tests.nd_parent_test import NdParentTest
 
 
-class TestEcVersion(DParentTest):
+class TestEcVersion(NdParentTest):
 
     def run_test(self, redant):
         """

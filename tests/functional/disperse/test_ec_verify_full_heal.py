@@ -19,11 +19,11 @@
     TC to verify full-heal
 """
 
-# disruptive;disp,dist-disp
-from tests.d_parent_test import DParentTest
+# nonDisruptive;disp,dist-disp
+from tests.nd_parent_test import NdParentTest
 
 
-class TestHealFull(DParentTest):
+class TestHealFull(NdParentTest):
 
     def run_test(self, redant):
         """
