@@ -1476,3 +1476,49 @@ class BrickOps(AbstractOps):
                     output = line.split('=')
                     attr_dict[key][output[0]] = output[1].strip()
         return attr_dict
+
+    def validate_xattr_on_all_bricks(self, bricks_list: list, file_path: str,
+                                     xattr: str) -> bool:
+        """
+        Checks if the xattr of the file/dir is same on all bricks.
+
+        Args:
+            bricks_list (list): List of bricks.
+            file_path (str): The path to the file/dir.
+            xattr (str): The file attribute to get from file.
+
+        Returns:
+            bool: True if the xattr is same on all the fqpath. False otherwise
+
+        Example:
+            validate_xattr_on_all_bricks("bricks_list",
+                                         "dir1/file1",
+                                         "xattr")
+        """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
+        time_counter = 240
+        self.logger.debug("The heal monitoring timeout is : "
+                          f" {(time_counter // 60)} minutes")
+
+        while time_counter > 0:
+            attr_vals = {}
+            for brick in bricks_list:
+                brick_node, brick_path = brick.split(":")
+                attr_vals[brick] = \
+                    (self.get_extended_attributes_info(brick_node,
+                     f"{brick_path}/{file_path}", attr_name=xattr))
+                if not attr_vals[brick]:
+                    self.logger.error("Failed to get extended attributes")
+                    return False
+
+            ec_version_vals = [list(val.values())[0][xattr] for val in
+                               list(attr_vals.values())]
+            if len(set(ec_version_vals)) == 1:
+                return True
+            else:
+                sleep(20)
+                time_counter -= 20
+
+        return False
