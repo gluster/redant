@@ -21,12 +21,12 @@ Test Description:
     verifies brick down, brick up scenarios and logs volume info and status.
 """
 
-# disruptive;disp,dist-disp
+# nonDisruptive;disp,dist-disp
 
-from tests.d_parent_test import DParentTest
+from tests.nd_parent_test import NdParentTest
 
 
-class TestCase(DParentTest):
+class TestCase(NdParentTest):
 
     # Tests: Kill 2 bricks and start it again
     def run_test(self, redant):
