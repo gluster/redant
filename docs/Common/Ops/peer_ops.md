@@ -315,7 +315,7 @@ Example:
 self.peer_detach_servers(self.server_list, self.server_list[0])
 ```
 
-## 14. wait_till_all_peers_are_connected()
+## 14. wait_till_all_peers_connected()
 
 This function helps in connecting all the peers by waiting till timeout.
 
@@ -328,5 +328,5 @@ Returns:
 
 Example:
 ```python
-self.wait_till_all_peers_are_connected(self.server_list)
+self.wait_till_all_peers_connected(self.server_list)
 ```
