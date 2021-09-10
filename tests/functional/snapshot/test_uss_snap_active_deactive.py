@@ -115,7 +115,7 @@ class TestCase(DParentTest):
         redant.snap_deactivate(snap_list[1], self.server_list[0])
 
         # validate the given snap is absent in mountpoint
-        if redant.view_snaps_from_mount(self.mounts, snap_list[1], False):
+        if redant.view_snaps_from_mount(self.mounts, snap_list[1]):
             raise Exception(f"Snap {snap_list[1]} shouldn't be present under"
                             ".snaps dir")
 
