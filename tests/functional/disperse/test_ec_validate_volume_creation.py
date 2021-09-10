@@ -89,7 +89,7 @@ class TestEcValidateVolumeCreate(DParentTest):
 
         # Test 3: Test cases to verify invalid input combinations.
         # Setup input parameters
-        conf_hash['redundancy_count'] = 2
+        conf_hash['redundancy_count'] = 0
         conf_hash['disperse_count'] = 6
 
         # Setup Volume, it should fail
