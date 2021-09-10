@@ -72,7 +72,7 @@ class TestEcTruncateFileWithBrickDown(DParentTest):
                 raise Exception("Bricks are still online")
 
             # Truncate the file
-            cmd = (f'python -c "import os, sys; fd = os.open({file_name},'
+            cmd = (f'python -c "import os, sys; fd = os.open(\'{file_name}\','
                    ' os.O_TRUNC ); os.close( fd )"')
             redant.execute_abstract_op_node(cmd, self.client_list[0])
 
@@ -100,7 +100,7 @@ class TestEcTruncateFileWithBrickDown(DParentTest):
                                 " offline")
 
             # write data to the file
-            cmd = (f'python -c "import os, sys;fd = os.open({file_name},'
+            cmd = (f'python -c "import os, sys;fd = os.open(\'{file_name}\','
                    ' os.O_RDWR) ;os.write(fd, \'This is test after '
                    'truncate\'.encode()); os.close(fd)"')
 
