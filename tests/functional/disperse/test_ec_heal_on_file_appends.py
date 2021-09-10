@@ -133,7 +133,7 @@ class TestHealOnFileAppends(DParentTest):
                                    f"{self.mountpoint}/{self.file_name}")
         if not ret:
             raise Exception("Not able to get stat of the file")
-        curr_ctime = ret['st_ctime'].strip()
+        curr_ctime = ret['msg']['st_ctime']
         if int(curr_ctime) <= int(prev_ctime):
             raise Exception("Not able to validate data is appended to the "
                             "file while checking for xaatrs")
