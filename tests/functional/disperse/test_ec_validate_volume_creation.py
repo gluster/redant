@@ -1,209 +1,194 @@
-#  Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-EcValidateVolumeCreate:
+ Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
     This module tries to create and validate EC volume
     with various combinations of input parameters.
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
+
+# disruptive;disp,dist-disp
+from copy import deepcopy
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['dispersed', 'distributed-dispersed'], ['glusterfs']])
-class EcValidateVolumeCreate(GlusterBaseClass):
+class TestEcValidateVolumeCreate(DParentTest):
 
-    # Method to setup the environment for test case
-    def setUp(self):
-        # Initialize the input parameters
-        self.volume['voltype']['redundancy_count'] = 0
-        self.volume['voltype']['disperse_count'] = 0
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        # Check server requirements
+        self.redant.check_hardware_requirements(self.server_list, 6)
 
-    # Verify volume creation with insufficient bricks
-    def test_insufficient_brick_servers(self):
+    def run_test(self, redant):
+        """
+        Steps:
+        - Verify volume creation should fail in case of insufficient bricks
+        - Repeat the above step wit force option, and it should pass
+        - Verify volume creation with valid config
+        - Verify volume creation with different invalid combinations of
+          disperse and redundancy count
+        """
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+
+        # Test 1: Verify volume creation with insufficient bricks
         # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 2
-        self.volume['voltype']['disperse_count'] = 6
+        conf_hash['redundancy_count'] = 2
+        conf_hash['disperse_count'] = 6
 
         # Restrict the brick servers to data brick count
-        default_servers = self.volume['servers']
-        data_brick_count = (self.volume['voltype']['disperse_count'] -
-                            self.volume['voltype']['redundancy_count'])
-        self.volume['servers'] = self.servers[0:data_brick_count]
+        data_brick_count = (conf_hash['disperse_count']
+                            - conf_hash['redundancy_count'])
 
-        # Setup Volume and Mount Volume without force
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume setup is not failing "
-                               "for volume %s", self.volname))
-        g.log.info("Successfully verified volume setup with insufficient "
-                   "brick servers witout force option")
+        # Setup Volume without force
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash,
+                                  self.server_list[0:data_brick_count],
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name}")
 
-        # Setup Volume and Mount Volume with force
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=True)
-        self.assertTrue(ret, ("Volume Setup and Mount failed for "
-                              "volume %s", self.volname))
-        g.log.info("Successfully verified volume setup with insufficient "
-                   "brick servers with force option")
-
-        # Stopping the volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        self.assertTrue(ret, ("Failed to Unmount Volume and Cleanup Volume"))
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Restore the default server list
-        self.volume['servers'] = default_servers
-
-    # Test cases to verify valid input combinations.
-    def test_valid_usecase_one(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 2
-        self.volume['voltype']['disperse_count'] = 6
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertTrue(ret, ("Volume Setup and Mount failed for volume %s",
-                              self.volname))
+        # Setup Volume with force
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash,
+                                  self.server_list[0:data_brick_count],
+                                  self.brick_roots, force=True, excep=False)
+        if ret['error_code'] != 0:
+            raise Exception("Unexpected: Volume setup is failing "
+                            f"for volume {self.vol_name} with force")
 
         # Stopping the volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        self.assertTrue(ret, ("Failed to Unmount Volume and "
-                              "Cleanup Volume"))
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
+        ret = redant.cleanup_volume(self.server_list[0], self.vol_name)
+        if not ret:
+            raise Exception("Failed to cleanup Volume")
 
-    # Test cases to verify invalid input combinations.
-    def test_invalid_usecase_one(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 0
-        self.volume['voltype']['disperse_count'] = 6
+        # Test 2: Test cases to verify valid input combinations.
 
         # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded"
-                               " for volume %s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        redant.setup_volume(self.vol_name, self.server_list[0],
+                            conf_hash, self.server_list,
+                            self.brick_roots)
 
-    def test_invalid_usecase_two(self):
+        # Stopping the volume
+        ret = redant.cleanup_volume(self.server_list[0], self.vol_name)
+        if not ret:
+            raise Exception("Failed to cleanup Volume")
+
+        # Test 3: Test cases to verify invalid input combinations.
         # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 3
-        self.volume['voltype']['disperse_count'] = 6
+        conf_hash['redundancy_count'] = 2
+        conf_hash['disperse_count'] = 6
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_three(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 4
-        self.volume['voltype']['disperse_count'] = 6
+        # Usecase 2: Increase the redundancy count
+        conf_hash['redundancy_count'] = 3
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_four(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 6
-        self.volume['voltype']['disperse_count'] = 6
+        # Usecase 3: Increase the redundancy count
+        conf_hash['redundancy_count'] = 4
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_five(self):
-        # Setup input parameters
-        self.volume['voltype']['disperse_data_count'] = 6
-        self.volume['voltype']['disperse_count'] = 6
+        # Usecase 4: Increase the redundancy count
+        conf_hash['redundancy_count'] = 6
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_six(self):
-        # Setup input parameters
-        self.volume['voltype']['disperse_data_count'] = 4
-        self.volume['voltype']['disperse_count'] = 4
+        # Usecase 5: Invalid disperse and redundancy count combination
+        conf_hash['redundancy_count'] = 4
+        conf_hash['disperse_count'] = 4
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_seven(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = -2
-        self.volume['voltype']['disperse_count'] = 6
+        # Usecase 6: Negative redundancy count
+        conf_hash['redundancy_count'] = -2
+        conf_hash['disperse_count'] = 6
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_eight(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = -2
-        self.volume['voltype']['disperse_count'] = -4
+        # Usecase 7: Negative redundancy, disperse count
+        conf_hash['redundancy_count'] = -2
+        conf_hash['disperse_count'] = -4
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_nine(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 2
-        self.volume['voltype']['disperse_count'] = -4
+        # Usecase 6: Negative disperse count
+        conf_hash['redundancy_count'] = 2
+        conf_hash['disperse_count'] = -4
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
 
-    def test_invalid_usecase_ten(self):
-        # Setup input parameters
-        self.volume['voltype']['redundancy_count'] = 2
-        self.volume['voltype']['disperse_count'] = 0
+        # Usecase 6: Zero disperse count
+        conf_hash['redundancy_count'] = 2
+        conf_hash['disperse_count'] = 0
 
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        self.assertFalse(ret, ("Volume Setup and Mount succeeded for volume "
-                               "%s", self.volname))
-        g.log.info("Successfully verified invalid input parameters")
+        # Setup Volume, it should fail
+        ret = redant.setup_volume(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Volume setup is not failing "
+                            f"for volume {self.vol_name} with invalid input")
