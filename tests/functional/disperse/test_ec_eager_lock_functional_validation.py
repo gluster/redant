@@ -1,46 +1,29 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
+  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 Test Description:
     Verify Eager lock reduces the number of locks
     being taken when writing to the file continuosly
 """
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-from glustolibs.gluster.volume_ops import set_volume_options
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.gluster.profile_ops import (profile_start, profile_stop)
-from glustolibs.gluster.dht_test_utils import find_hashed_subvol
-from glustolibs.gluster.lib_utils import get_extended_attributes_info
+# nonDisruptive;disp,dist-disp
+from tests.nd_parent_test import NdParentTest
 
 
-@runs_on([['dispersed', 'distributed-dispersed'], ['glusterfs']])
-class EagerlockFunctionalValidationTest(GlusterBaseClass):
-    # Method to setup the environment for test case
-
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=True)
-        if not ret:
-            raise ExecutionError("Failed to setup and mount volume")
-
+class TestCase(NdParentTest):
     def _check_dirty_xattr(self, filename):
         """Get trusted.ec.dirty xattr value to validate eagerlock behavior"""
         # Find the hashed subvol of the file created
@@ -98,7 +81,7 @@ class EagerlockFunctionalValidationTest(GlusterBaseClass):
 
         return filename
 
-    def test_validate_profile_for_inodelk(self):
+    def run_test(self, redant):
         """
         Test Steps:
         1) Create an ecvolume and mount it
@@ -154,8 +137,3 @@ class EagerlockFunctionalValidationTest(GlusterBaseClass):
         ret, _, _ = profile_stop(self.mnode, self.volname)
         self.assertEqual(ret, 0, "Failed to stop profile on volume: %s"
                          % self.volname)
-
-    def tearDown(self):
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
