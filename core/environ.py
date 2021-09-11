@@ -65,12 +65,15 @@ class environ:
         path
         """
         remove = False
-        for node in machines:
-            self.redant.create_dir('/usr/share/', 'redant/script', node)
+        check_path = False
+        if not self.redant.path_exists(machines, "/usr/share/redant/script"):
+            for node in machines:
+                self.redant.create_dir('/usr/share', 'redant/script', node)
+                check_path = True
 
-        if self.redant.path_exists(machines,
-                                   [dpath]):
+        if check_path and self.redant.path_exists(machines, [dpath]):
             remove = True
+
         for node in machines:
             self.redant.logger.info(f'Copying file to {node}')
             self.redant.transfer_file_from_local(spath,

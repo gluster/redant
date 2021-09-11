@@ -751,3 +751,23 @@ class HealOps:
             return False
 
         return True
+
+    def enable_heal(self, node: str, volname: str) -> bool:
+        """
+        Enable heal for the specified volume.
+
+        Args:
+            node : Node on which commands are executed
+            volname : Name of the volume
+
+        Returns:
+            bool : True if heal is enabled on the volume.
+                   False otherwise.
+        """
+        cmd = f"gluster volume heal {volname} enable"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to enable heal")
+            return False
+
+        return True
