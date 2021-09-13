@@ -74,7 +74,7 @@ class TestEcUssSnapshot(DParentTest):
         """
         self.is_io_running = False
         self.io_mem_monitor_running = False
-        self.mouns = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Starting resource consumption using top
         self.log_file_mem_monitor = '/var/log/glusterfs/mem_usage.log'
