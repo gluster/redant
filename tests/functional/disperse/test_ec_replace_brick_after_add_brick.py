@@ -1,82 +1,49 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check replace-brick on ec volume after add-brick while IO in
+    progress
+"""
+
+# disruptive;disp
+import traceback
 from random import choice
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.glusterfile import (remove_file,
-                                            occurences_of_pattern_in_file)
-from glustolibs.gluster.heal_libs import monitor_heal_completion
-from glustolibs.gluster.volume_libs import (replace_brick_from_volume,
-                                            expand_volume)
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (validate_io_procs, wait_for_io_to_complete)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['dispersed'], ['glusterfs']])
-class TestEcReplaceBrickAfterAddBrick(GlusterBaseClass):
+class TestEcReplaceBrickAfterAddBrick(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+    def terminate(self):
+        """
+        Wait for IO to complete, if the TC fails midway
+        """
+        try:
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    raise Exception("Failed to wait for IO to complete")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Upload IO scripts for running IO on mounts
-        cls.script_upload_path = (
-            "/usr/share/glustolibs/io/scripts/file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients {}".
-                                 format(cls.clients))
-
-    @classmethod
-    def tearDownClass(cls):
-        for each_client in cls.clients:
-            ret = remove_file(each_client, cls.script_upload_path)
-            if not ret:
-                raise ExecutionError("Failed to delete file {}".
-                                     format(cls.script_upload_path))
-        cls.get_super_method(cls, 'tearDownClass')()
-
-    def setUp(self):
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup volume and mount it on three clients.
-        if not self.setup_volume_and_mount_volume(self.mounts):
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-
-    def tearDown(self):
-        if self.all_mounts_procs:
-            ret = wait_for_io_to_complete(self.all_mounts_procs, self.mounts)
-            if ret:
-                raise ExecutionError(
-                    "Wait for IO completion failed on some of the clients")
-
-        # Unmount and cleanup the volume
-        if not self.unmount_volume_and_cleanup_volume(self.mounts):
-            raise ExecutionError("Unable to unmount and cleanup volume")
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_ec_replace_brick_after_add_brick(self):
+    def run_test(self, redant):
         """
         Test Steps:
         1. Create a pure-ec volume (say 1x(4+2))
@@ -89,80 +56,78 @@ class TestEcReplaceBrickAfterAddBrick(GlusterBaseClass):
         6. While IOs are in progress replace any of the bricks
         7. Check for errors if any collected after step 6
         """
-        # pylint: disable=unsubscriptable-object,too-many-locals
-        all_bricks = get_all_bricks(self.mnode, self.volname)
-        self.assertIsNotNone(all_bricks, "Unable to get the bricks from the {}"
-                                         " volume".format(self.volname))
+        self.is_io_running = False
+        all_bricks = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if not all_bricks:
+            raise Exception("Unable to get the bricks list")
 
         self.all_mounts_procs = []
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         for count, mount_obj in enumerate(self.mounts):
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d --dir-depth 3 --dir-length 5 "
-                   "--max-num-of-dirs 5 --num-of-files 5 %s" % (
-                       self.script_upload_path, count,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      count, 3, 5, 5, 5,
+                                                      mount_obj['client'])
             self.all_mounts_procs.append(proc)
 
-        ret = validate_io_procs(self.all_mounts_procs, self.mounts)
-        self.assertTrue(ret, "IO failed on the mounts")
-        self.all_mounts_procs *= 0
+        ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
+        if not ret:
+            raise Exception("IO failed on the mounts")
 
         # Expand the volume
-        ret = expand_volume(self.mnode, self.volname, self.servers,
-                            self.all_servers_info)
-        self.assertTrue(ret, "Expanding volume failed")
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots)
+        if not ret:
+            raise Exception("Expanding volume failed")
 
         # Create a new dir(common_dir) on mountpoint
-        common_dir = self.mounts[0].mountpoint + "/common_dir"
-        ret = mkdir(self.mounts[0].client_system, common_dir)
-        self.assertTrue(ret, "Directory creation failed")
+        redant.create_dir(self.mountpoint, "common_dir", self.client_list[0])
 
         # Create distinct directory for each client under common_dir
-        distinct_dir = common_dir + "/$HOSTNAME"
-        for each_client in self.clients:
-            ret = mkdir(each_client, distinct_dir)
-            self.assertTrue(ret, "Directory creation failed")
+        for each_client in self.client_list:
+            redant.create_dir(f"{self.mountpoint}/common_dir", "$HOSTNAME",
+                              each_client)
 
         # Run dd in the background and stdout,stderr to error.txt for
         # validating any errors after io completion.
-        run_dd_cmd = ("cd {}; for i in `seq 1 1000`; do dd if=/dev/urandom "
-                      "of=file$i bs=4096 count=10 &>> error.txt; done".
-                      format(distinct_dir))
-        for each_client in self.clients:
-            proc = g.run_async(each_client, run_dd_cmd)
+        run_dd_cmd = (f"cd {self.mountpoint}/common_dir/$HOSTNAME; "
+                      "for i in `seq 1 1000`; do dd if=/dev/urandom "
+                      "of=file$i bs=4096 count=10 &>> error.txt; done")
+        self.all_mounts_procs = []
+        for each_client in self.mounts:
+            proc = redant.execute_command_async(run_dd_cmd,
+                                                each_client['client'])
             self.all_mounts_procs.append(proc)
+        self.is_io_running = True
 
         # Get random brick from the bricks
         brick_to_replace = choice(all_bricks)
         node_from_brick_replace, _ = brick_to_replace.split(":")
 
         # Replace brick from the same node
-        servers_info_of_replaced_node = {}
-        servers_info_of_replaced_node[node_from_brick_replace] = (
-            self.all_servers_info[node_from_brick_replace])
+        ret = redant.replace_brick_from_volume(self.vol_name,
+                                               self.server_list[0],
+                                               node_from_brick_replace,
+                                               src_brick=brick_to_replace,
+                                               brick_roots=self.brick_roots)
+        if not ret:
+            raise Exception("Replace brick failed")
 
-        ret = replace_brick_from_volume(self.mnode, self.volname,
-                                        node_from_brick_replace,
-                                        servers_info_of_replaced_node,
-                                        src_brick=brick_to_replace)
-        self.assertTrue(ret, "Replace brick failed")
-
-        self.assertTrue(validate_io_procs(self.all_mounts_procs, self.mounts),
-                        "IO failed on the mounts")
-        self.all_mounts_procs *= 0
+        ret = redant.validate_io_procs(self.all_mounts_procs, self.mounts)
+        if not ret:
+            raise Exception("IO failed on the mounts")
+        self.is_io_running = False
 
         err_msg = "Too many levels of symbolic links"
-        dd_log_file = distinct_dir + "/error.txt"
-        for each_client in self.clients:
-            ret = occurences_of_pattern_in_file(each_client, err_msg,
-                                                dd_log_file)
-            self.assertEqual(ret, 0, "Either file {} doesn't exist or {} "
-                             "messages seen while replace brick operation "
-                             "in-progress".format(dd_log_file, err_msg))
+        dd_log_file = f"{self.mountpoint}/common_dir/$HOSTNAME/error.txt"
+        for each_client in self.mounts:
+            ret = redant.occurences_of_pattern_in_file(each_client['client'],
+                                                       err_msg, dd_log_file)
+            if ret != 0:
+                raise Exception(f"Either file {dd_log_file} doesn't exist or"
+                                f" '{err_msg}' messages seen while replace "
+                                "brick operation in-progress")
 
-        self.assertTrue(monitor_heal_completion(self.mnode, self.volname),
-                        "Heal failed on the volume {}".format(self.volname))
+        # Monitor heal completion
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal has not yet completed")
