@@ -87,7 +87,7 @@ class TestSnapshotUssSnap(DParentTest):
             # deleting the mount path from list
             del file_list[0]
             for file in file_list:
-                before_uss_enable.appned(file)
+                before_uss_enable.append(file)
 
         # Create Multiple snapshots for volume
         self.snaps_list = []
@@ -130,7 +130,7 @@ class TestSnapshotUssSnap(DParentTest):
             # deleting the mount path from list
             del file_list[0]
             for file in file_list:
-                after_uss_disable.appned(file)
+                after_uss_disable.append(file)
 
         # Validate after disabling USS, all files should be same
         for file in before_uss_enable:
