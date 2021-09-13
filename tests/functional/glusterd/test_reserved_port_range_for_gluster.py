@@ -92,7 +92,8 @@ class TestCase(DParentTest):
         out = ''
         for i in range(1, 51):
             volname = f"{self.vol_name}-volume-{i}"
-            ret = redant.volume_start(volname, self.server_list[0], False)
+            ret = redant.volume_start(volname, self.server_list[0],
+                                      excep=False)
             if ret['msg']['opRet'] != '0':
                 redant.logger.info(f"Failed to start volume {volname}")
                 out = ret['msg']['opErrstr']

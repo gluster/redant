@@ -63,7 +63,7 @@ class TestCase(DParentTest):
         if not redant.wait_node_power_up(self.server_list[2]):
             raise Exception(f"Node {self.server_list[2]} not yet up")
 
-        if not redant.wait_till_all_peers_connected(self.server_list):
+        if not redant.wait_till_all_peers_connected(self.server_list[:3]):
             raise Exception("Some peers not yet connected")
         for server in self.server_list:
             out = redant.get_brick_processes_count(server)

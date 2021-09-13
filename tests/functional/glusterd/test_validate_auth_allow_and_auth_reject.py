@@ -27,37 +27,50 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list, self.brick_roots)
+
+        # Create mountpoints
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+
     def _set_option_and_unmount_and_mount_volumes(self, redant, option="",
                                                   is_allowed=True):
         """
         Setting volume option and then mounting and unmounting the volume
         """
-        mount_det = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
-
         # Check if an option is passed
         if option:
             # Setting the option passed as an argument
             redant.set_volume_options(self.vol_name,
-                                      {option: mount_det[0]['client']},
+                                      {option: self.client_list[0]},
                                       self.server_list[0])
 
-        # Unmount only if the volume is supposed to be mounted
-        if is_allowed:
-            redant.volume_unmount(self.vol_name,
-                                  mount_det[0]['mountpath'],
-                                  mount_det[0]['client'])
-
         # Mounting a volume
-        ret = redant.volume_mount(self.server_list[0], self.vol_name,
-                                  mount_det[0]['mountpath'],
-                                  mount_det[0]['client'], False)
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[0], False)
 
-        if is_allowed and ret['error_code'] != 0:
+        ret = redant.is_mounted(self.vol_name, self.mountpoint,
+                                self.client_list[0], self.server_list[0])
+
+        if is_allowed and not ret:
             raise Exception("Unexpected: Volume mount failed. "
                             f"Error: {ret['error_msg']}")
 
-        elif not is_allowed and ret['error_code'] == 0:
+        elif not is_allowed and ret:
             raise Exception("Unexpected: Volume mount should have failed")
+
+        # Unmount only if the volume is supposed to be mounted
+        if is_allowed:
+            redant.volume_unmount(self.vol_name, self.mountpoint,
+                                  self.client_list[0])
 
     def _check_validate_test(self, redant):
         """

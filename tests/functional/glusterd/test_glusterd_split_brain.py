@@ -48,7 +48,7 @@ class TestCase(DParentTest):
         }
         self.volname = f"{self.test_name}-{self.volume_type}"
         redant.setup_volume(self.volname, self.server_list[0],
-                            conf_hash, self.server_list[-2:],
+                            conf_hash, self.server_list[:4],
                             self.brick_roots)
 
         # Volume options to set on the volume
@@ -68,19 +68,19 @@ class TestCase(DParentTest):
                                   self.server_list[0])
 
         # Stop glusterd on two gluster nodes where bricks aren't present
-        redant.stop_glusterd(self.server_list[-2:])
+        redant.stop_glusterd(self.server_list[4:6])
 
         # Check glusterd is stopped
-        if not redant.wait_for_glusterd_to_stop(self.server_list[-2:]):
+        if not redant.wait_for_glusterd_to_stop(self.server_list[4:6]):
             raise Exception("Glusterd is still running on nodes: "
-                            f"{self.server_list[-2:]}")
+                            f"{self.server_list[4:6]}")
 
         # Performing volume reset on the volume to remove all the volume
         # options set earlier
         redant.volume_reset(self.volname, self.server_list[0])
 
         # Bring back glusterd online on the nodes where it stopped earlier
-        redant.start_glusterd(self.server_list[-2:])
+        redant.start_glusterd(self.server_list[4:6])
 
         # Check peer status whether all peer are in connected state none of the
         # nodes should be in peer rejected state

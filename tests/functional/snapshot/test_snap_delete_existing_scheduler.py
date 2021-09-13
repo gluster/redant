@@ -62,7 +62,8 @@ class TestSnapshotDeleteExistingScheduler(DParentTest):
             shared_stor = True
             # Check if shared storage is enabled
             # Disable if true
-            ret = self.redant.is_shared_volume_mounted(self.server_list)
+            ret = self.redant.is_shared_volume_mounted(self.server_list[0],
+                                                       timeout=30)
             if ret:
                 ret = self.redant.disable_shared_storage(self.server_list[0])
                 if not ret:
@@ -106,7 +107,7 @@ class TestSnapshotDeleteExistingScheduler(DParentTest):
             raise Exception("Failed to enable shared storage")
 
         # Validate shared storage volume is mounted
-        ret = redant.is_shared_volume_mounted(self.server_list[0], timeout=10)
+        ret = redant.is_shared_volume_mounted(self.server_list[0], timeout=30)
         if not ret:
             raise Exception("Failed to validate if shared volume is mounted")
 

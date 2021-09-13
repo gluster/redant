@@ -2,52 +2,7 @@
 
 [Volume Ops](../../../common/ops/gluster_ops/volume_ops.py) contains all the functions required to carry out the volume related operations. Given below are all the details about all the functions implemented in the Volume Ops module:
 
-1) **volume_mount**<br>
-        Mounts the gluster volume to the client's filesystem.
-
-        Args:
-            server (str): Hostname or IP address
-            volname (str): Name of volume to be mounted
-            path (str): The path of the mount directory(mount point)
-        Kwargs:
-            node (str): The client node in the cluster where volume
-                        mount is to be run. Default - None
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-        Example:
-		```python
-            volume_mount(self.server_list[0], self.vol_name, self.mountpoint, self.client_list[0])
-		```
-
-2) **volume_unmount**<br>
-    Unmounts the gluster volume from its client.
-
-        Args:
-            volname (str): The volume whose mt pt. is to be unmounted.
-            path (str): The path of the mount directory(mount point)
-        Kwargs:
-            node (str): The client node in the cluster where volume
-                        unmount is to be run. Default - None
-        Returns:
-            ret: A dictionary consisting
-                - Flag : Flag to check if connection failed
-                - msg : message
-                - error_msg: error message
-                - error_code: error code returned
-                - cmd : command that got executed
-                - node : node on which the command got executed
-        Example:
-		```python
-            volume_unmount(self.vol_name, self.mountpoint, self.client_list[0])
-		```
-
-3) **volume_create**<br>
+1) **volume_create**<br>
     Create the gluster volume with specified configuration
 
         Args:
@@ -77,7 +32,7 @@
                           self.server_list, self.brick_roots, True)
 		```
 
-4) **volume_start**<br>
+2) **volume_start**<br>
     Starts the gluster volume
 
         Args:
@@ -101,7 +56,7 @@
             volume_start(self.vol_name,self.server_list[0])
 		```
 
-5) **volume_stop**<br>
+3) **volume_stop**<br>
     Stops the gluster volume
 
         Args:
@@ -124,7 +79,7 @@
             volume_stop(self.vol_name, self.server_list[0], True)
 		```
 
-6) **volume_delete**<br>
+4) **volume_delete**<br>
     Deletes the gluster volume if given volume exists in gluster.
 
         Args:
@@ -144,7 +99,7 @@
             volume_delete(self.vol_name, self.server_list[0])
 		```
 
-7) **volume_delete_and_brick_cleanup**<br>
+5) **volume_delete_and_brick_cleanup**<br>
     Deletes the gluster volume if given volume exists in gluster.
 
         Args:
@@ -164,7 +119,7 @@
             volume_delete_and_brick_cleanup(self.vol_name, self.server_list[0])
 		```
 
-8) **get_volume_info**<br>
+6) **get_volume_info**<br>
     Gives volume information.
 
         Kwargs:
@@ -221,7 +176,7 @@
                }
 			```
 
-9) **get_volume_list**<br>
+7) **get_volume_list**<br>
     Fetches the volume names in the gluster.
         Uses xml output of volume list and parses it into to list
 
@@ -234,7 +189,7 @@
             get_volume_list(server)
 		```
 
-10) **volume_reset**<br>
+8) **volume_reset**<br>
     Resets the gluster volume of all the reconfigured options.
 
         Args:
@@ -257,7 +212,7 @@
             volume_reset(self.vol_name,self.server_list[0])
 		```
 
-11) **get_volume_status**<br>
+9) **get_volume_status**<br>
     Gets the status of all or the specified volume
 
         Kwargs:
@@ -310,7 +265,7 @@
                }
 			```
 
-12) **get_volume_options**<br>
+10) **get_volume_options**<br>
      Gets the option values for a given volume.
 
         Args:
@@ -342,7 +297,7 @@
                }
 			```
 
-13) **set_volume_options**<br>
+11) **set_volume_options**<br>
      Sets the option values for the given volume.
 
         Args:
@@ -356,7 +311,7 @@
             set_volume_options("test-vol1", options, self.server_list[0])
 			```
 
-14) **validate_volume_option**<br>
+12) **validate_volume_option**<br>
      Validate the volume options
 
         Args:
@@ -373,7 +328,7 @@
 			```
             
 
-15) **reset_volume_option**<br>
+13) **reset_volume_option**<br>
     Resets the volume option
 
         Args:
@@ -401,7 +356,7 @@
          Example:
             
 
-16) **volume_sync**<br>
+14) **volume_sync**<br>
 	    Sync the volume to the specified host
     
         Args:
@@ -425,7 +380,7 @@
             volume_sync(hostname,self.server_list[0])
 			```
 
-17) **is_volume_started**<br>
+15) **is_volume_started**<br>
 		Function to check whether a said volume is in started state.
 
 		Args:
@@ -438,7 +393,7 @@
 			self.is_volume_started(self.vol_name, self.server_list[0])
 			```
 
-18) **wait_for_vol_to_go_offline**<br>
+16) **wait_for_vol_to_go_offline**<br>
 		Function to wait till the said volume goes offline.
 
 		Args:
@@ -452,7 +407,7 @@
 			self.wait_for_vol_to_go_offline(self.vol_name, self.server_list[0])
 			```
 
-18) **wait_for_vol_to_come_online**<br>
+17) **wait_for_vol_to_come_online**<br>
 		Function to wait till the said volume comes online.
 
 		Args:
@@ -466,7 +421,7 @@
 			self.wait_for_vol_to_come_online(self.vol_name, self.server_list[0])
 			```
 
-19) **setup_volume**<br>
+18) **setup_volume**<br>
         Function to setup the gluster volume with the specified configuration.
 
         Args:
@@ -503,7 +458,7 @@
             redant.setup_volume(self.volume_name1, self.server_list[0], conf_dict,[self.server_list[0]], self.brick_roots, True)
 			```
 
-20) **volume_create_with_custom_bricks**<br>
+19) **volume_create_with_custom_bricks**<br>
         This function helps in creating a gluster volume with custom brick configuration.
 
         Args:
@@ -543,7 +498,7 @@
                                                     brick_dict)
 			```
             
-21) **sanitize_volume**<br>
+20) **sanitize_volume**<br>
         This function helps in getting the volume ready for the next test case to be used. Generally, non-disruptive tests will require this function but even some strange scenario can be dealt with this in a test case.
 
         Args:
@@ -562,7 +517,7 @@
                                             vol_param)
 			```
 
-22) **cleanup_volume**<br>
+21) **cleanup_volume**<br>
         This function comes handy in cleanup operations. Basically, it deletes the volume and its mountpoints.
 
         Args:
@@ -574,7 +529,7 @@
             self.redant.cleanup_volume(self.server_list, self.volname1)
 			```
 
- 23) **is_distribute_volume**<br>
+22) **is_distribute_volume**<br>
         This function checks if a volume is a plain distributed volume.
         Args:
             volname (str): Name of the volume.
@@ -588,7 +543,7 @@
             self.is_distribute_volume(volname)
 			```
 
-24) **wait_for_volume_process_to_be_online**<br>
+23) **wait_for_volume_process_to_be_online**<br>
         This function waits for the volume's processes to be online until timeout
 
         Args:
@@ -610,7 +565,7 @@
                self.server_list[0], self.server_list, timeout=600)
 			```
 
-25) **get_subvols**<br>
+24) **get_subvols**<br>
         This function helps in getting the subvolumes in the given volume.
 
         Args:

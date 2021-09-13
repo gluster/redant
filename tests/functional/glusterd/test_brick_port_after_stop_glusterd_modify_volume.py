@@ -20,28 +20,25 @@
   making changes on the volume and starting the glusterd
   again.
 """
-import traceback
+
 from time import sleep
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
 # disruptive;dist
 class TestCase(DParentTest):
 
-    def terminate(self):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        In case the test fails midway and one of the nodes has
-        glusterd stopped then the glusterd is started on that node
-        and then the terminate function in the DParentTest is called
+        Override the volume create, start and mount in parent_run_test
         """
-        try:
-            self.redant.start_glusterd(self.server_list[1])
-            self.redant.wait_for_glusterd_to_start(self.server_list[1])
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        conf_hash['dist_count'] = 2
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
 
     def run_test(self, redant):
         """
@@ -51,7 +48,8 @@ class TestCase(DParentTest):
         3. Start glusterd on node 2
         4. Check volume status, brick should get port
         """
-        bricks_list = redant.es.get_brickdata(self.vol_name)
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
         if bricks_list is None:
             raise Exception("Failed to get the brick list")
 
@@ -71,10 +69,10 @@ class TestCase(DParentTest):
             if int(vol_brick["port"]) > 0:
                 totport += 1
 
-        if totport != 4:
+        if totport != 2:
             raise Exception(f"Volume {self.vol_name} is not started "
                             "successfully because no. of brick port "
-                            "is not equal to 4")
+                            "is not equal to 2")
 
         redant.stop_glusterd(self.server_list[1])
         redant.wait_for_glusterd_to_stop(self.server_list[1])
@@ -111,7 +109,7 @@ class TestCase(DParentTest):
             if int(vol_brick["port"]) > 0:
                 totport += 1
 
-        if totport != 4:
+        if totport != 2:
             raise Exception(f"Volume {self.vol_name} is not started "
                             "successfully because no. of brick port "
-                            "is not equal to 4")
+                            "is not equal to 2")

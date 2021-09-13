@@ -30,6 +30,28 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.do_rebalance = False
+
+        # Check server requirements
+        self.redant.check_hardware_requirements(self.server_list, 4)
+
+        # Create a volume using only 3 nodes
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list[:3], self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+
+        # Mount the volume using 4th node
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[3], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
+
     def terminate(self):
         try:
             if self.do_rebalance:
@@ -61,11 +83,6 @@ class TestCase(DParentTest):
         11.Create a new directory from the client on the mount point.
         12.Check for directory in both replica sets.
         """
-        self.do_rebalance = False
-
-        # Check server requirements
-        redant.check_hardware_requirements(self.server_list, 4)
-
         # Creating 100 files.
         command = ('for number in `seq 1 100`;do touch '
                    + self.mountpoint + '/file$number; done')
@@ -84,7 +101,7 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(command, self.client_list[0])
 
         # Forming brick list
-        brick_dict, brick_str = redant.form_brick_cmd(self.server_list,
+        brick_dict, brick_str = redant.form_brick_cmd(self.server_list[:3],
                                                       self.brick_roots,
                                                       self.vol_name, 3, True)
 
@@ -101,7 +118,7 @@ class TestCase(DParentTest):
                    + self.mountpoint + '/file$number; done')
         redant.execute_abstract_op_node(command, self.client_list[0])
 
-        # Forming brivk list of added bricks
+        # Forming brick list of added bricks
         brick_list = []
         for server in brick_dict:
             brick_list.append(f"{server}:{brick_dict[server][0]}")

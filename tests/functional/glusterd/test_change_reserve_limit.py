@@ -33,10 +33,11 @@ class TestChangeReservcelimit(NdParentTest):
         The voume created in the test case is destroyed.
         """
         try:
-            ret = self.redant.wait_for_io_to_complete(self.all_mounts_procs,
-                                                      self.mounts)
-            if not ret:
-                raise Exception("IO failed on some of the clients")
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    raise Exception("IO failed on some of the clients")
+
             self.redant.cleanup_volumes(self.server_list, self.volume_name1)
         except Exception as error:
             tb = traceback.format_exc()
@@ -62,10 +63,10 @@ class TestChangeReservcelimit(NdParentTest):
         redant.set_volume_options(vol_name, {'storage.reserve': '50'},
                                   self.server_list[0])
 
-        # Run IOs
-        redant.logger.info("Starting IO on all mounts...")
         self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(vol_name)
+        # Run IOs
+        redant.logger.info("Starting IO on all mounts...")
         for mount in self.mounts:
             redant.logger.info(f"Starting IO on {mount['client']}:"
                                f"{mount['mountpath']}")
@@ -74,10 +75,12 @@ class TestChangeReservcelimit(NdParentTest):
                                                       mount['client'])
             self.all_mounts_procs.append(proc)
             counter = counter + 10
+        self.is_io_running = True
 
         # Validate IO
         if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
             raise Exception("IO failed on some of the clients")
+        self.is_io_running = False
 
         brick_list = redant.get_all_bricks(vol_name, self.server_list[0])
 
@@ -108,8 +111,11 @@ class TestChangeReservcelimit(NdParentTest):
         3) Change the reserve limit to a higher value on the newly created
            volume
         """
+        self.is_io_running = False
+
         # change_reserve_limit_to_lower_value
-        self.set_storage_reserve_value(redant, self.vol_name, "33")
+        self._set_storage_reserve_value(redant, self.vol_name, "33")
+
         # volume creation for setting reserve limit to higher value.
         self.volume_type1 = 'dist-rep'
         self.volume_name1 = f"{self.test_name}-1"

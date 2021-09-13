@@ -453,7 +453,7 @@ class VolumeOps(AbstractOps):
                         # was unmount but the data structure isn't updated.
                         # Hence the unmout shouldn't be a strict check.
                         self.volume_unmount(
-                            volname, mount, mntd['client'], False)
+                            volname, mount, mntd['client'], excep=False)
                         self.execute_abstract_op_node(f"rm -rf {mount}",
                                                       mntd['client'])
 

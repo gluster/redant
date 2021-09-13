@@ -75,7 +75,7 @@ class TestFuseAuthAllow(DParentTest):
 
         # Unmount volume from client1
         redant.volume_unmount(self.vol_name, self.mountpoint,
-                              self.client_list[0])
+                              self.client_list[0], check_volds=False)
 
         # Obtain hostname of client1
         ret = redant.execute_abstract_op_node("hostname", self.client_list[0])
@@ -100,4 +100,4 @@ class TestFuseAuthAllow(DParentTest):
 
         # Unmount volume from client1
         redant.volume_unmount(self.vol_name, self.mountpoint,
-                              self.client_list[0])
+                              self.client_list[0], check_volds=False)

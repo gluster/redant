@@ -19,7 +19,6 @@
     TC to check glusterd quorum
 """
 
-import traceback
 from tests.d_parent_test import DParentTest
 
 # disruptive;rep,dist-rep
@@ -36,22 +35,6 @@ class TestCase(DParentTest):
         # Check server requirements
         self.redant.check_hardware_requirements(self.server_list, 4)
 
-    def terminate(self):
-        """
-        Cleanup the volume created in the TC
-        """
-        try:
-            # Start glusterd on all servers
-            self.redant.start_glusterd(self.server_list)
-            if not self.redant.wait_for_glusterd_to_start(self.server_list):
-                raise Exception("Failed to start glusterd on all nodes")
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
-
     def run_test(self, redant):
         """
         -> Creating two volumes and starting them, stop the second volume
@@ -64,8 +47,6 @@ class TestCase(DParentTest):
         -> Start the glusterd on the node where it is stopped
         -> Volume stop, start, delete will succeed once quorum is met
         """
-        self.vol_exist = False
-
         # Peer probe first 3 servers
         redant.create_cluster(self.server_list[:3])
         redant.wait_till_all_peers_connected(self.server_list[:3])
@@ -83,7 +64,6 @@ class TestCase(DParentTest):
         redant.setup_volume(self.volume_name1, self.server_list[0],
                             conf_dict, self.server_list[:3],
                             self.brick_roots)
-        self.vol_exist = True
 
         # stopping the second volume
         redant.volume_stop(self.volume_name1, self.server_list[0])
@@ -186,8 +166,13 @@ class TestCase(DParentTest):
             raise Exception("All bricks are not online")
 
         # Once quorum is met should be able to cleanup the volume
+        vol1_brick_list = redant.get_all_bricks(self.volume_name1,
+                                                self.server_list[0])
         redant.volume_delete(self.volume_name1, self.server_list[0])
-        self.vol_exist = False
+        ret = redant.delete_bricks(vol1_brick_list)
+        if not ret:
+            raise Exception("Failed to delete bricks for volume: "
+                            f"{self.volume_name1}")
 
         # Volume stop should succeed
         redant.volume_stop(self.vol_name, self.server_list[0])
