@@ -25,59 +25,46 @@ from tests.nd_parent_test import NdParentTest
 
 class TestCase(NdParentTest):
     def _check_dirty_xattr(self, filename):
-        """Get trusted.ec.dirty xattr value to validate eagerlock behavior"""
-        # Find the hashed subvol of the file created
-        # for distributed disperse case
-        subvols_info = get_subvols(self.mnode, self.volname)
-        subvols_info = subvols_info['volume_subvols']
-        if len(subvols_info) > 1:
-            _, hashed_subvol = find_hashed_subvol(subvols_info,
-                                                  '', filename)
-            if hashed_subvol is None:
-                g.log.error("Error in finding hash value of %s", filename)
-                return None
-        else:
-            hashed_subvol = 0
-
+        """Get trusted.ec.dirty xattr value to validate eagerlock behavior
+        """
         # Collect ec.dirty xattr value from each brick
         result = []
-        for subvol in subvols_info[hashed_subvol]:
-            host, brickpath = subvol.split(':')
-            brickpath = brickpath + '/' + filename
-            ret = get_extended_attributes_info(host, [brickpath],
-                                               encoding='hex',
-                                               attr_name='trusted.ec.dirty')
+        bricks_list = self.redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
+        if not bricks_list:
+            raise Exception("Failed to get the brick list")
+
+        for brick in bricks_list:
+            host, brickpath = brick.split(':')
+            brickpath = f"{brickpath}/{filename}"
+            ret = self.redant.get_extended_attributes_info(host, brickpath)
+            if not ret:
+                continue
             ret = ret[brickpath]['trusted.ec.dirty']
             result.append(ret)
 
         # Check if xattr values are same across all bricks
         if result.count(result[0]) == len(result):
             return ret
-        g.log.error("trusted.ec.dirty value is not consistent across the "
-                    "disperse set %s", result)
+        self.redant.logger.error("trusted.ec.dirty value is not consistent "
+                                 "across the "
+                                 f"disperse set {result}")
         return None
 
     def _file_create_and_profile_info(self, status):
         """Create a file and check the volume profile for inode lock count."""
         # Creating file
-        mountpoint = self.mounts[0].mountpoint
-        client = self.mounts[0].client_system
-
         filename = 'f1_EagerLock_' + status
-        cmd = ("dd if=/dev/urandom of=%s/%s bs=100M count=10"
-               % (mountpoint, filename))
-
-        ret, _, _ = g.run(client, cmd)
-        self.assertEqual(ret, 0, "Failed to create file on mountpoint")
-        g.log.info("Successfully created files on mountpoint")
+        cmd = (f"dd if=/dev/urandom of={self.mountpoint}/{filename} "
+               "bs=100M count=10")
+        self.redant.execute_abstract_op_node(cmd, self.server_list[0])
 
         # Getting and checking output of profile info.
-        cmd = "gluster volume profile %s info | grep -i INODELK" % self.volname
-        ret, rout, _ = g.run(self.mnode, cmd)
-        self.assertEqual(ret, 0, "Failed to grep INODELK count from profile "
-                         "info")
-        g.log.info("The lock counts on all bricks with eager-lock %s: %s",
-                   status, rout)
+        cmd = (f"gluster v profile {self.vol_name} info | grep -i INODELK"
+               " | awk '{print$8}'")
+        ret = self.redant.execute_abstract_op_node(cmd, self.server_list[0])
+        if ret['msg'] is None:
+            raise Exception("Failed to grep INODELK count from profile")
 
         return filename
 
@@ -96,44 +83,40 @@ class TestCase(NdParentTest):
         """
 
         # Enable EagerLock
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'disperse.eager-lock': 'on',
-                                  'disperse.eager-lock-timeout': '10'})
-        self.assertTrue(ret, "Failed to turn on eagerlock"
-                             "on %s" % self.volname)
+        redant.set_volume_options(self.vol_name,
+                                  {'disperse.eager-lock': 'on',
+                                   'disperse.eager-lock-timeout': '30'},
+                                  self.server_list[0], True)
 
         # Start profile on volume.
-        ret, _, _ = profile_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start profile on volume: %s"
-                         % self.volname)
+        redant.profile_start(self.vol_name, self.server_list[0])
 
         # Test behavior with EagerLock on
         filename = self._file_create_and_profile_info("on")
-        self.assertIsNotNone(filename, "Failed to get filename")
+        if filename is None:
+            raise Exception("Failed to get filename")
 
         # Test dirty bit with EagerLock on
         ret = self._check_dirty_xattr(filename)
-        self.assertEqual(ret, '0x00000000000000010000000000000001',
-                         "Unexpected dirty xattr value is %s on %s"
-                         % (ret, filename))
+        if ret != '0x00000000000000010000000000000001':
+            raise Exception("Unexpected dirty xattr value is set: "
+                            f"{ret} on {filename}")
 
         # Disable EagerLock
-        ret = set_volume_options(self.mnode, self.volname,
-                                 {'disperse.eager-lock': 'off'})
-        self.assertTrue(ret, "Failed to turn off eagerlock "
-                             "on %s" % self.volname)
+        redant.set_volume_options(self.vol_name,
+                                  {'disperse.eager-lock': 'off'},
+                                  self.server_list[0])
 
         # Test behavior with EagerLock off
         filename = self._file_create_and_profile_info("off")
-        self.assertIsNotNone(filename, "Failed to get filename")
+        if filename is None:
+            raise Exception("Failed to get filename")
 
         # Test dirty bit with EagerLock off
         ret = self._check_dirty_xattr(filename)
-        self.assertEqual(ret, '0x00000000000000000000000000000000',
-                         "Unexpected dirty xattr value is %s on %s"
-                         % (ret, filename))
+        if ret != '0x00000000000000000000000000000000':
+            raise Exception("Unexpected dirty xattr value is set: "
+                            f"{ret} on {filename}")
 
         # Stop profile on volume.
-        ret, _, _ = profile_stop(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to stop profile on volume: %s"
-                         % self.volname)
+        redant.profile_stop(self.vol_name, self.server_list[0])
