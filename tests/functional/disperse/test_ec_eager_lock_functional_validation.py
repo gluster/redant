@@ -19,11 +19,11 @@ Test Description:
     Verify Eager lock reduces the number of locks
     being taken when writing to the file continuosly
 """
-# nonDisruptive;disp,dist-disp
-from tests.nd_parent_test import NdParentTest
+# disruptive;disp,dist-disp
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
     def _check_dirty_xattr(self, filename):
         """Get trusted.ec.dirty xattr value to validate eagerlock behavior
         """
