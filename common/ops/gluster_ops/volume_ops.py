@@ -499,6 +499,11 @@ class VolumeOps(AbstractOps):
             self.logger.info(f"Volume {volname} does not exist on {node}")
             return True
 
+        brick_list = self.get_all_bricks(volname, node)
+        if not brick_list:
+            self.logger.error("Failed to get the brick list")
+            return False
+
         ret = self.snap_delete_by_volumename(volname, node, excep=False)
         if ret['msg']['opRet'] != '0':
             self.logger.error(f"Failed to delete the snapshots in {volname}")
@@ -514,10 +519,6 @@ class VolumeOps(AbstractOps):
             self.logger.error(f"Unable to cleanup the volume {volname}")
             return False
 
-        brick_list = self.get_all_bricks(volname, node)
-        if not brick_list:
-            self.logger.error("Failed to get the brick list")
-            return False
         self.delete_bricks(brick_list)
 
         self.logger.debug(f"Successfully cleaned the volume: {volname}")
