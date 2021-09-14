@@ -103,7 +103,7 @@ class TestEcUssSnapshot(DParentTest):
             # Create files inside each dir.
             cmd = ('touch %s/dir1/dir{%s}/file{%s};'
                    % (mount_obj['mountpath'], dir_range, file_range))
-            redant.execute_command_async(cmd, mount_obj['client'])
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
             # Increment counter so that at next client dir and files are made
             # with diff offset. Like at next client dir will be named

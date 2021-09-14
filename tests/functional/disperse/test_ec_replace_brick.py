@@ -1,91 +1,71 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-Test Description:
-    Tests replace brick on an EC volume
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to test replace brick on EC volume
 """
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.heal_libs import monitor_heal_completion
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (collect_mounts_arequal,
-                                 validate_io_procs)
-from glustolibs.gluster.brick_libs import (get_all_bricks,
-                                           wait_for_bricks_to_be_online,
-                                           are_bricks_online)
-from glustolibs.gluster.volume_libs import replace_brick_from_volume
-from glustolibs.gluster.glusterfile import file_exists
-from glustolibs.gluster.glusterdir import mkdir
+# disruptive;disp,dist-disp
+import traceback
+from random import choice
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class TestEcBrickReplace(GlusterBaseClass):
+class TestEcBrickReplace(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Upload io scripts for running IO on mounts
-        cls.script_upload_path1 = ("/usr/share/glustolibs/io/scripts/"
-                                   "file_dir_ops.py")
-        cls.script_upload_path2 = ("/usr/share/glustolibs/io/scripts/"
-                                   "fd_writes.py")
-        ret = upload_scripts(cls.clients, [cls.script_upload_path1,
-                                           cls.script_upload_path2])
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        self.all_mounts_procs = []
-        self.io_validation_complete = False
-
-        # Setup Volume and Mount Volume
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=False)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def tearDown(self):
+    def terminate(self):
         """
-        If test method failed before validating IO, tearDown waits for the
-        IO's to complete and checks for the IO exit status
-        Cleanup and umount volume
+        Complete memory logging proc, IO on mountpoint and fd IO, if the TC
+        fails midway
         """
-        # Cleanup and umount volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
+        try:
+            if self.io_mem_monitor_running:
+                for proc in self.cmd_list_procs:
+                    self.redant.wait_till_async_command_ends(proc)
 
-        # Calling GlusterBaseClass teardown
-        self.get_super_method(self, 'tearDown')()
+            for server in self.server_list:
+                cmd = f"rm -f {self.log_file_mem_monitor}"
+                self.redant.execute_abstract_op_node(cmd, server, False)
 
-    def test_ec_replace_brick(self):
+            _io_rc = False
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    _io_rc = True
+
+            _fd_rc = False
+            if self.is_fd_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_fd_procs, self.mounts)):
+                    _fd_rc = True
+
+            if _io_rc:
+                raise Exception("Failed to wait for IO to complete")
+
+            if _fd_rc:
+                raise Exception("Failed to wait for FD IO to complete")
+
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
+    def run_test(self, redant):
         """
         - Start resource consumption tool
         - Create directory dir1
@@ -103,23 +83,24 @@ class TestEcBrickReplace(GlusterBaseClass):
         - Replace brick while IO's are going on
         - Validating IO's and waiting for it to complete
         """
-        # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+        self.is_io_running = False
+        self.io_mem_monitor_running = False
+        self.is_fd_io_running = False
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
         # Starting resource consumption using top
-        log_file_mem_monitor = '/var/log/glusterfs/mem_usage.log'
-        cmd = ("for i in {1..20};do top -n 1 -b|egrep "
-               "'RES|gluster' & free -h 2>&1 >> %s ;"
-               "sleep 10;done" % (log_file_mem_monitor))
-        g.log.info(cmd)
-        cmd_list_procs = []
-        for server in self.servers:
-            proc = g.run_async(server, cmd)
-            cmd_list_procs.append(proc)
+        self.log_file_mem_monitor = '/var/log/glusterfs/mem_usage.log'
+        cmd = ("for i in {1..20};do top -n 1 -b|egrep 'RES|gluster' & free -h"
+               f" 2>&1 >> {self.log_file_mem_monitor} ; sleep 10;done")
+
+        self.cmd_list_procs = []
+        for server in self.server_list:
+            proc = redant.execute_command_async(cmd, server)
+            self.cmd_list_procs.append(proc)
+        self.io_mem_monitor_running = True
 
         # Creating dir1
-        ret = mkdir(self.mounts[0].client_system, "%s/dir1"
-                    % self.mounts[0].mountpoint)
-        self.assertTrue(ret, "Failed to create dir1")
-        g.log.info("Directory dir1 on %s created successfully", self.mounts[0])
+        redant.create_dir(self.mountpoint, "dir1", self.client_list[0])
 
         # Create 5 dir and 5 files in each dir at mountpoint on dir1
         start, end = 1, 5
@@ -128,17 +109,13 @@ class TestEcBrickReplace(GlusterBaseClass):
             dir_range = ("%s..%s" % (str(start), str(end)))
             file_range = ("%s..%s" % (str(start), str(end)))
             # Create dir 1-5 at mountpoint.
-            ret = mkdir(mount_obj.client_system, "%s/dir1/dir{%s}"
-                        % (mount_obj.mountpoint, dir_range))
-            self.assertTrue(ret, "Failed to create directory")
-            g.log.info("Directory created successfully")
+            redant.create_dir(mount_obj['mountpath'], "dir1/dir{%s}"
+                              % dir_range, mount_obj['client'])
 
             # Create files inside each dir.
             cmd = ('touch %s/dir1/dir{%s}/file{%s};'
-                   % (mount_obj.mountpoint, dir_range, file_range))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "File creation failed")
-            g.log.info("File created successfull")
+                   % (mount_obj['mountpath'], dir_range, file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
             # Increment counter so that at next client dir and files are made
             # with diff offset. Like at next client dir will be named
@@ -147,51 +124,32 @@ class TestEcBrickReplace(GlusterBaseClass):
             end += 5
 
         # Rename all files inside dir1 at mountpoint on dir1
-        cmd = ('cd %s/dir1/dir1/; '
-               'for FILENAME in *;'
-               'do mv $FILENAME Unix_$FILENAME; cd ~;'
-               'done;'
-               % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Failed to rename file on "
-                         "client")
-        g.log.info("Successfully renamed file on client")
+        cmd = (f"cd {self.mountpoint}/dir1/dir1/; "
+               "for FILENAME in *; do mv $FILENAME Unix_$FILENAME; done;")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Truncate at any dir in mountpoint inside dir1
         # start is an offset to be added to dirname to act on
         # diff files at diff clients.
         start = 1
         for mount_obj in self.mounts:
-            cmd = ('cd %s/dir1/dir%s/; '
-                   'for FILENAME in *;'
-                   'do echo > $FILENAME; cd ~;'
-                   'done;'
-                   % (mount_obj.mountpoint, str(start)))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Truncate failed")
-            g.log.info("Truncate of files successfull")
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start}/; "
+                   "for FILENAME in *; do echo > $FILENAME; done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
         # Create softlink and hardlink of files in mountpoint. Start is an
         # offset to be added to dirname to act on diff files at diff clients.
         start = 1
         for mount_obj in self.mounts:
-            cmd = ('cd %s/dir1/dir%s; '
-                   'for FILENAME in *; '
-                   'do ln -s $FILENAME softlink_$FILENAME; cd ~;'
-                   'done;'
-                   % (mount_obj.mountpoint, str(start)))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Creating Softlinks have failed")
-            g.log.info("Softlink of files have been changed successfully")
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start}; "
+                   "for FILENAME in *; do ln -s $FILENAME softlink_$FILENAME;"
+                   "done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = ('cd %s/dir1/dir%s; '
-                   'for FILENAME in *; '
-                   'do ln $FILENAME hardlink_$FILENAME; cd ~;'
-                   'done;'
-                   % (mount_obj.mountpoint, str(start + 1)))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Creating Hardlinks have failed")
-            g.log.info("Hardlink of files have been changed successfully")
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start + 1}; "
+                   "for FILENAME in *; do ln $FILENAME hardlink_$FILENAME;"
+                   "done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 5
 
         # chmod, chown, chgrp inside dir1
@@ -200,23 +158,17 @@ class TestEcBrickReplace(GlusterBaseClass):
         start, end = 2, 5
         for mount_obj in self.mounts:
             dir_file_range = '%s..%s' % (str(start), str(end))
-            cmd = ('chmod 777 %s/dir1/dir{%s}/file{%s}'
-                   % (mount_obj.mountpoint, dir_file_range, dir_file_range))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Changing mode of files has failed")
-            g.log.info("Mode of files have been changed successfully")
+            cmd = (f"chmod 777 {mount_obj['mountpath']}/dir1/dir"
+                   "{%s}/file{%s}" % (dir_file_range, dir_file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = ('chown root %s/dir1/dir{%s}/file{%s}'
-                   % (mount_obj.mountpoint, dir_file_range, dir_file_range))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Changing owner of files has failed")
-            g.log.info("Owner of files have been changed successfully")
+            cmd = (f"chown root {mount_obj['mountpath']}/dir1/dir"
+                   "{%s}/file{%s}" % (dir_file_range, dir_file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = ('chgrp root %s/dir1/dir{%s}/file{%s}'
-                   % (mount_obj.mountpoint, dir_file_range, dir_file_range))
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Changing group of files has failed")
-            g.log.info("Group of files have been changed successfully")
+            cmd = (f"chgrp root {mount_obj['mountpath']}/dir1/dir"
+                   "{%s}/file{%s}" % (dir_file_range, dir_file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 5
             end += 5
 
@@ -225,149 +177,162 @@ class TestEcBrickReplace(GlusterBaseClass):
         # at diff clients.
         offset = 1
         for mount_obj in self.mounts:
-            cmd = 'fallocate -l 100 tiny_file%s.txt' % str(offset)
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Fallocate for tiny files failed")
-            g.log.info("Fallocate for tiny files successfully")
+            cmd = (f"fallocate -l 100 {mount_obj['mountpath']}/"
+                   f"tiny_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = 'fallocate -l 20M small_file%s.txt' % str(offset)
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Fallocate for small files failed")
-            g.log.info("Fallocate for small files successfully")
+            cmd = (f"fallocate -l 20M {mount_obj['mountpath']}/"
+                   f"small_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = 'fallocate -l 200M medium_file%s.txt' % str(offset)
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Fallocate for medium files failed")
-            g.log.info("Fallocate for medium files successfully")
+            cmd = (f"fallocate -l 200M {mount_obj['mountpath']}/"
+                   f"medium_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = 'fallocate -l 1G large_file%s.txt' % str(offset)
-            ret, _, _ = g.run(mount_obj.client_system, cmd)
-            self.assertFalse(ret, "Fallocate for large files failed")
-            g.log.info("Fallocate for large files successfully")
+            cmd = (f"fallocate -l 1G {mount_obj['mountpath']}/"
+                   f"large_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             offset += 1
 
         # Get arequal before replacing brick
-        ret, result_before_replacing_brick = (
-            collect_mounts_arequal(self.mounts[0]))
-        self.assertTrue(ret, 'Failed to get arequal')
-        g.log.info('Getting arequal before replacing of brick '
-                   'is successful')
+        result_before_replacing_brick = \
+            redant.collect_mounts_arequal(self.mounts[0])
 
         # Replacing a brick of random choice
-        ret = replace_brick_from_volume(self.mnode, self.volname,
-                                        self.servers,
-                                        self.all_servers_info)
-        self.assertTrue(ret, "Unexpected:Replace brick is not successful")
-        g.log.info("Expected : Replace brick is successful")
+        sbrick = choice(redant.get_all_bricks(self.vol_name,
+                        self.server_list[0]))
+        sbrick_host, sbrick_root = sbrick.split(':')
+        dbrick_root = sbrick_root[0:sbrick.split(':')[1].rfind("/")]
+        dbrick = f"{sbrick_host}:{dbrick_root}/new_replaced_brick"
+        ret = redant.replace_brick_from_volume(self.vol_name,
+                                               self.server_list[0],
+                                               self.server_list,
+                                               sbrick, dbrick)
+        if not ret:
+            raise Exception("Unexpected:Replace brick is not successful")
 
         # Wait for brick to come online
-        ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Unexpected:Bricks are not online")
-        g.log.info("Expected : Bricks are online")
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list)
+        if not ret:
+            raise Exception("Unexpected: Bricks are not online")
 
         # Monitor heal completion
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, 'Unexpected:Heal has not yet completed')
-        g.log.info('Heal has completed successfully')
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal has not yet completed")
 
         # Check if bricks are online
-        all_bricks = get_all_bricks(self.mnode, self.volname)
-        ret = are_bricks_online(self.mnode, self.volname, all_bricks)
-        self.assertTrue(ret, 'Unexpected:All bricks are not online')
-        g.log.info('All bricks are online')
+        ret = redant.are_bricks_online(self.vol_name, bricks_list,
+                                       self.server_list[0])
+        if not ret:
+            raise Exception("Unexpected:All bricks are not online")
 
         # Get areequal after replacing brick
-        ret, result_after_replacing_brick = (
-            collect_mounts_arequal(self.mounts[0]))
-        self.assertTrue(ret, 'Failed to get arequal')
-        g.log.info('Getting areequal after replacing of brick '
-                   'is successful')
+        result_after_replacing_brick = \
+            redant.collect_mounts_arequal(self.mounts[0])
 
         # Comparing arequals
-        self.assertEqual(result_before_replacing_brick,
-                         result_after_replacing_brick,
-                         'Arequals are not equals before replacing '
-                         'brick and after replacing brick')
-        g.log.info('Arequals are equals before replacing brick '
-                   'and after replacing brick')
+        if result_before_replacing_brick != result_after_replacing_brick:
+            raise Exception('Arequals are not equals before replacing '
+                            'brick and after replacing brick')
 
         # Creating files on client side for dir1
         # Write IO
-        all_mounts_procs, count = [], 1
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.all_mounts_procs = []
+        count = 1
         for mount_obj in self.mounts:
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 10 "
-                   "--max-num-of-dirs 5 "
-                   "--num-of-files 5 %s/dir1" % (
-                       self.script_upload_path1, count,
-                       mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            all_mounts_procs.append(proc)
-            count += 10
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      count, 2, 10, 5, 5,
+                                                      mount_obj['client'])
+            self.all_mounts_procs.append(proc)
+            count = count + 10
+        self.is_io_running = True
 
         # Replacing a brick while IO's are going on
-        ret = replace_brick_from_volume(self.mnode, self.volname,
-                                        self.servers,
-                                        self.all_servers_info)
-        self.assertTrue(ret, "Unexpected:Replace brick is not successful")
-        g.log.info("Expected : Replace brick is successful")
+        sbrick = choice(redant.get_all_bricks(self.vol_name,
+                        self.server_list[0]))
+        sbrick_host, sbrick_root = sbrick.split(':')
+        dbrick_root = sbrick_root[0:sbrick.split(':')[1].rfind("/")]
+        dbrick = f"{sbrick_host}:{dbrick_root}/new_replaced_brick_1"
+        ret = redant.replace_brick_from_volume(self.vol_name,
+                                               self.server_list[0],
+                                               self.server_list,
+                                               sbrick, dbrick)
+        if not ret:
+            raise Exception("Unexpected: Replace brick is not successful")
 
         # Wait for brick to come online
-        ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Unexpected:Bricks are not online")
-        g.log.info("Expected : Bricks are online")
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list)
+        if not ret:
+            raise Exception("Unexpected: Bricks are not online")
 
         # Validating IO's and waiting to complete
-        ret = validate_io_procs(all_mounts_procs, self.mounts)
-        self.assertTrue(ret, "IO failed on some of the clients")
-        g.log.info("Successfully validated all io's")
+        ret = redant.validate_io_procs(self.all_mounts_procs,
+                                       self.mounts)
+        if not ret:
+            raise Exception("IO failed on some of the clients")
+        self.is_io_running = False
 
         # Create 2 directories and start IO's which opens FD
-        ret = mkdir(self.mounts[0].client_system, "%s/count{1..2}"
-                    % self.mounts[0].mountpoint)
-        self.assertTrue(ret, "Failed to create directories")
-        g.log.info("Directories created on %s successfully", self.mounts[0])
+        cmd = "mkdir -p %s/count{1..2}" % self.mountpoint
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        all_fd_procs, count = [], 1
+        self.all_fd_procs, count = [], 1
         for mount_obj in self.mounts:
-            cmd = ("cd %s ;/usr/bin/env python %s -n 10 -t 120 "
-                   "-d 5 -c 16 --dir count%s" % (
-                       mount_obj.mountpoint,
-                       self.script_upload_path2, count))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
-            all_fd_procs.append(proc)
+            cmd = (f"cd {mount_obj['mountpath']}; "
+                   "python3 /usr/share/redant/script/fd_writes.py -n 10 "
+                   f"-t 120 -d 5 -c 16 --dir count{count}")
+            proc = redant.execute_command_async(cmd, mount_obj['client'])
+            self.all_fd_procs.append(proc)
             count += 1
+        self.is_fd_io_running = True
 
         # Replacing a brick while open FD IO's are going on
-        ret = replace_brick_from_volume(self.mnode, self.volname,
-                                        self.servers,
-                                        self.all_servers_info)
-        self.assertTrue(ret, "Unexpected:Replace brick is not successful")
-        g.log.info("Expected : Replace brick is successful")
+        sbrick = choice(redant.get_all_bricks(self.vol_name,
+                        self.server_list[0]))
+        sbrick_host, sbrick_root = sbrick.split(':')
+        dbrick_root = sbrick_root[0:sbrick.split(':')[1].rfind("/")]
+        dbrick = f"{sbrick_host}:{dbrick_root}/new_replaced_brick_2"
+        ret = redant.replace_brick_from_volume(self.vol_name,
+                                               self.server_list[0],
+                                               self.server_list,
+                                               sbrick, dbrick)
+        if not ret:
+            raise Exception("Unexpected: Replace brick is not successful")
 
         # Wait for brick to come online
-        ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Unexpected:Bricks are not online")
-        g.log.info("Expected : Bricks are online")
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list)
+        if not ret:
+            raise Exception("Unexpected: Bricks are not online")
 
         # Validating IO's and waiting to complete
-        ret = validate_io_procs(all_fd_procs, self.mounts)
-        self.assertTrue(ret, "IO failed on some of the clients")
-        g.log.info("Successfully validated all io's")
+        ret = redant.validate_io_procs(self.all_fd_procs,
+                                       self.mounts)
+        if not ret:
+            raise Exception("IO failed on some of the clients")
+        self.is_fd_io_running = False
 
         # Close connection and check file exist for memory log
-        ret = file_exists(self.mnode,
-                          '/var/log/glusterfs/mem_usage.log')
-        self.assertTrue(ret, "Unexpected:Memory log file does "
-                             "not exist")
-        g.log.info("Memory log file exists")
-        for proc in cmd_list_procs:
-            ret, _, _ = proc.async_communicate()
-            self.assertEqual(ret, 0, "Memory logging failed")
-            g.log.info("Memory logging is successful")
+        ret = redant.path_exists(self.server_list[0],
+                                 self.log_file_mem_monitor)
+        if not ret:
+            raise Exception("Unexpected:Memory log file does not exist")
+
+        for proc in self.cmd_list_procs:
+            ret = redant.wait_till_async_command_ends(proc)
+            if ret['error_code'] != 0:
+                raise Exception("Memory logging failed")
+        self.io_mem_monitor_running = False
