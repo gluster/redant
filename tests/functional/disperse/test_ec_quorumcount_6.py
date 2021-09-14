@@ -101,7 +101,7 @@ class TestEcQuorumCount6(DParentTest):
         if not subvols:
             raise Exception("Failed to get subvols list")
         bricks_list1 = list(choice(subvols))
-        brick_1, brick_2 = sample(bricks_list1, 1)
+        brick_1 = sample(bricks_list1, 1)
 
         # Set volume disperse quorum count to 5
         options = {"disperse.quorum-count": "6"}
@@ -154,7 +154,7 @@ class TestEcQuorumCount6(DParentTest):
         readcmd = (f"cd {self.mountpoint}; for i in `seq 1 100` ;"
                    "do dd if=file$i of=/dev/null bs=1M "
                    "count=5;done")
-        redant.execute_abstract_op_node(self.readcmd, client2)
+        redant.execute_abstract_op_node(readcmd, client2)
 
         # Add brick
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
