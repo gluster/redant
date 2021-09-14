@@ -102,9 +102,9 @@ class TestEcRemoveBrickOperations(DParentTest):
             raise Exception("Failed to get the subvols")
 
         volinfo = redant.get_volume_info(self.server_list[0], self.vol_name)
-        initial_brickcount = volinfo[self.vol_name]['brickCount']
-        data_brick_count = (volinfo[self.vol_name]['disperseCount']
-                            - volinfo[self.vol_name]['redundancyCount'])
+        initial_brickcount = int(volinfo[self.vol_name]['brickCount'])
+        data_brick_count = (int(volinfo[self.vol_name]['disperseCount'])
+                            - int(volinfo[self.vol_name]['redundancyCount']))
 
         # Try to remove data brick count number of bricks from the volume
         bricks_list_to_remove = (subvols[0][0:data_brick_count])
@@ -124,8 +124,8 @@ class TestEcRemoveBrickOperations(DParentTest):
                             f" from the volume {self.vol_name}")
 
         # Try to remove redundant brick count number of bricks from the volume
-        bricks_list_to_remove = (subvols[0][0:volinfo[self.vol_name]
-                                            ['redundancyCount']])
+        bricks_list_to_remove = (subvols[0][0:int(volinfo[self.vol_name]
+                                            ['redundancyCount'])])
         ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                   bricks_list_to_remove, option='start',
                                   excep=False)
@@ -160,8 +160,8 @@ class TestEcRemoveBrickOperations(DParentTest):
 
         # Try to remove disperse count number of bricks from the volume with
         # one wrong brick path
-        bricks_list_to_remove = (subvols[0][0:volinfo[self.vol_name]
-                                            ['disperseCount']])
+        bricks_list_to_remove = (subvols[0][0:int(volinfo[self.vol_name]
+                                            ['disperseCount'])])
         bricks_list_to_remove[0] = f"{bricks_list_to_remove[0]}-wrong_path"
         ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                   bricks_list_to_remove, option='start',
@@ -180,7 +180,7 @@ class TestEcRemoveBrickOperations(DParentTest):
 
         # Verify that the brick count is intact
         volinfo = redant.get_volume_info(self.server_list[0], self.vol_name)
-        latest_brickcount = volinfo[self.vol_name]['brickCount']
+        latest_brickcount = int(volinfo[self.vol_name]['brickCount'])
         if latest_brickcount != initial_brickcount:
             raise Exception("Brick count is not expected to "
                             "change, but changed")
@@ -192,7 +192,7 @@ class TestEcRemoveBrickOperations(DParentTest):
 
         # Verify that the brick count is intact
         volinfo = redant.get_volume_info(self.server_list[0], self.vol_name)
-        latest_brickcount = volinfo[self.vol_name]['brickCount']
+        latest_brickcount = int(volinfo[self.vol_name]['brickCount'])
         if latest_brickcount != initial_brickcount:
             raise Exception("Brick count is not expected to "
                             "change, but changed")

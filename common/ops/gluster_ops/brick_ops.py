@@ -170,23 +170,7 @@ class BrickOps(AbstractOps):
                               f"node {node}")
             return None
 
-        remove_brick_status = {}
-        remove_brick_status["node"] = []
-        for info in ret['msg'].findall("volRemoveBrick"):
-            for element in info:
-                if element.tag == "node":
-                    status_info = {}
-                    for elmt in element:
-                        status_info[elmt.tag] = elmt.text
-                    remove_brick_status[element.tag].append(status_info)
-                elif element.tag == "aggregate":
-                    status_info = {}
-                    for elmt in element:
-                        status_info[elmt.tag] = elmt.text
-                    remove_brick_status[element.tag] = status_info
-                else:
-                    remove_brick_status[element.tag] = element.text
-        return remove_brick_status
+        return ret['msg']['volRemoveBrick']
 
     def wait_for_remove_brick_to_complete(self, node: str, volname: str,
                                           bricks_list: list,
@@ -214,7 +198,7 @@ class BrickOps(AbstractOps):
         while count < timeout:
             status_info = self.get_remove_brick_status(node, volname,
                                                        bricks_list)
-            if status_info is None or status_info['msg']['opRet'] != '0':
+            if status_info is None:
                 return False
 
             status = status_info['aggregate']['statusStr']
