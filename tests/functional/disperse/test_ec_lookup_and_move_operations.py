@@ -1,90 +1,77 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check lookup and move operations on ec volume
+"""
+
+# disruptive;disp,dist-disp
+# TODO: NFS
 from random import sample
-from unittest import SkipTest
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import (bring_bricks_offline,
-                                           are_bricks_offline,
-                                           are_bricks_online)
-from glustolibs.gluster.heal_libs import monitor_heal_completion
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.volume_ops import volume_start
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (validate_io_procs, wait_for_io_to_complete)
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['dispersed', 'distributed-dispersed'], ['glusterfs', 'nfs']])
-class TestEcLookupAndMoveOperations(GlusterBaseClass):
+class TestEcLookupAndMoveOperations(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+    def terminate(self):
+        """
+        Wait for IO to complete if the TC fails midway
+        """
+        try:
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.mount_procs, self.mounts)):
+                    raise Exception("Failed to wait for IO to complete")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Check for availability of atleast 3 clients
-        if len(cls.clients) < 3:
-            raise SkipTest("This test requires atleast 3 clients")
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.is_io_running = False
+        # Check for 3 clients in the cluster
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=3)
 
-        # Upload IO scripts for running IO on mounts
-        cls.script_upload_path = (
-            "/usr/share/glustolibs/io/scripts/file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s" %
-                                 cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup volume and mount it on three clients.
-        if not self.setup_volume_and_mount_volume(self.mounts):
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-
-    def tearDown(self):
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-        if self.mount_procs:
-            ret = wait_for_io_to_complete(self.mount_procs, self.mounts)
-            if ret:
-                raise ExecutionError(
-                    "Wait for IO completion failed on some of the clients")
-
-        # Unmount and cleanup the volume
-        if not self.unmount_volume_and_cleanup_volume(self.mounts):
-            raise ExecutionError("Unable to unmount and cleanup volume")
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list, self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0],
+                                     self.vol_name,
+                                     self.mountpoint, client)
 
     def _run_create_files(self, file_count, base_name, mpoint, client):
         """Run create files using file_dir_op.py"""
-        cmd = ("/usr/bin/env python {} create_files -f {} --fixed-file-size"
-               " 1k --base-file-name {} {}".format(self.script_upload_path,
-                                                   file_count, base_name,
-                                                   mpoint))
-        proc = g.run_async(client, cmd)
+        proc = self.redant.create_files('1k', mpoint, client, file_count,
+                                        base_name)
         self.mount_procs.append(proc)
 
-    def test_ec_lookup_and_move_operations_all_bricks_online(self):
+    def run_test(self, redant):
         """
         Test Steps:
         1. Create volume and mount the volume on 3 clients, c1(client1),
@@ -97,61 +84,57 @@ class TestEcLookupAndMoveOperations(GlusterBaseClass):
             to /dir/
         7. On c3, start ls in a loop for 20 iterations
         """
-        # Create directory on client1
-        dir_on_mount = self.mounts[0].mountpoint + '/dir'
-        ret = mkdir(self.mounts[0].client_system, dir_on_mount)
-        self.assertTrue(ret, "unable to create directory on client"
-                             "1 {}".format(self.mounts[0].client_system))
-        g.log.info("Directory created on %s successfully",
-                   self.mounts[0].client_system)
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-        # Create 4000 files on the mountpoint of client2
-        cmd = ("/usr/bin/env python {} create_files -f 4000"
-               " --fixed-file-size 10k --base-file-name file_from_client2_"
-               " {}".format(self.script_upload_path,
-                            self.mounts[1].mountpoint))
-        ret, _, err = g.run(self.mounts[1].client_system, cmd)
-        self.assertEqual(ret, 0, "File creation on {} failed with {}".
-                         format(self.mounts[1].client_system, err))
-        g.log.info("File creation successful on %s",
-                   self.mounts[1].client_system)
+        # Create directory on client2
+        dir_on_mount = f"{self.mountpoint}/dir"
+        redant.create_dir(self.mountpoint, "dir", self.mounts[1]['client'])
+
+        # Create 4000 files on the mountpoint of client1
+        proc = self.redant.create_files('10k', self.mounts[0]['mountpath'],
+                                        self.mounts[0]['client'], 4000,
+                                        "file_from_client1")
+        if not redant.validate_io_procs(proc, self.mounts[0]):
+            raise Exception("Failed to create files on client2")
 
         # Next IO to be ran in the background so using mount_procs list
         self.mount_procs = []
-        # Create next 4000 files on the mountpoint of client2
+        # Create 4000 files from client 1
         self._run_create_files(file_count=4000,
-                               base_name="files_on_client2_background_",
-                               mpoint=self.mounts[1].mountpoint,
-                               client=self.mounts[1].client_system)
-
-        # Create 10000 files from client 1 on dir1
-        self._run_create_files(file_count=10000,
                                base_name="files_on_client1_background_",
-                               mpoint=dir_on_mount,
-                               client=self.mounts[0].client_system)
+                               mpoint=self.mounts[0]['mountpath'],
+                               client=self.mounts[0]['client'])
+        self.is_io_running = True
 
-        # Move the files created on client2 to dir from client3
-        cmd = ("for i in `seq 0 3999`; do mv {}/file_from_client2_$i.txt {}; "
-               "done".format(self.mounts[2].mountpoint, dir_on_mount))
-        proc = g.run_async(self.mounts[2].client_system, cmd)
+        # Create next 10000 files on dir1 of client2
+        self._run_create_files(file_count=10000,
+                               base_name="files_on_client2_background_",
+                               mpoint=dir_on_mount,
+                               client=self.mounts[1]['client'])
+
+        # Move the files created on client1 to dir from client3
+        cmd = (f"for i in `seq 0 3999`; do mv {self.mounts[0]['mountpath']}"
+               f"/file_from_client1_$i.txt {dir_on_mount}; ")
+        proc = redant.execute_command_async(cmd, self.mounts[2]['mountpath'])
         self.mount_procs.append(proc)
 
         # Perform a lookup in loop from client3 for 20 iterations
-        cmd = ("ls -R {}".format(self.mounts[2].mountpoint))
+        cmd = f"ls -R {self.mounts[2]['mountpath']}"
         counter = 20
         while counter:
-            ret, _, err = g.run(self.mounts[2].client_system, cmd)
-            self.assertEqual(ret, 0, "ls while mv operation being carried"
-                                     " failed with {}".format(err))
-            g.log.debug("ls successful for the %s time", 21-counter)
+            redant.execute_abstract_op_node(cmd, self.mounts[2]['client'])
             counter -= 1
 
-        self.assertTrue(validate_io_procs(self.mount_procs, self.mounts),
-                        "IO failed on the clients")
-        # Emptying mount_procs for not validating IO in tearDown
-        self.mount_procs *= 0
+        if not redant.validate_io_procs(self.mount_procs, self.mounts):
+            raise Exception("IO failed on the clients")
+        self.is_io_running = False
 
-    def test_ec_lookup_and_move_operations_few_bricks_are_offline(self):
+        # Clear out the mountpoints on the client
+        for mount_obj in self.mounts:
+            cmd = f"rm -rf {mount_obj['mountpath']}/*"
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+
+        # Test2: test_ec_lookup_and_move_operations_few_bricks_are_offline
         """
         Test Steps:
         1. Mount this volume on 3 mount point, c1, c2, and c3
@@ -167,93 +150,79 @@ class TestEcLookupAndMoveOperations(GlusterBaseClass):
         8. Perform lookup from client 3
         """
         # List two bricks in each subvol
-        all_subvols_dict = get_subvols(self.mnode, self.volname)
-        subvols = all_subvols_dict['volume_subvols']
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        if not subvols:
+            raise Exception("Failed ot get the volume subvols")
+
         bricks_to_bring_offline = []
         for subvol in subvols:
-            self.assertTrue(subvol, "List is empty")
             bricks_to_bring_offline.extend(sample(subvol, 2))
 
         # Bring two bricks of each subvol offline
-        ret = bring_bricks_offline(self.volname, bricks_to_bring_offline)
-        self.assertTrue(ret, "Bricks are still online")
-        g.log.info("Bricks are offline %s", bricks_to_bring_offline)
+        redant.bring_bricks_offline(self.vol_name, bricks_to_bring_offline)
 
         # Validating the bricks are offline or not
-        ret = are_bricks_offline(self.mnode, self.volname,
-                                 bricks_to_bring_offline)
-        self.assertTrue(ret, "Few of the bricks are still online in"
-                             " {} in".format(bricks_to_bring_offline))
-        g.log.info("%s bricks are offline as expected",
-                   bricks_to_bring_offline)
+        if not redant.are_bricks_offline(self.vol_name,
+                                         bricks_to_bring_offline,
+                                         self.server_list[0]):
+            raise Exception("Few of the bricks are still online in"
+                            f" {bricks_to_bring_offline}")
 
         # Create directory on client1
-        dir_on_mount = self.mounts[0].mountpoint + '/dir1'
-        ret = mkdir(self.mounts[0].client_system, dir_on_mount)
-        self.assertTrue(ret, "unable to create directory on client"
-                             " 1 {}".format(self.mounts[0].client_system))
-        g.log.info("Dir1 created on %s successfully",
-                   self.mounts[0].client_system)
+        dir_on_mount = f"{self.mountpoint}/dir"
+        redant.create_dir(self.mountpoint, "dir", self.mounts[0]['client'])
 
         # Next IO to be ran in the background so using mount_procs
         # and run_async.
         self.mount_procs = []
 
         # On client1: under dir1 create files f{1..10000} run in background
-        self._run_create_files(file_count=10000, base_name="f_",
+        self._run_create_files(file_count=10000,
+                               base_name="f_",
                                mpoint=dir_on_mount,
-                               client=self.mounts[0].client_system)
+                               client=self.mounts[0]['client'])
+        self.is_io_running = True
 
-        # On client2: under root dir of the mountpoint touch x{1..1000}
-        cmd = ("/usr/bin/env python {} create_files -f 1000 --fixed-file-size"
-               " 10k --base-file-name x {}".format(self.script_upload_path,
-                                                   self.mounts[1].mountpoint))
-        ret, _, err = g.run(self.mounts[1].client_system, cmd)
-        self.assertEqual(ret, 0, "File creation failed on {} with {}".
-                         format(self.mounts[1].client_system, err))
-        g.log.info("File creation successful on %s",
-                   self.mounts[1].client_system)
+        # On client3: under root dir of the mountpoint touch x{1..1000}
+        proc = redant.create_files('10k', self.mounts[2]['mountpath'],
+                                   self.mounts[2]['client'], 1000, 'x')
+        if not redant.validate_io_procs(proc, self.mounts[2]):
+            raise Exception("File creation failed")
 
-        # On client3: start creating x{1001..10000}
-        cmd = ("cd {}; for i in `seq 1000 10000`; do touch x$i; done; "
-               "cd -".format(self.mounts[2].mountpoint))
-        proc = g.run_async(self.mounts[2].client_system, cmd)
+        # On client2: start creating x{1001..10000}
+        cmd = (f"cd {self.mounts[1]['mountpath']}; for i in `seq 1000 10000`"
+               "; do touch x$i; done;")
+        proc = redant.execute_command_async(cmd, self.mounts[1]['client'])
         self.mount_procs.append(proc)
 
         # Bring bricks online with volume start force
-        ret, _, err = volume_start(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, err)
-        g.log.info("Volume: %s started successfully", self.volname)
+        redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Check whether bricks are online or not
-        ret = are_bricks_online(self.mnode, self.volname,
-                                bricks_to_bring_offline)
-        self.assertTrue(ret, "Bricks {} are still offline".
-                        format(bricks_to_bring_offline))
-        g.log.info("Bricks %s are online now", bricks_to_bring_offline)
+        if not redant.are_bricks_online(self.vol_name,
+                                        bricks_to_bring_offline,
+                                        self.server_list[0]):
+            raise Exception(f"Bricks {bricks_to_bring_offline} are still "
+                            "offline")
 
-        # From client2 move all the files with name starting with x into dir1
-        cmd = ("for i in `seq 0 999`; do mv {}/x$i.txt {}; "
-               "done".format(self.mounts[1].mountpoint, dir_on_mount))
-        proc = g.run_async(self.mounts[1].client_system, cmd)
+        # From client3 move all the files with name starting with x into dir1
+        cmd = (f"for i in `seq 0 999`; do mv {self.mounts[2]['mountpath']}"
+               f"/x$i.txt {dir_on_mount}; done")
+        proc = redant.execute_command_async(cmd, self.mounts[2]['client'])
         self.mount_procs.append(proc)
 
         # Perform a lookup in loop from client3 for 20 iterations
-        cmd = ("ls -R {}".format(self.mounts[2].mountpoint))
+        cmd = f"ls -R {self.mounts[2]['mountpath']}"
         counter = 20
         while counter:
-            ret, _, err = g.run(self.mounts[2].client_system, cmd)
-            self.assertEqual(ret, 0, "ls while mv operation being carried"
-                                     " failed with {}".format(err))
-            g.log.debug("ls successful for the %s time", 21-counter)
+            redant.execute_abstract_op_node(cmd, self.mounts[2]['client'])
             counter -= 1
 
-        self.assertTrue(validate_io_procs(self.mount_procs, self.mounts),
-                        "IO failed on the clients")
-        # Emptying mount_procs for not validating IO in tearDown
-        self.mount_procs *= 0
+        if not redant.validate_io_procs(self.mount_procs, self.mounts):
+            raise Exception("IO failed on the clients")
+        self.is_io_running = False
 
         # Wait for heal to complete
-        ret = monitor_heal_completion(self.mnode, self.volname,)
-        self.assertTrue(ret, "Heal didn't completed in the expected time")
-        g.log.info("Heal completed successfully on %s volume", self.volname)
+        if not self.redant.monitor_heal_completion(self.server_list[0],
+                                                   self.vol_name):
+            raise Exception("Heal is not yet completed")
