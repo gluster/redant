@@ -71,3 +71,4 @@ excluded_tests:
     - tests/functional/snapshot/test_validate_snapshot_max_limit.py # Requires good servers with high amount of RAM and multiple disks
     - tests/functional/snapshot/test_validate_snap_del_gd_down.py # Requires downstream RHGS installation
     - tests/functional/glusterd/test_setting_volume_option_with_more_than_4096_characters.py # Requires downstream RHGS installation
+    - tests/functional/disperse/test_ec_uss_snapshot.py # Excluded due to bz: 1828820
