@@ -136,6 +136,7 @@ class TestEcBrickReplace(DParentTest):
             cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start}/; "
                    "for FILENAME in *; do echo > $FILENAME; done;")
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
+            start += 1
 
         # Create softlink and hardlink of files in mountpoint. Start is an
         # offset to be added to dirname to act on diff files at diff clients.
