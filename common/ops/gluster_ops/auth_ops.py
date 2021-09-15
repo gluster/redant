@@ -289,7 +289,8 @@ class AuthOps(AbstractOps):
         ret = self.is_mounted(volname, mountpoint, client, server)
         if ret:
             # Mount operation did not fail as expected. Cleanup the mount.
-            self.volume_unmount(volname, mountpoint, client)
+            self.volume_unmount(volname, mountpoint, client,
+                                check_volds=False)
             raise Exception("Mount operation did not fail as expected")
 
         self.logger.info("Mount operation failed as expected")

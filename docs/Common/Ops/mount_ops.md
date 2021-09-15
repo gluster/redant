@@ -39,7 +39,9 @@
             2. path (str): The path of the mount directory(mount point)
             3. node (str): The client node in the cluster where volume
                            unmount is to be run
-            4. excep (bool): To bypass or not to bypass the exception handling.
+            4. check_volds (bool): Default True. Check the mountpoint in present
+                           in the volds data structure, if yes then remove it.
+            5. excep (bool): To bypass or not to bypass the exception handling.
 
         Returns:
             ret: A dictionary consisting
@@ -51,7 +53,8 @@
                 - node : node on which the command got executed
         
         Example:
-            self.volume_unmount(volname, mount, mntd['client'], False)
+            self.volume_unmount(volname, mount, mntd['client'], check_volds=False,
+                                excep=False)
 
 3) **is_mounted**<br>
         

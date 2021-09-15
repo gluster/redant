@@ -20,32 +20,12 @@ Description:
     Test Default volume behavior and quorum options
 """
 
-import traceback
 from time import sleep
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-# nonDisruptive;
-class TestCase(NdParentTest):
-
-    def terminate(self):
-        """
-        The vol created in the test case needs to be
-        destroyed
-        """
-        try:
-            # Cleanup the remaining volumes
-            curr_vol_list = self.redant.get_volume_list(self.server_list[0])
-            tc_vol_list = [self.volume_name1, self.volume_name]
-            for volume in tc_vol_list:
-                if volume in curr_vol_list:
-                    self.redant.cleanup_volumes(self.server_list, volume)
-
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
+# disruptive;
+class TestCase(DParentTest):
 
     def run_test(self, redant):
         """
@@ -72,14 +52,19 @@ class TestCase(NdParentTest):
             raise Exception("Failed to get volume status on "
                             f"{self.server_list[0]}")
 
+        _rc = False
         for _ in range(4):
-            sleep(2)
             out1 = redant.get_volume_status(node=self.server_list[0])
             if out1 is None:
                 raise Exception("Failed to get volume status on "
                                 f"{self.server_list[0]}")
-            if out1 != out:
-                raise Exception
+            if out1 == out:
+                _rc = True
+                break
+            sleep(2)
+
+        if not _rc:
+            raise Exception("Volume status ouput is not consistent")
 
         redant.volume_stop(self.volume_name1, self.server_list[0])
         redant.volume_delete(self.volume_name1, self.server_list[0])

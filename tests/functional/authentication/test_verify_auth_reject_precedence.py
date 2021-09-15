@@ -33,8 +33,8 @@ class TestVerifyAuthRejectPrecedence(DParentTest):
         try:
             if self.is_vol_mounted:
                 cmd = f"umount {self.mountpoint}"
-                for client in self.client_list:
-                    self.redant.execute_abstract_op_node(cmd, client, False)
+                self.redant.execute_abstract_op_node(cmd, self.client_list[0],
+                                                     False)
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -99,8 +99,8 @@ class TestVerifyAuthRejectPrecedence(DParentTest):
         redant.create_dir(self.mountpoint, "d1", self.client_list[0])
 
         # Unmount volume from client1
-        cmd = f"umount {self.mountpoint}"
-        redant.execute_abstract_op_node(cmd, self.client_list[0])
+        redant.volume_unmount(self.vol_name, self.mountpoint,
+                              self.client_list[0], check_volds=False)
         self.is_vol_mounted = False
 
         # Setting auth.reject on volume for all clients

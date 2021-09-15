@@ -65,6 +65,6 @@ class TestFuseSubDirMount(NdParentTest):
         self.is_mounted = True
 
         # Unmount sub directories
-        cmd = f"umount {self.mountpoint}"
-        redant.execute_abstract_op_node(cmd, self.client_list[0], False)
-        self.is_mounted = False
+        redant.volume_unmount(volname, self.mountpoint,
+                              self.client_list[0], check_volds=False)
+        self.is_vol_mounted = False

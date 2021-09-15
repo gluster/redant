@@ -42,7 +42,7 @@ class TestAFRSnapshot(DParentTest):
         - Get arequal after restoring snapshot
         - Compare arequals
         """
-        script_file_path = "/usr/share/redant/file_dir_ops.py"
+        script_file_path = "/usr/share/redant/script/file_dir_ops.py"
         self.all_mounts_procs = []
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Creating files on client side

@@ -110,25 +110,24 @@ class TestCase(DParentTest):
                                        self.vol_name):
             raise Exception("Heal not yet finished")
 
-        redant.logger.info("checking if the areequal checksum of all "
-                           "the bricks in the subvol match")
-        checksum_list = []
+        # Check arequals on all the bricks
+        arequals = redant.collect_mounts_arequal(self.mounts)
+        mount_point_total = arequals[0][-1].split(':')[-1]
+
+        # Get arequal on bricks and compare with mount_point_total
+        arequals = redant.collect_bricks_arequal(all_bricks)
+        for arequal in arequals:
+            brick_total = arequal[-1].split(':')[-1]
+            if mount_point_total != brick_total:
+                raise Exception('Arequals for mountpoint and brick '
+                                'are not equal')
+
+        # checking file size of healed file on each brick to verify
+        # correctness of choice for sink and source
         for brick in all_bricks:
             node, brick_path = brick.split(':')
-            command = f"arequal-checksum {brick_path}/.glusterfs/landfill"
-            ret = redant.execute_abstract_op_node(command, node)
-
-            checksum_list.append(ret['msg'])
-
-            # checking file size of healed file on each brick to verify
-            # correctness of choice for sink and source
-            stat_dict = (redant.
-                         get_file_stat(node,
-                                       f"{brick_path}/test_file0.txt")['msg'])
-            if stat_dict['st_size'] != 1048576:
+            stat_dict = redant.get_file_stat(node,
+                                             f"{brick_path}/test_file0.txt")
+            if stat_dict['msg']['st_size'] != 1048576:
                 raise Exception("File size of healed file is different"
                                 " than expected.")
-
-        if not all(val == checksum_list[0] for val in checksum_list):
-            raise Exception("the arequal checksum of all bricks is"
-                            "not same")

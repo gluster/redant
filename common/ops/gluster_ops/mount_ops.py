@@ -49,7 +49,7 @@ class MountOps(AbstractOps):
         return ret
 
     def volume_unmount(self, volname: str, path: str, node: str = None,
-                       excep: bool = True):
+                       check_volds: bool = True, excep: bool = True):
         """
         Unmounts the gluster volume .
         Args:
@@ -57,6 +57,8 @@ class MountOps(AbstractOps):
             path (str): The path of the mount directory(mount point)
             node (str): The client node in the cluster where volume
                         unmount is to be run
+            check_volds (bool): Default True. Check the mountpoint in present
+                        in the volds data structure, if yes then remove it.
             excep (bool): To bypass or not to bypass the exception handling.
 
         Returns:
@@ -73,7 +75,9 @@ class MountOps(AbstractOps):
         cmd = f"umount {path}"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        self.es.remove_mountpath(volname, node, path)
+        if check_volds:
+            self.es.remove_mountpath(volname, node, path)
+
         return ret
 
     def is_mounted(self, volname: str, mpath: str, mclient: str, mserver: str):
