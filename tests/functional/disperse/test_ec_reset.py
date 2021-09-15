@@ -1,102 +1,51 @@
-#  Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 """
-Test Description:
+ Copyright (C) 2018-2020  Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
     Tests brick reset on a EC volume.
     For brick reset we can start it to kill a brick with source defined
     or commit to reset a brick with source and destination defined
 """
-from os import getcwd
+
+# disruptive;disp,dist-disp
 from random import choice
 from time import sleep
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass, runs_on)
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.heal_libs import (monitor_heal_completion)
-from glustolibs.misc.misc_libs import upload_scripts
-from glustolibs.io.utils import (collect_mounts_arequal,
-                                 list_all_files_and_dirs_mounts,
-                                 validate_io_procs)
-from glustolibs.gluster.brick_libs import (
-    get_all_bricks, bring_bricks_online,
-    bring_bricks_offline, get_offline_bricks_list,
-    wait_for_bricks_to_be_online, are_bricks_offline,
-    are_bricks_online)
-from glustolibs.gluster.brick_ops import (reset_brick)
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class TestBrickReset(GlusterBaseClass):
+class TestBrickReset(DParentTest):
 
-    @classmethod
-    def setUpClass(cls):
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on mounts",
-                   cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, [cls.script_upload_path])
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s"
-                                 % cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        self.all_mounts_procs = []
-        self.io_validation_complete = False
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts,
-                                                 volume_create_force=False)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def tearDown(self):
+    def terminate(self):
         """
-        If test method failed before validating IO, tearDown waits for the
-        IO's to complete and checks for the IO exit status
-
-        Cleanup and umount volume
+        Wait for IO to complete if the TC fails midway
         """
-        # Cleanup and umount volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
+        try:
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.all_mounts_procs, self.mounts)):
+                    raise Exception("Failed to wait for IO to complete")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Calling GlusterBaseClass teardown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_brickreset_ec_volume(self):
-        # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-
+    def run_test(self, redant):
         """
         - Start resource consumption tool
         - Create IO on dir2 of volume mountpoint
@@ -139,105 +88,85 @@ class TestBrickReset(GlusterBaseClass):
         - Monitor heal completion
         - Compare the arequal's calculated
         """
+        self.is_io_running = False
+        self.io_mem_monitor_running = False
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+
         # Starting resource consumption using top
-        log_file_mem_monitor = getcwd() + '/mem_usage.log'
-        cmd = 'for i in {1..100};do top -n 1 -b|egrep \
-                "RES|gluster" & free -h 2>&1 >> ' + \
-            log_file_mem_monitor + ' ;sleep 10;done'
-        g.log.info(cmd)
+        self.log_file_mem_monitor = '/var/log/glusterfs/mem_usage.log'
+        cmd = ("for i in {1..100};do top -n 1 -b|egrep 'RES|gluster' & free -h"
+               f" 2>&1 >> {self.log_file_mem_monitor} ; sleep 10;done")
+
+        self.cmd_list_procs = []
         for mount_obj in self.mounts:
-            g.run_async(mount_obj.client_system, cmd)
-        bricks_list = []
+            proc = redant.execute_command_async(cmd, mount_obj['client'])
+            self.cmd_list_procs.append(proc)
+        self.io_mem_monitor_running = True
 
         # Get the bricks from the volume
-        g.log.info("Fetching bricks for the volume : %s", self.volname)
-        bricks_list = get_all_bricks(self.mnode, self.volname)
-        g.log.info("Brick List : %s", bricks_list)
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
 
         # Creating directory2
-        cmd = ('mkdir %s/dir2' % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Failed to create directory2")
-        g.log.info("Directory 2 on %s created successfully", self.mounts[0])
+        redant.create_dir(self.mountpoint, "dir2", self.mounts[0]['client'])
 
         # Creating files on client side for dir2
-        for mount_obj in self.mounts:
-            g.log.info("Generating data for %s:%s",
-                       mount_obj.client_system, mount_obj.mountpoint)
-
+        count = 1
+        for mount in self.mounts:
             # Create dirs with file
-            g.log.info('Creating dirs with file...')
-            command = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                       "-d 2 -l 2 -n 2 -f 20 %s/dir2" % (
-                           self.script_upload_path,
-                           mount_obj.mountpoint))
-
-            proc = g.run_async(mount_obj.client_system, command,
-                               user=mount_obj.user)
+            proc = (redant.create_deep_dirs_with_files(
+                    f"{mount['mountpath']}/dir2", count, 2, 2, 2, 20,
+                    mount['client']))
             self.all_mounts_procs.append(proc)
-        self.io_validation_complete = False
+            count += 20
+        self.is_io_running = True
 
         # Reset a brick
-        g.log.info('Reset of brick using start')
         brick_reset = choice(bricks_list)
-        ret, _, _ = reset_brick(self.mnode, self.volname, brick_reset,
-                                "start")
+        redant.reset_brick(self.server_list[0], self.vol_name, brick_reset,
+                           "start")
 
         # Check if the brick is offline
-        g.log.info("Check the brick status if it is offline")
-        offline_bricks = get_offline_bricks_list(self.mnode, self.volname)
-        self.assertEqual(offline_bricks[0], brick_reset, "Brick not offline")
-        g.log.info("Expected : Brick is offline")
+        offline_bricks = redant.get_offline_bricks_list(self.vol_name,
+                                                        self.server_list[0])
+        if offline_bricks != brick_reset:
+            raise Exception("Expected Brick is not offline")
 
         # Reset brick with dest same as source with force while running IO's
-        g.log.info('Reset of brick with same src and dst brick')
-        ret, _, _ = reset_brick(self.mnode, self.volname, brick_reset,
-                                "commit", brick_reset, force="true")
-        self.assertEqual(ret, 0, "Not Expected: Reset brick failed")
-        g.log.info("Expected : Reset brick is successful")
+        redant.reset_brick(self.server_list[0], self.vol_name, brick_reset,
+                           "commit", brick_reset, force="true")
 
         # Validating IO's and waiting to complete
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-            )
-        self.io_validation_complete = True
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed on some of the clients")
+        self.is_io_running = False
 
         # List all files and dirs created
-        g.log.info("List all files and directories:")
-        ret = list_all_files_and_dirs_mounts(self.mounts)
-        self.assertTrue(ret, "Failed to list all files and dirs")
-        g.log.info("Listing all files and directories is successful")
+        ret = redant.list_all_files_and_dirs_mounts(self.mounts)
+        if not ret:
+            raise Exception("Failed to list all files and dirs")
 
         # Deleting dir2
-        cmd = ('rm -rf %s/dir2' % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Failed to delete directory2")
-        g.log.info("Directory 2 deleted successfully for %s", self.mounts[0])
-
-        del self.all_mounts_procs[:]
+        cmd = f"rm -rf {self.mounts[0]['mountpath']}/dir2"
+        redant.execute_abstract_op_node(cmd, self.mounts[0]['client'])
 
         # Creating dir1
-        cmd = ('mkdir  %s/dir1' % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Failed to create directory1")
-        g.log.info("Directory 1 created successfully for %s", self.mounts[0])
+        redant.create_dir(self.mountpoint, "dir1", self.mounts[0]['client'])
 
         # Create 5 dir and 5 files in each dir at mountpoint on dir1
         start, end = 1, 5
         for mount_obj in self.mounts:
             # Number of dir and files to be created.
-            dir_range = str(start) + ".." + str(end)
-            file_range = str(start) + ".." + str(end)
+            dir_range = ("%s..%s" % (str(start), str(end)))
+            file_range = ("%s..%s" % (str(start), str(end)))
             # Create dir 1-5 at mountpoint.
-            cmd = ('mkdir %s/dir1/dir{%s};' %
-                   (mount_obj.mountpoint, dir_range))
-            g.run(mount_obj.client_system, cmd)
+            redant.create_dir(mount_obj['mountpath'], "dir1/dir{%s}"
+                              % dir_range, mount_obj['client'])
 
             # Create files inside each dir.
             cmd = ('touch %s/dir1/dir{%s}/file{%s};'
-                   % (mount_obj.mountpoint, dir_range, file_range))
-            g.run(mount_obj.client_system, cmd)
+                   % (mount_obj['mountpath'], dir_range, file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
             # Increment counter so that at next client dir and files are made
             # with diff offset. Like at next client dir will be named
@@ -246,56 +175,42 @@ class TestBrickReset(GlusterBaseClass):
             end += 5
 
         # Rename all files inside dir1 at mountpoint on dir1
-        clients = []
-        for mount_obj in self.mounts:
-            clients.append(mount_obj.client_system)
-            cmd = ('cd %s/dir1/dir1/; '
-                   'for FILENAME in *;'
-                   'do mv $FILENAME Unix_$FILENAME; '
-                   'done;'
-                   % mount_obj.mountpoint)
-            g.run_parallel(clients, cmd)
+        cmd = (f"cd {self.mountpoint}/dir1/dir1/; "
+               "for FILENAME in *; do mv $FILENAME Unix_$FILENAME; done;")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Truncate at any dir in mountpoint inside dir1
         # start is an offset to be added to dirname to act on
         # diff files at diff clients.
         start = 1
         for mount_obj in self.mounts:
-            cmd = ('cd %s/dir1/dir%s/; '
-                   'for FILENAME in *;'
-                   'do echo > $FILENAME; '
-                   'done;'
-                   % (mount_obj.mountpoint, str(start)))
-            g.run(mount_obj.client_system, cmd)
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start}/; "
+                   "for FILENAME in *; do echo > $FILENAME; done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+            start += 1
 
         # Create softlink and hardlink of files in mountpoint. Start is an
         # offset to be added to dirname to act on diff files at diff clients.
         start = 1
         for mount_obj in self.mounts:
-            cmd = ('cd %s/dir1/dir%s; '
-                   'for FILENAME in *; '
-                   'do ln -s $FILENAME softlink_$FILENAME; '
-                   'done;'
-                   % (mount_obj.mountpoint, str(start)))
-            g.run(mount_obj.client_system, cmd)
-            cmd = ('cd %s/dir1/dir%s; '
-                   'for FILENAME in *; '
-                   'do ln $FILENAME hardlink_$FILENAME; '
-                   'done;'
-                   % (mount_obj.mountpoint, str(start + 1)))
-            g.run(mount_obj.client_system, cmd)
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start}; "
+                   "for FILENAME in *; do ln -s $FILENAME softlink_$FILENAME;"
+                   "done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start + 1}; "
+                   "for FILENAME in *; do ln $FILENAME hardlink_$FILENAME;"
+                   "done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 5
 
         # Delete op for deleting all file in one of the dirs. start is being
         # used as offset like in previous testcase in dir1
         start = 1
         for mount_obj in self.mounts:
-            cmd = ('cd %s/dir1/dir%s; '
-                   'for FILENAME in *; '
-                   'do rm -f $FILENAME; '
-                   'done;'
-                   % (mount_obj.mountpoint, str(start)))
-            g.run(mount_obj.client_system, cmd)
+            cmd = (f"cd {mount_obj['mountpath']}/dir1/dir{start}; "
+                   "for FILENAME in *; do rm -f $FILENAME; done;")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 5
 
         # chmod, chown, chgrp inside dir1
@@ -304,18 +219,17 @@ class TestBrickReset(GlusterBaseClass):
         start, end = 2, 5
         for mount_obj in self.mounts:
             dir_file_range = '%s..%s' % (str(start), str(end))
-            cmd = ('chmod 777 %s/dir1/dir{%s}/file{%s}'
-                   % (mount_obj.mountpoint, dir_file_range, dir_file_range))
-            g.run(mount_obj.client_system, cmd)
+            cmd = (f"chmod 777 {mount_obj['mountpath']}/dir1/"
+                   "dir{%s}/file{%s}" % (dir_file_range, dir_file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = ('chown root %s/dir1/dir{%s}/file{%s}'
-                   % (mount_obj.mountpoint, dir_file_range, dir_file_range))
-            g.run(mount_obj.client_system, cmd)
+            cmd = (f"chown root {mount_obj['mountpath']}/dir1/"
+                   "dir{%s}/file{%s}" % (dir_file_range, dir_file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = ('chgrp root %s/dir1/dir{%s}/file{%s}'
-                   % (mount_obj.mountpoint, dir_file_range, dir_file_range))
-            g.run(mount_obj.client_system, cmd)
-
+            cmd = (f"chgrp root {mount_obj['mountpath']}/dir1/"
+                   "dir{%s}/file{%s}" % (dir_file_range, dir_file_range))
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 5
             end += 5
 
@@ -324,277 +238,223 @@ class TestBrickReset(GlusterBaseClass):
         # at diff clients.
         offset = 1
         for mount_obj in self.mounts:
-            cmd = 'fallocate -l 100 tiny_file%s.txt' % str(offset)
-            g.run(mount_obj.client_system, cmd)
-            cmd = 'fallocate -l 20M small_file%s.txt' % str(offset)
-            g.run(mount_obj.client_system, cmd)
-            cmd = 'fallocate -l 200M medium_file%s.txt' % str(offset)
-            g.run(mount_obj.client_system, cmd)
-            cmd = 'fallocate -l 1G large_file%s.txt' % str(offset)
-            g.run(mount_obj.client_system, cmd)
+            cmd = (f"fallocate -l 100 {mount_obj['mountpath']}/"
+                   f"tiny_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+
+            cmd = (f"fallocate -l 20M {mount_obj['mountpath']}/"
+                   f"small_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+
+            cmd = (f"fallocate -l 200M {mount_obj['mountpath']}/"
+                   f"medium_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+
+            cmd = (f"fallocate -l 1G {mount_obj['mountpath']}/"
+                   f"large_file{offset}.txt")
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
             offset += 1
 
         # Creating files on client side for dir1
+        self.all_mounts_procs, count = [], 100
         for mount_obj in self.mounts:
-            g.log.info("Generating data for %s:%s",
-                       mount_obj.client_system, mount_obj.mountpoint)
             # Create dirs with file
-            g.log.info('Creating dirs with file...')
-            command = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                       "-d 2 -l 2 -n 2 -f 20 %s/dir1" % (
-                           self.script_upload_path,
-                           mount_obj.mountpoint))
-
-            proc = g.run_async(mount_obj.client_system, command,
-                               user=mount_obj.user)
+            proc = (redant.create_deep_dirs_with_files(
+                    f"{mount['mountpath']}/dir1", count, 2, 2, 2, 20,
+                    mount['client']))
             self.all_mounts_procs.append(proc)
-        self.io_validation_complete = False
+            count += 20
 
         # Validating IO's and waiting to complete
-        self.assertTrue(
-            validate_io_procs(self.all_mounts_procs, self.mounts),
-            "IO failed on some of the clients"
-            )
-        self.io_validation_complete = True
+        if not redant.validate_io_procs(self.all_mounts_procs, self.mounts):
+            raise Exception("IO failed on some of the clients")
 
         # List all files and dirs created
-        g.log.info("List all files and directories:")
-        ret = list_all_files_and_dirs_mounts(self.mounts)
-        self.assertTrue(ret, "Failed to list all files and dirs")
-        g.log.info("Listing all files and directories is successful")
+        ret = redant.list_all_files_and_dirs_mounts(self.mounts)
+        if not ret:
+            raise Exception("Failed to list all files and dirs")
 
         # Get areequal before killing the brick
-        g.log.info('Getting areequal before killing of brick...')
-        ret, result_before_killing_brick = (
-            collect_mounts_arequal(self.mounts[0]))
-        self.assertTrue(ret, 'Failed to get arequal')
-        g.log.info('Getting areequal before killing of brick '
-                   'is successful')
+        result_before_killing_brick = (redant.collect_mounts_arequal(
+                                       self.mounts[0]))
 
         # Reset a brick
-        g.log.info('Reset of brick using start')
-        ret, _, _ = reset_brick(self.mnode, self.volname, bricks_list[0],
-                                "start")
+        redant.reset_brick(self.server_list[0], self.vol_name, bricks_list[0],
+                           "start")
 
         # Check if the brick is offline
-        g.log.info("Check the brick status if it is offline")
-        ret = are_bricks_offline(self.mnode, self.volname, [bricks_list[0]])
-        self.assertTrue(ret, "Brick is not offline")
-        g.log.info("Expected : Brick is offline")
+        offline_bricks = redant.get_offline_bricks_list(self.vol_name,
+                                                        self.server_list[0])
+        if offline_bricks != bricks_list[0]:
+            raise Exception("Expected Brick is not offline")
 
         # Reset brick by giving a different source and dst brick
-        g.log.info('Reset of brick by giving different src and dst brick')
-        ret, _, _ = reset_brick(self.mnode, self.volname, bricks_list[0],
-                                "commit", bricks_list[1])
-        self.assertNotEqual(ret, 0, "Not Expected: Reset brick is successfull")
-        g.log.info("Expected : Source and Destination brick must be same for"
-                   " reset")
+        ret = redant.reset_brick(self.server_list[0], self.vol_name,
+                                 bricks_list[0], "commit", bricks_list[1],
+                                 excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Not Expected: Reset brick is successfull")
 
         # Reset brick with destination same as source
-        g.log.info('Reset of brick with same src and dst brick')
-        ret, _, _ = reset_brick(self.mnode, self.volname, bricks_list[0],
-                                "commit", bricks_list[0])
-        self.assertNotEqual(ret, 0, "Not Expected : Reset brick is successful")
-        g.log.info("Expected : Reset brick failed,Vol id is same use force")
+        ret = redant.reset_brick(self.server_list[0], self.vol_name,
+                                 bricks_list[0], "commit", bricks_list[0],
+                                 excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Not Expected: Reset brick is successfull")
 
         # Obtain hostname of node
-        ret, hostname_node1, _ = g.run(self.mnode, "hostname")
-        self.assertEqual(ret, 0, ("Failed to obtain hostname of node %s",
-                                  self.mnode))
-        g.log.info("Obtained hostname of client. IP- %s, hostname- %s",
-                   self.mnode, hostname_node1.strip())
+        ret = redant.execute_abstract_op_node("hostname", self.server_list[0])
+        hostname_node1 = ret['msg'][0].strip()
 
         # Reset brick with destination same as source with force using hostname
-        g.log.info('Reset of brick with same src and dst brick')
-        ret, _, _ = reset_brick(hostname_node1.strip(), self.volname,
-                                bricks_list[0], "commit", bricks_list[0],
-                                force="true")
-        self.assertEqual(ret, 0, "Not Expected: Reset brick failed")
-        g.log.info("Expected : Reset brick is successful")
+        redant.reset_brick(hostname_node1, self.vol_name, bricks_list[0],
+                           "commit", bricks_list[0], force=True)
 
         # Wait for brick to come online
-        g.log.info("Waiting for brick to come online")
-        ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Bricks are not online")
-        g.log.info("Expected : Bricks are online")
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list)
+        if not ret:
+            raise Exception("Bricks are not online")
 
         # Monitor heal completion
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal has not yet completed')
-        g.log.info('Heal has completed successfully')
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet completed")
 
         # Check if bricks are online
-        all_bricks = get_all_bricks(self.mnode, self.volname)
-        ret = are_bricks_online(self.mnode, self.volname, all_bricks)
-        self.assertTrue(ret, 'All bricks are not online')
-        g.log.info('All bricks are online')
+        all_bricks = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if not redant.are_bricks_online(self.vol_name, all_bricks,
+                                        self.server_list[0]):
+            raise Exception('All bricks are not online')
 
         # Bring down other bricks to max redundancy
-        # Get List of bricks to bring offline
-
-        # Bringing bricks offline
-        ret = bring_bricks_offline(self.volname,
-                                   bricks_list[1:3])
-        self.assertTrue(ret, 'Bricks not offline')
-        g.log.info('Bricks are offline successfully')
-        sleep(2)
+        ret = redant.bring_bricks_offline(self.vol_name, bricks_list[1:3])
+        if not ret:
+            raise Exception('Bricks are not offline')
 
         # Check if 4 bricks are online
         all_bricks = []
         all_bricks = [bricks_list[0], bricks_list[3], bricks_list[4],
                       bricks_list[5]]
-        ret = are_bricks_online(self.mnode, self.volname, all_bricks)
-        self.assertTrue(ret, 'All bricks are not online')
-        g.log.info('All bricks are online')
+        ret = redant.are_bricks_online(self.vol_name, all_bricks,
+                                       self.server_list[0])
+        if not ret:
+            raise Exception('All bricks are not online')
 
         # Check mount point
         cmd = 'ls -lrt /mnt'
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        g.log.info("Client mount point details ")
+        redant.execute_abstract_op_node(cmd, self.mounts[0]['client'])
 
         # Get arequal after bringing down bricks
-        g.log.info('Getting arequal after bringing down bricks...')
-        ret, result_offline_redundant_brick1 = (
-            collect_mounts_arequal(self.mounts[0]))
-        self.assertTrue(ret, 'Failed to get arequal')
-        g.log.info('Getting arequal before getting bricks offline '
-                   'is successful')
+        result_offline_redundant_brick1 = (redant.collect_mounts_arequal(
+                                           self.mounts[0]))
 
         # Bring bricks online
-        list_of_bricks_to_bring_online = bricks_list[1:3]
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  list_of_bricks_to_bring_online)
-        self.assertTrue(ret, 'Bricks not brought online')
-        g.log.info('Bricks are online successfully')
+        ret = redant.bring_bricks_online(self.vol_name, self.server_list,
+                                         bricks_list[1:3])
+        if not ret:
+            raise Exception('Bricks not brought online')
 
         # Wait for brick to come online
-        g.log.info("Waiting for brick to come online")
-        ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Bricks are not online")
-        g.log.info("Expected : Bricks are online")
-
-        # Check if bricks are online
-        all_bricks = get_all_bricks(self.mnode, self.volname)
-        ret = are_bricks_online(self.mnode, self.volname, all_bricks)
-        self.assertTrue(ret, 'All bricks are not online')
-        g.log.info('All bricks are online')
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list[1:3])
+        if not ret:
+            raise Exception("Bricks are not online")
 
         # Reset brick without bringing down brick
-        g.log.info('Reset of brick by giving different src and dst brick')
-        ret, _, _ = reset_brick(self.mnode, self.volname, bricks_list[1],
-                                "commit", bricks_list[1])
-        self.assertNotEqual(ret, 0, "Not Expected: Reset brick passed")
-        g.log.info("Expected : Brick reset failed as source brick must be"
-                   " stopped")
+        ret = redant.reset_brick(self.server_list[0], self.vol_name,
+                                 bricks_list[1], "commit", bricks_list[1],
+                                 excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Not Expected: Reset brick is successfull")
 
         # Kill the brick manually
-        ret = bring_bricks_offline(self.volname,
-                                   [bricks_list[1]])
-        self.assertTrue(ret, 'Brick not offline')
-        g.log.info('Brick is offline successfully')
+        ret = redant.bring_bricks_offline(self.vol_name, bricks_list[1])
+        if not ret:
+            raise Exception('Brick not offline')
 
         # Check if the brick is offline
-        g.log.info("Check the brick status if it is offline")
-        ret = are_bricks_offline(self.mnode, self.volname, [bricks_list[1]])
-        self.assertTrue(ret, "Brick is not offline")
-        g.log.info("Expected : Brick is offline")
+        ret = redant.are_bricks_offline(self.vol_name, bricks_list[1],
+                                        self.server_list[0])
+        if not ret:
+            raise Exception("Brick is not offline")
 
         # Reset brick with dest same as source after killing brick manually
-        g.log.info('Reset of brick by giving different src and dst brick')
-        ret, _, _ = reset_brick(self.mnode, self.volname, bricks_list[1],
-                                "commit", bricks_list[1], force="true")
-        self.assertEqual(ret, 0, "Not Expected: Reset brick failed")
-        g.log.info("Expected : Reset brick is successful")
+        redant.reset_brick(self.server_list[0], self.vol_name, bricks_list[1],
+                           "commit", bricks_list[1], force=True)
 
         # Wait for brick to come online
-        g.log.info("Waiting for brick to come online")
-        ret = wait_for_bricks_to_be_online(self.mnode, self.volname)
-        self.assertTrue(ret, "Bricks are not online")
-        g.log.info("Expected : Bricks are online")
+        ret = redant.wait_for_bricks_to_come_online(self.vol_name,
+                                                    self.server_list,
+                                                    bricks_list[1])
+        if not ret:
+            raise Exception("Bricks are not online")
 
         # Check if bricks are online
-        all_bricks = get_all_bricks(self.mnode, self.volname)
-        ret = are_bricks_online(self.mnode, self.volname, all_bricks)
-        self.assertTrue(ret, 'All bricks are not online')
-        g.log.info('All bricks are online')
+        all_bricks = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        if not redant.are_bricks_online(self.vol_name, all_bricks,
+                                        self.server_list[0]):
+            raise Exception('All bricks are not online')
 
         # Bring down other bricks to max redundancy
         # Bringing bricks offline
-        ret = bring_bricks_offline(self.volname,
-                                   bricks_list[2:4])
-        self.assertTrue(ret, 'Bricks not offline')
-        g.log.info('Bricks are offline successfully')
+        ret = redant.bring_bricks_offline(self.vol_name, bricks_list[2:4])
+        if not ret:
+            raise Exception('Bricks not offline')
 
         # Check mount point
         cmd = 'ls -lrt /mnt'
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        g.log.info("Client mount point details")
+        redant.execute_abstract_op_node(cmd, self.mounts[0]['client'])
 
         # Get arequal after bringing down bricks
-        g.log.info('Getting arequal after bringing down redundant bricks...')
-        ret, result_offline_redundant_brick2 = (
-            collect_mounts_arequal(self.mounts[0]))
-        self.assertTrue(ret, 'Failed to get arequal')
-        g.log.info('Getting arequal before getting bricks offline '
-                   'is successful')
+        result_offline_redundant_brick2 = (redant.collect_mounts_arequal(
+                                           self.mounts[0]))
 
         # Bring bricks online
-        list_of_bricks_to_bring_online = bricks_list[2:4]
-        ret = bring_bricks_online(self.mnode, self.volname,
-                                  list_of_bricks_to_bring_online)
-        self.assertTrue(ret, 'Bricks not brought online')
-        g.log.info('Bricks are online successfully')
+        ret = redant.bring_bricks_online(self.vol_name, self.server_list,
+                                         bricks_list[2:4])
+        if not ret:
+            raise Exception('Bricks not brought online')
 
         # Removing brick from backend
-        brick = bricks_list[0].strip().split(":")
-        cmd = "rm -rf %s" % brick[1]
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertEqual(ret, 0, "Failed to delete brick %s"
-                         % bricks_list[0])
-        g.log.info("Removed brick %s sucessfully", bricks_list[0])
+        node, brick = bricks_list[0].split(":")
+        cmd = f"rm -rf {brick}"
+        redant.execute_abstract_op_node(cmd, node)
 
         # Check if the brick is offline
         count = 0
         while count <= 20:
-            g.log.info("Check the brick status if it is offline")
-            ret = are_bricks_offline(self.mnode, self.volname,
-                                     [bricks_list[0]])
+            ret = redant.are_bricks_offline(self.vol_name,
+                                            bricks_list[0],
+                                            self.server_list[0])
             if ret:
                 break
             sleep(2)
             count = + 1
-        self.assertTrue(ret, "Brick is not offline")
-        g.log.info("Expected : Brick is offline")
+        if not ret:
+            raise Exception("Brick is not offline")
 
         # Reset brick with destination same as source
-        g.log.info('Reset of brick with same src and dst brick')
-        ret, _, _ = reset_brick(hostname_node1.strip(), self.volname,
-                                bricks_list[0], "commit", bricks_list[0])
-        self.assertEqual(ret, 0, "Not Expected: Reset brick failed")
-        g.log.info("Expected : Reset brick is successful")
+        redant.reset_brick(hostname_node1, self.vol_name, bricks_list[0],
+                           "commit", bricks_list[0])
 
         # Monitor heal completion
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, 'Heal has not yet completed')
-        g.log.info('Heal has completed successfully')
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet completed")
 
         # Comparing arequals
-        self.assertEqual(result_before_killing_brick,
-                         result_offline_redundant_brick1,
-                         'Arequals are not equals before killing brick'
-                         'processes and after offlining redundant bricks')
-        g.log.info('Arequals are equals before killing brick'
-                   'processes and after offlining redundant bricks')
+        if result_before_killing_brick != result_offline_redundant_brick1:
+            raise Exception('Arequals are not equals before killing brick'
+                            'processes and after offlining redundant bricks')
 
         # Comparing arequals
-        self.assertEqual(result_offline_redundant_brick2,
-                         result_offline_redundant_brick1,
-                         'Arequals are not equals for offlining redundant'
-                         ' bricks')
-        g.log.info('Arequals are equals for offlining redundant bricks')
+        if result_offline_redundant_brick1 != result_offline_redundant_brick2:
+            raise Exception('Arequals are not equals for offlining redundant'
+                            ' bricks')
 
         # Deleting dir1
-        cmd = ('rm -rf %s/dir1' % self.mounts[0].mountpoint)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd)
-        self.assertEqual(ret, 0, "Failed to delete directory1")
-        g.log.info("Directory 1 deleted successfully for %s", self.mounts[0])
+        cmd = f"rm -rf {self.mounts[0]['mountpath']}/dir1"
+        redant.execute_abstract_op_node(cmd, self.mounts[0]['mountpath'])
