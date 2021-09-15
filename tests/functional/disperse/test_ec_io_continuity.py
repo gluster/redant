@@ -30,6 +30,28 @@ from tests.d_parent_test import DParentTest
 
 class TestIOsOnECVolume(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.is_io_running = False
+        # Check for 2 clients in the cluster
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
+
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list, self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0],
+                                     self.vol_name,
+                                     self.mountpoint, client)
+
     def terminate(self):
         """
         Wait for IO to complete if the TC fails midway
@@ -51,7 +73,7 @@ class TestIOsOnECVolume(DParentTest):
                                  force=True)
         if not self.redant.monitor_heal_completion(self.server_list[0],
                                                    self.vol_name,
-                                                   bricks=bricks):
+                                                   bricks=list(bricks)):
             raise Exception("Heal is not yet completed")
 
     def run_test(self, redant):
@@ -68,11 +90,6 @@ class TestIOsOnECVolume(DParentTest):
         - Validate heal info on volume when brick down erroring out instantly
         - Validate arequal on brining the brick offline
         """
-        self.is_io_running = False
-        # Check for 2 clients in the cluster
-        redant.check_hardware_requirements(clients=self.client_list,
-                                           clients_count=2)
-
         # Create a directory structure on mount from client 1
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         cmd = ("python3 /usr/share/redant/script/file_dir_ops.py"
