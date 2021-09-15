@@ -135,6 +135,89 @@ class BrickOps(AbstractOps):
 
         return ret
 
+    def get_remove_brick_status(self, node: str, volname: str,
+                                bricks_list: list) -> dict:
+        """
+        Parse the output of 'gluster vol remove-brick status' command
+        for the given volume
+
+        Args:
+            node (str): Node on which command has to be executed.
+            volname (str): volume name
+            bricks_list (list): List of bricks participating in
+                                remove-brick operation
+
+        Returns:
+            NoneType: None if command execution fails, parse errors.
+            dict: dict on success. rebalance status will be
+                  in dict format
+        """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
+        brick_cmd = " ".join(bricks_list)
+
+        cmd = (f"gluster volume remove-brick {volname} {brick_cmd} "
+               "status --xml")
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to parse the remove-brick status"
+                              "xml output on volume")
+            return None
+
+        if ret['msg']['opRet'] != '0':
+            self.logger.error("Failed to execute 'remove-brick status' on "
+                              f"node {node}")
+            return None
+
+        return ret['msg']['volRemoveBrick']
+
+    def wait_for_remove_brick_to_complete(self, node: str, volname: str,
+                                          bricks_list: list,
+                                          timeout: int = 1200) -> bool:
+        """
+        Waits for the remove brick to complete
+
+        Args:
+            node (str): Node on which command has to be executed.
+            volname (str): volume name
+            bricks_list (list): List of bricks participating in
+                                remove-brick operation
+
+        Optional:
+            timeout (int): timeout value in seconds to wait for remove brick
+                           to complete
+
+        Returns:
+            True on success, False otherwise
+        """
+        if not isinstance(bricks_list, list):
+            bricks_list = [bricks_list]
+
+        count = 0
+        while count < timeout:
+            status_info = self.get_remove_brick_status(node, volname,
+                                                       bricks_list)
+            if status_info is None:
+                return False
+
+            status = status_info['aggregate']['statusStr']
+            if status == 'completed':
+                self.logger.info("Remove brick is successfully completed in "
+                                 f"{count} sec")
+                return True
+            elif status == 'failed':
+                self.logger.error("Remove brick failed on one or more nodes. "
+                                  "Check remove brick status for more details")
+                return False
+            else:
+                sleep(10)
+                count += 10
+                self.logger.info("Remove brick operation has not completed. "
+                                 f"Wait timeout is {count}")
+
+        return False
+
     def replace_brick(self, node: str, volname: str,
                       src_brick: str, dest_brick: str,
                       excep: bool = True) -> dict:
