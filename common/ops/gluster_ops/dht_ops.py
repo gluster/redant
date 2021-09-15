@@ -318,3 +318,60 @@ class DHTOps(AbstractOps):
                 break
 
         return hashed_subvol, count
+
+    def find_new_hashed(self, subvols: list, parent_path: str,
+                        oldname: str) -> tuple:
+        """
+            This is written for rename case so that the new name will hash to a
+            different subvol than that of the the old name.
+            Note: The new hash will be searched under the same parent
+
+            Args:
+                subvols (list): list of subvols
+                parent_path (str): parent path (relative to mount) of "oldname"
+                oldname(str): name of the source file for rename operation
+
+            Return Values:
+                For success returns A tuple (name, brickdir_path, count)
+                containing name: Newname of hashed object,
+                brickdir_path: Brick path for which new hash was calculated,
+                count: Subvol count
+
+                For Failure returns None
+        """
+        if not isinstance(subvols, list):
+            subvols = [subvols]
+
+        bricklist = self.create_brickpathlist(subvols, parent_path)
+        if not bricklist:
+            self.logger.error("Could not form brickpath list")
+            return None
+
+        for brickdir in bricklist:
+            hashrange = self.get_hashrange(brickdir)
+            if not hashrange:
+                self.logger.error("Failed to get hashrange")
+                return None
+            self.logger.debug(f"Low hashrange: {hashrange[0]}, "
+                              f"High hashrange: {hashrange[1]}")
+
+        host, _ = bricklist[0].split(':')
+        hash_num = self.calculate_hash(host, oldname)
+        oldhashed, _ = self.find_hashed_subvol(subvols, parent_path, oldname)
+        if oldhashed is None:
+            self.logger.error("Could not find old hashed subvol")
+            return None
+        self.logger.debug(f"Oldhashed: {oldhashed}, Oldhash: {hash_num}")
+
+        count = -1
+        for item in range(1, 5000):
+            newhash = self.calculate_hash(host, str(item))
+            for brickdir in bricklist:
+                count += 1
+                ret = self.hashrange_contains_hash(brickdir, newhash)
+                if ret:
+                    if oldhashed != brickdir:
+                        return (item, brickdir, count)
+
+            count = -1
+        return None
