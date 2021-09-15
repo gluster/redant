@@ -111,7 +111,7 @@ class TestBrickReset(DParentTest):
         redant.create_dir(self.mountpoint, "dir2", self.mounts[0]['client'])
 
         # Creating files on client side for dir2
-        count = 1
+        self.all_mounts_procs, count = [], 1
         for mount in self.mounts:
             # Create dirs with file
             proc = (redant.create_deep_dirs_with_files(
@@ -129,7 +129,7 @@ class TestBrickReset(DParentTest):
         # Check if the brick is offline
         offline_bricks = redant.get_offline_bricks_list(self.vol_name,
                                                         self.server_list[0])
-        if offline_bricks != brick_reset:
+        if offline_bricks[0] != brick_reset:
             raise Exception("Expected Brick is not offline")
 
         # Reset brick with dest same as source with force while running IO's
@@ -285,7 +285,7 @@ class TestBrickReset(DParentTest):
         # Check if the brick is offline
         offline_bricks = redant.get_offline_bricks_list(self.vol_name,
                                                         self.server_list[0])
-        if offline_bricks != bricks_list[0]:
+        if offline_bricks[0] != bricks_list[0]:
             raise Exception("Expected Brick is not offline")
 
         # Reset brick by giving a different source and dst brick
@@ -302,12 +302,8 @@ class TestBrickReset(DParentTest):
         if ret['error_code'] == 0:
             raise Exception("Not Expected: Reset brick is successfull")
 
-        # Obtain hostname of node
-        ret = redant.execute_abstract_op_node("hostname", self.server_list[0])
-        hostname_node1 = ret['msg'][0].strip()
-
-        # Reset brick with destination same as source with force using hostname
-        redant.reset_brick(hostname_node1, self.vol_name, bricks_list[0],
+        # Reset brick with destination same as source with force
+        redant.reset_brick(self.server_list[0], self.vol_name, bricks_list[0],
                            "commit", bricks_list[0], force=True)
 
         # Wait for brick to come online
@@ -437,7 +433,7 @@ class TestBrickReset(DParentTest):
             raise Exception("Brick is not offline")
 
         # Reset brick with destination same as source
-        redant.reset_brick(hostname_node1, self.vol_name, bricks_list[0],
+        redant.reset_brick(self.server_list[0], self.vol_name, bricks_list[0],
                            "commit", bricks_list[0])
 
         # Monitor heal completion
@@ -457,4 +453,4 @@ class TestBrickReset(DParentTest):
 
         # Deleting dir1
         cmd = f"rm -rf {self.mounts[0]['mountpath']}/dir1"
-        redant.execute_abstract_op_node(cmd, self.mounts[0]['mountpath'])
+        redant.execute_abstract_op_node(cmd, self.mounts[0]['cient'])
