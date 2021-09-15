@@ -453,4 +453,4 @@ class TestBrickReset(DParentTest):
 
         # Deleting dir1
         cmd = f"rm -rf {self.mounts[0]['mountpath']}/dir1"
-        redant.execute_abstract_op_node(cmd, self.mounts[0]['cient'])
+        redant.execute_abstract_op_node(cmd, self.mounts[0]['client'])
