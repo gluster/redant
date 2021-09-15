@@ -53,13 +53,13 @@ class TestFileAccessSubvolDown(DParentTest):
                                         self.client_list[0])
 
         # find hashed subvol
-        srchashed, scount = redant.find_hashed_subvol(subvols, "/",
+        srchashed, scount = redant.find_hashed_subvol(subvols, "",
                                                       "testfile")
         if not srchashed:
             raise Exception("Could not find srchashed")
 
         # rename the file such that the new name hashes to a new subvol
-        newhash = redant.find_new_hashed(subvols, "/", "testfile")
+        newhash = redant.find_new_hashed(subvols, "", "testfile")
         if not newhash:
             raise Exception("Could not find new hashed for dstfile")
 
@@ -72,7 +72,8 @@ class TestFileAccessSubvolDown(DParentTest):
 
         # check that on dsthash_subvol the file is a linkto file
         node, brick = dsthashed.split(":")
-        filepath = f"{brick}/{dstname}"
+        # '/' not needed as the 'brick' will already have '/'in the end
+        filepath = f"{brick}{dstname}"
         file_stat = redant.get_file_stat(node, filepath)
         if file_stat['msg']['permission'] != 1000:
             raise Exception("Expected file permission to be 1000"
@@ -80,7 +81,8 @@ class TestFileAccessSubvolDown(DParentTest):
 
         # check on srchashed the file is a data file
         host, brick = srchashed.split(':')
-        filepath = f"{brick}/{dstname}"
+        # '/' not needed as the 'brick' will already have '/'in the end
+        filepath = f"{brick}{dstname}"
         file_stat = redant.get_file_stat(host, filepath)
         if file_stat['msg']['permission'] == 1000:
             raise Exception("Expected file permission not to be 1000"
