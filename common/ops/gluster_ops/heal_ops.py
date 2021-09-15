@@ -241,6 +241,9 @@ class HealOps:
             bool: True if heal is complete within timeout_period.
             False otherwise
         """
+        if bricks and not isinstance(bricks, list):
+            bricks = [bricks]
+
         if timeout_period != 0:
             heal_monitor_timeout = timeout_period
 
