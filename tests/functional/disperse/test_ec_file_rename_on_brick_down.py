@@ -1,80 +1,69 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-131 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along`
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-131 USA.
+
+Description: Test to check no errors on file/dir renames when one of
+                        the bricks is down in the volume.
+"""
 
 from random import choice
 from time import sleep
+from tests.d_parent_test import DParentTest
 
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import get_all_bricks, bring_bricks_offline
-from glustolibs.gluster.volume_libs import volume_start
-from glustolibs.gluster.glusterfile import create_link_file
+# disruptive;disp,dist-disp
 
 
-@runs_on([['dispersed', 'distributed-dispersed'], ['glusterfs']])
-class TestECRenameFilesOnBrickDown(GlusterBaseClass):
+class TestECRenameFilesOnBrickDown(DParentTest):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        # Check server requirements
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
 
-    # pylint: disable=too-many-statements,too-many-locals
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-
-        # Remove on fixing BZ 1596165
-        if 'dispersed' in self.volname:
-            self.skipTest("Test will fail due to BZ 1596165")
-
-        # Setup and mount volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to setup and mount volume")
-
-    def tearDown(self):
-
-        # Unmount and cleanup volume
-        ret = self.unmount_volume_and_cleanup_volume(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to unmount and cleanup volume")
-
-        self.get_super_method(self, 'tearDown')()
+        # Create and start the volume
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node("mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, client)
 
     def create_links(self, client, path):
-
         # Soft links
         for i in range(4, 7):
-            ret = create_link_file(client,
-                                   '{}/file{}_or'.format(path, i),
-                                   '{}/file{}_sl'.format(path, i), soft=True)
-            self.assertTrue(ret, "Fail: Not able to create soft link for "
-                            "{}/file{}_or".format(path, i))
-        g.log.info("Created soft links for files successfully")
+            if not (self.redant.
+                    create_link_file(client, f'{path}/file{i}_or',
+                                     f'{path}/file{i}_sl',
+                                     soft=True)):
+                raise Exception("Unable to create soft link file.")
 
         # Hard links
         for i in range(7, 10):
-            ret = create_link_file(client,
-                                   '{}/file{}_or'.format(path, i),
-                                   '{}/file{}_hl'.format(path, i),)
-            self.assertTrue(ret, "Fail: Not able to create hard link for "
-                            "{}/file{}_or".format(path, i))
-        g.log.info("Created hard links for files successfully")
+            if not (self.redant.
+                    create_link_file(client, f'{path}/file{i}_or',
+                                     f'{path}/file{i}_hl')):
+                raise Exception("Unable to create hard link file.")
 
-    def test_ec_rename_files_with_brick_down(self):
+    def run_test(self, redant):
         """
-        Description: Test to check no errors on file/dir renames when one of
-                        the bricks is down in the volume.
         Steps:
         1. Create an EC volume
         2. Mount the volume using FUSE on two different clients
@@ -90,132 +79,124 @@ class TestECRenameFilesOnBrickDown(GlusterBaseClass):
         """
 
         # Creating ~9 files from client 1 on mount
-        m_point = self.mounts[0].mountpoint
-        cmd = 'cd %s; touch file{1..9}_or' % m_point
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "Fail: Not able to create files on "
-                         "{}".format(m_point))
-        g.log.info("Files created successfully on mount point")
+        cmd = 'cd %s; touch file{1..9}_or' % self.mountpoint
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Creating 9 dir X 9 files in each dir from client 2
-        cmd = ('cd %s; mkdir -p dir{1..9}_or; touch '
-               'dir{1..9}_or/file{1..9}_or' % m_point)
-        ret, _, _ = g.run(self.clients[1], cmd)
-        self.assertEqual(ret, 0, "Fail: Not able to create dir with files on "
-                         "{}".format(m_point))
-        g.log.info("Dirs with files are created successfully on mount point")
+        cmd = ('cd %s; mkdir -p dir{1..9}_or;'
+               'touch dir{1..9}_or/file{1..9}_or' % self.mountpoint)
+        redant.execute_abstract_op_node(cmd, self.client_list[1])
 
         # Create required soft links and hard links from client 1 on mount
-        client, path = self.clients[0], m_point
-        self.create_links(client, path)
+        self.create_links(self.client_list[0], self.mountpoint)
 
-        client = self.clients[1]
+        # Create required soft and hard links in nested dirs from client2
         for i in range(1, 10):
+            path = (f'{self.mountpoint}/dir{i}_or')
+            self.create_links(self.client_list[1], path)
 
-            # Create required soft and hard links in nested dirs
-            path = '{}/dir{}_or'.format(m_point, i)
-            self.create_links(client, path)
-
-        # Create soft links for dirs
-        path = m_point
+        # Create soft links for dirs from client2
+        path = self.mountpoint
         for i in range(4, 7):
-            ret = create_link_file(client,
-                                   '{}/dir{}_or'.format(path, i),
-                                   '{}/dir{}_sl'.format(path, i), soft=True)
-            self.assertTrue(ret, "Fail: Not able to create soft link for "
-                            "{}/dir{}_or".format(path, i))
-        g.log.info("Created nested soft and hard links for files successfully")
+            if not (self.redant.
+                    create_link_file(self.client_list[1], f'{path}/dir{i}_or',
+                                     f'{path}/dir{i}_sl', soft=True)):
+                raise Exception("Unable to create soft link file for dir")
 
         # Calculate all file count against each section orginal, hard, soft
         # links
-        cmd = ('cd %s; arr=(or sl hl); '
-               'for i in ${arr[*]}; do find . -name "*$i" | wc -l ; '
-               'done; ' % m_point)
-        ret, out, _ = g.run(client, cmd)
-        self.assertEqual(ret, 0, "Not able get list of soft and hard links "
-                         "created on the mount point")
-        all_org, all_soft, all_hard = out.split()
+        cmd = (f'cd {path}; arr=(or sl hl); '
+               'for i in ${arr[*]}; do find . -name "*$i" | wc -l ; done;')
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
+        count = []
+        for i in ret['msg']:
+            count.append(int(i.strip()))
+        all_org, all_soft, all_hard = count
 
         # Rename 2 out of 3 dir's soft links from client 1
-        client = self.clients[0]
-        cmd = ('cd %s; sl=0; '
+        cmd = (f'cd {path}; sl=0; '
                'for line in `ls -R | grep -P "dir(4|5)_sl"`; '
                'do mv -f "$line" "$line""_renamed"; ((sl++)); done; '
-               'echo $sl;' % m_point)
-        ret, out, _ = g.run(client, cmd)
-        self.assertEqual(ret, 0, "Not able to rename directory soft links")
-        temp_soft = out.strip()
+               'echo $sl;')
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
+        temp_soft = int(ret['msg'][0].strip())
 
         # Start renaming original files from client 1 and
         # softlinks, hardlinks  from client 2
-        cmd = ('cd %s; arr=(. dir{1..9}_or);  or=0; '
-               'for item in ${arr[*]}; do '
-               'cd $item; '
+        cmd = (f'cd {path}; '
+               'arr=(. dir{1..9}_or);  or=0; '
+               'for item in ${arr[*]}; do cd $item; '
                'for line in `ls | grep -P "file(1|2)_or"`; '
-               'do mv -f "$line" "$line""_renamed"; ((or++)); sleep 2; done;'
-               'cd - > /dev/null; sleep 1; done; echo $or ' % m_point)
-        proc_or = g.run_async(client, cmd)
+               'do mv -f "$line" "$line""_renamed"; ((or++)); '
+               'sleep 2; done;''cd - > /dev/null; sleep 1; done; echo $or ')
+        proc_or = redant.execute_command_async(cmd, self.client_list[0])
 
-        client = self.clients[1]
-        cmd = ('cd %s; arr=(. dir{1..9}_or); sl=0; hl=0; '
-               'for item in ${arr[*]}; do '
-               'cd $item; '
+        cmd = (f'cd {path}; '
+               'arr=(. dir{1..9}_or); sl=0; hl=0; '
+               'for item in ${arr[*]}; do cd $item; '
                'for line in `ls | grep -P "file(4|5)_sl"`; '
-               'do mv -f "$line" "$line""_renamed"; ((sl++)); sleep 1; done; '
+               'do mv -f "$line" "$line""_renamed"; ((sl++)); '
+               'sleep 1; done; '
                'for line in `ls | grep -P "file(7|8)_hl"`; '
-               'do mv -f "$line" "$line""_renamed"; ((hl++)); sleep 1; done; '
-               'cd - > /dev/null; sleep 1; done; echo $sl $hl; ' % m_point)
-        proc_sl_hl = g.run_async(client, cmd)
+               'do mv -f "$line" "$line""_renamed"; ((hl++)); '
+               'sleep 1; done; '
+               'cd - > /dev/null; sleep 1; done; echo $sl $hl; ')
+        proc_sl_hl = redant.execute_command_async(cmd, self.client_list[1])
 
         # Wait for some files to be renamed
         sleep(20)
 
         # Kill one of the bricks
-        brick_list = get_all_bricks(self.mnode, self.volname)
-        ret = bring_bricks_offline(self.volname, choice(brick_list))
-        self.assertTrue(ret, "Failed to bring one of the bricks offline")
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+        bricks_offline = choice(bricks_list)
+        redant.bring_bricks_offline(self.vol_name, bricks_offline)
+        if not redant.are_bricks_offline(self.vol_name, bricks_offline,
+                                         self.server_list[0]):
+            raise Exception(f"Brick {bricks_offline} is not offline")
 
         # Wait for some more files to be renamed
         sleep(20)
 
         # Bring brick online
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, "Not able to start Volume with force option")
+        redant.volume_start(self.vol_name, self.server_list[0],
+                            force=True)
 
         # Wait for rename to complete and take count of file operations
-        ret, out, _ = proc_or.async_communicate()
-        self.assertEqual(ret, 0, "Fail: Origianl files are not renamed")
-        ren_org = out.strip()
+        ret1 = redant.wait_till_async_command_ends(proc_or)
+        ret2 = redant.wait_till_async_command_ends(proc_sl_hl)
 
-        ret, out, _ = proc_sl_hl.async_communicate()
-        self.assertEqual(ret, 0, "Fail: Soft and Hard links are not renamed")
-        ren_soft, ren_hard = out.strip().split()
+        ren_org = int(ret1['msg'][0].strip())
+        ren_soft, ren_hard = ret2['msg'][0].strip().split()
         ren_soft = str(int(ren_soft) + int(temp_soft))
 
         # Count actual data of renaming links/files
-        cmd = ('cd %s; arr=(or or_renamed sl sl_renamed hl hl_renamed); '
-               'for i in ${arr[*]}; do find . -name "*$i" | wc -l ; '
-               'done; ' % m_point)
-        ret, out, _ = g.run(client, cmd)
-        self.assertEqual(ret, 0, "Not able to get count of original and link "
-                         "files after brick was brought up")
+        cmd = (f'cd {path}; arr=(or or_renamed sl sl_renamed hl hl_renamed); '
+               'for i in ${arr[*]}; do find . -name "*$i" | wc -l ; done;')
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
+        count = []
+        for i in ret['msg']:
+            count.append(int(i.strip()))
+
         (act_org, act_org_ren, act_soft,
-         act_soft_ren, act_hard, act_hard_ren) = out.split()
+         act_soft_ren, act_hard, act_hard_ren) = count
 
         # Validate count of expected and actual rename of
         # links/files is matching
-        for exp, act, msg in ((ren_org, act_org_ren, 'original'),
-                              (ren_soft, act_soft_ren, 'soft links'),
-                              (ren_hard, act_hard_ren, 'hard links')):
-            self.assertEqual(exp, act, "Count of {} files renamed while brick "
-                             "was offline is not matching".format(msg))
-
+        for exp, act, msg in (
+                (int(ren_org), int(act_org_ren), 'original'),
+                (int(ren_soft), int(act_soft_ren), 'soft links'),
+                (int(ren_hard), int(act_hard_ren), 'hard links')):
+            if exp != act:
+                raise Exception(f"Count of {msg} files renamed while brick "
+                                "was offline is not matching")
         # Validate no data is lost in rename process
         for exp, act, msg in (
                 (int(all_org)-int(act_org_ren), int(act_org), 'original'),
                 (int(all_soft)-int(act_soft_ren), int(act_soft), 'soft links'),
                 (int(all_hard)-int(act_hard_ren), int(act_hard), 'hard links'),
         ):
-            self.assertEqual(exp, act, "Count of {} files which are not "
-                             "renamed while brick was offline "
-                             "is not matching".format(msg))
+            if exp != act:
+                raise Exception(f"Count of {msg} files which are not "
+                                "renamed while brick was offline "
+                                "is not matching")
