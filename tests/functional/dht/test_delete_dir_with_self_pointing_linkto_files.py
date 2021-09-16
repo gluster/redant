@@ -105,14 +105,15 @@ class TestDeletDirWithSelfPointingLinktofiles(DParentTest):
         ret = redant.get_dht_linkto_xattr(node, f"{path}{file_list[0]}")
         if not ret:
             raise Exception("Unable to fetch dht linkto xattr")
+        linkto_xattr = ret[1].split('=')[1].strip()
 
         # Change trusted.glusterfs.dht.linkto from dist-client-0 to
         # dist-client-1 or visa versa according to initial value
-        dht_linkto_xattr = ret.split("-")
-        if int(dht_linkto_xattr[2]):
-            dht_linkto_xattr[2] = "0"
+        dht_linkto_xattr = linkto_xattr[1:-1].split("-")
+        if int(dht_linkto_xattr[3]):
+            dht_linkto_xattr[3] = "0"
         else:
-            dht_linkto_xattr[2] = "1"
+            dht_linkto_xattr[3] = "1"
         linkto_value = "-".join(dht_linkto_xattr)
 
         # Set xattr trusted.glusterfs.dht.linkto on all the linkto files
