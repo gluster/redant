@@ -1528,4 +1528,4 @@ class IoOps(AbstractOps):
             self.logger.error("Failed to get md5sum")
             return None
 
-        return ret['msg']
+        return ret['msg'][0]

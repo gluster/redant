@@ -114,7 +114,7 @@ class TestAddBrickRebalanceWithSymlinkPointingOutOfGluster(DParentTest):
             if symlink_md5sum is None:
                 raise Exception("Failed to get md5sum")
 
-            if original_file_md5sum.split()[0].strip() != \
-               symlink_md5sum.split()[0].strip():
+            if original_file_md5sum.split()[0] != \
+               symlink_md5sum.split()[0]:
                 raise Exception("Original file and symlink checksum not equal"
                                 f" for link{number}")
