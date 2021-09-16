@@ -50,6 +50,9 @@ class TestBrickFullAddBrickRebalance(DParentTest):
         # Calculate the usable size and fill till it reaches
         # min free limit
         usable_size = redant.get_usable_size_per_disk(bricks[0])
+        if not usable_size:
+            raise Exception("Failed to get the usable size of the brick")
+
         subvols = redant.get_subvols(self.vol_name, self.server_list[0])
         if not subvols:
             raise Exception("Failed to get the volume subvols")

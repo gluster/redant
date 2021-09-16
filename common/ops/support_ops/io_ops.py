@@ -607,6 +607,28 @@ class IoOps(AbstractOps):
 
         return ret['msg'][0].split("\n")[0]
 
+    def get_usable_size_per_disk(self, brickpath: str,
+                                 min_free_limit: int = 10) -> int:
+        """
+        Get the usable size per disk
+
+        Args:
+            brickpath(str): Brick path to be used to calculate usable size
+            min_free_limit(int): Min free disk limit to be used.
+                                 Default is 10
+
+        Returns:
+          (int): Usable size in GB. None in case of errors.
+        """
+        node, brick_path = brickpath.split(':')
+        size = self.get_size_of_mountpoint(brick_path, node)
+        if not size:
+            return None
+        size = int(size)
+        min_free_size = size * min_free_limit // 100
+        usable_size = ((size - min_free_size) // 1048576) + 1
+        return usable_size
+
     def list_all_files_and_dirs_mounts(self, mounts: list) -> bool:
         """List all Files and Directories from mounts.
         Args:
