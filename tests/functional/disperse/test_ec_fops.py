@@ -187,10 +187,8 @@ class TestFops(DParentTest):
 
         # Creating 2TB file if volume is greater
         # than equal to 3TB
-        command = (f"df {self.mountpoint} | grep -v '^Filesystem' |"
-                   " awk '{print $4}'")
-        ret = redant.execute_abstract_op_node(command, self.client_list[0])
-        avail = ret['msg'][0].split("\n")[0]
+        avail = redant.get_size_of_mountpoint(self.mountpoint,
+                                              self.client_list[0])
         if int(avail) >= 3000000000:
             cmd = f'fallocate -l 2TB {self.mountpoint}/tiny_file_large.txt'
             redant.execute_abstract_op_node(cmd, self.client_list[0])
