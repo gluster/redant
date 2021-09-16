@@ -192,7 +192,7 @@ class IoOps(AbstractOps):
         out = "".join(ret['msg'])
         return list(filter(None, out.split("\n")))
 
-    def get_file_stat(self, node: str, path: str) -> str:
+    def get_file_stat(self, node: str, path: str) -> dict:
         """
         Function to get file stat.
         Args:
@@ -205,7 +205,7 @@ class IoOps(AbstractOps):
               "msg" : DICT or string of error
             }
         """
-        ret_val = {'error_code': 0, 'msg': ''}
+        ret_val = {'error_code': 0, 'msg': {}}
         cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py stat {path}")
         ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
@@ -1473,9 +1473,11 @@ class IoOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, host, False)
         if ret['error_code'] == 0:
             # An additional ',' is there for newer platforms
-            if 'sticky empty' in ret['msg'][0] \
-               or 'sticky, empty' in ret['msg'][0]:
+            if ('sticky empty' in ret['msg'][0]) \
+               or ('sticky, empty' in ret['msg'][0]):
                 stat = self.get_file_stat(host, fqpath)
+                if stat['error_code'] != 0:
+                    return False
                 if stat['msg']['st_size'] == 0:
                     xattr = self.get_dht_linkto_xattr(host, fqpath)
                     if xattr:
