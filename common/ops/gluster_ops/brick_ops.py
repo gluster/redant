@@ -334,7 +334,8 @@ class BrickOps(AbstractOps):
         return True
 
     def reset_brick(self, node: str, volname: str, src_brick: str,
-                    option: str, dst_brick=None, force=False):
+                    option: str, dst_brick=None, force=False,
+                    excep: bool = True) -> dict:
         """
         Resets brick in a volume
 
@@ -345,11 +346,12 @@ class BrickOps(AbstractOps):
             src_brick (str) : Name of the source brick
             dst_brick (str) : Name of the destination brick
             option (str) : Options for reset brick : start | commit | force
-
-        Kwargs:
             force (bool) : If this option is set to True,
                            then reset brick will get executed
                            with force option
+            excep (bool): Whether to bypass the exception or not. If set to
+                          False the exception is bypassed and value from
+                          remote executioner is returned. Defaults to True
 
         Returns:
             ret: A dictionary consisting
@@ -374,7 +376,7 @@ class BrickOps(AbstractOps):
             if force:
                 cmd = f"{cmd} force"
 
-        ret = self.execute_abstract_op_node(cmd=cmd, node=node)
+        ret = self.execute_abstract_op_node(cmd=cmd, node=node, excep=excep)
 
         return ret
 
