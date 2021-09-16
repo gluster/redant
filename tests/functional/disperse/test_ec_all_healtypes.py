@@ -83,16 +83,16 @@ class TestCase(DParentTest):
         # at diff clients.
         offset = 1
         for mount_obj in self.mounts:
-            cmd = f'fallocate -l 100 tiny_file{offset}.txt'
+            cmd = f'fallocate -l 100 {mpoint}/tiny_file{offset}.txt'
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = f'fallocate -l 20M small_file{offset}.txt'
+            cmd = f'fallocate -l 20M {mpoint}/small_file{offset}.txt'
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = f'fallocate -l 200M medium_file{offset}.txt'
+            cmd = f'fallocate -l 200M {mpoint}/medium_file{offset}.txt'
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
-            cmd = f'fallocate -l 1G large_file{offset}.txt'
+            cmd = f'fallocate -l 1G {mpoint}/large_file{offset}.txt'
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
             offset += 1
