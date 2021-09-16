@@ -1077,8 +1077,8 @@ class IoOps(AbstractOps):
             setfattr result or exception will be raised on failure.
         """
         cmd = (f"setfattr -n {fattr} -v {value} {fpath}")
-        ret = self.execute_abstract_op_node(cmd, node)
-        return ret['msg']
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        return ret
 
     def delete_fattr(self, fpath: str, fattr: str, node: str) -> list:
         """
