@@ -78,7 +78,7 @@ class TestCopyHugeFileWithRemoveBrickInProgress(DParentTest):
             "client": self.client_list[0],
             "mountpath": self.mountpoint
         }
-        cmd = f"cd {self.mountpoint}; cp ../huge_file.txt ."
+        cmd = f"sleep 30; cd {self.mountpoint}; cp ../huge_file.txt ."
         self.io_proc = redant.execute_command_async(cmd, self.client_list[0])
         self.cp_running = True
 

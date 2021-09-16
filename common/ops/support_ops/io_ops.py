@@ -728,6 +728,8 @@ class IoOps(AbstractOps):
         Returns:
             bool: True if IO is complete on all mounts. False otherwise.
         """
+        if not isinstance(all_mounts_async_objs, list):
+            all_mounts_async_objs = [all_mounts_async_objs]
 
         if isinstance(mounts, dict):
             mounts = [mounts]
