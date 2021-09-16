@@ -1,99 +1,48 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.lib_utils import add_user, del_user, set_passwd
-from glustolibs.gluster.volume_ops import (set_volume_options,
-                                           reset_volume_option)
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.gluster.dht_test_utils import find_new_hashed
-from glustolibs.gluster.glusterfile import move_file, is_linkto_file
-from glustolibs.gluster.glusterfile import set_file_permissions
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to checks if the files are accessible as non-root user if
+    the files have stale linkto xattr.
+"""
+
+# disruptive;dist,dist-rep,dist-arb,dist-disp
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'distributed-arbiter',
-           'distributed-replicated', 'distributed-dispersed'],
-          ['glusterfs']])
-class TestAccessFileWithStaleLinktoXattr(GlusterBaseClass):
-    def setUp(self):
+class TestAccessFileWithStaleLinktoXattr(DParentTest):
+
+    def terminate(self):
         """
-        Setup and mount volume or raise ExecutionError
+        Delete the user
         """
-        self.get_super_method(self, 'setUp')()
+        try:
+            ret = self.redant.del_user(self.client_list[0], "test_user1")
+            if not ret:
+                raise Exception("Failed to delete user")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Setup Volume
-        ret = self.setup_volume_and_mount_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Failed to Setup and Mount Volume")
-
-        # Add a new user to the clients
-        ret = add_user(self.clients[0], "test_user1")
-        if ret is not True:
-            raise ExecutionError("Failed to add user")
-
-        # Set password for user "test_user1"
-        ret = set_passwd(self.clients[0], "test_user1", "red123")
-        if ret is not True:
-            raise ExecutionError("Failed to set password")
-
-        # Geneate ssh key on local host
-        cmd = 'echo -e "n" | ssh-keygen -f ~/.ssh/id_rsa -q -N ""'
-        ret, out, _ = g.run_local(cmd)
-        if ret and "already exists" not in out:
-            raise ExecutionError("Failed to generate ssh-key")
-        g.log.info("Successfully generated ssh-key")
-
-        # Perform ssh-copy-id
-        cmd = ('sshpass -p "red123" ssh-copy-id -o StrictHostKeyChecking=no'
-               ' test_user1@{}'.format(self.clients[0]))
-        ret, _, _ = g.run_local(cmd)
-        if ret:
-            raise ExecutionError("Failed to perform ssh-copy-id")
-        g.log.info("Successfully performed ssh-copy-id")
-
-    def tearDown(self):
-        # Delete the added user
-        ret = del_user(self.clients[0], "test_user1")
-        if ret is not True:
-            raise ExecutionError("Failed to delete user")
-
-        # Reset the volume options set inside the test
-        for opt in ('performance.parallel-readdir',
-                    'performance.readdir-ahead'):
-            ret, _, _ = reset_volume_option(self.mnode, self.volname, opt)
-            if ret:
-                raise ExecutionError("Failed to reset the volume option %s"
-                                     % opt)
-            g.log.info("Successfully reset the volume options")
-
-        # Unmount and cleanup original volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=[self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_access_file_with_stale_linkto_xattr(self):
+    def run_test(self, redant):
         """
-        Description: Checks if the files are accessible as non-root user if
-                     the files have stale linkto xattr.
         Steps:
         1) Create a volume and start it.
         2) Mount the volume on client node using FUSE.
@@ -106,50 +55,56 @@ class TestAccessFileWithStaleLinktoXattr(GlusterBaseClass):
            subvols in the graph
         7) Login as an non-root user and access the file.
         """
-        # pylint: disable=protected-access
+        # Add a new user to the clients
+        ret = redant.add_user(self.client_list[0], "test_user1")
+        if not ret:
+            raise Exception("Failed to add user")
+
+        # Set password for user "test_user1"
+        ret = redant.set_passwd(self.client_list[0], "test_user1", "red123")
+        if not ret:
+            raise Exception("Failed to set password")
 
         # Set permissions on the mount-point
-        m_point = self.mounts[0].mountpoint
-        ret = set_file_permissions(self.clients[0], m_point, "-R 777")
-        self.assertTrue(ret, "Failed to set file permissions")
-        g.log.info("Successfully set file permissions on mount-point")
+        ret = redant.set_file_permissions(self.client_list[0],
+                                          self.mountpoint, "-R 777")
+        if not ret:
+            raise Exception("Failed to set file permissions")
 
         # Creating a file on the mount-point
-        cmd = 'dd if=/dev/urandom of={}/FILE-1 count=1 bs=16k'.format(
-            m_point)
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "File to create file")
+        cmd = (f"dd if=/dev/urandom of={self.mountpoint}/FILE-1 "
+               "count=1 bs=16k")
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Enable performance.parallel-readdir and
         # performance.readdir-ahead on the volume
         options = {"performance.parallel-readdir": "enable",
                    "performance.readdir-ahead": "enable"}
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, "Failed to set volume options")
-        g.log.info("Successfully set volume options")
+        redant.set_volume_options(self.vol_name, options, self.server_list[0],
+                                  multi_option=True)
 
         # Finding a file name such that renaming source file to it will form a
         # linkto file
-        subvols = (get_subvols(self.mnode, self.volname))['volume_subvols']
-        newhash = find_new_hashed(subvols, "/", "FILE-1")
-        new_name = str(newhash.newname)
-        new_host = str(newhash.hashedbrickobject._host)
-        new_name_path = str(newhash.hashedbrickobject._fqpath)[:-1]
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        newhash = redant.find_new_hashed(subvols, "", "FILE-1")
+        if not newhash:
+            raise Exception("Failed to get new_hash for the file")
+
+        new_name = str(newhash[0])
+        new_host, new_name_path = newhash[1].split(':')
 
         # Move file such that it hashes to some other subvol and forms linkto
         # file
-        ret = move_file(self.clients[0], "{}/FILE-1".format(m_point),
-                        "{}/{}".format(m_point, new_name))
-        self.assertTrue(ret, "Rename failed")
-        g.log.info('Renamed file %s to %s',
-                   "{}/FILE-1".format(m_point),
-                   "{}/{}".format(m_point, new_name))
+        ret = redant.move_file(self.client_list[0],
+                               f"{self.mountpoint}/FILE-1",
+                               f"{self.mountpoint}/{new_name}")
+        if not ret:
+            raise Exception("Rename failed")
 
         # Check if "dst_file" is linkto file
-        ret = is_linkto_file(new_host,
-                             '{}{}'.format(new_name_path, new_name))
-        self.assertTrue(ret, "File is not a linkto file")
-        g.log.info("File is linkto file")
+        ret = redant.is_linkto_file(new_host, f"{new_name_path}{new_name}")
+        if not ret:
+            raise Exception("File is not a linkto file")
 
         # Force the linkto xattr values to become stale by changing the dht
         # subvols in the graph; for that:
@@ -157,13 +112,9 @@ class TestAccessFileWithStaleLinktoXattr(GlusterBaseClass):
         # performance.readdir-ahead on the volume
         options = {"performance.parallel-readdir": "disable",
                    "performance.readdir-ahead": "disable"}
-        ret = set_volume_options(self.mnode, self.volname, options)
-        self.assertTrue(ret, "Failed to disable volume options")
-        g.log.info("Successfully disabled volume options")
+        redant.set_volume_options(self.vol_name, options, self.server_list[0],
+                                  multi_option=True)
 
         # Access the file as non-root user
-        cmd = "ls -lR {}".format(m_point)
-        ret, _, _ = g.run(self.mounts[0].client_system, cmd,
-                          user="test_user1")
-        self.assertEqual(ret, 0, "Lookup failed ")
-        g.log.info("Lookup successful")
+        cmd = f"runuser -l test_user1 -c 'ls -lR {self.mountpoint}'"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
