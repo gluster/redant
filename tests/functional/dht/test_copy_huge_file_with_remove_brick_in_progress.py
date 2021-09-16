@@ -69,7 +69,7 @@ class TestCopyHugeFileWithRemoveBrickInProgress(DParentTest):
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Create a huge file under /mnt dir
-        redant.execute_abstract_op_node("fallocate -l 10G /mnt/huge_file.txt",
+        redant.execute_abstract_op_node("fallocate -l 5G /mnt/huge_file.txt",
                                         self.client_list[0])
         self.file_created = True
 
@@ -78,7 +78,7 @@ class TestCopyHugeFileWithRemoveBrickInProgress(DParentTest):
             "client": self.client_list[0],
             "mountpath": self.mountpoint
         }
-        cmd = f"sleep 60; cd {self.mountpoint}; cp ../huge_file.txt ."
+        cmd = f"cd {self.mountpoint}; cp ../huge_file.txt ."
         self.io_proc = redant.execute_command_async(cmd, self.client_list[0])
         self.cp_running = True
 
