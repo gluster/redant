@@ -32,6 +32,11 @@ class TestAddBrickRebalanceWithSymlinkPointingOutOfGluster(DParentTest):
         Wait for IO to complete if the TC fails midway
         """
         try:
+            # Remove the tmp dir
+            cmd = "rm -rf /mnt/tmp_dir"
+            self.redant.execute_abstract_op_node(cmd, self.client_list[0])
+
+            # Complete the IO, if still running
             if self.is_copy_running:
                 if not (self.redant.wait_for_io_to_complete(
                         self.proc, self.mounts)):
