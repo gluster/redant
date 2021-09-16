@@ -599,7 +599,7 @@ class IoOps(AbstractOps):
 
         cmd = (f"df {mountpoint} | grep -v '^Filesystem' | "
                "awk '{print $4}'")
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
             self.logger.error("Failed to get size of mountpoint {mountpoint}"
                               f" on {node}")
