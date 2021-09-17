@@ -67,11 +67,12 @@ class TestBrickFullAddBrickRebalance(DParentTest):
             cmd = f"fallocate -l {usable_size}G {self.mountpoint}/{filename}"
             ret = redant.execute_abstract_op_node(cmd, self.client_list[0],
                                                   False)
+            ret_val = ret['error_code']
             err_msg = 'No space left on device'
             if ret['error_code'] and ret['error_msg'] == err_msg:
-                ret = 0
+                ret_val = 0
 
-            if ret != 0:
+            if ret_val != 0:
                 raise Exception("Failed to fill disk to min free limit")
 
         # Try to perfrom I/O from mount point(This should fail)
