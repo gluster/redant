@@ -1,189 +1,133 @@
-#  Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2020  Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-from glustolibs.gluster.brick_ops import add_brick, remove_brick
-from glustolibs.gluster.constants import \
-    TEST_LAYOUT_IS_COMPLETE as LAYOUT_IS_COMPLETE
-from glustolibs.gluster.constants import FILETYPE_DIRS
-from glustolibs.gluster.dht_test_utils import validate_files_in_dir
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.rebalance_ops import get_remove_brick_status
-from glustolibs.gluster.volume_libs import (form_bricks_list_to_add_brick,
-                                            form_bricks_list_to_remove_brick,
-                                            log_volume_info_and_status)
-from glustolibs.io.utils import (list_all_files_and_dirs_mounts,
-                                 wait_for_io_to_complete)
-from glustolibs.misc.misc_libs import upload_scripts
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check add-brick while remove brick is in progress
+"""
+
+# disruptive;dist,dist-rep,dist-disp
+from common.ops.gluster_ops.constants import (FILETYPE_DIRS,
+                                              TEST_LAYOUT_IS_COMPLETE)
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'distributed-replicated',
-           'distributed-dispersed'],
-          ['glusterfs']])
-class RemoveBrickValidation(GlusterBaseClass):
-    @classmethod
-    def setUpClass(cls):
+class TestRemoveBrickValidation(DParentTest):
 
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+    def terminate(self):
+        """
+        Stop remove brick operation, if the status is 'in-progress'
+        """
+        try:
+            status_info = (self.redant.get_remove_brick_status(
+                           self.server_list[0], self.vol_name,
+                           self.remove_brick_list))
+            if 'in progress' in status_info['aggregate']['statusStr']:
+                # Shrink volume by removing bricks with option start
+                self.redant.remove_brick(self.server_list[0], self.vol_name,
+                                         self.remove_brick_list, "stop")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Upload io scripts for running IO on mounts
-        g.log.info("Upload io scripts to clients %s for running IO on "
-                   "mounts", cls.clients)
-        cls.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                  "file_dir_ops.py")
-        ret = upload_scripts(cls.clients, cls.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients %s" %
-                                 cls.clients)
-        g.log.info("Successfully uploaded IO scripts to clients %s",
-                   cls.clients)
-
-    def setUp(self):
-
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume and Mount Volume
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
+    def run_test(self, redant):
+        """
+        Steps:
+        - Create and start a volume
+        - Mount the volume on a client
+        - Form brick list for expanding volume
+        - Start IO on mountpoint
+        - Validate IO
+        - Verify hash layout values
+        - Form brick list to remove bricks
+        - Start removing bricks
+        - Start add-brick, and confirm that it fails with proper error msg
+        - Cleanup the brick directories created
+        - Stop remove brick, if the status is 'in-progress'
+        """
         # Form brick list for expanding volume
-        self.add_brick_list = form_bricks_list_to_add_brick(
-            self.mnode, self.volname, self.servers, self.all_servers_info,
-            distribute_count=1)
-        if not self.add_brick_list:
-            g.log.error("Volume %s: Failed to form bricks list for expand",
-                        self.volname)
-            raise ExecutionError("Volume %s: Failed to form bricks list for"
-                                 "expand" % self.volname)
-        g.log.info("Volume %s: Formed bricks list for expand", self.volname)
+        add_brick_cmd = (redant.form_brick_cmd_to_add_brick(
+                         self.server_list[0], self.vol_name,
+                         self.server_list, self.brick_roots,
+                         distribute_count=1))
+        if not add_brick_cmd:
+            raise Exception("Failed to form add-brick cmd")
 
         # Start IO on mounts
-        g.log.info("Starting IO on all mounts...")
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         all_mounts_procs = []
         for index, mount_obj in enumerate(self.mounts, start=1):
-            g.log.info("Starting IO on %s:%s", mount_obj.client_system,
-                       mount_obj.mountpoint)
-            cmd = ("/usr/bin/env python %s create_deep_dirs_with_files "
-                   "--dirname-start-num %d "
-                   "--dir-depth 2 "
-                   "--dir-length 2 "
-                   "--max-num-of-dirs 2 "
-                   "--num-of-files 10 %s" % (
-                       self.script_upload_path,
-                       index + 10, mount_obj.mountpoint))
-            proc = g.run_async(mount_obj.client_system, cmd,
-                               user=mount_obj.user)
+            proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
+                                                      index + 10, 2, 2, 2,
+                                                      10, mount_obj['client'])
             all_mounts_procs.append(proc)
 
         # Wait for IO to complete
-        g.log.info("Wait for IO to complete as IO validation did not "
-                   "succeed in test method")
-        ret = wait_for_io_to_complete(all_mounts_procs, self.mounts)
+        ret = redant.validate_io_procs(all_mounts_procs, self.mounts)
         if not ret:
-            raise ExecutionError("IO failed on some of the clients")
-        g.log.info("IO is successful on all mounts")
+            raise Exception("IO failed on some of the clients")
 
         # List all files and dirs created
-        g.log.info("List all files and directories:")
-        ret = list_all_files_and_dirs_mounts(self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to list all files and dirs")
-        g.log.info("Listing all files and directories is successful")
+        if not redant.list_all_files_and_dirs_mounts(self.mounts):
+            raise Exception("Failed to find list and dirs opn mountpoints")
 
-    def tearDown(self):
-
-        status_info = get_remove_brick_status(self.mnode, self.volname,
-                                              bricks_list=self.
-                                              remove_brick_list)
-        status = status_info['aggregate']['statusStr']
-        if 'in progress' in status:
-            # Shrink volume by removing bricks with option start
-            g.log.info("Vol %s: Stop remove brick", self.volname)
-            ret, _, _ = remove_brick(self.mnode, self.volname,
-                                     self.remove_brick_list, "stop")
-            g.log.info("Volume %s shrink stopped ", self.volname)
-
-        # Unmount Volume and Cleanup Volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_add_brick_while_remove_brick_is_in_progress(self):
         # DHT Layout and hash validation
-        g.log.debug("Verifying hash layout values %s:%s",
-                    self.clients[0], self.mounts[0].mountpoint)
-        ret = validate_files_in_dir(self.clients[0], self.mounts[0].mountpoint,
-                                    test_type=LAYOUT_IS_COMPLETE,
-                                    file_type=FILETYPE_DIRS)
-        self.assertTrue(ret, "LAYOUT_IS_COMPLETE: FAILED")
-        g.log.info("LAYOUT_IS_COMPLETE: PASS")
+        ret = (redant.validate_files_in_dir(self.client_list[0],
+               self.mountpoint, test_type=TEST_LAYOUT_IS_COMPLETE,
+               file_type=FILETYPE_DIRS))
+        if not ret:
+            raise Exception("LAYOUT_IS_COMPLETE: FAILED")
 
         # Log Volume Info and Status before shrinking the volume.
-        g.log.info("Logging volume info and Status before shrinking volume")
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Form bricks list for volume shrink
-        self.remove_brick_list = form_bricks_list_to_remove_brick(
-            self.mnode, self.volname, subvol_name=1)
-        self.assertIsNotNone(self.remove_brick_list, ("Volume %s: Failed to "
-                                                      "form bricks list for "
-                                                      "shrink", self.volname))
-        g.log.info("Volume %s: Formed bricks list for shrink", self.volname)
+        self.remove_brick_list = (redant.form_bricks_list_to_remove_brick(
+                                  self.server_list[0], self.vol_name,
+                                  subvol_num=1))
+        if self.remove_brick_list is None:
+            raise Exception(f"Volume {self.vol_name}: Failed to form bricks"
+                            " list for shrink")
 
         # Shrink volume by removing bricks
-        g.log.info("Start removing bricks from volume")
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 self.remove_brick_list, "start")
-        self.assertEqual(ret, 0, ("Volume %s shrink failed ",
-                                  self.volname))
-        g.log.info("Volume %s shrink started ", self.volname)
+        redant.remove_brick(self.server_list[0], self.vol_name,
+                            self.remove_brick_list, "start")
+
         # Log remove-brick status
-        g.log.info("Logging Remove-brick status")
-        ret, out, err = remove_brick(self.mnode, self.volname,
-                                     self.remove_brick_list, "status")
-        self.assertEqual(ret, 0, ("Remove-brick status failed on %s ",
-                                  self.volname))
-        g.log.info("Remove-brick status %s", self.volname)
-        g.log.info(out)
+        redant.remove_brick(self.server_list[0], self.vol_name,
+                            self.remove_brick_list, "status")
 
         # Expanding volume while volume shrink is in-progress
-        g.log.info("Volume %s: Expand volume while volume shrink in-progress",
-                   self.volname)
-        _, _, err = add_brick(self.mnode, self.volname, self.add_brick_list)
-        self.assertIn("rebalance is in progress", err, "Successfully added"
-                      "bricks to the volume <NOT EXPECTED>")
-        g.log.info("Volume %s: Failed to add-bricks while volume shrink "
-                   "in-progress <EXPECTED>", self.volname)
+        ret = redant.add_brick(self.vol_name, add_brick_cmd,
+                               self.server_list[0], excep=False)
+        if ret['msg']['opRet'] == '0':
+            raise Exception("Unexpected: Successfully added"
+                            "bricks to the volume")
+
+        if "rebalance is in progress" not in ret['msg']['opErrstr']:
+            raise Exception("add-brick failed with wrong error")
 
         # cleanup add-bricks list
-        for brick in self.add_brick_list:
-            brick_node, brick_path = brick.split(":")
-            ret, _, _ = g.run(brick_node, ("rm -rf %s", brick_path))
-            if ret != 0:
-                g.log.error("Failed to clean %s:%s", brick_node, brick_path)
-        g.log.info("Successfully cleaned backend add-brick bricks list")
+        add_brick_list = add_brick_cmd.split()
+        ret = redant.delete_bricks(add_brick_list)
+        if not ret:
+            raise Exception("Failed to cleanup bricks")
