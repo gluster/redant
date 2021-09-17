@@ -1530,3 +1530,22 @@ class IoOps(AbstractOps):
                    f"sleep {time}; echo 'Write to open FD' >&$i; done")
 
         return self.execute_command_async(cmd, client)
+
+    def get_md5sum(self, host: str, fqpath: str) -> int:
+        """
+        Get the md5 checksum for the file.
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            The md5sum of the file on success. None on fail.
+        """
+        cmd = f"md5sum {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, host, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to get md5sum")
+            return None
+
+        return ret['msg'][0]
