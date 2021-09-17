@@ -192,7 +192,7 @@ class IoOps(AbstractOps):
         out = "".join(ret['msg'])
         return list(filter(None, out.split("\n")))
 
-    def get_file_stat(self, node: str, path: str) -> str:
+    def get_file_stat(self, node: str, path: str) -> dict:
         """
         Function to get file stat.
         Args:
@@ -205,7 +205,7 @@ class IoOps(AbstractOps):
               "msg" : DICT or string of error
             }
         """
-        ret_val = {'error_code': 0, 'msg': ''}
+        ret_val = {'error_code': 0, 'msg': {}}
         cmd = (f"python3 /usr/share/redant/script/file_dir_ops.py stat {path}")
         ret = self.execute_abstract_op_node(cmd, node, False)
         if ret['error_code'] != 0:
@@ -1329,6 +1329,33 @@ class IoOps(AbstractOps):
                 return False
         return True
 
+    def set_passwd(self, servers: list, username: str,
+                   passwd: str) -> bool:
+        """
+        Sets password for a given username.
+
+        Args:
+            servers(list|str): list of nodes on which cmd is to be executed.
+            username(str): username of user for which password is to be set.
+            passwd(str): Password to be set.
+
+        Returns:
+            bool : True if password set is successful on all servers.
+                   False otherwise.
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        cmd = f"echo {username}:{passwd} | chpasswd"
+        results = self.execute_abstract_op_multinode(cmd, servers, False)
+
+        for result in results:
+            if result['error_code'] != 0:
+                self.logger.error("Failed to set passwd on node: "
+                                  f"{result['node']}")
+                return False
+        return True
+
     def get_pathinfo(self, fqpath: str, node: str) -> dict:
         """
         Get pathinfo for a remote file.
@@ -1446,6 +1473,52 @@ class IoOps(AbstractOps):
                                   f'{node} for file {sfile}')
             return False
         return True
+
+    def is_linkto_file(self, host: str, fqpath: str) -> bool:
+        """
+        Test if file is a dht linkto file.
+        To return True, file must...
+        1. be of type 'sticky empty'
+        2. have size of 0
+        3. have the glusterfs.dht.linkto xattr set.
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            bool: True if the file is linkto_file or False.
+        """
+        cmd = f"file {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, host, False)
+        if ret['error_code'] == 0:
+            # An additional ',' is there for newer platforms
+            if ('sticky empty' in ret['msg'][0]) \
+               or ('sticky, empty' in ret['msg'][0]):
+                stat = self.get_file_stat(host, fqpath)
+                if stat['error_code'] != 0:
+                    return False
+                if stat['msg']['st_size'] == 0:
+                    xattr = self.get_dht_linkto_xattr(host, fqpath)
+                    if xattr:
+                        return True
+        return False
+
+    def get_dht_linkto_xattr(self, host: str, fqpath: str) -> list:
+        """
+        Get the glusterfs.dht.linkto xattr for a file on a brick.
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            fqpath (str): The fully-qualified path to the file.
+
+        Returns:
+            Return value of get_fattr trusted.glusterfs.dht.linkto call.
+        """
+        linkto_xattr = self.get_fattr(fqpath, 'trusted.glusterfs.dht.linkto',
+                                      host, encode="text")
+
+        return linkto_xattr
 
     def kill_process(self, node: str, process_ids: str = '',
                      process_names: str = '') -> bool:
