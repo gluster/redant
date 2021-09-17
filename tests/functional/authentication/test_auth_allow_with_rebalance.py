@@ -107,8 +107,8 @@ class TestFuseAuthAllow(DParentTest):
             raise Exception("Failed to set authentication")
 
         # Mounting volume on client1
-        self.authenticated_mount(self.vol_name, self.server_list[0],
-                                 self.mountpoint, self.client_list[0])
+        redant.authenticated_mount(self.vol_name, self.server_list[0],
+                                   self.mountpoint, self.client_list[0])
 
         # Create files,perform add-brick and trigger rebalance
         self._add_brick_rebalance()
