@@ -587,6 +587,26 @@ class IoOps(AbstractOps):
                                  f"{mount['mountpath']}")
         return _rc
 
+    def get_size_of_mountpoint(self, mountpoint: str, node: str) -> list:
+        """
+        Returns the size in blocks for the mount point
+        Args:
+            node - node on which path is mounted
+            mounts - mount point path
+        Returns:
+            Size of the mount point in blocks or none.
+        """
+
+        cmd = (f"df {mountpoint} | grep -v '^Filesystem' | "
+               "awk '{print $4}'")
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to get size of mountpoint {mountpoint}"
+                              f" on {node}")
+            return None
+
+        return ret['msg'][0].split("\n")[0]
+
     def list_all_files_and_dirs_mounts(self, mounts: list) -> bool:
         """List all Files and Directories from mounts.
         Args:
