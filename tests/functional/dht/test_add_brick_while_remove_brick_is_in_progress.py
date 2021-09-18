@@ -33,13 +33,15 @@ class TestRemoveBrickValidation(DParentTest):
         Stop remove brick operation, if the status is 'in-progress'
         """
         try:
-            status_info = (self.redant.get_remove_brick_status(
-                           self.server_list[0], self.vol_name,
-                           self.remove_brick_list))
-            if 'in progress' in status_info['aggregate']['statusStr']:
-                # Shrink volume by removing bricks with option start
-                self.redant.remove_brick(self.server_list[0], self.vol_name,
-                                         self.remove_brick_list, "stop")
+            if self.remove_brick_list:
+                status_info = (self.redant.get_remove_brick_status(
+                               self.server_list[0], self.vol_name,
+                               self.remove_brick_list))
+                if 'in progress' in status_info['aggregate']['statusStr']:
+                    # Shrink volume by removing bricks with option start
+                    self.redant.remove_brick(self.server_list[0],
+                                             self.vol_name,
+                                             self.remove_brick_list, "stop")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -61,6 +63,8 @@ class TestRemoveBrickValidation(DParentTest):
         - Cleanup the brick directories created
         - Stop remove brick, if the status is 'in-progress'
         """
+        self.remove_brick_list = []
+
         # Form brick list for expanding volume
         add_brick_cmd = (redant.form_brick_cmd_to_add_brick(
                          self.server_list[0], self.vol_name,

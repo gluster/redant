@@ -5,7 +5,7 @@ hashing, layout and so on.
 
 import os
 import ctypes
-import constants as c
+import gluster_ops.constants as c
 from common.ops.abstract_ops import AbstractOps
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Constants for DHT library functions"""
 
 # FILE TYPES
