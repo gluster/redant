@@ -94,7 +94,7 @@ class environ:
                          'tools/scripts/compute_hash.py',
                          'tools/scripts/file_lock.py',
                          'tools/scripts/fd_writes.py',
-                         'tools/scripts/wak_dir.py']
+                         'tools/scripts/walk_dir.py']
 
         total_nodes = list(set(self.client_list + self.server_list))
         for ind, script in enumerate(scripts_spath):

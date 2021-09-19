@@ -2,10 +2,11 @@
 DHT ops contain methods which deals with DHT operations like
 hashing, layout and so on.
 """
+# pylint: disable=no-name-in-module
 
 import os
 import ctypes
-import gluster_ops.constants as c
+import common.ops.gluster_ops.constants as c
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -425,6 +426,8 @@ class DHTOps(AbstractOps):
             validate_files_in_dir(clients[0], '/mnt/glusterfs',
                                   test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS)
         """
+        # pylint: disable=eval-used
+
         layout_cache = {}
 
         script_path = ("/usr/share/redant/script/walk_dir.py")
@@ -434,7 +437,7 @@ class DHTOps(AbstractOps):
             self.logger.error(f"Unable to run the script on node: {node}")
             return False
 
-        for walkies in ret['msg']:
+        for walkies in eval(ret['msg'][0]):
             self.logger.debug(f"TESTING DIRECTORY {walkies[0]}")
 
             # check directories
