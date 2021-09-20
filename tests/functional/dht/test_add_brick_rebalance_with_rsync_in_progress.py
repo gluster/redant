@@ -83,7 +83,7 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         # Start linux untar on dir linuxuntar
         proc = redant.run_linux_untar(self.client_list[0], self.mountpoint,
                                       dirs=tuple(['linuxuntar']))
-        self.list_of_io_processes.append(proc)
+        self.list_of_io_processes.append(proc[0])
         self.mounts = [{
             "client": self.client_list[0],
             "mountpath": self.linux_untar_dir
@@ -96,7 +96,7 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
                           self.client_list[0])
 
         # Start rsync for linux untar on mount point
-        cmd = f"sleep 30; rsync -azr {self.linux_untar_dir} {self.rsync_dir}"
+        cmd = f"rsync -azr {self.linux_untar_dir} {self.rsync_dir}"
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.list_of_io_processes.append(proc)
         self.mounts.append({
