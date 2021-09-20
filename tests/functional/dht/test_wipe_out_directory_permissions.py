@@ -1,82 +1,73 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.lib_utils import form_bricks_list
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.glusterfile import get_file_stat, get_fattr
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along`
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+# disruptive;dist
+
+from copy import deepcopy
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestDhtWipeOutDirectoryPremissions(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def setUp(self):
-
-        self.get_super_method(self, 'setUp')()
-
-        # Changing dist_count to 1
-        self.volume['voltype']['dist_count'] = 1
-
-        # Creating Volume and mounting the volume
-        ret = self.setup_volume_and_mount_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed: %s"
-                                 % self.volname)
-
-        # Assign a variable for the first_client
-        self.first_client = self.mounts[0].client_system
-
-    def tearDown(self):
-
-        # Unmounting and cleaning volume
-        ret = self.unmount_volume_and_cleanup_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Unable to delete volume %s" % self.volname)
-
-        self.get_super_method(self, 'tearDown')()
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        conf_hash['dist_count'] = 1
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
     def _check_permissions_of_dir(self):
         """Check permissions of dir created."""
-        for brick_path in get_all_bricks(self.mnode, self.volname):
+        bricks = self.redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
+
+        for brick_path in bricks:
             node, path = brick_path.split(":")
-            ret = get_file_stat(node, "{}/dir".format(path))
-            self.assertEqual(int(ret["access"]), 755,
-                             "Unexpected:Permissions of dir is %s and not %d"
-                             % (ret["access"], 755))
-        g.log.info("Permissions of dir directory is proper on all bricks")
+            ret = self.redant.get_file_stat(node, "{}/dir".format(path))
+            if not ret:
+                raise Exception("Not able to get stat of the dir")
 
     def _check_trusted_glusterfs_dht_on_all_bricks(self):
         """Check trusted.glusterfs.dht xattr on the backend bricks"""
-        bricks = get_all_bricks(self.mnode, self.volname)
+        bricks = self.redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
         possible_values = ["0x000000000000000000000000ffffffff",
                            "0x00000000000000000000000000000000"]
         for brick_path in bricks:
             node, path = brick_path.split(":")
-            ret = get_fattr(node, "{}/dir".format(path),
-                            "trusted.glusterfs.dht")
-            self.assertEqual(
-                ret, possible_values[bricks.index(brick_path)],
-                "Value of trusted.glusterfs.dht is not as expected")
-        g.log.info("Successfully checked value of trusted.glusterfs.dht.")
+            dir_name = f"{path}/dir"
+            ret = self.redant.get_fattr(dir_name, "trusted.glusterfs.dht",
+                                        node)
+            fattr = ret[1].split("=")[1].strip()
+            if fattr != possible_values[bricks.index(brick_path)]:
+                raise Exception("Value of trusted.glusterfs.dht "
+                                "is not as expected")
 
-    def test_wipe_out_directory_permissions(self):
+    def run_test(self, redant):
         """
         Test case:
         1. Create a 1 brick pure distributed volume.
@@ -92,27 +83,27 @@ class TestDhtWipeOutDirectoryPremissions(GlusterBaseClass):
         11. Check trusted.glusterfs.dht xattr on the backend bricks.
         """
         # Create a directory on the mount point
-        self.dir_path = "{}/dir".format(self.mounts[0].mountpoint)
-        ret = mkdir(self.first_client, self.dir_path)
-        self.assertTrue(ret, "Failed to create directory dir")
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        redant.create_dir(self.mounts[0]['mountpath'], "dir",
+                          self.client_list[0])
 
         # Check trusted.glusterfs.dht xattr on the backend brick
         self._check_trusted_glusterfs_dht_on_all_bricks()
 
         # Add brick to the volume using force
-        brick_list = form_bricks_list(self.mnode, self.volname, 1,
-                                      self.servers, self.all_servers_info)
-        self.assertIsNotNone(brick_list,
-                             "Failed to get available space on mount point")
-        ret, _, _ = add_brick(self.mnode, self.volname, brick_list, force=True)
-        self.assertEqual(ret, 0, ("Volume {}: Add-brick failed".format
-                                  (self.volname)))
+        brick = redant.form_brick_cmd_to_add_brick(self.server_list[0],
+                                                   self.vol_name,
+                                                   self.server_list,
+                                                   self.brick_roots)
+        if brick is None:
+            raise Exception("Failed to form brick list to add brick")
+
+        redant.add_brick(self.vol_name, brick, self.server_list[0],
+                         force=True)
 
         # Do a lookup from the mount point
-        cmd = "ls -lR {}".format(self.dir_path)
-        ret, _, _ = g.run(self.first_client, cmd)
-        self.assertEqual(ret, 0, "Failed to lookup")
-        g.log.info("Lookup successful")
+        cmd = f"ls -lR {self.mountpoint}/dir"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check the directory permissions from the backend bricks
         self._check_permissions_of_dir()
@@ -121,9 +112,8 @@ class TestDhtWipeOutDirectoryPremissions(GlusterBaseClass):
         self._check_trusted_glusterfs_dht_on_all_bricks()
 
         # From mount point cd into the directory
-        ret, _, _ = g.run(self.first_client, "cd {};cd ..;cd {}"
-                          .format(self.dir_path, self.dir_path))
-        self.assertEqual(ret, 0, "Unable to cd into dir from mount point")
+        cmd = f"cd {self.mountpoint}/dir; cd..; cd {self.mountpoint}/dir"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check the directory permissions from backend bricks
         self._check_permissions_of_dir()
