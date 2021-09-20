@@ -83,15 +83,12 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         # Start linux untar on dir linuxuntar
         proc = redant.run_linux_untar(self.client_list[0], self.mountpoint,
                                       dirs=tuple(['linuxuntar']))
-        self.mounts = {
+        self.list_of_io_processes.append(proc)
+        self.mounts = [{
             "client": self.client_list[0],
             "mountpath": self.linux_untar_dir
-        }
-
-        # Complete linux untar
-        ret = redant.validate_io_procs(proc, self.mounts)
-        if not ret:
-            raise Exception("failed to do linux untar")
+        }]
+        self.is_io_running = True
 
         # Create a new directory and start rsync
         self.rsync_dir = f"{self.mountpoint}/rsyncuntarlinux"
@@ -99,14 +96,13 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
                           self.client_list[0])
 
         # Start rsync for linux untar on mount point
-        cmd = (f"for i in `seq 1 2`; do rsync -azr {self.linux_untar_dir} "
-               f"{self.rsync_dir}; sleep 5; done")
+        cmd = f"sleep 30; rsync -azr {self.linux_untar_dir} {self.rsync_dir}"
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.list_of_io_processes.append(proc)
-        self.mounts = {
+        self.mounts.append({
             "client": self.client_list[0],
             "mountpath": self.rsync_dir
-        }
+        })
         self.is_io_running = True
 
         # Add bricks to the volume
