@@ -1,78 +1,68 @@
-#  Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2021 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
 
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterfile import set_file_permissions
-from glustolibs.gluster.brick_libs import (get_all_bricks,
-                                           bring_bricks_offline,
-                                           bring_bricks_online)
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+# nonDisruptive;dist,dist-rep,dist-disp,dist-arb
+
+from tests.nd_parent_test import NdParentTest
 
 
-@runs_on([['distributed', 'distributed-replicated', 'distributed-dispersed',
-           'distributed-arbiter'],
-          ['glusterfs']])
-class TestVerifyPermissionChanges(GlusterBaseClass):
-    def setUp(self):
-        """
-        Setup and mount volume
-        """
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        if not self.setup_volume_and_mount_volume(mounts=[self.mounts[0]]):
-            raise ExecutionError("Failed to Setup and Mount Volume")
-
+class TestCase(NdParentTest):
     def _set_root_dir_permission(self, permission):
         """ Sets the root dir permission to the given value"""
-        m_point = self.mounts[0].mountpoint
-        ret = set_file_permissions(self.mounts[0].client_system,
-                                   m_point, permission)
-        self.assertTrue(ret, "Failed to set root dir permissions")
+        ret = self.redant.set_file_permissions(self.client_list[0],
+                                               self.mountpoint,
+                                               permission)
+        if not ret:
+            raise Exception("Failed to set permissions on the mountpoint")
 
-    def _get_dir_permissions(self, host, directory):
+    def _get_dir_permissions(self, node, path):
         """ Returns dir permissions"""
-        cmd = 'stat -c "%a" {}'.format(directory)
-        ret, out, _ = g.run(host, cmd)
-        self.assertEqual(ret, 0, "Failed to get permission on {}".format(host))
-        return out.strip()
+        cmd = f'stat -c "%a" {path}'
+        out = self.redant.execute_abstract_op_node(cmd, node)
+        return out['msg'][0].strip()
 
     def _get_root_dir_permission(self, expected=None):
         """ Returns the root dir permission """
-        permission = self._get_dir_permissions(self.mounts[0].client_system,
-                                               self.mounts[0].mountpoint)
+        permission = self._get_dir_permissions(self.client_list[0],
+                                               self.mountpoint)
         if not expected:
-            return permission.strip()
-        self.assertEqual(permission, expected, "The permissions doesn't match")
+            return permission
+
+        if permission != expected:
+            raise Exception("The permissions doesn't match")
+
         return True
 
     def _bring_a_brick_offline(self):
         """ Brings down a brick from the volume"""
-        brick_to_kill = get_all_bricks(self.mnode, self.volname)[-1]
-        ret = bring_bricks_offline(self.volname, brick_to_kill)
-        self.assertTrue(ret, "Failed to bring brick offline")
+        brick_to_kill = self.redant.get_all_bricks(self.vol_name,
+                                                   self.server_list[0])[-1]
+        if not self.redant.bring_bricks_offline(self.vol_name,
+                                                brick_to_kill):
+            raise Exception("Failed to bring down the bricks.")
         return brick_to_kill
 
     def _bring_back_brick_online(self, brick):
         """ Brings back down brick from the volume"""
-        ret = bring_bricks_online(self.mnode, self.volname, [brick],
-                                  "glusterd_restart")
-        self.assertTrue(ret, "Failed to bring brick online")
+        if not self.redant.bring_bricks_online(self.vol_name, self.server_list,
+                                               brick, True):
+            raise Exception("Failed to bring the brick "
+                            f"{brick} online")
 
     def _verify_mount_dir_and_brick_dir_permissions(self, expected,
                                                     down_brick=None):
@@ -81,16 +71,17 @@ class TestVerifyPermissionChanges(GlusterBaseClass):
         self._get_root_dir_permission(expected)
 
         # Verify brick dir permission
-        brick_list = get_all_bricks(self.mnode, self.volname)
+        brick_list = self.redant.get_all_bricks(self.vol_name,
+                                                self.server_list[0])
         for brick in brick_list:
             brick_node, brick_path = brick.split(":")
             if down_brick and down_brick.split(":")[-1] != brick_path:
                 actual_perm = self._get_dir_permissions(brick_node,
                                                         brick_path)
-                self.assertEqual(actual_perm, expected,
-                                 "The permissions are not same")
+                if actual_perm != expected:
+                    raise Exception("The permissions are not same")
 
-    def test_verify_root_dir_permission_changes(self):
+    def run_test(self, redant):
         """
         1. create pure dist volume
         2. mount on client
@@ -126,14 +117,8 @@ class TestVerifyPermissionChanges(GlusterBaseClass):
         # Verify the permission changed to 755 on mount and brick dirs
         self._verify_mount_dir_and_brick_dir_permissions("755")
 
-    def tearDown(self):
         # Change root permission back to 755
-        self._set_root_dir_permission("755")
+        self._set_root_dir_permission("444")
 
-        # Unmount and cleanup original volume
-        if not self.unmount_volume_and_cleanup_volume(mounts=[self.mounts[0]]):
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        redant.logger.info("Test to verify permission changes made on"
+                           " mount dir i succesful")
