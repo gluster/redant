@@ -119,6 +119,7 @@ class TestAccessFileStaleLayout(DParentTest):
         layout1 = redant.get_fattr(fqpath1, fattr, node1)
         if not layout1:
             raise Exception(f"{fattr} is not present on {fqpath1}")
+        layout1 = layout1[1].split('=')[1].strip()
 
         # Lookup on file from node1 should fail as `dir/file` will always get
         # hashed to node2 in a 2-brick distribute volume by default
@@ -128,8 +129,9 @@ class TestAccessFileStaleLayout(DParentTest):
         # Take note of newly created directory's layout from org_subvol2
         node2, fqpath2 = next(gen)
         layout2 = redant.get_fattr(fqpath2, fattr, node2)
-        if not layout1:
+        if not layout2:
             raise Exception(f"{fattr} is not present on {fqpath2}")
+        layout2 = layout2[1].split('=')[1].strip()
 
         # Lookup on file from node2 should pass
         self._assert_file_lookup(node2, f"{fqpath2}{file_name}",
@@ -145,12 +147,12 @@ class TestAccessFileStaleLayout(DParentTest):
 
         # Remove file after layout change from client0
         cmd = f"rm -f {file_path}"
-        redant.execute_abstract_op_node(io_cmd, client0)
+        redant.execute_abstract_op_node(cmd, client0)
 
         # Create file with same name as above after layout change from client0
         # and client1
         for client in (client0, client1):
-            redant.execute_abstract_op_node(cmd, client)
+            redant.execute_abstract_op_node(io_cmd, client)
 
         # After layout change lookup on file from node1 should pass
         self._assert_file_lookup(node1, f"{fqpath1}{file_name}",
