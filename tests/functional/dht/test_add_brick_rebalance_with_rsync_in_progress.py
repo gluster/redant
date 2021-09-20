@@ -1,77 +1,65 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.rebalance_ops import (
-    rebalance_start, wait_for_rebalance_to_complete)
-from glustolibs.gluster.volume_libs import expand_volume
-from glustolibs.io.utils import collect_mounts_arequal, run_linux_untar
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along`
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check rebalance after add-brick with rsync in progress
+"""
+
+# disruptive;dist,dist-rep,dist-arb,dist-disp
+from copy import deepcopy
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-replicated', 'distributed-arbiter',
-           'distributed-dispersed', 'distributed'], ['glusterfs']])
-class TestAddBrickRebalanceWithRsyncInProgress(GlusterBaseClass):
+class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
 
-    def setUp(self):
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        conf_hash['dist_count'] = 3
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p "
+                                             f"{self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
-        # Changing dist_count to 3
-        self.volume['voltype']['dist_count'] = 3
+    def terminate(self):
+        """
+        Wait for IO to complete if the TC fails midway
+        """
+        try:
+            if self.is_io_running:
+                if not (self.redant.wait_for_io_to_complete(
+                        self.list_of_io_processes, self.mounts)):
+                    raise Exception("Failed ot wait for IO to complete")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-        # Set I/O flag to false
-        self.is_io_running = False
-
-        # Creating Volume and mounting the volume
-        ret = self.setup_volume_and_mount_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed: %s"
-                                 % self.volname)
-
-    def tearDown(self):
-
-        # Wait for I/O if not completed
-        if self.is_io_running:
-            if not self._wait_for_untar_and_rsync_completion():
-                g.log.error("I/O failed to stop on clients")
-
-        # Unmounting and cleaning volume
-        ret = self.unmount_volume_and_cleanup_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Unable to delete volume % s" % self.volname)
-
-        self.get_super_method(self, 'tearDown')()
-
-    def _wait_for_untar_and_rsync_completion(self):
-        """Wait for untar and rsync to complete"""
-        has_process_stopped = []
-        for proc in self.list_of_io_processes:
-            try:
-                ret, _, _ = proc.async_communicate()
-                if not ret:
-                    has_process_stopped.append(False)
-                has_process_stopped.append(True)
-            except ValueError:
-                has_process_stopped.append(True)
-        return all(has_process_stopped)
-
-    def test_add_brick_rebalance_with_rsync_in_progress(self):
+    def run_test(self, redant):
         """
         Test case:
         1. Create, start and mount a volume.
@@ -84,68 +72,80 @@ class TestAddBrickRebalanceWithRsyncInProgress(GlusterBaseClass):
         7. Wait for I/O to complete.
         8. Validate if checksum of both the untar and rsync is same.
         """
+        self.is_io_running = False
         # List of I/O processes
         self.list_of_io_processes = []
 
         # Create a dir to start untar
-        self.linux_untar_dir = "{}/{}".format(self.mounts[0].mountpoint,
-                                              "linuxuntar")
-        ret = mkdir(self.clients[0], self.linux_untar_dir)
-        self.assertTrue(ret, "Failed to create dir linuxuntar for untar")
+        self.linux_untar_dir = f"{self.mountpoint}/linuxuntar"
+        redant.create_dir(self.mountpoint, "linuxuntar", self.client_list[0])
 
         # Start linux untar on dir linuxuntar
-        ret = run_linux_untar(self.clients[0], self.mounts[0].mountpoint,
-                              dirs=tuple(['linuxuntar']))
-        self.list_of_io_processes += ret
+        ret = redant.run_linux_untar(self.client_list[0], self.mountpoint,
+                                     dirs=tuple(['linuxuntar']))
+        self.list_of_io_processes.append(ret[0])
         self.is_io_running = True
+        self.mounts = [{
+            "client": self.client_list[0],
+            "mountpath": self.linux_untar_dir
+        }]
 
         # Create a new directory and start rsync
-        self.rsync_dir = "{}/{}".format(self.mounts[0].mountpoint,
-                                        'rsyncuntarlinux')
-        ret = mkdir(self.clients[0], self.rsync_dir)
-        self.assertTrue(ret, "Failed to create dir rsyncuntarlinux for rsync")
+        self.rsync_dir = f"{self.mountpoint}/rsyncuntarlinux"
+        redant.create_dir(self.mountpoint, "rsyncuntarlinux",
+                          self.client_list[0])
 
         # Start rsync for linux untar on mount point
-        cmd = ("for i in `seq 1 3`; do rsync -azr {} {};sleep 120;done"
-               .format(self.linux_untar_dir, self.rsync_dir))
-        ret = g.run_async(self.clients[0], cmd)
-        self.list_of_io_processes.append(ret)
+        cmd = (f"for i in `seq 1 3`; do rsync -azr {self.linux_untar_dir}"
+               f" {self.rsync_dir}; sleep 120; done")
+        proc = redant.execute_command_async(cmd, self.client_list[0])
+        self.list_of_io_processes.append(proc)
+        self.mounts.append({
+            "client": self.client_list[0],
+            "mountpath": self.rsync_dir
+        })
 
         # Add bricks to the volume
-        ret = expand_volume(self.mnode, self.volname, self.servers,
-                            self.all_servers_info)
-        self.assertTrue(ret, "Failed to add brick with rsync on volume %s"
-                        % self.volname)
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots)
+        if not ret:
+            raise Exception("Failed to add brick with rsync on volume "
+                            f"{self.vol_name}")
 
         # Trigger rebalance on the volume
-        ret, _, _ = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, "Failed to start rebalance on the volume %s"
-                         % self.volname)
+        redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Wait for rebalance to complete
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname,
-                                             timeout=6000)
-        self.assertTrue(ret, "Rebalance is not yet complete on the volume "
-                             "%s" % self.volname)
+        ret = redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                    self.server_list[0],
+                                                    timeout=6000)
+        if not ret:
+            raise Exception("Rebalance is not yet complete on the volume "
+                            f"{self.vol_name}")
 
         # Wait for IO to complete.
-        ret = self._wait_for_untar_and_rsync_completion()
-        self.assertFalse(ret, "IO didn't complete or failed on client")
+        ret = redant.validate_io_procs(self.list_of_io_processes, self.mounts)
+        if not ret:
+            raise Exception("IO didn't complete or failed on client")
         self.is_io_running = False
 
         # As we are running rsync and untar together, there are situations
         # when some of the new files created by linux untar is not synced
         # through rsync which causes checksum to retrun different value,
         # Hence to take care of this corner case we are rerunning rsync.
-        cmd = "rsync -azr {} {}".format(self.linux_untar_dir, self.rsync_dir)
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "Failed sync left behind files")
+        cmd = f"rsync -azr {self.linux_untar_dir} {self.rsync_dir}"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        # Check daata consistency on both the directories
-        rsync_checksum = collect_mounts_arequal(
-            self.mounts[0], path='rsyncuntarlinux/linuxuntar/')
-        untar_checksum = collect_mounts_arequal(self.mounts[0],
-                                                path='linuxuntar')
-        self.assertEqual(
-            rsync_checksum, untar_checksum,
-            "Checksum on untar dir and checksum on rsync dir didn't match")
+        # Check data consistency on both the directories
+        self.mounts = {
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }
+        rsync_checksum = (redant.collect_mounts_arequal(self.mounts,
+                          'rsyncuntarlinux/linuxuntar/'))
+
+        untar_checksum = redant.collect_mounts_arequal(self.mounts,
+                                                       'linuxuntar')
+        if rsync_checksum != untar_checksum:
+            raise Exception("Checksum on untar dir and checksum on rsync"
+                            " dir didn't match")
