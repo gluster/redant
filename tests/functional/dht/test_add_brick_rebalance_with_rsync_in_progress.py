@@ -81,14 +81,17 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         redant.create_dir(self.mountpoint, "linuxuntar", self.client_list[0])
 
         # Start linux untar on dir linuxuntar
-        ret = redant.run_linux_untar(self.client_list[0], self.mountpoint,
-                                     dirs=tuple(['linuxuntar']))
-        self.list_of_io_processes.append(ret[0])
-        self.is_io_running = True
-        self.mounts = [{
+        proc = redant.run_linux_untar(self.client_list[0], self.mountpoint,
+                                      dirs=tuple(['linuxuntar']))
+        self.mounts = {
             "client": self.client_list[0],
             "mountpath": self.linux_untar_dir
-        }]
+        }
+
+        # Complete linux untar
+        ret = redant.validate_io_procs(proc, self.mounts)
+        if not ret:
+            raise Exception("failed to do linux untar")
 
         # Create a new directory and start rsync
         self.rsync_dir = f"{self.mountpoint}/rsyncuntarlinux"
@@ -96,18 +99,23 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
                           self.client_list[0])
 
         # Start rsync for linux untar on mount point
-        cmd = (f"for i in `seq 1 3`; do rsync -azr {self.linux_untar_dir}"
-               f" {self.rsync_dir}; sleep 120; done")
+        cmd = (f"for i in `seq 1 2`; do rsync -azr {self.linux_untar_dir} "
+               f"{self.rsync_dir}; sleep 5; done")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.list_of_io_processes.append(proc)
-        self.mounts.append({
+        self.mounts = {
             "client": self.client_list[0],
             "mountpath": self.rsync_dir
-        })
+        }
+        self.is_io_running = True
 
         # Add bricks to the volume
+        force = False
+        if self.volume_type == "dist-disp":
+            force = True
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
-                                   self.server_list, self.brick_roots)
+                                   self.server_list, self.brick_roots,
+                                   force=force)
         if not ret:
             raise Exception("Failed to add brick with rsync on volume "
                             f"{self.vol_name}")
