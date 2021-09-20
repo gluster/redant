@@ -62,7 +62,7 @@ class TestAddBrickRebalanceWithSelfHeal(DParentTest):
         self.list_of_io_processes = []
         # Start I/O from mount point and wait for it to complete
         cmd = (f"cd {self.mountpoint}; for i in {{1..1000}} ; do "
-               "dd if=/dev/urandom of=file$i bs=10M count=1; done")
+               "dd if=/dev/urandom of=file$i bs=1M count=1; done")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.list_of_io_processes.append(proc)
         self.is_copy_running = True
