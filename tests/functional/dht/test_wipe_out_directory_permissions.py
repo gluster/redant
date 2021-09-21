@@ -50,6 +50,9 @@ class TestCase(DParentTest):
             ret = self.redant.get_file_stat(node, "{}/dir".format(path))
             if not ret:
                 raise Exception("Not able to get stat of the dir")
+            if int(ret['msg']['permission']) != 755:
+                raise Exception("Unexpected:Permissions of dir is "
+                                f"{ret['msg']['permission']} not 755")
 
     def _check_trusted_glusterfs_dht_on_all_bricks(self):
         """Check trusted.glusterfs.dht xattr on the backend bricks"""
@@ -112,7 +115,7 @@ class TestCase(DParentTest):
         self._check_trusted_glusterfs_dht_on_all_bricks()
 
         # From mount point cd into the directory
-        cmd = f"cd {self.mountpoint}/dir; cd..; cd {self.mountpoint}/dir"
+        cmd = f"cd {self.mountpoint}/dir; cd ..; cd {self.mountpoint}/dir"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check the directory permissions from backend bricks
