@@ -65,7 +65,7 @@ class TestAddBrickReplaceBrickFixLayout(DParentTest):
             node, path = brick_path.split(":")
             ret = self.redant.get_fattr(path, "trusted.glusterfs.dht", node)
             fattr_value += [ret[1].split('=')[1].rstrip("\n")]
-        if len(set(fattr_value)) == 4:
+        if len(set(fattr_value)) != 4:
             raise Exception("Value of trusted.glusterfs.dht is not as "
                             "expected")
 
