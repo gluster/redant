@@ -63,9 +63,9 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         """
         Test case:
         1. Create, start and mount a volume.
-        2. Create a directory on the mount point and start linux utar.
+        2. Create a directory on the mount point and start IO.
         3. Create another directory on the mount point and start rsync of
-           linux untar directory.
+           the IO directory.
         4. Add bricks to the volume
         5. Trigger rebalance on the volume.
         6. Wait for rebalance to complete on volume.
@@ -77,33 +77,32 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         self.list_of_io_processes = []
 
         # Create a dir to start untar
-        self.linux_untar_dir = f"{self.mountpoint}/linuxuntar"
-        redant.create_dir(self.mountpoint, "linuxuntar", self.client_list[0])
+        self.io_dir = f"{self.mountpoint}/io_dir"
+        redant.create_dir(self.mountpoint, "io_dir", self.client_list[0])
 
-        # Start linux untar on dir linuxuntar
-        proc = redant.run_linux_untar(self.client_list[0], self.mountpoint,
-                                      dirs=tuple(['linuxuntar']))
-        self.list_of_io_processes.append(proc[0])
+        # Start IO on the directory created under mountpoint
+        proc = redant.create_deep_dirs_with_files(f"{self.mountpoint}/io_dir",
+                                                  1, 3, 6, 5, 20,
+                                                  self.client_list[0])
+        self.list_of_io_processes.append(proc)
         self.mounts = [{
             "client": self.client_list[0],
-            "mountpath": self.linux_untar_dir
+            "mountpath": self.io_dir
         }]
         self.is_io_running = True
 
         # Create a new directory and start rsync
-        self.rsync_dir = f"{self.mountpoint}/rsyncuntarlinux"
-        redant.create_dir(self.mountpoint, "rsyncuntarlinux",
-                          self.client_list[0])
+        self.rsync_dir = f"{self.mountpoint}/rsyndir"
+        redant.create_dir(self.mountpoint, "rsyncdir", self.client_list[0])
 
-        # Start rsync for linux untar on mount point
-        cmd = f"rsync -azr {self.linux_untar_dir} {self.rsync_dir}"
+        # Start rsync for the directory on mount point
+        cmd = f"rsync -azr {self.io_dir} {self.rsync_dir}"
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.list_of_io_processes.append(proc)
         self.mounts.append({
             "client": self.client_list[0],
             "mountpath": self.rsync_dir
         })
-        self.is_io_running = True
 
         # Add bricks to the volume
         force = False
@@ -134,10 +133,10 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         self.is_io_running = False
 
         # As we are running rsync and untar together, there are situations
-        # when some of the new files created by linux untar is not synced
+        # when some of the new files created by IO is not synced
         # through rsync which causes checksum to retrun different value,
         # Hence to take care of this corner case we are rerunning rsync.
-        cmd = f"rsync -azr {self.linux_untar_dir} {self.rsync_dir}"
+        cmd = f"rsync -azr {self.io_dir} {self.rsync_dir}"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Check data consistency on both the directories
@@ -146,10 +145,10 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
             "mountpath": self.mountpoint
         }
         rsync_checksum = (redant.collect_mounts_arequal(self.mounts,
-                          'rsyncuntarlinux/linuxuntar/'))
+                          'rsyncdir/io_dir/'))
 
         untar_checksum = redant.collect_mounts_arequal(self.mounts,
-                                                       'linuxuntar')
+                                                       'io_dir')
         if rsync_checksum != untar_checksum:
             raise Exception("Checksum on untar dir and checksum on rsync"
                             " dir didn't match")
