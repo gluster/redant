@@ -17,11 +17,26 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 # nonDisruptive;dist,dist-rep,dist-disp,dist-arb
-
+import traceback
 from tests.nd_parent_test import NdParentTest
 
 
 class TestCase(NdParentTest):
+    def terminate(self):
+        """
+        Wait for IO to complete if the TC fails midway
+        """
+        try:
+            if self.is_perm_set:
+                if not (self.redant.set_file_permissions(self.client_list[0],
+                        self.mountpoint, "755")):
+                    raise Exception("Failed to reset permission on mountpoint")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
+
     def _set_root_dir_permission(self, permission):
         """ Sets the root dir permission to the given value"""
         ret = self.redant.set_file_permissions(self.client_list[0],
@@ -92,12 +107,13 @@ class TestCase(NdParentTest):
         7. Verify permission changes on all bricks, except down brick
         8. Bring back the brick and verify the changes are reflected
         """
-
+        self.is_perm_set = False
         # Verify the default permission on root dir is 755
         self._verify_mount_dir_and_brick_dir_permissions("755")
 
         # Change root permission to 444
         self._set_root_dir_permission("444")
+        self.is_perm_set = True
 
         # Verify the changes were successful
         self._verify_mount_dir_and_brick_dir_permissions("444")
@@ -107,6 +123,7 @@ class TestCase(NdParentTest):
 
         # Change root permission to 755
         self._set_root_dir_permission("755")
+        self.is_perm_set = False
 
         # Verify the permission changed to 755 on mount and brick dirs
         self._verify_mount_dir_and_brick_dir_permissions("755", offline_brick)
@@ -116,9 +133,6 @@ class TestCase(NdParentTest):
 
         # Verify the permission changed to 755 on mount and brick dirs
         self._verify_mount_dir_and_brick_dir_permissions("755")
-
-        # Change root permission back to 755
-        self._set_root_dir_permission("444")
 
         redant.logger.info("Test to verify permission changes made on"
                            " mount dir i succesful")
