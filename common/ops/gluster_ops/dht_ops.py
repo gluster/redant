@@ -2,8 +2,12 @@
 DHT ops contain methods which deals with DHT operations like
 hashing, layout and so on.
 """
+# The below bypass is necessary as we use mixin.
+# pylint: disable=no-name-in-module
 
+import os
 import ctypes
+import common.ops.gluster_ops.constants as c
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -375,3 +379,299 @@ class DHTOps(AbstractOps):
 
             count = -1
         return None
+
+    def validate_files_in_dir(self, node: str, rootdir: str,
+                              file_type: int = c.FILETYPE_ALL,
+                              test_type: int = c.TEST_ALL) -> bool:
+        """
+        walk a directory tree and check if layout is_complete.
+
+        Args:
+            node (str): The host of the directory being traversed.
+            rootdir (str): The fully qualified path of the dir being traversed.
+            file_type (int): An or'd set of constants defining the file types
+                             to test.
+                                FILETYPE_DIR
+                                FILETYPE_DIRS
+                                FILETYPE_FILE
+                                FILETYPE_FILES
+                                FILETYPE_ALL
+                             Default to 255 i.e, equivalent to FILETYPE_ALL
+
+            test_type (int): An or'd set of constants defining the test types
+                             to run.
+                                TEST_LAYOUT_IS_COMPLETE
+                                TEST_LAYOUT_IS_BALANCED
+                                TEST_FILE_EXISTS_ON_HASHED_BRICKS
+                                TEST_ALL
+                             Default to 255 i.e, equivalent to TEST_ALL
+
+        Examples:
+            # TEST LAYOUTS FOR FILES IN A DIRECTORY
+
+            validate_files_in_dir(clients[0], '/mnt/glusterfs')
+            validate_files_in_dir(clients[0], '/mnt/glusterfs',
+                                  file_type=FILETYPE_DIRS)
+            validate_files_in_dir(clients[0], '/mnt/glusterfs',
+                                  file_type=FILETYPE_FILES)
+            validate_files_in_dir(clients[0], '/mnt/glusterfs',
+                                  test_type=TEST_LAYOUT_IS_COMPLETE,
+                                  file_type=FILETYPE_DIRS | FILETYPE_FILES)
+            validate_files_in_dir(clients[0], '/mnt/glusterfs',
+                                  test_type=TEST_LAYOUT_IS_BALANCED)
+            validate_files_in_dir(clients[0], '/mnt/glusterfs',
+                                  test_type=TEST_LAYOUT_IS_BALANCED,
+                                  file_type=FILETYPE_FILES)
+
+            # TEST FILES IN DIRECTORY EXIST ON HASHED BRICKS
+            validate_files_in_dir(clients[0], '/mnt/glusterfs',
+                                  test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS)
+        """
+        # pylint: disable=eval-used
+
+        layout_cache = {}
+
+        script_path = ("/usr/share/redant/script/walk_dir.py")
+        cmd = f"python3 {script_path} {rootdir}"
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Unable to run the script on node: {node}")
+            return False
+
+        for walkies in eval(ret['msg'][0]):
+            self.logger.debug(f"TESTING DIRECTORY {walkies[0]}")
+
+            # check directories
+            if file_type & c.FILETYPE_DIR:
+                for testdir in walkies[1]:
+                    fqpath = os.path.join(walkies[0], testdir)
+                    parent_dir = os.path.dirname(fqpath)
+
+                    if parent_dir in layout_cache:
+                        layout = layout_cache[parent_dir]
+                    else:
+                        layout = self.get_pathinfo(parent_dir, node)
+                        layout_cache[parent_dir] = layout
+
+                        self.run_layout_tests(fqpath, layout, test_type)
+
+                    if test_type & c.TEST_FILE_EXISTS_ON_HASHED_BRICKS:
+                        self.run_hashed_bricks_test(node, fqpath, layout)
+
+            # check files
+            if file_type & c.FILETYPE_FILE:
+                for file in walkies[2]:
+                    fqpath = os.path.join(walkies[0], file)
+                    parent_dir = os.path.dirname(fqpath)
+
+                    if parent_dir in layout_cache:
+                        layout = layout_cache[parent_dir]
+                    else:
+                        layout = self.get_pathinfo(parent_dir, node)
+                        layout_cache[parent_dir] = layout
+
+                        self.run_layout_tests(fqpath, layout, test_type)
+
+                    if test_type & c.TEST_FILE_EXISTS_ON_HASHED_BRICKS:
+                        self.run_hashed_bricks_test(node, fqpath, layout)
+        return True
+
+    def run_layout_tests(self, fqpath: str, layout: dict,
+                         test_type: int):
+        """
+        run the is_complete and/or is_balanced tests
+
+        Args:
+            fqpath (str): Path of the dir/file
+            layout (str): Brickdir paths dict
+            test_type (int): An or'd set of constants defining the test types
+                             to run.
+                                TEST_LAYOUT_IS_COMPLETE
+                                TEST_LAYOUT_IS_BALANCED
+                                TEST_FILE_EXISTS_ON_HASHED_BRICKS
+                                TEST_ALL
+        """
+        for brickdir_path in layout['brickdir_paths']:
+            if self.get_volume_type_from_brickpath(brickdir_path) in \
+               ('Replicate', 'Disperse', 'Arbiter'):
+                self.logger.debug("Cannot check for layout completeness as"
+                                  " volume under test is Replicate/Disperse"
+                                  "/Arbiter")
+            else:
+                if test_type & c.TEST_LAYOUT_IS_COMPLETE:
+                    self.logger.debug(f"Testing layout complete for {fqpath}")
+                    if not self.is_complete(layout):
+                        msg = f"Layout for {fqpath} IS NOT COMPLETE"
+                        self.logger.error(msg)
+                        raise Exception(f"LayoutIsNotComplete: {msg}")
+
+                if test_type & c.TEST_LAYOUT_IS_BALANCED:
+                    self.logger.debug(f"Testing layout balance for {fqpath}")
+                    if not self.is_balanced(layout):
+                        msg = f"Layout for {fqpath} IS NOT BALANCED"
+                        self.logger.error(msg)
+                        raise Exception(f"LayoutIsNotBalancedError: {msg}")
+
+    def get_layout(self, layout: dict) -> list:
+        """
+        Discover brickdir data and cache in instance for further use
+        Args:
+            layout (dict): Brickdir_pathinfo
+
+        Returns:
+            list: Valid Brickdir list
+        """
+        brickdir_list = []
+        for brickdir_path in layout['brickdir_paths']:
+            if self.get_volume_type_from_brickpath(brickdir_path) in \
+               ('Replicate', 'Disperse', 'Arbiter'):
+                self.logger.debug("Cannot check for layout completeness as"
+                                  " volume under test is Replicate/Disperse"
+                                  "/Arbiter")
+            else:
+                brickdir_list.append(brickdir_path)
+
+        return brickdir_list
+
+    def is_complete(self, layout: dict) -> bool:
+        """
+        Layout starts at zero,
+        ends at 32-bits high,
+        and has no holes or overlaps
+
+        Args:
+            layout (dict): Brickdir_pathinfo
+
+        Returns:
+            bool: True on success, else False
+        """
+        for brickdir_path in layout['brickdir_paths']:
+            if self.get_volume_type_from_brickpath(brickdir_path) in\
+               ('Replicate', 'Disperse', 'Arbiter'):
+                self.logger.debug("Cannot check for layout completeness as"
+                                  " volume under test is Replicate/Disperse"
+                                  "/Arbiter")
+            else:
+                joined_hashranges = []
+                for brickdir in layout['brickdir_paths']:
+                    # Get hashrange for brickdir
+                    hashrange = self.get_hashrange(brickdir)
+
+                    # join all of the hashranges into a single list
+                    if hashrange:
+                        joined_hashranges += hashrange
+
+                self.logger.debug(f"joined range list: {joined_hashranges}")
+                # remove duplicate hashes
+                collapsed_ranges = list(set(joined_hashranges))
+                # sort the range list for good measure
+                collapsed_ranges.sort()
+
+                # first hash in the list is 0?
+                if collapsed_ranges[0] != 0:
+                    self.logger.error("First hash in range "
+                                      f"({collapsed_ranges[0]}) is not zero")
+                    return False
+
+                # last hash in the list is 32-bits high?
+                if collapsed_ranges[-1] != int(0xffffffff):
+                    self.logger.error("Last hash in ranges "
+                                      f"({hex(collapsed_ranges[-1])}) is not "
+                                      "0xffffffff")
+                    return False
+
+                # remove the first and last hashes
+                clipped_ranges = collapsed_ranges[1:-1]
+                self.logger.debug(f"clipped: {clipped_ranges}")
+
+                # walk through the list in pairs and look for diff == 1
+                iter_ranges = iter(clipped_ranges)
+                for first in iter_ranges:
+                    second = next(iter_ranges)
+                    hash_difference = second - first
+                    self.logger.debug(f"{second} - {first} = "
+                                      f"{hash_difference}")
+
+                    if hash_difference > 1:
+                        self.logger.error("Layout has holes")
+                        return False
+
+                    elif hash_difference < 1:
+                        self.logger.error("Layout has overlaps")
+                        return False
+
+                return True
+
+        return False
+
+    def run_hashed_bricks_test(self, node: str, fqpath: str,
+                               layout: dict):
+        """
+        run check for file/dir existence on brick based on calculated hash
+
+        Args:
+            node (str): Node on which file is present
+            fqpath (str): Path of the dir/file
+            layout (dict): Dict of brickdir_pathinfo
+        """
+        self.logger.debug(f"Testing file/dir {fqpath} existence on hashed"
+                          " brick(s).")
+        if not self.exists_on_hashed_bricks(node, fqpath, layout):
+            msg = (f"File/Dir {fqpath} DOES NOT EXIST on hashed bricks.")
+            self.logger.error(msg)
+            raise Exception(f"FileDoesNotExistOnHashedBricksError: {msg}")
+
+        return True
+
+    def exists_on_hashed_bricks(self, node: str, fqpath: str,
+                                layout: dict) -> bool:
+        """
+        Does the file exist on the hashed bricks as expected?
+
+        Args:
+            node (str): Node on which file is present
+            fqpath (str): Path of file/dir
+            layout (dict): Dict of brickdir_pathinfo
+
+        Returns:
+            bool: True on success, else False
+        """
+        # TODO: inject check for linkto and data files
+        flag = 0
+        hashed_bricks = self.get_hashed_bricks(node, fqpath, layout)
+        for brickdir_path in hashed_bricks:
+            (host, fqpath) = brickdir_path.split(':')
+            if not self.path_exists(host, fqpath):
+                flag = flag | 1
+
+        if flag == 0:
+            return True
+
+        return False
+
+    def hashed_bricks(self, node: str, fqpath: str, layout: dict) -> list:
+        """
+        Finds the list of bricks matching with hashrange surrounding hash
+
+        Args:
+            node (str): Node on which file is present
+            fqpath (str): Path of file/dir
+            layout (dict): Dict of brickdir_pathinfo
+
+        Returns:
+            list of hashed_bricks
+        """
+        brickpaths = []
+        brickdir_list = self.get_layout(layout)
+        for brickdir in brickdir_list:
+            hashrange = self.get_hashrange(brickdir)
+            if hashrange:
+                low, high = hashrange
+                basename = os.path.basename(fqpath)
+                calculated_hash = self.calculate_hash(node, basename)
+                if low < calculated_hash < high:
+                    brickpaths.append(brickdir)
+                    self.logger.debug(f"{brickdir}: {low} - {calculated_hash}"
+                                      f" - {high}")
+
+        return brickpaths

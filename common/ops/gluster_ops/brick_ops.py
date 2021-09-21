@@ -592,7 +592,7 @@ class BrickOps(AbstractOps):
             index += 1
             iteration += 1
 
-        brick_cmd = brick_cmd.lstrip(" ")
+        brick_cmd = brick_cmd.lstrip()
 
         return (brick_dict, brick_cmd)
 
