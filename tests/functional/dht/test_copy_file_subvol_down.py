@@ -95,7 +95,7 @@ class TestCopyFileSubvolDown(DParentTest):
             subvol_list.remove(item)
 
         # Find name for dest file
-        dest_subvol = f"{subvol_list[0][0]}//"
+        dest_subvol = f"{subvol_list[0][0]}/"
         dest_file = self.redant.find_specific_hashed(self.subvols, "",
                                                      dest_subvol)
         if not dest_file:
@@ -137,6 +137,10 @@ class TestCopyFileSubvolDown(DParentTest):
         3) All subvols are up
         4) Copy src file to dest file
         """
+        self.subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        if not self.subvols:
+            raise Exception("Failed to get the volume subvols")
+
         # Create a src file
         self._create_src_file()
 
