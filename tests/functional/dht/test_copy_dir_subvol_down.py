@@ -21,6 +21,7 @@
 
 # disruptive;dist,dist-rep,dist-arb,dist-disp
 from copy import deepcopy
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -52,8 +53,7 @@ class TestCopyDirSubvolDown(DParentTest):
         source directory.
         """
         # Create source dir
-        self.redant.execute_abstract_op_node(m_point, "src_dir",
-                                             self.client_list[0])
+        self.redant.create_dir(m_point, "src_dir", self.client_list[0])
 
         # Create files inside source dir
         proc = self.redant.create_files("1k", f"{m_point}/src_dir/",
@@ -142,6 +142,9 @@ class TestCopyDirSubvolDown(DParentTest):
         # Cleanup mount and force start volume for next case
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
+        # Add sleep to allow the clients to get back up
+        sleep(3)
+
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
@@ -191,6 +194,9 @@ class TestCopyDirSubvolDown(DParentTest):
         # Cleanup mount and force start volume for next case
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
+        # Add sleep to allow the clients to get back up
+        sleep(3)
+
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
@@ -239,6 +245,9 @@ class TestCopyDirSubvolDown(DParentTest):
 
         # Cleanup mount and force start volume for next case
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
+
+        # Add sleep to allow the clients to get back up
+        sleep(3)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
