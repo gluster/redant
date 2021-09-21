@@ -82,7 +82,7 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
 
         # Start IO on the directory created under mountpoint
         proc = redant.create_deep_dirs_with_files(f"{self.mountpoint}/io_dir",
-                                                  1, 3, 6, 5, 20,
+                                                  1, 3, 4, 4, 20,
                                                   self.client_list[0])
         self.list_of_io_processes.append(proc)
         self.mounts = [{
@@ -92,7 +92,7 @@ class TestAddBrickRebalanceWithRsyncInProgress(DParentTest):
         self.is_io_running = True
 
         # Create a new directory and start rsync
-        self.rsync_dir = f"{self.mountpoint}/rsyndir"
+        self.rsync_dir = f"{self.mountpoint}/rsyncdir"
         redant.create_dir(self.mountpoint, "rsyncdir", self.client_list[0])
 
         # Start rsync for the directory on mount point
