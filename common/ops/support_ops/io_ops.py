@@ -1053,7 +1053,7 @@ class IoOps(AbstractOps):
                 self.execute_abstract_op_node(cmd, client)
 
                 # Start linux untar
-                cmd = ("cd {}/{}; tar -xvf linux-5.4.54.tar.xz"
+                cmd = ("cd {}/{}; tar -xf linux-5.4.54.tar.xz"
                        .format(mountpoint, directory))
                 async_obj = self.execute_command_async(cmd, client)
                 list_of_procs.append(async_obj)
