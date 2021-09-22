@@ -75,3 +75,4 @@ excluded_tests:
     - tests/functional/disperse/test_ec_file_rename_on_brick_down.py # Remove on fixing BZ 1596165
     - tests/functional/disperse/test_ec_brick_consumable_size.py # Excluded due to bz: 1883429
     - tests/functional/arbiter/test_afr_read_write.py # Cat command is hanging in CI
+    - tests/functional/dht/test_add_brick_rebalance_with_self_heal_in_progress.py # Requires downstream RHGS
