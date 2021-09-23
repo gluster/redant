@@ -115,9 +115,11 @@ class TestDhtClass(DParentTest):
         for direc in list_of_all_dirs:
             for brick in brick_list:
                 host, brick_path = brick.split(':')
-                redant.get_fattr(f"{brick_path}/{direc}",
-                                 'trusted.glusterfs.pathinfo',
-                                 host)
+                ret = redant.get_fattr(f"{brick_path}/{direc}",
+                                       'trusted.glusterfs.pathinfo',
+                                       host, excep=False)
+                if ret['error_code'] == 0:
+                    raise Exception("Subvolume showing pathinfo xattr")
 
         # Clear mountpoint for next case
         cmd = f"rm -rf {self.mountpoint}/*"
@@ -155,10 +157,10 @@ class TestDhtClass(DParentTest):
         cmd = f'stat {sym_link_path}'
         ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
 
-        if 'symbolic link' not in ret['msg']:
+        if 'symbolic link' not in "".join(ret['msg']):
             raise Exception("The type of the link is not symbolic")
 
-        if not search(fqpath_for_test_dir, ret['msg']):
+        if not search(fqpath_for_test_dir, "".join(ret['msg'])):
             raise Exception("sym link does not point to correct "
                             "location")
 
@@ -190,11 +192,15 @@ class TestDhtClass(DParentTest):
                 raise Exception("Important xattrs are being compromised"
                                 " using the symlink at the mount point")
 
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        brick_count = len(brick_list)
+
         path_info_1 = redant.get_pathinfo(fqpath_for_test_dir,
                                           self.client_list[0])
         path_info_2 = redant.get_pathinfo(sym_link_path,
                                           self.client_list[0])
-        if path_info_1 != path_info_2:
+        if set(path_info_1['brickdir_paths'][0:brick_count]) != \
+           set(path_info_2['brickdir_paths'][0:brick_count]):
             raise Exception("Pathinfos for test_dir and its sym link "
                             "are not same")
 
