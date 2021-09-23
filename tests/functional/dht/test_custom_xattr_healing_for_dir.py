@@ -41,14 +41,12 @@ class TestCustomXattrHealingForDir(DParentTest):
                                     self.client_list[0], encode="text",
                                     excep=False)
         if ret['error_code'] != 0:
-            if expected_value is None and "no such attribute" \
+            if expected_value is None and "No such attribute" \
                not in ret['error_msg']:
                 raise Exception("Xattr is not NONE as expected")
-            else:
-                raise Exception("Failed to get the xattr")
         else:
-            val = ret[1].split('=')[1].strip()
-            if val != expected_value:
+            val = ret['msg'][1].split('=')[1].strip()
+            if val[1:-1] != expected_value:
                 raise Exception("Failed to get the xattr"
                                 f" on:{self.client_list[0]}")
 
@@ -61,14 +59,12 @@ class TestCustomXattrHealingForDir(DParentTest):
             ret = self.redant.get_fattr(f'{brick_path}/dir1', 'user.foo',
                                         host, encode="text", excep=False)
             if ret['error_code'] != 0:
-                if expected_value is None and "no such attribute" \
+                if expected_value is None and "No such attribute" \
                    not in ret['error_msg']:
                     raise Exception("Xattr is not NONE as expected")
-                else:
-                    raise Exception("Failed to get the xattr")
             else:
-                val = ret[1].split('=')[1].strip()
-                if val != expected_value:
+                val = ret['msg'][1].split('=')[1].strip()
+                if val[1:-1] != expected_value:
                     raise Exception("Failed to get the xattr"
                                     f" on:{self.client_list[0]}")
 

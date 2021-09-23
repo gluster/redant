@@ -1078,7 +1078,10 @@ class IoOps(AbstractOps):
         """
         cmd = f"getfattr --absolute-names -e '{encode}' -n '{fattr}' {fpath}"
         ret = self.execute_abstract_op_node(cmd, node, excep)
-        return ret['msg']
+        if not excep:
+            return ret
+        else:
+            return ret['msg']
 
     def get_fattr_list(self, fqpath: str, node: str,
                        encode_hex=False) -> dict:
