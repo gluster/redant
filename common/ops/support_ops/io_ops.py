@@ -1061,7 +1061,7 @@ class IoOps(AbstractOps):
         return list_of_procs
 
     def get_fattr(self, fpath: str, fattr: str, node: str,
-                  encode: str = "hex") -> list:
+                  encode: str = "hex", excep: bool = True) -> list:
         """
         Function to get the fattr on a said file on a remote folder.
 
@@ -1070,12 +1070,14 @@ class IoOps(AbstractOps):
             2. fattr (str): The fattr name to be checked.
             3. node (str): The node wherein the fattr is to be checked.
             4. encode (str): Optional parameter with default value of 'hex'.
-                             The encoding in which the return value s required.
+                             The encoding in which the return value s required
+            5. excep (bool): Whether to bypass the exception handling in
+                             abstract ops.
         Returns:
             getfattr result on success. Exception thrown on failure.
         """
-        cmd = (f"getfattr --absolute-names -e '{encode}' -n '{fattr}' {fpath}")
-        ret = self.execute_abstract_op_node(cmd, node)
+        cmd = f"getfattr --absolute-names -e '{encode}' -n '{fattr}' {fpath}"
+        ret = self.execute_abstract_op_node(cmd, node, excep)
         return ret['msg']
 
     def get_fattr_list(self, fqpath: str, node: str,
