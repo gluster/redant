@@ -192,14 +192,13 @@ class TestDhtClass(DParentTest):
                 raise Exception("Important xattrs are being compromised"
                                 " using the symlink at the mount point")
 
-        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
-        brick_count = len(brick_list)
-
         path_info_1 = redant.get_pathinfo(fqpath_for_test_dir,
                                           self.client_list[0])
+        brick_count = len(path_info_1['brickdir_paths'])
+
         path_info_2 = redant.get_pathinfo(sym_link_path,
                                           self.client_list[0])
-        if set(path_info_1['brickdir_paths'][0:brick_count]) != \
+        if set(path_info_1['brickdir_paths']) != \
            set(path_info_2['brickdir_paths'][0:brick_count]):
             raise Exception("Pathinfos for test_dir and its sym link "
                             "are not same")
