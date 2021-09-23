@@ -48,7 +48,7 @@ class TestDhtCopy(DParentTest):
             raise Exception("ls command didn't list all the directories")
 
         # Create files at different directory levels
-        cmd = f"touch {self.mountpoint}/root_dir/test_file\{{1..5\}}"
+        cmd = f"touch {self.mountpoint}/root_dir/test_file{{1..5}}"
         self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         cmd = f"ls {self.mountpoint}/root_dir"
