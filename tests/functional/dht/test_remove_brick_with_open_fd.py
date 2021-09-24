@@ -16,12 +16,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# nonDisruptive;dist-rep,dist-disp,dist-arb,dist
+# disruptive;dist-rep,dist-disp,dist-arb,dist
 import traceback
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestRemoveBrickWithOpenFD(NdParentTest):
+class TestRemoveBrickWithOpenFD(DParentTest):
 
     def terminate(self):
         """
