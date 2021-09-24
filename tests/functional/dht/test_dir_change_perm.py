@@ -63,7 +63,7 @@ class TestDirChangePerm(DParentTest):
 
         # Start IO on mounts
         cmd = (f'cd {self.mountpoint} ; mkdir testdir; '
-               'mkdir -p testdir/dir{1..10} touch testdir/file{1..10}')
+               'mkdir -p testdir/dir{1..10}; touch testdir/file{1..10}')
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # List all files and dirs created
