@@ -177,7 +177,7 @@ class TestDhtCustomXattrClass(DParentTest):
 
         # Check if files are created on the right subvol
         ret = (redant.validate_files_in_dir(self.client_list[0],
-               self.mount_point, file_type=FILETYPE_FILES,
+               self.mountpoint, file_type=FILETYPE_FILES,
                test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS))
         if not ret:
             raise Exception("Files not created on correct sub-vols")
