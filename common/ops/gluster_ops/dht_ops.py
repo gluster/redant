@@ -649,7 +649,7 @@ class DHTOps(AbstractOps):
 
         return False
 
-    def hashed_bricks(self, node: str, fqpath: str, layout: dict) -> list:
+    def get_hashed_bricks(self, node: str, fqpath: str, layout: dict) -> list:
         """
         Finds the list of bricks matching with hashrange surrounding hash
 
