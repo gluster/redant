@@ -43,7 +43,7 @@ class GlusterdOps(AbstractOps):
             self.logger.info(f"Running {cmd} on all nodes.")
         else:
             ret = self.execute_command_multinode(cmd, node)
-            self.logger.info(f"Running {cmd} on {node}")
+            self.logger.info(f"Running {cmd} on nodes {node}")
 
         for result_val in ret:
             if int(result_val['error_code']) != 0:
@@ -54,8 +54,9 @@ class GlusterdOps(AbstractOps):
 
         if cmd_fail and enable_retry:
             self.reset_failed_glusterd(node)
-            self.start_glusterd(node)
-        elif cmd_fail:
+            cmd_fail = self.start_failed_glusterd(cmd, node)
+
+        if cmd_fail:
             raise Exception(error_msg)
 
         return ret
@@ -98,11 +99,43 @@ class GlusterdOps(AbstractOps):
 
         if cmd_fail and enable_retry:
             self.reset_failed_glusterd(node)
-            self.restart_glusterd(node)
-        elif cmd_fail:
+            cmd_fail = self.start_failed_glusterd(cmd, node)
+
+        if cmd_fail:
             raise Exception(error_msg)
 
         return ret
+
+    def start_failed_glusterd(self, cmd: str, node: str = None) -> bool:
+        """
+        Do a start/restart of glusterd after `reset-failed` execution
+
+        Args:
+            cmd (str): Command to be run
+            node (str/list): Node(s) on which the command has to be run
+
+        Returns:
+            bool : False if the command execution was successful, else True
+        """
+        if node and not isinstance(node, list):
+            node = [node]
+
+        if node is None:
+            ret = self.execute_command_multinode(cmd)
+            self.logger.debug(f"Running {cmd} on all nodes.")
+        else:
+            ret = self.execute_command_multinode(cmd, node)
+            self.logger.debug(f"Running {cmd} on nodes {node}")
+
+        _rc = False
+        for result_val in ret:
+            if int(result_val['error_code']) != 0:
+                error_msg = result_val['error_msg']
+                self.logger.error(error_msg)
+                _rc = True
+                break
+
+        return _rc
 
     def stop_glusterd(self, node=None) -> dict:
         """
