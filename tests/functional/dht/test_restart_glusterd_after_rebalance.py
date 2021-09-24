@@ -30,7 +30,7 @@ class TestCase(DParentTest):
         3) Expanding volume by adding bricks to the volume
         4) Start Rebalance and wait for it to complete
         5) restart glusterd on all servers
-        6) Check if rebalance process has started or not 
+        6) Check if rebalance process has started or not
            after glusterd restart.
         """
 
