@@ -16,12 +16,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# nonDisruptive;dist,dist-rep
+# disruptive;dist,dist-rep
 
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
 
     def _create_file_and_hold_lock(self):
         """ Creates a file and holds lock on the file created"""
