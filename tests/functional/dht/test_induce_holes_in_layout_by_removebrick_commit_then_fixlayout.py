@@ -78,10 +78,16 @@ class TestRebalanceValidation(DParentTest):
                             f"on volume {self.vol_name}")
 
         # Shrinking volume by removing bricks
-        ret = redant.shrink_volume(self.server_list[0], self.vol_name,
-                                   subvol_num=1)
-        if not ret:
-            raise Exception("Failed to remove bricks from volume")
+        bricks_list_to_remove = (redant.form_bricks_list_to_remove_brick(
+                                 self.server_list[0], self.vol_name,
+                                 subvol_num=1))
+
+        if bricks_list_to_remove is None:
+            raise Exception("Failed to form bricks list to remove-brick. "
+                            f"Hence unable to shrink volume {self.vol_name}")
+
+        redant.remove_brick(self.server_list[0], self.vol_name,
+                            bricks_list_to_remove, "force")
 
         # Check the layout
         ret = redant.is_layout_complete(self.server_list[0], self.vol_name,
