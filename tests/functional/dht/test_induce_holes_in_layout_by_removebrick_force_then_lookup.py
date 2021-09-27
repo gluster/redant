@@ -1,73 +1,58 @@
-#  Copyright (C) 2018-2020 Red Hat, Inc. http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2018-2020 Red Hat, Inc. http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.brick_ops import remove_brick
-from glustolibs.gluster.constants import \
-    TEST_LAYOUT_IS_COMPLETE as LAYOUT_IS_COMPLETE
-from glustolibs.gluster.constants import FILETYPE_DIRS
-from glustolibs.gluster.dht_test_utils import validate_files_in_dir
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.volume_libs import (
-    log_volume_info_and_status, form_bricks_list_to_remove_brick)
-from glustolibs.gluster.dht_test_utils import is_layout_complete
-from glustolibs.gluster.mount_ops import mount_volume
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to induce holes in layout by remove brick force then lookup to
+    fix layout
+"""
+
+# disruptive;dist,dist-rep,dist-arb,dist-disp
+from common.ops.gluster_ops.constants import (TEST_LAYOUT_IS_COMPLETE,
+                                              FILETYPE_DIRS)
+from copy import deepcopy
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'distributed-replicated', 'distributed-arbiter',
-           'distributed-dispersed'],
-          ['glusterfs']])
-class RebalanceValidation(GlusterBaseClass):
-    @classmethod
-    def setUpClass(cls):
+class TestRebalanceValidation(DParentTest):
 
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
-
-        # Check for the default dist_count value and override it if required
-        if cls.default_volume_type_config['distributed']['dist_count'] <= 2:
-            cls.default_volume_type_config['distributed']['dist_count'] = 4
-        if (cls.default_volume_type_config['distributed-replicated']
-                ['dist_count']) <= 2:
-            (cls.default_volume_type_config['distributed-replicated']
-             ['dist_count']) = 4
-        if (cls.default_volume_type_config['distributed-dispersed']
-                ['dist_count']) <= 2:
-            (cls.default_volume_type_config['distributed-dispersed']
-             ['dist_count']) = 4
-        if (cls.default_volume_type_config['distributed-arbiter']
-                ['dist_count']) <= 2:
-            (cls.default_volume_type_config['distributed-arbiter']
-             ['dist_count']) = 4
-
-        # Setup Volume and Mount Volume
-
-        g.log.info("Starting to Setup Volume and Mount Volume")
-        ret = cls.setup_volume_and_mount_volume(mounts=cls.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-        g.log.info("Successful in Setup Volume and Mount Volume")
-
-    def test_induce_holes_then_lookup(self):
-
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        Test Script to induce holes in layout by using remove-brick force
-        and then performing lookup in order to fix the layout.
+        Override the volume create, start and mount in parent_run_test
+        """
+        # Minimum of 2 clients are needed
+        self.redant.check_hardware_requirements(clients=self.client_list,
+                                                clients_count=2)
 
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        if conf_hash['dist_count'] <= 2:
+            conf_hash['dist_count'] = 4
+
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
+
+    def run_test(self, redant):
+        """
         Steps :
         1) Create a volume and mount it using FUSE.
         2) Create a directory "testdir" on mount point.
@@ -79,97 +64,58 @@ class RebalanceValidation(GlusterBaseClass):
         8) Mount the volume on a new mount.
         9) Send a lookup on mount point.
         10) Check if the layout is complete.
-
         """
-        # pylint: disable=too-many-statements
-        # Create a directory on mount point
-        m_point = self.mounts[0].mountpoint
-        dirpath = '/testdir'
-        command = 'mkdir -p ' + m_point + dirpath
-        ret, _, _ = g.run(self.clients[0], command)
-        self.assertEqual(ret, 0, "mkdir failed")
-        g.log.info("mkdir is successful")
+        redant.create_dir(self.mountpoint, "testdir", self.client_list[0])
 
         # DHT Layout validation
-        g.log.debug("Verifying hash layout values %s:%s",
-                    self.clients[0], m_point)
-        ret = validate_files_in_dir(self.clients[0], m_point,
-                                    test_type=LAYOUT_IS_COMPLETE,
-                                    file_type=FILETYPE_DIRS)
-        self.assertTrue(ret, "LAYOUT_IS_COMPLETE: FAILED")
-        g.log.info("LAYOUT_IS_COMPLETE: PASS")
+        ret = redant.validate_files_in_dir(self.client_list[0],
+                                           self.mountpoint,
+                                           test_type=TEST_LAYOUT_IS_COMPLETE,
+                                           file_type=FILETYPE_DIRS)
+        if not ret:
+            raise Exception("LAYOUT_IS_COMPLETE: FAILED")
 
         # Log Volume Info and Status before shrinking the volume.
-        g.log.info("Logging volume info and Status before shrinking volume")
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not redant.log_volume_info_and_status(self.server_list[0],
+                                                 self.vol_name):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Form bricks list for Shrinking volume
-        self.remove_brick_list = form_bricks_list_to_remove_brick(self.mnode,
-                                                                  self.volname,
-                                                                  subvol_num=1)
-        self.assertNotEqual(self.remove_brick_list, None,
-                            ("Volume %s: Failed to form bricks list for volume"
-                             " shrink", self.volname))
-        g.log.info("Volume %s: Formed bricks list for volume shrink",
-                   self.volname)
+        bricks_list_to_remove = (redant.form_bricks_list_to_remove_brick(
+                                 self.server_list[0], self.vol_name,
+                                 subvol_num=1))
 
-        # Shrinking volume by removing bricks
-        g.log.info("Start removing bricks from volume")
-        ret, _, _ = remove_brick(self.mnode, self.volname,
-                                 self.remove_brick_list, "force")
-        self.assertFalse(ret, "Remove-brick with force: FAIL")
-        g.log.info("Remove-brick with force: PASS")
+        if bricks_list_to_remove is None:
+            raise Exception("Failed to form bricks list to remove-brick. "
+                            f"Hence unable to shrink volume {self.vol_name}")
+
+        # Shrink volume
+        redant.remove_brick(self.server_list[0], self.vol_name,
+                            bricks_list_to_remove, "force")
 
         # Check the layout
-        ret = is_layout_complete(self.mnode, self.volname, dirpath)
-        self.assertFalse(ret, ("Volume %s: Layout is complete", self.volname))
-        g.log.info("Volume %s: Layout has some holes", self.volname)
+        ret = redant.is_layout_complete(self.server_list[0], self.vol_name,
+                                        dirpath='/testdir')
+        if ret:
+            raise Exception(f"Unexpected: Volume {self.vol_name} layout is"
+                            " complete")
 
         # Mount the volume on a new mount point
-        ret, _, _ = mount_volume(self.volname, mtype='glusterfs',
-                                 mpoint=m_point,
-                                 mserver=self.mnode,
-                                 mclient=self.clients[1])
-        self.assertEqual(ret, 0, ("Failed to do gluster mount of volume %s"
-                                  " on client node %s",
-                                  self.volname, self.clients[1]))
-        g.log.info("Volume %s mounted successfullly on %s", self.volname,
-                   self.clients[1])
+        redant.execute_abstract_op_node(f"mkdir  -p {self.mountpoint}",
+                                        self.client_list[1])
+
+        redant.volume_mount(self.server_list[0], self.vol_name,
+                            self.mountpoint, self.client_list[1])
 
         # Send a look up on the directory
-        cmd = 'ls %s%s' % (m_point, dirpath)
-        ret, _, err = g.run(self.clients[1], cmd)
-        self.assertEqual(ret, 0, ("Lookup failed on %s with error %s",
-                                  (dirpath, err)))
-        g.log.info("Lookup sent successfully on %s", m_point + dirpath)
+        cmd = f'ls {self.mountpoint}/testdir'
+        redant.execute_abstract_op_node(cmd, self.client_list[1])
 
         # DHT Layout validation
-        g.log.info("Checking layout after new mount")
-        g.log.debug("Verifying hash layout values %s:%s",
-                    self.clients[1], m_point + dirpath)
-        ret = validate_files_in_dir(self.clients[1], m_point + dirpath,
-                                    test_type=LAYOUT_IS_COMPLETE,
-                                    file_type=FILETYPE_DIRS)
-        self.assertTrue(ret, "LAYOUT_IS_COMPLETE: FAILED")
-        g.log.info("LAYOUT_IS_COMPLETE: PASS")
-
-    def tearDown(self):
-
-        # Cleaning the removed bricks
-        for brick in self.remove_brick_list:
-            brick_node, brick_path = brick.split(":")
-            cmd = "rm -rf " + brick_path
-            ret, _, _ = g.run(brick_node, cmd)
-            if ret:
-                raise ExecutionError("Failed to delete removed brick dir "
-                                     "%s:%s" % (brick_node, brick_path))
-
-        # Unmount Volume and Cleanup Volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
+        ret = redant.validate_files_in_dir(self.client_list[1],
+                                           f"{self.mountpoint}/testdir",
+                                           test_type=TEST_LAYOUT_IS_COMPLETE,
+                                           file_type=FILETYPE_DIRS)
         if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+            raise Exception("LAYOUT_IS_COMPLETE: FAILED")
