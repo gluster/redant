@@ -1,65 +1,34 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description: Tests to check that there is no data loss when rename is
+             performed with a brick of volume down.
+"""
+# nonDisruptive;rep,arb,dist-arb,dist-rep
 
 from random import choice
 from time import sleep
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.brick_libs import get_all_bricks, bring_bricks_offline
-from glustolibs.gluster.volume_ops import volume_start
-from glustolibs.gluster.volume_libs import get_volume_type
-from glustolibs.gluster.glusterfile import create_link_file
+from tests.nd_parent_test import NdParentTest
 
 
-@runs_on([['replicated', 'arbiter',
-           'distributed', 'distributed-arbiter',
-           'distributed-replicated'],
-          ['glusterfs']])
-class TestRenameFilesBrickDown(GlusterBaseClass):
+class TestCase(NdParentTest):
 
-    # pylint: disable=too-many-statements
-    def setUp(self):
+    def run_test(self, redant):
         """
-        Setup and mount volume or raise ExecutionError
-        """
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            g.log.error("Failed to Setup and Mount Volume")
-            raise ExecutionError("Failed to Setup and Mount Volume")
-
-    def tearDown(self):
-
-        # Unmount and cleanup original volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_rename_files_with_brick_down(self):
-        """
-        Description: Tests to check that there is no data loss when rename is
-                      performed with a brick of volume down.
          Steps :
          1) Create a volume.
          2) Mount the volume using FUSE.
@@ -79,94 +48,80 @@ class TestRenameFilesBrickDown(GlusterBaseClass):
          14) Check if all the files are renamed properly.
          """
         # Creating 1000 files on volume root
-        m_point = self.mounts[0].mountpoint
-        command = 'touch ' + m_point + '/file{1..1000}_0'
-        ret, _, _ = g.run(self.clients[0], command)
-        self.assertEqual(ret, 0, "File creation failed on %s"
-                         % m_point)
-        g.log.info("Files successfully created on the mount point")
+        mpoint = self.mountpoint
+        client = self.client_list[0]
+        command = f'touch {mpoint}/file{{1..1000}}_0'
+        redant.execute_abstract_op_node(command, client)
 
         # Create soft links for a few files
         for i in range(1, 100):
-            ret = create_link_file(self.clients[0],
-                                   '{}/file{}_0'.format(m_point, i),
-                                   '{}/soft_link_file{}_0'.format(m_point, i),
-                                   soft=True)
-            self.assertTrue(ret, "Failed to create soft links for files")
-        g.log.info("Created soft links for files successfully")
+            if not (redant.create_link_file(client, f'{mpoint}/file{i}_0',
+                                            f'{mpoint}/soft_link_file{i}_0',
+                                            True)):
+                raise Exception("Unable to create soft link file.")
 
         # Create hard links for a few files
         for i in range(101, 200):
-            ret = create_link_file(self.clients[0],
-                                   '{}/file{}_0'.format(m_point, i),
-                                   '{}/hard_link_file{}_0'.format(m_point, i),
-                                   soft=False)
-            self.assertTrue(ret, "Failed to create hard links for files")
-        g.log.info("Created hard links for files successfully")
+            if not (redant.create_link_file(client, f'{mpoint}/file{i}_0',
+                                            f'{mpoint}/hard_link_file{i}_0')):
+                raise Exception("Unable to create hard link file.")
 
         # Calculate file count for the mount-point
-        cmd = ("ls -lR %s/ | wc -l" % m_point)
-        ret, count_before, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "Failed to get file count")
-        g.log.info("File count before rename is:%s", count_before)
+        cmd = (f"ls -lR {mpoint}/ | wc -l")
+        ret = redant.execute_abstract_op_node(cmd, client)
+        count_before = int(ret['msg'][0].strip())
 
         # Start renaming the files in multiple iterations
-        g.log.info("Starting to rename the files")
         all_mounts_procs = []
-        cmd = ('for i in `seq 1 1000`; do for j in `seq 0 5`;do mv -f '
-               '%s/file$i\\_$j %s/file$i\\_$(expr $j + 1); done; done'
-               % (m_point, m_point))
-        proc = g.run_async(self.mounts[0].client_system, cmd,
-                           user=self.mounts[0].user)
+        cmd = ('for i in `seq 1 1000`; do for j in `seq 0 5`;'
+               f'do mv -f {mpoint}/file$i\\_$j mpoint/file$i\\_$(expr $j + 1);'
+               'done; done')
+        proc = redant.execute_command_async(cmd, client)
         all_mounts_procs.append(proc)
 
         # Waiting for some time for a iteration of rename to complete
-        g.log.info("Waiting for few rename iterations to complete")
         sleep(120)
 
         # Get the information about the bricks part of the volume
-        brick_list = get_all_bricks(self.mnode, self.volname)
+        bricks_list = redant.get_all_bricks(self.vol_name,
+                                            self.server_list[0])
 
         # Kill a brick part of the volume
-        ret = bring_bricks_offline(self.volname, choice(brick_list))
-        self.assertTrue(ret, "Failed to bring brick offline")
-        g.log.info("Successfully brought brick offline")
+        bricks_offline = choice(bricks_list)
+        redant.bring_bricks_offline(self.vol_name, bricks_offline)
+        if not redant.are_bricks_offline(self.vol_name, bricks_offline,
+                                         self.server_list[0]):
+            raise Exception(f"Brick {bricks_offline} is not offline")
 
         # Let the brick be down for some time
-        g.log.info("Keeping brick down for few minutes")
         sleep(60)
 
         # Bring the brick online using gluster v start force
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, "Volume start with force failed")
-        g.log.info("Volume start with force successful")
+        redant.volume_start(self.vol_name, self.server_list[0],
+                            force=True)
 
         # Close connection and check if rename has completed
-        ret, _, _ = proc.async_communicate()
-        self.assertEqual(ret, 0, "Rename is not completed")
-        g.log.info("Rename is completed")
+        redant.wait_till_async_command_ends(proc)
 
         # Do lookup on the files
         # Calculate file count from mount
-        cmd = ("ls -lR %s/ | wc -l" % m_point)
-        ret, count_after, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, "Failed to do lookup and"
-                         "get file count")
-        g.log.info("Lookup successful. File count after"
-                   " rename is:%s", count_after)
+        cmd = (f"ls -lR {mpoint}/ | wc -l")
+        ret = redant.execute_abstract_op_node(cmd, client)
+        count_after = int(ret['msg'][0].strip())
 
         # Check if there is any data loss
-        self.assertEqual(int(count_before), int(count_after),
-                         "The file count before and after"
-                         " rename is not same. There is data loss.")
-        g.log.info("The file count before and after rename is same."
-                   " No data loss occurred.")
+        if count_before != count_after:
+            raise Exception("The file count before and after"
+                            " rename is not same. There is data loss.")
 
         # Checking if all files were renamed Successfully
-        ret = get_volume_type(brick_list[0] + "/")
-        if ret in ("Replicate", "Disperse", "Arbiter", "Distributed-Replicate",
-                   "Distribute-Disperse", "Distribute-Arbiter"):
-            cmd = ("ls -lR %s/file*_6 | wc -l" % m_point)
-            ret, out, _ = g.run(self.clients[0], cmd)
-            self.assertEqual(int(out), 1000, "Rename failed on some files")
-            g.log.info("All the files are renamed successfully")
+        vol_info_dict = redant.get_volume_type_info(self.server_list[0],
+                                                    self.vol_name)
+        vol_type = vol_info_dict['volume_type_info']['typeStr']
+        if vol_type in ("Replicate", "Distributed-Replicate",
+                        "Arbiter", "Distribute-Arbiter"):
+            cmd = (f"ls -lR {mpoint}/file* | wc -l")
+            ret = redant.execute_abstract_op_node(cmd, client)
+            count = int(ret['msg'][0].strip())
+            if count != 1000:
+                raise Exception("Rename failed on some files")
