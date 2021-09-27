@@ -19,7 +19,7 @@
     Test cases in this module tests directory healing
 """
 
-# disruptive;dist,dist-rep,dist-disp,dist-arb
+# disruptive;dist-rep,dist-disp,dist-arb
 # TODO: NFS
 from tests.d_parent_test import DParentTest
 
