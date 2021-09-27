@@ -1,55 +1,46 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.lib_utils import get_usable_size_per_disk
-from glustolibs.gluster.brick_libs import get_all_bricks
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along`
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+# disruptive;dist
+
+from copy import deepcopy
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed'], ['glusterfs']])
-class TestRenameWithBricksMinFreeLimitCrossed(GlusterBaseClass):
+class TestCase(DParentTest):
 
-    def setUp(self):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        conf_hash['dist_count'] = 1
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
-        self.get_super_method(self, 'setUp')()
-
-        # Changing dist_count to 1
-        self.volume['voltype']['dist_count'] = 1
-
-        # Creating Volume and mounting the volume
-        ret = self.setup_volume_and_mount_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed: %s"
-                                 % self.volname)
-
-        self.first_client = self.mounts[0].client_system
-        self.mount_point = self.mounts[0].mountpoint
-
-    def tearDown(self):
-
-        # Unmounting and cleaning volume
-        ret = self.unmount_volume_and_cleanup_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Unable to delete volume %s" % self.volname)
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_rename_with_brick_min_free_limit_crossed(self):
+    def run_test(self, redant):
         """
         Test case:
         1. Create a volume, start it and mount it.
@@ -57,26 +48,24 @@ class TestRenameWithBricksMinFreeLimitCrossed(GlusterBaseClass):
         3. Rename the file
         4. Try to perfrom I/O from mount point.(This should fail)
         """
-        bricks = get_all_bricks(self.mnode, self.volname)
+        bricks = redant.get_all_bricks(self.vol_name, self.server_list[0])
 
         # Calculate the usable size and fill till it reachs
         # min free limit
-        usable_size = get_usable_size_per_disk(bricks[0])
-        ret, _, _ = g.run(self.first_client, "fallocate -l {}G {}/file"
-                          .format(usable_size, self.mount_point))
-        self.assertFalse(ret, "Failed to fill disk to min free limit")
-        g.log.info("Disk filled up to min free limit")
+        usable_size = redant.get_usable_size_per_disk(bricks[0])
+        if not usable_size:
+            raise Exception("Failed to get the usable size of the brick")
+
+        cmd = f"fallocate -l {usable_size-1}G {self.mountpoint}/file"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Rename the file
-        ret, _, _ = g.run(self.first_client, "mv {}/file {}/Renamedfile"
-                          .format(self.mount_point, self.mount_point))
-        self.assertFalse(ret, "Rename failed on file to Renamedfile")
-        g.log.info("File renamed successfully")
+        cmd = f"mv {self.mountpoint}/file {self.mountpoint}/Renamedfile"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Try to perfrom I/O from mount point(This should fail)
-        ret, _, _ = g.run(self.first_client,
-                          "fallocate -l 5G {}/mfile".format(self.mount_point))
-        self.assertTrue(ret,
-                        "Unexpected: Able to do I/O even when disks are "
-                        "filled to min free limit")
-        g.log.info("Expected: Unable to perfrom I/O as min free disk is hit")
+        cmd = f"fallocate -l 5G {self.mountpoint}/mfile"
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0], False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: Able to do I/O even when disks are "
+                            "filled to min free limit")
