@@ -1,155 +1,122 @@
-#  Copyright (C) 2018-2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-Description:
+ Copyright (C) 2018-2020 Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
     Test cases in this module tests mkdir operation with subvol down
 """
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.brick_libs import bring_bricks_offline, \
-     bring_bricks_online, are_bricks_offline, are_bricks_online
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.gluster.glusterfile import file_exists
-from glustolibs.gluster.dht_test_utils import find_hashed_subvol
-from glustolibs.gluster.dht_test_utils import create_brickobjectlist
+# disruptive;dist,dist-rep,dist-disp
+# TODO: NFS
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-replicated', 'distributed', 'distributed-dispersed'],
-          ['glusterfs', 'nfs']])
-class TestMkdirHashdown(GlusterBaseClass):
-    '''
-    test case:
-        - bring down a subvol
-        - create a directory so that it hashes the down subvol
-        - make sure mkdir does not succeed
-    '''
-    # Create Volume and mount according to config file
-    def setUp(self):
+class TestMkdirHashdown(DParentTest):
+
+    def run_test(self, redant):
         """
-        Setup and mount volume or raise ExecutionError
+        Steps:
+        - Create and start a volume
+        - Mount it on a client
+        - Bring down a subvol
+        - Create a directory so that it hashes the down subvol
+        - Make sure mkdir does not succeed
         """
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            g.log.error("Failed to Setup and Mount Volume")
-            raise ExecutionError("Failed to Setup and Mount Volume")
-
-    def test_mkdir_with_subvol_down(self):
-        '''
-        Test mkdir hashed to a down subvol
-        '''
-        # pylint: disable=too-many-locals
-        # pylint: disable=too-many-branches
-        # pylint: disable=too-many-statements
-        # pylint: disable=W0212
-        mount_obj = self.mounts[0]
-        mountpoint = mount_obj.mountpoint
-
         # directory that needs to be created
-        parent_dir = mountpoint + '/parent'
-        child_dir = mountpoint + '/parent/child'
+        parent_dir = f"{self.mountpoint}/parent"
+        child_dir = f"{self.mountpoint}/parent/child"
 
         # get hashed subvol for name "parent"
-        subvols = (get_subvols(self.mnode, self.volname))['volume_subvols']
-        hashed, count = find_hashed_subvol(subvols, "/", "parent")
-        self.assertIsNotNone(hashed, "Could not find hashed subvol")
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        if not subvols:
+            raise Exception("Failed to get the subvols")
+
+        hashed_subvol = redant.find_hashed_subvol(subvols, "", "parent")
+        if not hashed_subvol:
+            raise Exception("Could not find hashed subvol")
+
+        hashed, count = hashed_subvol
 
         # bring target_brick offline
-        bring_bricks_offline(self.volname, subvols[count])
-        ret = are_bricks_offline(self.mnode, self.volname, subvols[count])
-        self.assertTrue(ret, ('Error in bringing down subvolume %s',
-                              subvols[count]))
-        g.log.info('target subvol is offline')
+        redant.bring_bricks_offline(self.vol_name, subvols[count])
+        ret = redant.are_bricks_offline(self.vol_name, subvols[count],
+                                        self.server_list[0])
+        if not ret:
+            raise Exception('Error in bringing down subvolume'
+                            f' {subvols[count]}')
 
         # create parent dir
-        ret, _, err = g.run(self.clients[0], ("mkdir %s" % parent_dir))
-        self.assertNotEqual(ret, 0, ('Expected mkdir of %s to fail with %s',
-                                     parent_dir, err))
-        g.log.info('mkdir of dir %s failed as expected', parent_dir)
+        ret = redant.create_dir(self.mountpoint, "parent",
+                                self.client_list[0], excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected:mkdir of 'parent' should have failed")
 
         # check that parent_dir does not exist on any bricks and client
-        brickobject = create_brickobjectlist(subvols, "/")
-        for brickdir in brickobject:
-            adp = "%s/parent" % brickdir.path
-            bpath = adp.split(":")
-            self.assertTrue((file_exists(brickdir._host, bpath[1])) == 0,
-                            ('Expected dir %s not to exist on servers',
-                             parent_dir))
+        bricklist = redant.create_brickpathlist(subvols, "parent")
+        for brickdir in bricklist:
+            host, bpath = brickdir.split(":")
+            if redant.path_exists(host, bpath):
+                raise Exception("Unexpected: dir 'parent' should not exist on"
+                                " servers")
 
-        for client in self.clients:
-            self.assertTrue((file_exists(client, parent_dir)) == 0,
-                            ('Expected dir %s not to exist on clients',
-                             parent_dir))
-
-        g.log.info('dir %s does not exist on mount as expected', parent_dir)
+        for client in self.client_list:
+            if redant.path_exists(client, parent_dir):
+                raise Exception("Unexpected: dir 'parent' should not exist on"
+                                " clients")
 
         # Bring up the subvols and create parent directory
-        bring_bricks_online(self.mnode, self.volname, subvols[count],
-                            bring_bricks_online_methods=None)
-        ret = are_bricks_online(self.mnode, self.volname, subvols[count])
-        self.assertTrue(ret, ("Error in bringing back subvol %s online",
-                              subvols[count]))
-        g.log.info('Subvol is back online')
+        redant.bring_bricks_online(self.vol_name, self.server_list,
+                                   subvols[count])
+        ret = redant.are_bricks_online(self.vol_name, subvols[count],
+                                       self.server_list[0])
+        if not ret:
+            raise Exception("Error in bringing back subvol online:",
+                            f" {subvols[count]}")
 
-        ret, _, _ = g.run(self.clients[0], ("mkdir %s" % parent_dir))
-        self.assertEqual(ret, 0, ('Expected mkdir of %s to succeed',
-                                  parent_dir))
-        g.log.info('mkdir of dir %s successful', parent_dir)
+        redant.create_dir(self.mountpoint, "parent", self.client_list[0])
 
         # get hash subvol for name "child"
-        hashed, count = find_hashed_subvol(subvols, "parent", "child")
-        self.assertIsNotNone(hashed, "Could not find hashed subvol")
+        hashed_subvol = redant.find_hashed_subvol(subvols, "parent", "child")
+        if not hashed_subvol:
+            raise Exception("Could not find hashed subvol")
+        hashed, count = hashed_subvol
 
         # bring target_brick offline
-        bring_bricks_offline(self.volname, subvols[count])
-        ret = are_bricks_offline(self.mnode, self.volname, subvols[count])
-        self.assertTrue(ret, ('Error in bringing down subvolume %s',
-                              subvols[count]))
-        g.log.info('target subvol is offline')
+        redant.bring_bricks_offline(self.vol_name, subvols[count])
+        ret = redant.are_bricks_offline(self.vol_name, subvols[count],
+                                        self.server_list[0])
+        if not ret:
+            raise Exception('Error in bringing down subvolume'
+                            f' {subvols[count]}')
 
         # create child dir
-        ret, _, err = g.run(self.clients[0], ("mkdir %s" % child_dir))
-        self.assertNotEqual(ret, 0, ('Expected mkdir of %s to fail with %s',
-                                     child_dir, err))
-        g.log.info('mkdir of dir %s failed', child_dir)
+        ret = redant.create_dir(f"{self.mountpoint}/parent", "child",
+                                self.client_list[0], excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected:mkdir of 'child' should have failed")
 
         # check if child_dir exists on any bricks
-        for brickdir in brickobject:
-            adp = "%s/parent/child" % brickdir.path
-            bpath = adp.split(":")
-            self.assertTrue((file_exists(brickdir._host, bpath[1])) == 0,
-                            ('Expected dir %s not to exist on servers',
-                             child_dir))
-        for client in self.clients:
-            self.assertTrue((file_exists(client, child_dir)) == 0)
+        bricklist = redant.create_brickpathlist(subvols, "parent/child")
+        for brickdir in bricklist:
+            host, bpath = brickdir.split(":")
+            if redant.path_exists(host, bpath):
+                raise Exception("Unexpected: dir 'child' should not exist on"
+                                " servers")
 
-        g.log.info('dir %s does not exist on mount as expected', child_dir)
-
-    def tearDown(self):
-
-        # Unmount and cleanup original volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        for client in self.client_list:
+            if redant.path_exists(client, child_dir):
+                raise Exception("Unexpected: dir 'child' should not exist on"
+                                " clients")
