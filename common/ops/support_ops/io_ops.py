@@ -1533,19 +1533,22 @@ class IoOps(AbstractOps):
                         return True
         return False
 
-    def get_dht_linkto_xattr(self, host: str, fqpath: str) -> list:
+    def get_dht_linkto_xattr(self, host: str, fqpath: str,
+                             excep: bool = True) -> list:
         """
         Get the glusterfs.dht.linkto xattr for a file on a brick.
 
         Args:
             host (str): The hostname/ip of the remote system.
             fqpath (str): The fully-qualified path to the file.
+            excep (bool): Whether to bypass the exception handling in
+                          abstract ops.
 
         Returns:
             Return value of get_fattr trusted.glusterfs.dht.linkto call.
         """
         linkto_xattr = self.get_fattr(fqpath, 'trusted.glusterfs.dht.linkto',
-                                      host, encode="text")
+                                      host, encode="text", excep=excep)
 
         return linkto_xattr
 
