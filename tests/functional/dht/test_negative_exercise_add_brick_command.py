@@ -1,188 +1,110 @@
-#  Copyright (C) 2017-2018 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2017-2018 Red Hat, Inc. <http://www.redhat.com>
 
-"""Negative test - Exercise Add-brick command"""
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import (GlusterBaseClass,
-                                                   runs_on)
-# pylint: disable=no-name-in-module
-from glustolibs.gluster.volume_libs import (form_bricks_list_to_add_brick,
-                                            get_subvols, setup_volume,
-                                            cleanup_volume)
-from glustolibs.gluster.brick_ops import add_brick
-from glustolibs.gluster.volume_ops import get_volume_list
-from glustolibs.gluster.exceptions import ExecutionError
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    Negative test - Exercise Add-brick command
+"""
+
+# disruptive;rep,dist,dist-rep,disp,dist-disp
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class ExerciseAddbrickCommand(GlusterBaseClass):
-    """BaseClass for running Negative test - Exercise Add-brick command"""
-    @classmethod
-    def setUpClass(cls):
-        """Upload the necessary scripts to run tests"""
-        # Calling GlusterBaseClass setUpClass
-        cls.get_super_method(cls, 'setUpClass')()
+class TestExerciseAddbrickCommand(DParentTest):
 
-    def setUp(self):
-        """Setup Volume"""
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume Volume
-        g.log.info("Starting to Setup Volume")
-        ret = self.setup_volume()
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume")
-        g.log.info("Successful in Setting up Volume")
-
-    def tearDown(self):
-        """Cleanup Volume"""
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
-
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Unable to delete volume % s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_add_brick_without_volname(self):
+    def run_test(self, redant):
         """Test add-brick command without volume"""
         # Form bricks list for add-brick
-        bricks_list = form_bricks_list_to_add_brick(self.mnode, self.volname,
-                                                    self.servers,
-                                                    self.all_servers_info)
-        cmd = ("gluster volume add-brick %s " % (' '.join(bricks_list)))
-        g.log.info("Adding bricks without specifying volume name")
-        ret, _, _ = g.run(self.mnode, cmd)
-        self.assertTrue(ret, "add-brick is successful")
-        g.log.info("Volume %s: add-brick failed", self.volname)
+        brick_cmd = redant.form_brick_cmd_to_add_brick(self.server_list[0],
+                                                       self.volname,
+                                                       self.server_list,
+                                                       self.brick_roots)
+        cmd = f"gluster volume add-brick {brick_cmd}"
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: Add-brick is successfull")
 
-    def test_add_duplicate_brick(self):
-        """Test add-bricks to the volume which are already part of the volume
+        # Case 2: test_add_duplicate_brick
+        """
+        Test add-bricks to the volume which are already part of the volume
         """
         # Get sub-vols for adding the same bricks to the volume
-        sub_vols = get_subvols(self.mnode, self.volname)['volume_subvols']
-        cmd = ("gluster volume add-brick %s %s " % (self.volname,
-                                                    ' '.join(sub_vols[0])))
-        g.log.info("Adding bricks which are already part of the volume %s ",
-                   self.volname)
-        _, _, err = g.run(self.mnode, cmd)
-        self.assertIn("Brick may be containing or be contained by an existing"
-                      " brick", err, "add-brick is successful")
-        g.log.info("Volume add-brick failed with error %s ", err)
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        cmd = (f"gluster volume add-brick {self.vol_name} "
+               f"{' '.join(subvols[0])}")
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: Add-brick is successfull")
+        err_msg = ("Brick may be containing or be contained by an existing"
+                   " brick")
+        if err_msg not in ret['error_msg']:
+            raise Exception("Unexpected: add-brick is successful without any"
+                            " error")
 
-    def test_add_nested_brick(self):
+        # Case 3: test_add_nested_brick
         """Test add nested bricks to the volume"""
         # Get sub-vols for forming a nested bricks list
-        sub_vol = get_subvols(self.mnode, self.volname)['volume_subvols'][0]
-        nested_bricks_list = [x + '/nested' for x in sub_vol]
-        cmd = ('gluster volume add-brick %s %s ' % (
-            self.volname, (' '.join(nested_bricks_list))))
-        g.log.info("Adding nested bricks to the volume %s ", self.volname)
-        _, _, err = g.run(self.mnode, cmd)
-        self.assertIn("Brick may be containing or be contained by an existing"
-                      " brick", err, "add-brick is successful")
-        g.log.info("Volume add-brick failed with error %s ", err)
+        subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        nested_bricks_list = [f"{x}/nested" for x in subvols]
+        cmd = (f"gluster volume add-brick {self.vol_name} "
+               f"{' '.join(nested_bricks_list)}")
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: Add-brick is successfull")
+        err_msg = ("Brick may be containing or be contained by an existing"
+                   " brick")
+        if err_msg not in ret['error_msg']:
+            raise Exception("Unexpected: add-brick is successful without any"
+                            " error")
 
-    def test_add_brick_non_existent_volume(self):
+        # Case 4: test_add_brick_non_existent_volume
         """Test add-bricks to an non existent volume"""
         # Form bricks list for add-brick
-        bricks_list = form_bricks_list_to_add_brick(self.mnode, self.volname,
-                                                    self.servers,
-                                                    self.all_servers_info)
-        cmd = ("gluster volume add-brick novolume %s " %
-               (' '.join(bricks_list)))
-        g.log.info("Trying to add-bricks to a non-existent volume")
-        _, _, err = g.run(self.mnode, cmd)
-        self.assertIn("does not exist", err, "add-brick is successful")
-        g.log.info("Volume add-brick failed with error %s ", err)
+        brick_cmd = redant.form_brick_cmd_to_add_brick(self.server_list[0],
+                                                       self.volname,
+                                                       self.server_list,
+                                                       self.brick_roots)
+        cmd = f"gluster volume add-brick novolume {brick_cmd}"
+        ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: Add-brick is successfull")
+        err_msg = "does not exist"
+        if err_msg not in ret['error_msg']:
+            raise Exception("Unexpected: add-brick is successful without any"
+                            " error")
 
-    def test_add_brick_peer_not_in_cluster(self):
-        """ Test add bricks to the volume from the host which is not
+        # Case 5: test_add_brick_peer_not_in_cluster
+        """
+        Test add bricks to the volume from the host which is not
         in the cluster.
         """
         # Form bricks list for add-brick
-        bricks_list = get_subvols(self.mnode,
-                                  self.volname)['volume_subvols'][0]
+        bricks_list = redant.get_subvols(self.vol_name,
+                                         self.server_list[0])[0]
         for (i, item) in enumerate(bricks_list):
             server, _ = item.split(":")
             item.replace(server, "abc.def.ghi.jkl")
             bricks_list[i] = item.replace(server, "abc.def.ghi.jkl")
-        g.log.info("Adding bricks to the volume %s from the host which is not"
-                   " in the cluster", self.volname)
-        _, _, err = add_brick(self.mnode, self.volname, bricks_list)
-        self.assertIn("Pre-validation failed on localhost", err,
-                      "add-brick is successful")
-        g.log.info("Volume add-brick failed with error %s ", err)
 
-
-@runs_on([['replicated', 'distributed', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class AddBrickAlreadyPartOfAnotherVolume(GlusterBaseClass):
-    """Base class for running test add-brick which is already part of an
-    another volume
-    """
-    def tearDown(self):
-        """Cleanup Volume"""
-        # clean up all volumes
-        vol_list = get_volume_list(self.mnode)
-        if vol_list is None:
-            raise ExecutionError("Failed to get the volume list")
-
-        for volume in vol_list:
-            ret = cleanup_volume(self.mnode, volume)
-            if not ret:
-                raise ExecutionError("Unable to delete volume %s" % volume)
-            g.log.info("Volume deleted successfully : %s", volume)
-
-        self.get_super_method(self, 'tearDown')()
-
-    def test_add_brick_already_part_of_another_volume(self):
-        """ Test adding bricks to the volume which are already part of another
-        volume.
-        """
-        # create and start a volume
-        self.volume['name'] = "existing_volume"
-        self.volname = "existing_volume"
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start volume")
-        g.log.info("Volume created and started successfully")
-        sub_vols = get_subvols(self.mnode, self.volname)['volume_subvols']
-
-        # create and start a new volume
-        self.volume['name'] = "new_volume"
-        self.volname = "new_volume"
-        ret = setup_volume(self.mnode, self.all_servers_info, self.volume)
-        self.assertTrue(ret, "Failed to create and start volume")
-        g.log.info("Volume created and started successfully")
-        cmd = ("gluster volume add-brick %s %s " % (self.volname,
-                                                    ' '.join(sub_vols[0])))
-        g.log.info("Adding bricks to volume %s which are already part of an"
-                   "another volume", self.volname)
-        _, _, err = g.run(self.mnode, cmd)
-        self.assertIn("Brick may be containing or be contained by an existing"
-                      " brick", err, "add-brick is successful")
-        g.log.info("Volume add-brick failed with error %s ", err)
+        brick_str = " ".join(bricks_list)
+        ret = redant.add_brick(self.vol_name, brick_str, self.server_list[0],
+                               excep=False)
+        if ret['error_code'] == 0:
+            raise Exception("Unexpected: add-brick is successful")
+        err_msg = "Pre-validation failed on localhost"
+        if err_msg not in ret['error_msg']:
+            raise Exception("Unexpected: add-brick successful without "
+                            "any error")
