@@ -21,6 +21,7 @@
 
 # disruptive;dist,dist-rep,dist-disp
 # TODO: NFS
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -85,6 +86,10 @@ class TestMkdirHashdown(DParentTest):
         if not ret:
             raise Exception("Error in bringing back subvol online:",
                             f" {subvols[count]}")
+
+        # Adding sleep, as sometimes the mountpoint it not yet connected
+        # after the bricks are online
+        sleep(5)
 
         redant.create_dir(self.mountpoint, "parent", self.client_list[0])
 
