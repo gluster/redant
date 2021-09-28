@@ -1,72 +1,33 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-131 USA.
-
 """
+  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along`
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-131 USA.
+
 Description:
     Rebalance with one brick down in replica
 """
+# disruptive;dist-arb,dist-rep,dist-disp
 
 from random import choice
-
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.rebalance_ops import (rebalance_start,
-                                              wait_for_rebalance_to_complete)
-from glustolibs.gluster.volume_libs import (
-    expand_volume,
-    log_volume_info_and_status,
-    volume_start)
-from glustolibs.gluster.brick_libs import (
-    get_all_bricks,
-    bring_bricks_offline)
-from glustolibs.gluster.heal_libs import monitor_heal_completion
-from glustolibs.io.utils import (
-    wait_for_io_to_complete,
-    collect_mounts_arequal)
-from glustolibs.misc.misc_libs import upload_scripts
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-arbiter', 'distributed-replicated',
-           'distributed-dispersed'], ['glusterfs']])
-class TestRebalanceWithBrickDown(GlusterBaseClass):
+class TestRebalanceWithBrickDown(DParentTest):
     """ Rebalance with brick down in replica"""
 
-    def setUp(self):
-        """Setup Volume"""
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
-        self.all_mounts_procs = []
-
-        # Setup and mount the volume
-        g.log.info("Starting to setup and mount the volume")
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup Volume and Mount it")
-
-        # Upload IO script for running IO on mounts
-        self.script_upload_path = ("/usr/share/glustolibs/io/scripts/"
-                                   "file_dir_ops.py")
-        ret = upload_scripts(self.mounts[0].client_system,
-                             self.script_upload_path)
-        if not ret:
-            raise ExecutionError("Failed to upload IO scripts to clients")
-
-    def test_rebalance_with_brick_down(self):
+    def run_test(self, redant):
         """
         Rebalance with brick down in replica
         - Create a Replica volume.
@@ -77,95 +38,92 @@ class TestRebalanceWithBrickDown(GlusterBaseClass):
         - Bring back the brick which was down.
         - After self heal happens, all the files should be present.
         """
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
         # Log the volume info and status before brick is down.
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Bring one fo the bricks offline
-        brick_list = get_all_bricks(self.mnode, self.volname)
-        ret = bring_bricks_offline(self.volname, choice(brick_list))
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        ret = redant.bring_bricks_offline(self.vol_name, choice(brick_list))
+        if not ret:
+            raise Exception("Error in bringing down brick")
 
         # Log the volume info and status after brick is down.
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Create files at mountpoint.
-        cmd = (
-            "/usr/bin/env python %s create_files "
-            "-f 2000 --fixed-file-size 1k --base-file-name file %s"
-            % (self.script_upload_path, self.mounts[0].mountpoint))
-        proc = g.run_async(
-            self.mounts[0].client_system, cmd, user=self.mounts[0].user)
-        self.all_mounts_procs.append(proc)
+        proc = redant.create_files(num_files=2000,
+                                   fix_fil_size="1k",
+                                   path=self.mountpoint,
+                                   node=self.client_list[0])
 
         # Wait for IO to complete.
-        self.assertTrue(wait_for_io_to_complete(self.all_mounts_procs,
-                                                self.mounts[0]),
-                        "IO failed on some of the clients")
-        g.log.info("IO completed on the clients")
+        ret = redant.wait_for_io_to_complete(proc, self.mounts)
+        if not ret:
+            raise Exception("IO failed on some of the clients")
 
         # Compute the arequal checksum before bringing all bricks online
-        arequal_before_all_bricks_online = collect_mounts_arequal(self.mounts)
+        before_all_bricks_online = redant.collect_mounts_arequal(self.mounts)
 
         # Log the volume info and status before expanding volume.
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Expand the volume.
-        ret = expand_volume(self.mnode, self.volname, self.servers,
-                            self.all_servers_info)
-        self.assertTrue(ret, ("Failed to expand the volume %s", self.volname))
-        g.log.info("Expanding volume is successful on "
-                   "volume %s", self.volname)
+        ret = redant.expand_volume(self.server_list[0], self.vol_name,
+                                   self.server_list, self.brick_roots,
+                                   force=True)
+        if not ret:
+            raise Exception(f"Failed to add brick on volume {self.vol_name}")
 
         # Log the voluem info after expanding volume.
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Start Rebalance.
-        ret, _, _ = rebalance_start(self.mnode, self.volname)
-        self.assertEqual(ret, 0, ("Failed to start rebalance on the volume "
-                                  "%s", self.volname))
-        g.log.info("Successfully started rebalance on the volume %s",
-                   self.volname)
+        redant.rebalance_start(self.vol_name, self.server_list[0])
 
         # Wait for rebalance to complete
-        ret = wait_for_rebalance_to_complete(self.mnode, self.volname)
-        self.assertTrue(ret, ("Rebalance is not yet complete on the volume "
-                              "%s", self.volname))
-        g.log.info("Rebalance is successfully complete on the volume %s",
-                   self.volname)
+        ret = redant.wait_for_rebalance_to_complete(self.vol_name,
+                                                    self.server_list[0],
+                                                    timeout=600)
+        if not ret:
+            raise Exception("Rebalance is not yet complete on the volume "
+                            f"{self.vol_name}")
 
         # Log the voluem info and status before bringing all bricks online
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Bring all bricks online.
-        ret, _, _ = volume_start(self.mnode, self.volname, force=True)
-        self.assertEqual(ret, 0, "Not able to start volume with force option")
-        g.log.info("Volume start with force option successful.")
+        redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Log the volume info and status after bringing all beicks online
-        log_volume_info_and_status(self.mnode, self.volname)
+        if not (redant.log_volume_info_and_status(self.server_list[0],
+                self.vol_name)):
+            raise Exception("Logging volume info and status failed "
+                            f"on volume {self.vol_name}")
 
         # Monitor heal completion.
-        ret = monitor_heal_completion(self.mnode, self.volname)
-        self.assertTrue(ret, "heal has not yet completed")
-        g.log.info("Self heal completed")
+        if not redant.monitor_heal_completion(self.server_list[0],
+                                              self.vol_name):
+            raise Exception("Heal is not yet completed")
 
         # Compute the arequal checksum after all bricks online.
-        arequal_after_all_bricks_online = collect_mounts_arequal(self.mounts)
+        after_all_bricks_online = redant.collect_mounts_arequal(self.mounts)
 
         # Comparing arequal checksum before and after the operations.
-        self.assertEqual(arequal_before_all_bricks_online,
-                         arequal_after_all_bricks_online,
-                         "arequal checksum is NOT MATCHING")
-        g.log.info("arequal checksum is SAME")
-
-    def tearDown(self):
-        """tear Down callback"""
-        # Unmount Volume and cleanup.
-        g.log.info("Starting to Unmount Volume and Cleanup")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Filed to Unmount Volume and "
-                                 "Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and cleanup.")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        if before_all_bricks_online != after_all_bricks_online:
+            raise Exception("arequal checksum is NOT MATCHNG")
