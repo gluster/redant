@@ -122,6 +122,8 @@ class TestExerciseAddbrickCommand(DParentTest):
             raise Exception("Expected new volume size to be greater than old")
 
         # Reset volume config
+        redant.volume_start(self.vol_name, self.server_list[0], force=True)
+
         ret = redant.shrink_volume(self.server_list[0], self.vol_name,
                                    subvol_num=1, force=True)
         if not ret:

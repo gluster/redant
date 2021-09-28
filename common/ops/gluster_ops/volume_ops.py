@@ -681,6 +681,28 @@ class VolumeOps(AbstractOps):
             self.logger.info("Successfully removed bricks "
                              f"{bricks_list_to_remove} from the volume "
                              f"{volname} with force option")
+
+            # Delete the removed bricks
+            if delete_bricks:
+                ret = self.delete_bricks(bricks_list_to_remove)
+                if not ret:
+                    return False
+
+            dist_count = None
+            if 'distribute_count' in kwargs:
+                dist_count = int(kwargs['distribute_count'])
+                self.es.set_vol_type_param(volname, 'dist_count', -dist_count)
+
+            rep_count = None
+            if replica_count is not None:
+                rep_count = current_replica_count - replica_count
+                self.es.set_vol_type_param(volname, 'replica_count',
+                                           -rep_count)
+
+            if dist_count is None and rep_count is None:
+                dist_count = 1
+                self.es.set_vol_type_param(volname, 'dist_count', -dist_count)
+
             return True
 
         # remove-brick start
