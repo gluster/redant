@@ -72,8 +72,8 @@ class TestOneBrickFullAddBrickRebalance(DParentTest):
         fname = "abc"
 
         # Create directories in hierarchy
-        dirp = "/dir1/dir2/"
-        path = f"{self.mountpoint}{dirp}"
+        dirp = "dir1/dir2/"
+        path = f"{self.mountpoint}/{dirp}"
         redant.create_dir(self.mountpoint, "dir1/dir2", self.client_list[0])
 
         for _ in range(0, usable_size):
@@ -117,9 +117,9 @@ class TestOneBrickFullAddBrickRebalance(DParentTest):
         # completed we shouldn't be seeing any linkto files
         for brick in bricks:
             node, path = brick.split(":")
-            path += dirp
+            path = f"{path}/{dirp}"
             list_of_files = redant.get_dir_contents(path, node)
-            if not list_of_files:
+            if list_of_files is None:
                 raise Exception("Unable to get files")
 
             for filename in list_of_files:
