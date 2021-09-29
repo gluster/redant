@@ -62,12 +62,8 @@ class TestAddBrickRebalanceFilesWithHoles(DParentTest):
             raise Exception("Rebalance is not yet complete on the volume "
                             f"{self.vol_name}")
 
-        # Clear mountpoint and shrink volume
-        cmd = f"rm -rf {self.mountpoint}/*"
-        redant.execute_abstract_op_node(cmd, self.client_list[0])
-
-        if not redant.shrink_volume(self.server_list[0], self.vol_name):
-            raise Exception("Failed to shrink volume")
+        # Cleanup volume
+        redant.cleanup_volumes(self.server_list, self.vol_name)
 
         # Case 2: TestRemoveBrickRebalanceFilesWithHoles
         volume_types = ["dist-rep", "dist-arb", "dist-disp", "dist"]
@@ -79,6 +75,15 @@ class TestAddBrickRebalanceFilesWithHoles(DParentTest):
             3. After the file creation is complete, remove-brick from volume.
             4. Wait for remove-brick to complete.
             """
+            self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                     self.vol_type_inf[self.volume_type],
+                                     self.server_list, self.brick_roots)
+            self.mountpoint = (f"/mnt/{self.vol_name}")
+            self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                                 self.client_list[0])
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, self.client_list[0])
+
             # On the volume root, create files with holes
             cmd = (f"cd {self.mountpoint}; for i in {{1..2000}}; do dd"
                    " if=/dev/urandom of=file_with_holes$i bs=1M count=1"
