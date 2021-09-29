@@ -1630,9 +1630,9 @@ class IoOps(AbstractOps):
             cmd = (f"cd {mountpoint}; exec 30<> file_openfd ; sleep {time};"
                    "echo 'xyz' >&30")
         else:
-            cmd = (f"cd {mountpoint}; for i in `seq {start_range} "
-                   f"{end_range}`; do eval 'exec $i<>file_openfd$i'; "
-                   f"sleep {time}; echo 'Write to open FD' >&$i; done")
+            cmd = (f'cd {mountpoint}; for i in `seq {start_range} '
+                   f'{end_range}`; do eval "exec $i<> file_openfd$i"; '
+                   f'sleep {time}; echo "Write to open FD" >&$i; done')
 
         return self.execute_command_async(cmd, client)
 
