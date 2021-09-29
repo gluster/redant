@@ -20,10 +20,26 @@
 """
 
 # disruptive;dist,rep,arb,disp
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestOpenFileMigration(DParentTest):
+
+    def terminate(self):
+        """
+        Wait for IO to complete, if the TC fails midway
+        """
+        try:
+            if self.is_io_running:
+                ret = self.redant.wait_till_async_command_ends(self.proc)
+                if ret['error_code'] != 0:
+                    raise Exception("Write on open fd has not completed yet")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def run_test(self, redant):
         """
@@ -39,12 +55,16 @@ class TestOpenFileMigration(DParentTest):
         8) Check for any data loss during rebalance.
         9) Check if rebalance has any failures.
         """
+        self.is_io_running = False
+
         # Create files and open fd for the files on mount point
         cmd = (f"cd {self.mountpoint}; for i in `seq 261 1261`;do touch "
                "testfile$i; done")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
-        proc = redant.open_file_fd(self.mountpoint, 2, self.client_list[0],
-                                   start_range=301, end_range=400)
+        self.proc = redant.open_file_fd(self.mountpoint, 2,
+                                        self.client_list[0], start_range=301,
+                                        end_range=400)
+        self.is_io_running = True
 
         # Calculate file count for the mount-point
         cmd = f"ls -lR {self.mountpoint}/testfile* | wc -l"
@@ -67,10 +87,11 @@ class TestOpenFileMigration(DParentTest):
             raise Exception(f"Rebalance failed on volume {self.vol_name}")
 
         # Close connection and check if write on open fd has completed
-        ret = redant.wait_till_async_command_ends(proc)
+        ret = redant.wait_till_async_command_ends(self.proc)
         if ret['error_code'] != 0:
             raise Exception("Write on open fd"
                             " has not completed yet")
+        self.is_io_running = False
 
         # Calculate file count for the mount-point
         cmd = f"ls -lR {self.mountpoint}/testfile* | wc -l"
