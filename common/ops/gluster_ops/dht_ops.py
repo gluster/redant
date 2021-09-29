@@ -7,6 +7,7 @@ hashing, layout and so on.
 
 import os
 import ctypes
+import socket
 import common.ops.gluster_ops.constants as c
 from common.ops.abstract_ops import AbstractOps
 
@@ -31,6 +32,7 @@ class DHTOps(AbstractOps):
         command = (f"getfattr -n trusted.glusterfs.dht -e hex {fqpath} "
                    "2> /dev/null | grep -i trusted.glusterfs.dht | "
                    "cut -d= -f2")
+        host = socket.gethostbyname(host)
         ret = self.execute_abstract_op_node(command, host, False)
         if ret['error_code'] != 0:
             self.logger.error("Failed to get the hash range for the brick."
@@ -74,6 +76,7 @@ class DHTOps(AbstractOps):
             None on fail.
         """
         host, _ = brickdir_path.split(':')
+        host = socket.gethostbyname(host)
         ver = self.get_gluster_version(host)
         ret = self.get_volume_type_from_brickpath(brickdir_path)
         if ret in ('Replicate', 'Disperse', 'Arbiter') and float(ver) >= 6.0:
@@ -230,6 +233,7 @@ class DHTOps(AbstractOps):
         except OSError:
             cmd = ("python3 /usr/share/redant/script/compute_hash.py "
                    f"{filename}")
+            host = socket.gethostbyname(host)
             ret = self.execute_abstract_op_node(cmd, host, False)
             if ret['error_code'] != 0:
                 self.logger.error(f"Unable to run the script on node: {host}")
