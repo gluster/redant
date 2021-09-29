@@ -47,16 +47,16 @@ class TestRebalancePreserveUserPermissions(DParentTest):
         # check owner and group of random file
         fpath = f"{self.mountpoint}/d1/f.1"
         stat_dict = self.redant.get_file_stat(self.client_list[0], fpath)
-        if stat_mp_dict['error_code'] != 0:
+        if stat_dict['error_code'] != 0:
             raise Exception(f"stat on {fpath} failed")
 
-        if stat_mp_dict['msg']['user'] != self.user:
+        if stat_dict['msg']['user'] != self.user:
             raise Exception(f"Expected {self.user} but "
-                            f"found {stat_mp_dict['msg']['user']}")
+                            f"found {stat_dict['msg']['user']}")
 
-        if stat_mp_dict['msg']['group'] != self.user:
+        if stat_dict['msg']['group'] != self.user:
             raise Exception(f"Expected {self.user} but "
-                            f"found {stat_mp_dict['msg']['group']}")
+                            f"found {stat_dict['msg']['group']}")
 
     def _testcase(self, number_of_expands=1):
         """
