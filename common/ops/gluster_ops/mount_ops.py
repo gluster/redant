@@ -14,7 +14,8 @@ class MountOps(AbstractOps):
     """
 
     def volume_mount(self, server: str, volname: str,
-                     path: str, node: str = None, excep: bool = True):
+                     path: str, node: str = None, excep: bool = True,
+                     option: str = None):
         """
         Mounts the gluster volume to the client's filesystem.
         Args:
@@ -27,6 +28,7 @@ class MountOps(AbstractOps):
                           mount command fails. If set to False
                           the exception is bypassed and value from remote
                           executioner is returned. Defaults to True
+            option (str): command-line options specified  by the -o argument
 
         Returns:
             ret: A dictionary consisting
@@ -39,7 +41,10 @@ class MountOps(AbstractOps):
 
         """
 
-        cmd = f"mount.glusterfs {server}:/{volname} {path}"
+        if option:
+            cmd = f"mount -t glusterfs -o {option} {server}:/{volname} {path}"
+        else:
+            cmd = f"mount.glusterfs {server}:/{volname} {path}"
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
         if not excep and ret['error_code'] != 0:
