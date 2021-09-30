@@ -178,6 +178,8 @@ def _obtain_stat(resultDict: dict) -> dict:
         tempDict['dCount'] = dCount
         tempDict['ndCount'] = ndCount
         tempDict['totalCount'] = dCount + ndCount
+        tempDict['passCount'] = dPass + ndPass
+        tempDict['failCount'] = tempDict['totalCount'] - tempDict['passCount']
         tempDict['dSkipCount'] = dSkipCount
         tempDict['ndSkipCount'] = ndSkipCount
         tempDict['dRuns'] = dRuns
@@ -253,6 +255,8 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
         {'ndSkipCount': 'Non Disruptive Tests Skipped'},
         {'runCount': 'Tests Ran'},
         {'skipCount': 'Tests Skipped'},
+        {'passCount': 'Tests Passed'},
+        {'failCount': 'Tests Failed'},
         {'totalCount': 'Total Tests'},
         {'dPass': 'Disruptive Tests Pass Percentage'},
         {'ndPass': 'Non Disruptive Tests Pass Percentage'},
@@ -332,6 +336,8 @@ def _data_to_pretty_tables(statDict: dict, resultDict: dict,
         {'ndSkipCount': 'Non Disruptive Tests Skipped'},
         {'runCount': 'Tests Ran'},
         {'skipCount': 'Tests Skipped'},
+        {'passCount': 'Tests Passed'},
+        {'failCount': 'Tests Failed'},
         {'totalCount': 'Total Tests'},
         {'dPass': 'Disruptive Tests Pass Percentage'},
         {'ndPass': 'Non Disruptive Tests Pass Percentage'},
