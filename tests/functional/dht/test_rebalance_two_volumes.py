@@ -24,15 +24,6 @@ from tests.d_parent_test import DParentTest
 
 class TestRebalanceTwoVolumes(DParentTest):
 
-    def terminate(self):
-        try:
-            self.redant.cleanup_volume(self.server_list, self.second_vol_name)
-        except Exception as error:
-            tb = traceback.format_exc()
-            self.redant.logger.error(error)
-            self.redant.logger.error(tb)
-        super().terminate()
-
     def run_test(self, redant):
         """
         Test case:
@@ -66,7 +57,7 @@ class TestRebalanceTwoVolumes(DParentTest):
         self.redant.execute_abstract_op_node("mkdir -p "
                                              f"{self.second_mountpoint}",
                                              self.client_list[0])
-        self.redant.volume_mount(self.server_list[0], self.vol_name,
+        self.redant.volume_mount(self.server_list[0], self.second_vol_name,
                                  self.second_mountpoint, self.client_list[0])
 
         self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
