@@ -88,7 +88,7 @@ class TestRebalanceWithAclSetToFiles(DParentTest):
                 raise Exception("Failed to set acl on files")
 
         # Collect arequal on mount point and check acl value
-        arequal_checksum_before = redant.collect_mounts_arequal(self.mounts[0])
+        arequal_checksum_before = redant.collect_mounts_arequal(self.mounts)
         self._check_acl_set_to_files()
 
         # Add brick to volume
@@ -114,6 +114,6 @@ class TestRebalanceWithAclSetToFiles(DParentTest):
         self._check_acl_set_to_files()
 
         # Check for data loss by comparing arequal before and after ops
-        arequal_checksum_after = redant.collect_mounts_arequal(self.mounts[0])
+        arequal_checksum_after = redant.collect_mounts_arequal(self.mounts)
         if arequal_checksum_before != arequal_checksum_after:
             raise Exception("arequal checksum in NOT equal")

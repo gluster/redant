@@ -1655,7 +1655,7 @@ class IoOps(AbstractOps):
 
         return ret['msg'][0]
 
-    def set_acl(self, host, rule, fqpath):
+    def set_acl(self, host: str, rule: str, fqpath: str):
         """Set acl rule on a specific file
 
         Args:
@@ -1674,7 +1674,7 @@ class IoOps(AbstractOps):
 
         return True
 
-    def get_acl(self, host, path, filename):
+    def get_acl(self, host: str, path: str, filename: str):
         """Get all acl rules set to a file
 
         Args:
