@@ -77,3 +77,4 @@ excluded_tests:
     - tests/functional/arbiter/test_afr_read_write.py # Cat command is hanging in CI
     - tests/functional/dht/test_add_brick_rebalance_with_self_heal_in_progress.py # Requires downstream RHGS
     - tests/functional/dht/test_wipe_out_directory_permissions.py # Fails in upstream. Succeeds in downstream env
+    - tests/functional/dht/test_rebalance_rename.py # Skipping due to bz 1755834
