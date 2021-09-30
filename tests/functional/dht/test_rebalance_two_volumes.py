@@ -17,7 +17,6 @@
 """
 # disruptive;dist,dist-rep
 
-import traceback
 from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
