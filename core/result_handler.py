@@ -178,13 +178,13 @@ def _obtain_stat(resultDict: dict) -> dict:
         tempDict['dCount'] = dCount
         tempDict['ndCount'] = ndCount
         tempDict['totalCount'] = dCount + ndCount
-        tempDict['passCount'] = dPass + ndPass
-        tempDict['failCount'] = tempDict['totalCount'] - tempDict['passCount']
         tempDict['dSkipCount'] = dSkipCount
         tempDict['ndSkipCount'] = ndSkipCount
         tempDict['dRuns'] = dRuns
         tempDict['ndRuns'] = ndRuns
         tempDict['totalRuns'] = dRuns + ndRuns
+        tempDict['passCount'] = dPass + ndPass
+        tempDict['failCount'] = tempDict['totalRuns'] - tempDict['passCount']
         tempDict['skipCount'] = dSkipCount + ndSkipCount
         if tempDict['totalRuns'] == 0:
             tempDict['runCount'] = 0
