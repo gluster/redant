@@ -1654,3 +1654,48 @@ class IoOps(AbstractOps):
             return None
 
         return ret['msg'][0]
+
+    def set_acl(self, host: str, rule: str, fqpath: str):
+        """Set acl rule on a specific file
+
+        Args:
+            host (str): The hostname/ip of the remote system.
+            fqpath (str): The fully-qualified path to the file.
+            rule(str): The acl rule to be set on the file.
+
+        Returns:
+            (bool): True if command successful else False.
+        """
+        cmd = f"setfacl -m {rule} {fqpath}"
+        ret = self.execute_abstract_op_node(cmd, host, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Failed to set acl rule on {fqpath}")
+            return False
+
+        return True
+
+    def get_acl(self, host: str, path: str, filename: str):
+        """Get all acl rules set to a file
+
+        Args:
+        host(str): Host on which the command is executed.
+        path (str): The fully-qualified path to the dir where file is present.
+        filename(str): Name of the file for which rules have to be fetched.
+
+        Returns:
+        (dict): A dictionary with the formatted output of the command.
+        (None): In case of failures
+
+        Example:
+        >>> get_acl('dhcp35-4.lab.eng.blr.redhat.com', '/root/', 'file')
+        ['# file: file1\n', '# owner: root\n', '# group: root\n',
+         'user::rw-\n', 'user:joker:rwx\n', 'group::r--\n',
+         'mask::rwx\n', 'other::r--\n', '\n']
+        """
+        cmd = f"cd {path};getfacl {filename}"
+        ret = self.execute_abstract_op_node(cmd, host, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Failed to get acl {filename}")
+            return None
+
+        return ret
