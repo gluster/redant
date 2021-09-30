@@ -64,7 +64,9 @@ class TestRebalanceValidation(DParentTest):
         ret = redant.get_all_bricks(self.vol_name, self.server_list[0])
         list_of_servers_used = []
         for brick in ret:
-            list_of_servers_used.append(brick.split(":")[0])
+            host = brick.split(":")[0]
+            if host not in list_of_servers_used:
+                list_of_servers_used.append(host)
 
         # Form a new list of servers without mnode in it to prevent mnode
         # from glusterd failure
