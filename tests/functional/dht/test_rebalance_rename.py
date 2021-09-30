@@ -33,11 +33,6 @@ class TestRenameDuringRebalance(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         self.is_io_running = False
-
-        # Skipping due to bz 1755834
-        self.TEST_RES[0] = None
-        raise Exception("Skipping due to bz 1755834")
-
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
