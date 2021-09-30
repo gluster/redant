@@ -6,7 +6,7 @@ from the test case.
 # pylint: disable=too-many-lines
 
 from time import sleep
-
+import socket
 from common.ops.abstract_ops import AbstractOps
 
 
@@ -979,6 +979,7 @@ class VolumeOps(AbstractOps):
         path_info = (brick_path_info[:-2] if brick_path_info.endswith("//")
                      else brick_path_info[:-1])
 
+        host = socket.gethostbyname(host)
         volume_list = self.get_volume_list(host)
         for volume in volume_list:
             brick_list = self.get_all_bricks(volume, host)
