@@ -1,83 +1,37 @@
-#  Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-Description:
+ Copyright (C) 2017-2020 Red Hat, Inc. <http://www.redhat.com>
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
     Test cases in this module tests DHT Rename directory
 """
 
-from glusto.core import Glusto as g
-
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.constants import FILETYPE_DIRS
-from glustolibs.gluster.constants import \
-    TEST_FILE_EXISTS_ON_HASHED_BRICKS as FILE_ON_HASHED_BRICKS
-from glustolibs.gluster.constants import \
-    TEST_LAYOUT_IS_COMPLETE as LAYOUT_IS_COMPLETE
-from glustolibs.gluster.dht_test_utils import validate_files_in_dir
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.glusterfile import file_exists, move_file
+# disruptive;dist,rep,arb.disp,dist-rep,dist-disp,dist-arb
+from common.ops.gluster_ops.constants import \
+    (FILETYPE_DIRS, TEST_LAYOUT_IS_COMPLETE,
+     TEST_FILE_EXISTS_ON_HASHED_BRICKS)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-replicated', 'replicated', 'distributed',
-           'dispersed', 'distributed-dispersed', 'arbiter',
-           'distributed-arbiter'],
-          ['glusterfs']])
-class TestDHTRenameDirectory(GlusterBaseClass):
-    """DHT Tests - rename directory
-    Scenarios:
-    1 - Rename directory when destination is not present
-    2 - Rename directory when destination is present
-    """
+class TestDHTRenameDirectory(DParentTest):
 
-    def setUp(self):
+    def _create_files(self, host, root, files, content):
         """
-        Setup and mount volume or raise ExecutionError
-        """
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            g.log.error("Failed to Setup and Mount Volume")
-            raise ExecutionError("Failed to Setup and Mount Volume")
-
-        self.files = (
-            'a.txt',
-            'b.txt',
-            'sub_folder/c.txt',
-            'sub_folder/d.txt'
-        )
-
-    @classmethod
-    def create_files(cls, host, root, files, content):
-        """This method is responsible to create file structure by given
+        This method is responsible to create file structure by given
         sequence with the same content for all of the files
-        :param host: Remote host
-        :param root: root file directory
-        :param files: Sequence of files
-        :param content: Content for all of the files
-        :type host: str
-        :type root: str
-        :type files: list or tuple or set
-        :type content: str
-        :rtype host: str
-        :return: True on success / False on error
-        :rtype: boolean
         """
         for item in files:
             dir_name = root
@@ -85,87 +39,99 @@ class TestDHTRenameDirectory(GlusterBaseClass):
             if item.find('/') != -1:
                 folders_tree = "/".join(item.split('/')[:-1])
                 file_name = item[-1]
-                dir_name = '{root}/{folders_tree}'.format(
-                    root=root, folders_tree=folders_tree)
-                mkdir(host, dir_name, parents=True)
-            cmd = 'echo "{content}" > {root}/{file}'.format(root=dir_name,
-                                                            file=file_name,
-                                                            content=content)
-            ret, _, _ = g.run(host, cmd)
-            if ret != 0:
-                g.log.error('Error on file creation %s', cmd)
+                dir_name = f'{root}/{folders_tree}'
+                cmd = f"mkdir -p {dir_name}"
+                self.redant.execute_abstract_op_node(cmd, host)
+            cmd = f'echo "{content}" > {dir_name}/{file_name}'
+            ret = self.redant.execute_abstract_op_node(cmd, host, False)
+            if ret['error_code'] != 0:
+                self.redant.logger.error("Error on file creation")
                 return False
         return True
 
-    def test_rename_directory_no_destination_folder(self):
-        """Test rename directory with no destination folder"""
+    def run_test(self, redant):
+        """
+        Case 1: Test rename directory with no destination folder
+        Steps:
+        - Create and start a volume
+        - Mount it on client
+        - Validate LAYOUT
+        - Create source folder on mountpoint
+        - Create files and directories under the source folder
+        - Validate files on HASHED_BRICKS
+        - Check if destination dir exists
+        - Rename source folder to destination dir
+        - Vaildate the presence of src and dst dirs on bricks
+        """
+        self.files = (
+            'a.txt',
+            'b.txt',
+            'sub_folder/c.txt',
+            'sub_folder/d.txt'
+        )
         dirs = {
             'initial': '{root}/folder_{client_index}',
             'new_folder': '{root}/folder_renamed{client_index}'
         }
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         for mount_index, mount_obj in enumerate(self.mounts):
-            client_host = mount_obj.client_system
-            mountpoint = mount_obj.mountpoint
+            client_host = mount_obj['client']
+            mountpoint = mount_obj['mountpath']
+
             initial_folder = dirs['initial'].format(
-                root=mount_obj.mountpoint,
+                root=mountpoint,
                 client_index=mount_index
             )
 
-            ret = validate_files_in_dir(client_host, mountpoint,
-                                        test_type=LAYOUT_IS_COMPLETE,
-                                        file_type=FILETYPE_DIRS)
-            self.assertTrue(ret, "Expected - Layout is complete")
-            g.log.info('Layout is complete')
+            ret = (redant.validate_files_in_dir(client_host, mountpoint,
+                   test_type=TEST_LAYOUT_IS_COMPLETE,
+                   file_type=FILETYPE_DIRS))
+            if not ret:
+                raise Exception("Expected - Layout is complete")
 
             # Create source folder on mount point
-            self.assertTrue(mkdir(client_host, initial_folder),
-                            'Failed creating source directory')
-            self.assertTrue(file_exists(client_host, initial_folder))
-            g.log.info('Created source directory %s on mount point %s',
-                       initial_folder, mountpoint)
+            cmd = f"mkdir -p {initial_folder}"
+            redant.execute_abstract_op_node(cmd, client_host)
 
             # Create files and directories
-            ret = self.create_files(client_host, initial_folder, self.files,
-                                    content='Textual content')
+            ret = self._create_files(client_host, initial_folder, self.files,
+                                     content='Textual content')
+            if not ret:
+                raise Exception('Unable to create files on mount point')
 
-            self.assertTrue(ret, 'Unable to create files on mount point')
-            g.log.info('Files and directories are created')
-
-            ret = validate_files_in_dir(client_host, mountpoint,
-                                        test_type=FILE_ON_HASHED_BRICKS)
-            self.assertTrue(ret, "Expected - Files and dirs are stored "
-                            "on hashed bricks")
-            g.log.info('Files and dirs are stored on hashed bricks')
+            ret = (redant.validate_files_in_dir(client_host, mountpoint,
+                   test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS))
+            if not ret:
+                raise Exception("Expected - Files and dirs are stored "
+                                "on hashed bricks")
 
             new_folder_name = dirs['new_folder'].format(
                 root=mountpoint,
                 client_index=mount_index
             )
             # Check if destination dir does not exist
-            self.assertFalse(file_exists(client_host, new_folder_name),
-                             'Expected New folder name should not exists')
-            # Rename source folder
-            ret = move_file(client_host, initial_folder,
-                            new_folder_name)
-            self.assertTrue(ret, "Rename direcoty failed")
-            g.log.info('Renamed directory %s to %s', initial_folder,
-                       new_folder_name)
+            if redant.path_exists(new_folder_name, client_host):
+                raise Exception('Expected New folder name should not exists')
 
-            # Old dir does not exists and destination is presented
-            self.assertFalse(file_exists(client_host, initial_folder),
-                             '%s should be not listed' % initial_folder)
-            g.log.info('The old directory %s does not exists on mount point',
-                       initial_folder)
-            self.assertTrue(file_exists(client_host, new_folder_name),
-                            'Destination dir does not exists %s' %
-                            new_folder_name)
-            g.log.info('The new folder is presented %s', new_folder_name)
+            # Rename source folder
+            ret = redant.move_file(client_host, initial_folder,
+                                   new_folder_name)
+            if not ret:
+                raise Exception("Rename direcoty failed")
+
+            # Old dir does not exists and destination is present
+            if redant.path_exists(initial_folder, client_host):
+                raise Exception('Old dir should not exists')
+
+            if not redant.path_exists(new_folder_name, client_host):
+                raise Exception('Destination dir does not exists')
 
             # Check bricks for source and destination directories
-            for brick_item in get_all_bricks(self.mnode, self.volname):
+            brick_list = redant.get_all_bricks(self.vol_name,
+                                               self.server_list[0])
+            for brick_item in brick_list:
                 brick_host, brick_dir = brick_item.split(':')
-
                 initial_folder = dirs['initial'].format(
                     root=brick_dir,
                     client_index=mount_index
@@ -175,20 +141,30 @@ class TestDHTRenameDirectory(GlusterBaseClass):
                     client_index=mount_index
                 )
 
-                self.assertFalse(file_exists(brick_host, initial_folder),
-                                 "Expected folder %s to be not presented" %
-                                 initial_folder)
-                self.assertTrue(file_exists(brick_host, new_folder_name),
-                                'Expected folder %s to be presented' %
-                                new_folder_name)
+                if redant.path_exists(initial_folder, brick_host):
+                    raise Exception('Old dir should not exists')
 
-                g.log.info('The old directory %s does not exists and directory'
-                           ' %s is presented', initial_folder, new_folder_name)
-        g.log.info('Rename directory when destination directory '
-                   'does not exists is successful')
+                if not redant.path_exists(new_folder_name, brick_host):
+                    raise Exception('Destination dir does not exists')
 
-    def test_rename_directory_with_dest_folder(self):
-        """Test rename directory with presented destination folder
+        # Clear the mountpoint for next case
+        for mount_obj in self.mounts:
+            cmd = f"rm -rf {mount_obj['mountpath']}/*"
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
+
+        # Case 2: test_rename_directory_with_dest_folder
+        """
+        Steps:
+        - Create and start a volume
+        - Mount it on client
+        - Validate LAYOUT
+        - Create source folder on mountpoint
+        - Create dest dir on mountpoint
+        - Create files and directories under the source folder
+        - Validate files on HASHED_BRICKS
+        - Check if destination dir exists
+        - Rename source folder to destination dir
+        - Vaildate the presence of src and dst dirs on bricks
         """
         dirs = {
             'initial_folder': '{root}/folder_{client_index}/',
@@ -196,69 +172,61 @@ class TestDHTRenameDirectory(GlusterBaseClass):
         }
 
         for mount_index, mount_obj in enumerate(self.mounts):
-            client_host = mount_obj.client_system
-            mountpoint = mount_obj.mountpoint
+            client_host = mount_obj['client']
+            mountpoint = mount_obj['mountpath']
 
             initial_folder = dirs['initial_folder'].format(
-                root=mount_obj.mountpoint,
+                root=mountpoint,
                 client_index=mount_index
             )
 
-            ret = validate_files_in_dir(client_host, mountpoint,
-                                        test_type=LAYOUT_IS_COMPLETE,
-                                        file_type=FILETYPE_DIRS)
-            self.assertTrue(ret, "Expected - Layout is complete")
-            g.log.info('Layout is complete')
+            ret = (redant.validate_files_in_dir(client_host, mountpoint,
+                   test_type=TEST_LAYOUT_IS_COMPLETE,
+                   file_type=FILETYPE_DIRS))
+            if not ret:
+                raise Exception("Expected - Layout is complete")
 
             # Create a folder on mount point
-            self.assertTrue(mkdir(client_host, initial_folder, parents=True),
-                            'Failed creating source directory')
-            self.assertTrue(file_exists(client_host, initial_folder))
-            g.log.info('Created source directory %s on mount point %s',
-                       initial_folder, mountpoint)
+            cmd = f"mkdir -p {initial_folder}"
+            redant.execute_abstract_op_node(cmd, client_host)
 
             new_folder_name = dirs['new_folder'].format(
                 root=mountpoint,
                 client_index=mount_index
             )
             # Create destination directory
-            self.assertTrue(mkdir(client_host, new_folder_name, parents=True),
-                            'Failed creating destination directory')
-            self.assertTrue(file_exists(client_host, new_folder_name))
-            g.log.info('Created destination directory %s on mount point %s',
-                       new_folder_name, mountpoint)
+            cmd = f"mkdir -p {new_folder_name}"
+            redant.execute_abstract_op_node(cmd, client_host)
 
             # Create files and directories
-            ret = self.create_files(client_host, initial_folder, self.files,
-                                    content='Textual content')
-            self.assertTrue(ret, 'Unable to create files on mount point')
-            g.log.info('Files and directories are created')
+            ret = self._create_files(client_host, initial_folder, self.files,
+                                     content='Textual content')
+            if not ret:
+                raise Exception('Unable to create files on mount point')
 
-            ret = validate_files_in_dir(client_host, mountpoint,
-                                        test_type=FILE_ON_HASHED_BRICKS)
-            self.assertTrue(ret, "Expected - Files and dirs are stored "
-                            "on hashed bricks")
-            g.log.info('Files and dirs are stored on hashed bricks')
+            ret = (redant.validate_files_in_dir(client_host, mountpoint,
+                   test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS))
+            if not ret:
+                raise Exception("Expected - Files and dirs are stored "
+                                "on hashed bricks")
 
             # Rename source folder to destination
-            ret = move_file(client_host, initial_folder,
-                            new_folder_name)
-            self.assertTrue(ret, "Rename folder failed")
-            g.log.info('Renamed folder %s to %s', initial_folder,
-                       new_folder_name)
+            ret = redant.move_file(client_host, initial_folder,
+                                   new_folder_name)
+            if not ret:
+                raise Exception("Rename direcoty failed")
 
-            # Old dir does not exists and destination is presented
-            self.assertFalse(file_exists(client_host, initial_folder),
-                             '%s should be not listed' % initial_folder)
-            g.log.info('The old directory %s does not exists on mount point',
-                       initial_folder)
-            self.assertTrue(file_exists(client_host, new_folder_name),
-                            'Renamed directory does not exists %s' %
-                            new_folder_name)
-            g.log.info('The new folder exists %s', new_folder_name)
+            # Old dir does not exists and destination is present
+            if redant.path_exists(initial_folder, client_host):
+                raise Exception('Old dir should not exists')
+
+            if not redant.path_exists(new_folder_name, client_host):
+                raise Exception('Destination dir does not exists')
 
             # Check bricks for source and destination directories
-            for brick_item in get_all_bricks(self.mnode, self.volname):
+            brick_list = redant.get_all_bricks(self.vol_name,
+                                               self.server_list[0])
+            for brick_item in brick_list:
                 brick_host, brick_dir = brick_item.split(':')
 
                 initial_folder = dirs['initial_folder'].format(
@@ -270,25 +238,8 @@ class TestDHTRenameDirectory(GlusterBaseClass):
                     client_index=mount_index
                 )
 
-                self.assertFalse(file_exists(brick_host, initial_folder),
-                                 "Expected folder %s to be not presented" %
-                                 initial_folder)
-                self.assertTrue(file_exists(brick_host, new_folder_name),
-                                'Expected folder %s to be presented' %
-                                new_folder_name)
+                if redant.path_exists(initial_folder, brick_host):
+                    raise Exception('Old dir should not exists')
 
-                g.log.info('The old directory %s does not exists and directory'
-                           ' %s is presented', initial_folder, new_folder_name)
-        g.log.info('Rename directory when destination directory '
-                   'exists is successful')
-
-    def tearDown(self):
-        # Unmount Volume and Cleanup Volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+                if not redant.path_exists(new_folder_name, brick_host):
+                    raise Exception('Destination dir does not exists')
