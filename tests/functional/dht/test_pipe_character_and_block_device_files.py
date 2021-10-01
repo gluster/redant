@@ -1,56 +1,48 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along`
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+ Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along`
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    TC to check pipe character and block device files
+"""
+
+# disruptive;dist,dist-rep,dist-arb
 from socket import gethostbyname
-
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.glusterdir import get_dir_contents
-from glustolibs.gluster.glusterfile import (
-    get_file_stat, get_fattr, set_fattr, delete_fattr, get_pathinfo,
-    file_exists)
+from copy import deepcopy
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-replicated', 'distributed-arbiter', 'distributed'],
-          ['glusterfs']])
-class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
+class TestPipeCharacterAndBlockDeviceFiles(DParentTest):
 
-    def setUp(self):
-        # calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        conf_hash['dist_count'] = 5
 
-        # Changing dist_count to 5
-        self.volume['voltype']['dist_count'] = 5
-
-        # Creating Volume and mounting the volume
-        ret = self.setup_volume_and_mount_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Volume creation or mount failed: %s"
-                                 % self.volname)
-
-    def tearDown(self):
-
-        # Unmounting and cleaning volume
-        ret = self.unmount_volume_and_cleanup_volume([self.mounts[0]])
-        if not ret:
-            raise ExecutionError("Unable to delete volume % s" % self.volname)
-
-        self.get_super_method(self, 'tearDown')()
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
     def _create_character_and_block_device_files(self):
         """Create character and block device files"""
@@ -58,16 +50,12 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
         for ftype, filename in (('b', 'blockfile'), ('c', 'Characterfile')):
 
             # Create files using mknod
-            cmd = ("cd {}; mknod {} {} 1 5".format(
-                self.mounts[0].mountpoint, filename, ftype))
-            ret, _, _ = g.run(self.clients[0], cmd)
-            self.assertEqual(
-                ret, 0, 'Failed to create %s file' % filename)
+            cmd = f"cd {self.mountpoint}; mknod {filename} {ftype} 1 5"
+            self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
             # Add file names and file path to lists
             self.file_names.append(filename)
-            self.list_of_device_files.append('{}/{}'.format(
-                self.mounts[0].mountpoint, filename))
+            self.list_of_device_files.append(f'{self.mountpoint}/{filename}')
 
         # Create file type list for the I/O
         self.filetype_list = ["block special file", "character special file"]
@@ -76,123 +64,134 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
         """Create pipe files"""
 
         # Create pipe files using mkfifo
-        cmd = "cd {}; mkfifo {}".format(self.mounts[0].mountpoint, 'fifo')
-        ret, _, _ = g.run(self.clients[0], cmd)
-        self.assertEqual(ret, 0, 'Failed to create %s file' % 'fifo')
+        cmd = f"cd {self.mountpoint}; mkfifo fifo"
+        self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Populate variables with fifo file details
-        self.list_of_device_files = [
-            '{}/{}'.format(self.mounts[0].mountpoint, 'fifo')]
+        self.list_of_device_files = [f'{self.mountpoint}/fifo']
         self.file_names = ['fifo']
         self.filetype_list = ['fifo']
 
     def _set_xattr_trusted_foo(self, xattr_val):
         """Sets xattr trusted.foo on all the files"""
         for fname in self.list_of_device_files:
-            ret = set_fattr(self.clients[0], fname, 'trusted.foo',
-                            xattr_val)
-            self.assertTrue(ret, "Unable to create custom xattr "
-                            "for file {}".format(fname))
+            self.redant.set_fattr(fname, 'trusted.foo',
+                                  self.client_list[0], xattr_val)
 
     def _delete_xattr_trusted_foo(self):
         """Removes xattr trusted.foo from all the files."""
         for fname in self.list_of_device_files:
-            ret = delete_fattr(self.clients[0], fname, 'trusted.foo')
-            self.assertTrue(ret, "Unable to remove custom xattr for "
-                            "file {}".format(fname))
+            self.redant.delete_fattr(fname, 'trusted.foo',
+                                     self.client_list[0])
 
     def _check_custom_xattr_trusted_foo(self, xattr_val, visible=True):
         """Check custom xttar from mount point and on bricks."""
         # Check custom xattr from mount point
         for fname in self.list_of_device_files:
-            ret = get_fattr(self.clients[0], fname, 'trusted.foo',
-                            encode='text')
+            ret = self.redant.get_fattr(fname, 'trusted.foo',
+                                        self.client_list[0], encode='text',
+                                        excep=False)
             if visible:
-                self.assertEqual(ret, xattr_val,
-                                 "Custom xattr not found from mount.")
+                val = ret['msg'][1].split('=')[1].strip()
+                if val[1:-1] != xattr_val:
+                    raise Exception("Custom xattr not found from mount.")
             else:
-                self.assertIsNone(ret, "Custom attribute visible at mount "
-                                  "point even after deletion")
+                if ret['error_code'] == 0 and \
+                   "No such attribute" not in ret['error_msg']:
+                    raise Exception("Custom attribute visible at mount "
+                                    "point even after deletion")
 
         # Check custom xattr on bricks
-        for brick in get_all_bricks(self.mnode, self.volname):
+        bricks_list = self.redant.get_all_bricks(self.vol_name,
+                                                 self.server_list[0])
+        for brick in bricks_list:
             node, brick_path = brick.split(':')
-            files_on_bricks = get_dir_contents(node, brick_path)
+            files_on_bricks = self.redant.get_dir_contents(brick_path, node)
             files = [
                 fname for fname in self.file_names
                 if fname in files_on_bricks]
             for fname in files:
-                ret = get_fattr(node, "{}/{}".format(brick_path, fname),
-                                'trusted.foo', encode='text')
+                ret = self.redant.get_fattr(f"{brick_path}/{fname}",
+                                            'trusted.foo', node,
+                                            encode='text', excep=False)
                 if visible:
-                    self.assertEqual(ret, xattr_val,
-                                     "Custom xattr not visible on bricks")
+                    val = ret['msg'][1].split('=')[1].strip()
+                    if val[1:-1] != xattr_val:
+                        raise Exception("Custom xattr not visible on bricks.")
                 else:
-                    self.assertIsNone(ret, "Custom attribute visible on "
-                                      "brick even after deletion")
+                    if ret['error_code'] == 0 and \
+                       "No such attribute" not in ret['error_msg']:
+                        raise Exception("Custom attribute visible on bricks "
+                                        "even after deletion")
 
     def _check_if_files_are_stored_only_on_expected_bricks(self):
         """Check if files are stored only on expected bricks"""
         for fname in self.list_of_device_files:
             # Fetch trusted.glusterfs.pathinfo and check if file is present on
             # brick or not
-            ret = get_pathinfo(self.clients[0], fname)
-            self.assertIsNotNone(ret, "Unable to get "
-                                 "trusted.glusterfs.pathinfo  of file %s"
-                                 % fname)
+            ret = self.redant.get_pathinfo(fname, self.client_list[0])
+            if ret is None:
+                raise Exception("Unable to get trusted.glusterfs.pathinfo "
+                                f"of file {fname}")
+
             present_brick_list = []
             for brick_path in ret['brickdir_paths']:
                 node, path = brick_path.split(":")
-                ret = file_exists(node, path)
-                self.assertTrue(ret, "Unable to find file {} on brick {}"
-                                .format(fname, path))
+                ret = self.redant.path_exists(node, path)
+                if not ret:
+                    raise Exception(f"Unable to find file {fname} on brick "
+                                    f"{path}")
                 brick_text = brick_path.split('/')[:-1]
                 if brick_text[0][0:2].isdigit():
-                    brick_text[0] = gethostbyname(brick_text[0][:-1]) + ":"
+                    brick_text[0] = f"{gethostbyname(brick_text[0][:-1])}:"
                 present_brick_list.append('/'.join(brick_text))
 
             # Check on other bricks where file doesn't exist
-            brick_list = get_all_bricks(self.mnode, self.volname)
+            brick_list = self.redant.get_all_bricks(self.vol_name,
+                                                    self.server_list[0])
             other_bricks = [
                 brk for brk in brick_list if brk not in present_brick_list]
             for brick in other_bricks:
                 node, path = brick.split(':')
-                ret = file_exists(node, "{}/{}".format(path,
-                                                       fname.split('/')[-1]))
-                self.assertFalse(ret, "Unexpected: Able to find file {} on "
-                                 "brick {}".format(fname, path))
+                ret = (self.redant.path_exists(node,
+                       f"{path}/{fname.split('/')[-1]}"))
+                if ret:
+                    raise Exception(f"Unexpected: Able to find file {fname}"
+                                    f" on brick {path}")
 
     def _check_filetype_of_files_from_mountpoint(self):
         """Check filetype of files from mountpoint"""
         for filetype in self.filetype_list:
             # Check if filetype is as expected
-            ret = get_file_stat(self.clients[0], self.list_of_device_files[
-                self.filetype_list.index(filetype)])
-            self.assertEqual(ret['filetype'], filetype,
-                             "File type not reflecting properly for %s"
-                             % filetype)
+            fl = self.list_of_device_files[self.filetype_list.index(filetype)]
+            ret = self.redant.get_file_stat(self.client_list[0], fl)
+            if ret['msg']['fileType'] != filetype:
+                raise Exception("File type not reflecting properly for "
+                                f"{filetype}")
 
-    def _compare_stat_output_from_mout_point_and_bricks(self):
+    def _compare_stat_output_from_mount_point_and_bricks(self):
         """Compare stat output from mountpoint and bricks"""
         for fname in self.list_of_device_files:
             # Fetch stat output from mount point
-            mountpoint_stat = get_file_stat(self.clients[0], fname)
-            bricks = get_pathinfo(self.clients[0], fname)
+            mountpoint_stat = self.redant.get_file_stat(self.client_list[0],
+                                                        fname)
+            bricks = self.redant.get_pathinfo(fname, self.client_list[0])
 
             # Fetch stat output from bricks
             for brick_path in bricks['brickdir_paths']:
                 node, path = brick_path.split(":")
-                brick_stat = get_file_stat(node, path)
-                for key in ("filetype", "access", "size", "username",
-                            "groupname", "uid", "gid", "epoch_atime",
-                            "epoch_mtime", "epoch_ctime"):
-                    self.assertEqual(mountpoint_stat[key], brick_stat[key],
-                                     "Difference observed between stat output "
-                                     "of mountpoint and bricks for file %s"
-                                     % fname)
+                brick_stat = self.redant.get_file_stat(node, path)
+                for key in ("fileType", "permission", "st_size", "user",
+                            "group", "st_uid", "st_gid", "st_atime",
+                            "st_mtime", "st_ctime"):
+                    if mountpoint_stat['msg'][key] != brick_stat['smg'][key]:
+                        raise Exception("Difference observed between stat "
+                                        "output of mountpoint and bricks for"
+                                        f" file {fname}")
 
-    def test_character_and_block_device_file_creation(self):
+    def run_test(self, redant):
         """
+        Case 1: test_character_and_block_device_file_creation
         Test case:
         1. Create distributed volume with 5 sub-volumes, start amd mount it.
         2. Create character and block device files.
@@ -201,6 +200,9 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
            mentioned in trusted.glusterfs.pathinfo xattr.
         5. Verify stat output from mount point and bricks.
         """
+        self.list_of_device_files = []
+        self.file_names = []
+
         # Create Character and block device files
         self._create_character_and_block_device_files()
 
@@ -212,9 +214,13 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
         self._check_if_files_are_stored_only_on_expected_bricks()
 
         # Verify stat output from mount point and bricks
-        self._compare_stat_output_from_mout_point_and_bricks()
+        self._compare_stat_output_from_mount_point_and_bricks()
 
-    def test_character_and_block_device_file_removal_using_rm(self):
+        # Clear mountpoint
+        cmd = f"rm -rf {self.mountpoint}/*"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
+
+        # Case 2: test_character_and_block_device_file_removal_using_rm
         """
         Test case:
         1. Create distributed volume with 5 sub-volumes, start and mount it.
@@ -237,20 +243,24 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
 
         # Delete both the character and block device files
         for fname in self.list_of_device_files:
-            ret, _, _ = g.run(self.clients[0], 'rm -rf {}'.format(fname))
-            self.assertEqual(
-                ret, 0, 'Failed to remove {} file'.format(fname))
+            cmd = f"rm -rf {fname}"
+            redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Verify if the files are deleted from all bricks or not
-        for brick in get_all_bricks(self.mnode, self.volname):
+        brick_list = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        for brick in brick_list:
             node, path = brick.split(':')
             for fname in self.file_names:
-                ret = file_exists(node, "{}/{}".format(path, fname))
-                self.assertFalse(ret, "Unexpected: Able to find file {} on "
-                                 " brick {} even after deleting".format(fname,
-                                                                        path))
+                ret = redant.path_exists(node, f"{path}/{fname}")
+                if ret:
+                    raise Exception("Unexpected: Able to find file {fname} "
+                                    f"on brick {path} even after deleting")
 
-    def test_character_and_block_device_file_with_custom_xattrs(self):
+        # Clear mountpoint
+        cmd = f"rm -rf {self.mountpoint}/*"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
+
+        # Case 3: test_character_and_block_device_file_with_custom_xattrs
         """
         Test case:
         1. Create distributed volume with 5 sub-volumes, start and mount it.
@@ -290,7 +300,11 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
         # Verify that mount point shows pathinfo xattr properly
         self._check_if_files_are_stored_only_on_expected_bricks()
 
-    def test_pipe_file_create(self):
+        # Clear mountpoint
+        cmd = f"rm -rf {self.mountpoint}/*"
+        redant.execute_abstract_op_node(cmd, self.client_list[0])
+
+        # Case 4: test_pipe_file_create
         """
         Test case:
         1. Create distributed volume with 5 sub-volumes, start and mount it.
@@ -313,16 +327,14 @@ class TestPipeCharacterAndBlockDeviceFiles(GlusterBaseClass):
         self._check_if_files_are_stored_only_on_expected_bricks()
 
         # Verify stat output from mount point and bricks
-        self._compare_stat_output_from_mout_point_and_bricks()
+        self._compare_stat_output_from_mount_point_and_bricks()
 
         # Write data to fifo file and read data from fifo file
         # from the other instance of the same client.
-        g.run_async(self.clients[0], "echo 'Hello' > {} ".format(
-            self.list_of_device_files[0]))
-        ret, out, _ = g.run(
-            self.clients[0], "cat < {}".format(self.list_of_device_files[0]))
-        self.assertEqual(
-            ret, 0, "Unable to fetch datat on other terimnal")
-        self.assertEqual(
-            "Hello", out.split('\n')[0],
-            "Hello not recieved on the second terimnal")
+        cmd = f"echo 'Hello' > {self.list_of_device_files[0]}"
+        redant.execute_command_async(cmd, self.client_list[0])
+
+        cmd = f"cat < {self.list_of_device_files[0]}"
+        ret = redant.execute_abstract_op_node(cmd, self.client_list[0])
+        if ret['msg'][0].strip() != "Hello":
+            raise Exception("Hello not recieved on the second terimnal")
