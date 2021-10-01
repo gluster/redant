@@ -75,15 +75,14 @@ class TestCreateFile(DParentTest):
         for brickdir in bricklist:
             count += 1
             ret = redant.hashrange_contains_hash(brickdir, filehash)
+            host, path = brickdir.split(":")
             if ret:
                 hash_subvol = subvols[count]
-                redant.execute_abstract_op_node(f"stat {brickdir}/file1",
-                                                brickdir.split(':')[0])
+                redant.execute_abstract_op_node(f"stat {path}/file1", host)
                 continue
 
-            ret = redant.execute_abstract_op_node(f"stat {brickdir}/file1",
-                                                  brickdir.split(':')[0],
-                                                  False)
+            ret = redant.execute_abstract_op_node(f"stat {path}/file1",
+                                                  host, False)
             if ret['error_code'] == 0:
                 raise Exception("Expected stat to fail")
 
