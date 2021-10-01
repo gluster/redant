@@ -137,14 +137,14 @@ class TestPipeCharacterAndBlockDeviceFiles(DParentTest):
             present_brick_list = []
             for brick_path in ret['brickdir_paths']:
                 node, path = brick_path.split(":")
+                node = gethostbyname(node)
                 ret = self.redant.path_exists(node, path)
                 if not ret:
                     raise Exception(f"Unable to find file {fname} on brick "
                                     f"{path}")
-                brick_text = brick_path.split('/')[:-1]
-                if brick_text[0][0:2].isdigit():
-                    brick_text[0] = f"{gethostbyname(brick_text[0][:-1])}:"
-                present_brick_list.append('/'.join(brick_text))
+                path = path.split('/')
+                path = "/".join(path[:-1])
+                present_brick_list.append(f'{node}:{path}')
 
             # Check on other bricks where file doesn't exist
             brick_list = self.redant.get_all_bricks(self.vol_name,
@@ -164,27 +164,34 @@ class TestPipeCharacterAndBlockDeviceFiles(DParentTest):
         for filetype in self.filetype_list:
             # Check if filetype is as expected
             fl = self.list_of_device_files[self.filetype_list.index(filetype)]
-            ret = self.redant.get_file_stat(self.client_list[0], fl)
-            if ret['msg']['fileType'] != filetype:
+            ret = self.redant.execute_abstract_op_node(f"stat -c '%F' {fl}",
+                                                       self.client_list[0])
+            stat = ret['msg'][0].strip()
+            if filetype != stat:
                 raise Exception("File type not reflecting properly for "
                                 f"{filetype}")
 
     def _compare_stat_output_from_mount_point_and_bricks(self):
         """Compare stat output from mountpoint and bricks"""
+        stat_out = ["filetype", "access", "size", "user", "group", "uid",
+                    "gid", "epoch_atime", "epoch_mtime", "epoch_ctime"]
         for fname in self.list_of_device_files:
             # Fetch stat output from mount point
-            mountpoint_stat = self.redant.get_file_stat(self.client_list[0],
-                                                        fname)
+            cmd = f"stat -c '%F,%A,%s,%U,%G,%u,%g,%X,%Y,%Z' {fname}"
+            ret = self.redant.execute_abstract_op_node(cmd,
+                                                       self.client_list[0])
+            mountpoint_stat = ret['msg'][0].strip().split(',')
             bricks = self.redant.get_pathinfo(fname, self.client_list[0])
 
             # Fetch stat output from bricks
             for brick_path in bricks['brickdir_paths']:
                 node, path = brick_path.split(":")
-                brick_stat = self.redant.get_file_stat(node, path)
-                for key in ("fileType", "permission", "st_size", "user",
-                            "group", "st_uid", "st_gid", "st_atime",
-                            "st_mtime", "st_ctime"):
-                    if mountpoint_stat['msg'][key] != brick_stat['smg'][key]:
+                node = gethostbyname(node)
+                cmd = f"stat -c '%F,%A,%s,%U,%G,%u,%g,%X,%Y,%Z' {path}"
+                ret = self.redant.execute_abstract_op_node(cmd, node)
+                brick_stat = ret['msg'][0].strip().split(',')
+                for index, key in enumerate(stat_out):
+                    if mountpoint_stat[index] != brick_stat[index]:
                         raise Exception("Difference observed between stat "
                                         "output of mountpoint and bricks for"
                                         f" file {fname}")
