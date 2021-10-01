@@ -23,6 +23,7 @@
 # TODO: NFS,Samba
 from common.ops.gluster_ops.constants import (FILETYPE_DIRS,
                                               TEST_LAYOUT_IS_COMPLETE)
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -67,6 +68,9 @@ class TestLookupDir(DParentTest):
         if not ret:
             self.redant.logger.error("Error in bringing back subvol online")
             return False
+
+        # Sleep to allow volume to be mounted successfully after brick is up
+        sleep(5)
 
         # delete parent_dir
         ret = self.redant.rmdir(f"{self.mountpoint}/parent",
@@ -117,6 +121,9 @@ class TestLookupDir(DParentTest):
             self.redant.logger.error("Error in bringing back subvol online")
             return False
 
+        # Sleep to allow volume to be mounted successfully after brick is up
+        sleep(5)
+
         # delete parent_dir
         ret = self.redant.rmdir(f"{self.mountpoint}/parent",
                                 self.client_list[0])
@@ -165,6 +172,9 @@ class TestLookupDir(DParentTest):
         if not ret:
             self.redant.logger.error("Error in bringing back subvol online")
             return False
+
+        # Sleep to allow volume to be mounted successfully after brick is up
+        sleep(5)
 
         # delete parent_dir
         ret = self.redant.rmdir(f"{self.mountpoint}/parent",
@@ -223,6 +233,6 @@ class TestLookupDir(DParentTest):
             - bringdown unhashed subvol
             - make sure stat is successful on the dir
         """
-        ret = self.mkdir_nonhashed_down(subvols)
+        ret = self._mkdir_nonhashed_down(subvols)
         if not ret:
             raise Exception('mkdir_nonhashed_down failed')
