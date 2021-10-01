@@ -19,7 +19,7 @@
     Test cases in this module tests DHT Rename directory
 """
 
-# disruptive;dist,rep,arb.disp,dist-rep,dist-disp,dist-arb
+# disruptive;dist,rep,arb,disp,dist-rep,dist-disp,dist-arb
 from common.ops.gluster_ops.constants import \
     (FILETYPE_DIRS, TEST_LAYOUT_IS_COMPLETE,
      TEST_FILE_EXISTS_ON_HASHED_BRICKS)
@@ -111,7 +111,7 @@ class TestDHTRenameDirectory(DParentTest):
                 client_index=mount_index
             )
             # Check if destination dir does not exist
-            if redant.path_exists(new_folder_name, client_host):
+            if redant.path_exists(client_host, new_folder_name):
                 raise Exception('Expected New folder name should not exists')
 
             # Rename source folder
@@ -121,10 +121,10 @@ class TestDHTRenameDirectory(DParentTest):
                 raise Exception("Rename direcoty failed")
 
             # Old dir does not exists and destination is present
-            if redant.path_exists(initial_folder, client_host):
+            if redant.path_exists(client_host, initial_folder):
                 raise Exception('Old dir should not exists')
 
-            if not redant.path_exists(new_folder_name, client_host):
+            if not redant.path_exists(client_host, new_folder_name):
                 raise Exception('Destination dir does not exists')
 
             # Check bricks for source and destination directories
@@ -141,10 +141,10 @@ class TestDHTRenameDirectory(DParentTest):
                     client_index=mount_index
                 )
 
-                if redant.path_exists(initial_folder, brick_host):
+                if redant.path_exists(brick_host, initial_folder):
                     raise Exception('Old dir should not exists')
 
-                if not redant.path_exists(new_folder_name, brick_host):
+                if not redant.path_exists(brick_host, new_folder_name):
                     raise Exception('Destination dir does not exists')
 
         # Clear the mountpoint for next case
@@ -217,10 +217,10 @@ class TestDHTRenameDirectory(DParentTest):
                 raise Exception("Rename direcoty failed")
 
             # Old dir does not exists and destination is present
-            if redant.path_exists(initial_folder, client_host):
+            if redant.path_exists(client_host, initial_folder):
                 raise Exception('Old dir should not exists')
 
-            if not redant.path_exists(new_folder_name, client_host):
+            if not redant.path_exists(client_host, new_folder_name):
                 raise Exception('Destination dir does not exists')
 
             # Check bricks for source and destination directories
@@ -238,8 +238,8 @@ class TestDHTRenameDirectory(DParentTest):
                     client_index=mount_index
                 )
 
-                if redant.path_exists(initial_folder, brick_host):
+                if redant.path_exists(brick_host, initial_folder):
                     raise Exception('Old dir should not exists')
 
-                if not redant.path_exists(new_folder_name, brick_host):
+                if not redant.path_exists(brick_host, new_folder_name):
                     raise Exception('Destination dir does not exists')
