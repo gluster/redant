@@ -40,7 +40,7 @@ class TestLookupDir(DParentTest):
 
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
-                                 self.brick_roots)
+                                 self.brick_roots, force=True)
         self.mountpoint = (f"/mnt/{self.vol_name}")
         self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
                                              self.client_list[0])
