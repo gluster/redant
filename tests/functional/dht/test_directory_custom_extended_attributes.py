@@ -198,9 +198,10 @@ class TestDirectoryCustomExtendedAttributes(DParentTest):
                 brick_server, brick_dir = brick.split(':')
                 brick_path = (dir_prefix.format(root=brick_dir,
                               client_index=f"{mount_index}_linked"))
-                cmd = f"[ -f {brick_path} ] && echo 'yes' || 'no'"
-                ret = redant.execute_abstract_op_node(cmd, brick_server)
-                if "no" in ret['msg'][0].strip():
+                cmd = f'[ -f {brick_path} ] && echo "yes"'
+                ret = redant.execute_abstract_op_node(cmd, brick_server,
+                                                      False)
+                if not ret['msg']:
                     redant.logger.info("Link does not exists")
                     continue
 
@@ -230,9 +231,10 @@ class TestDirectoryCustomExtendedAttributes(DParentTest):
                 brick_server, brick_dir = brick.split(':')
                 brick_path = (dir_prefix.format(root=brick_dir,
                               client_index=f"{mount_index}_linked"))
-                cmd = f"[ -f {brick_path} ] && echo 'yes' || 'no'"
-                ret = redant.execute_abstract_op_node(cmd, brick_server)
-                if "no" in ret['msg'][0].strip():
+                cmd = f'[ -f {brick_path} ] && echo "yes"'
+                ret = redant.execute_abstract_op_node(cmd, brick_server,
+                                                      False)
+                if not ret['msg']:
                     redant.logger.info("Link does not exists")
                     continue
 
