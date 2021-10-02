@@ -1,367 +1,243 @@
-#  Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-Distributed Hash Table (DHT) Tests
-Test cases in this module tests
-Custom extended attribute validation
+ Copyright (C) 2017-2018  Red Hat, Inc. <http://www.redhat.com>
 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Description:
+    Test cases in this module tests custom extended attribute validation
 """
-from glusto.core import Glusto as g
 
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.constants import FILETYPE_DIR, FILETYPE_LINK
-from glustolibs.gluster.constants import \
-    TEST_FILE_EXISTS_ON_HASHED_BRICKS as FILE_ON_HASHED_BRICKS
-from glustolibs.gluster.dht_test_utils import validate_files_in_dir
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.glusterdir import mkdir
-from glustolibs.gluster.glusterfile import (delete_fattr, file_exists,
-                                            get_fattr, get_fattr_list,
-                                            set_fattr)
+# disruptive;dist,rep,dist-rep,disp,dist-disp
+from common.ops.gluster_ops.constants import \
+    (FILETYPE_DIR, FILETYPE_LINK, TEST_FILE_EXISTS_ON_HASHED_BRICKS)
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['replicated', 'distributed', 'distributed-replicated',
-           'dispersed', 'distributed-dispersed'],
-          ['glusterfs']])
-class TestDirectoryCustomExtendedAttributes(GlusterBaseClass):
-    """
-    TestDirectoryCustomExtendedAttributes contains tests
-    which verifies Directory - custom extended attribute
-    validation getfattr, setfattr.
-    """
+class TestDirectoryCustomExtendedAttributes(DParentTest):
 
-    def setUp(self):
-        self.get_super_method(self, 'setUp')()
-
-        # Setup Volume
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            g.log.error("Failed to Setup and Mount Volume")
-            raise ExecutionError("Failed to Setup and Mount Volume")
-
-    def test_directory_custom_extended_attr(self):
-        """Test - set custom xattr to directory and link to directory
+    def run_test(self, redant):
         """
-        # pylint: disable = too-many-statements
+        Steps:
+        - Create and start a volume
+        - Mount the volume on clients
+        - Create a dir on mountpoint
+        - Validate hash layout
+        - Verify that mountpoint should not display xattrs
+        - Veirfy pathinfo xattr is present
+        - Create a custom xattr
+        - Verify that the custom xattr is present
+        - Create a link file and repeat the same steps as above
+        """
         dir_prefix = '{root}/folder_{client_index}'
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-        for mount_index, mount_point in enumerate(self.mounts):
+        for mount_index, mount_obj in enumerate(self.mounts):
             folder_name = dir_prefix.format(
-                root=mount_point.mountpoint,
+                root=mount_obj['mountpath'],
                 client_index=mount_index
             )
 
             # Create a directory from mount point
-            g.log.info('Creating directory : %s:%s',
-                       mount_point.mountpoint, folder_name)
-            ret = mkdir(mount_point.client_system, folder_name)
-            self.assertTrue(ret,
-                            'Failed to create directory %s on mount point %s'
-                            % (folder_name, mount_point.mountpoint))
-
-            ret = file_exists(mount_point.client_system,
-                              folder_name)
-            self.assertTrue(ret,
-                            'Created Directory %s does not exists on mount '
-                            'point %s' %
-                            (folder_name, mount_point.mountpoint))
-            g.log.info('Created directory %s:%s',
-                       mount_point.mountpoint, folder_name)
+            cmd = f"mkdir -p {folder_name}"
+            redant.execute_abstract_op_node(cmd, mount_obj['client'])
 
             # Verify that hash layout values are set on each
             # bricks for the dir
-            g.log.debug("Verifying hash layout values")
-            ret = validate_files_in_dir(mount_point.client_system,
-                                        mount_point.mountpoint,
-                                        test_type=FILE_ON_HASHED_BRICKS,
-                                        file_type=FILETYPE_DIR)
-            self.assertTrue(ret, "Expected - Directory is stored "
-                                 "on hashed bricks")
-            g.log.info("Hash layout values are set on each bricks")
+            ret = (redant.validate_files_in_dir(
+                   mount_obj['client'], mount_obj['mountpath'],
+                   test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS,
+                   file_type=FILETYPE_DIR))
+            if not ret:
+                raise Exception("Expected - Directory is stored "
+                                "on hashed bricks")
 
             # Verify that mount point should not display
             # xattr : trusted.gfid and dht
-            g.log.debug("Loading extra attributes")
-            ret = get_fattr_list(mount_point.client_system, folder_name)
+            ret = redant.get_fattr_list(folder_name, mount_obj['client'])
 
-            self.assertTrue('trusted.gfid' not in ret,
-                            "Extended attribute trusted.gfid is presented on "
-                            "mount point %s and folder %s"
-                            % (mount_point.mountpoint, folder_name))
-            self.assertTrue('trusted.glusterfs.dht' not in ret,
-                            "Extended attribute trusted.glusterfs.dht is "
-                            "presented on mount point %s and folder %s"
-                            % (mount_point.mountpoint, folder_name))
+            if 'trusted.gfid' in ret:
+                raise Exception("Unexpected: Extended attribute trusted.gfid"
+                                " is presented on mount point")
 
-            g.log.info('Extended attributes trusted.gfid and '
-                       'trusted.glusterfs.dht does not exists on '
-                       'mount point %s:%s ',
-                       mount_point.mountpoint, folder_name)
+            if 'trusted.glusterfs.dht' in ret:
+                raise Exception("Unexpected: Extended attribute "
+                                "trusted.glusterfs.dht is present")
 
             # Verify that mount point shows pathinfo xattr
-            g.log.debug("Check for xattr trusted.glusterfs.pathinfo on %s:%s",
-                        mount_point, folder_name)
-            ret = get_fattr(mount_point.client_system,
-                            mount_point.mountpoint,
-                            'trusted.glusterfs.pathinfo',
-                            encode="text")
-            self.assertIsNotNone(ret,
-                                 "trusted.glusterfs.pathinfo is not "
-                                 "presented on %s:%s" %
-                                 (mount_point.mountpoint, folder_name))
-            g.log.info('pathinfo xattr is displayed on mount point %s and '
-                       'dir %s', mount_point.mountpoint, folder_name)
+            redant.get_fattr(mount_obj['mountpath'],
+                             'trusted.glusterfs.pathinfo',
+                             mount_obj['client'], encode="text")
 
             # Create a custom xattr for dir
-            g.log.info("Set attribute user.foo to %s", folder_name)
-            ret = set_fattr(mount_point.client_system,
-                            folder_name, 'user.foo', 'bar2')
-            self.assertTrue(ret, "Setup custom attribute on %s:%s failed" %
-                            (mount_point.client_system, folder_name))
+            redant.set_fattr(folder_name, 'user.foo',
+                             mount_obj['client'], 'bar2')
 
-            g.log.info('Set custom attribute is set on %s:%s',
-                       mount_point.client_system, folder_name)
             # Verify that custom xattr for directory is displayed
             # on mount point and bricks
-            g.log.debug('Check xarttr user.foo on %s:%s',
-                        mount_point.client_system, folder_name)
-            ret = get_fattr(mount_point.client_system, folder_name,
-                            'user.foo', encode="text")
-            self.assertEqual(ret, 'bar2',
-                             "Xattr attribute user.foo is not presented on "
-                             "mount point %s and directory %s" %
-                             (mount_point.client_system, folder_name))
+            ret = redant.get_fattr(folder_name, 'user.foo',
+                                   mount_obj['client'], encode="text")
+            val = ret[1].split('=')[1].strip()[1:-1]
+            if val != 'bar2':
+                raise Exception("Xattr attribute user.foo is not present "
+                                "on mount point")
 
-            g.log.info('Custom xattr user.foo is presented on mount point'
-                       ' %s:%s ', mount_point.client_system, folder_name)
-
-            for brick in get_all_bricks(self.mnode, self.volname):
+            brick_list = redant.get_all_bricks(self.vol_name,
+                                               self.server_list[0])
+            for brick in brick_list:
                 brick_server, brick_dir = brick.split(':')
                 brick_path = dir_prefix.format(root=brick_dir,
                                                client_index=mount_index)
 
-                ret = get_fattr(brick_server, brick_path, 'user.foo',
-                                encode="text")
-
-                g.log.debug('Check custom xattr for directory on brick %s:%s',
-                            brick_server, brick_path)
-                self.assertEqual('bar2', ret,
-                                 "Expected: user.foo should be on brick %s\n"
-                                 "Actual: Value of attribute foo.bar %s" %
-                                 (brick_path, ret))
-                g.log.info('Custom xattr is presented on brick %s',
-                           brick_path)
+                ret = redant.get_fattr(brick_path, 'user.foo', brick_server,
+                                       encode="text")
+                val = ret[1].split('=')[1].strip()[1:-1]
+                if val != 'bar2':
+                    raise Exception("Xattr attribute user.foo is not present"
+                                    " on brick")
 
             # Delete custom attribute
-            ret = delete_fattr(mount_point.client_system, folder_name,
-                               'user.foo')
-            self.assertTrue(ret, "Failed to delete custom attribute")
+            redant.delete_fattr(folder_name, 'user.foo', mount_obj['client'])
 
-            g.log.info('Removed custom attribute from directory %s:%s',
-                       mount_point.client_system, folder_name)
             # Verify that custom xattr is not displayed after delete
             # on mount point and on the bricks
+            ret = redant.get_fattr(folder_name, 'user.foo',
+                                   mount_obj['client'], encode="text",
+                                   excep=False)
+            if ret['error_code'] == 0:
+                raise Exception("Xattr user.foo is present on mount point"
+                                " even after deletion")
 
-            g.log.debug('Looking if custom extra attribute user.foo is '
-                        'presented on mount or on bricks after deletion')
-            self.assertIsNone(get_fattr(mount_point.client_system,
-                                        folder_name, 'user.foo',
-                                        encode="text"),
-                              "Xattr user.foo is presented on mount point"
-                              " %s:%s after deletion" %
-                              (mount_point.mountpoint, folder_name))
-
-            g.log.info("Xattr user.foo is not presented after deletion"
-                       " on mount point %s:%s",
-                       mount_point.mountpoint, folder_name)
-
-            for brick in get_all_bricks(self.mnode, self.volname):
+            brick_list = redant.get_all_bricks(self.vol_name,
+                                               self.server_list[0])
+            for brick in brick_list:
                 brick_server, brick_dir = brick.split(':')
                 brick_path = dir_prefix.format(root=brick_dir,
                                                client_index=mount_index)
-                self.assertIsNone(get_fattr(brick_server, brick_path,
-                                            'user.foo'),
-                                  "Deleted xattr user.foo is presented on "
-                                  "brick %s:%s" % (brick, brick_path))
-                g.log.info('Custom attribute is not presented after delete '
-                           'from directory on brick %s:%s', brick, brick_path)
+
+                ret = redant.get_fattr(brick_path, 'user.foo', brick_server,
+                                       encode="text", excep=False)
+                if ret['error_code'] == 0:
+                    raise Exception("Xattr user.foo is present on brick"
+                                    " even after deletion")
 
         # Repeat all of the steps for link of created directory
-        for mount_index, mount_point in enumerate(self.mounts):
+        for mount_index, mount_obj in enumerate(self.mounts):
             linked_folder_name = dir_prefix.format(
-                root=mount_point.mountpoint,
-                client_index="%s_linked" % mount_index
+                root=mount_obj['mountpath'],
+                client_index=f"{mount_index}_linked"
             )
+
             folder_name = dir_prefix.format(
-                root=mount_point.mountpoint,
+                root=mount_obj['mountpath'],
                 client_index=mount_index
             )
             # Create link to created dir
-            command = 'ln -s {src} {dst}'.format(dst=linked_folder_name,
-                                                 src=folder_name)
-            ret, _, _ = g.run(mount_point.client_system, command)
-            self.assertEqual(0, ret,
-                             'Failed to create link %s to directory %s' % (
-                                 linked_folder_name, folder_name))
-            self.assertTrue(file_exists(mount_point.client_system,
-                                        linked_folder_name),
-                            'Link does not exists on %s:%s' %
-                            (mount_point.client_system, linked_folder_name))
-            g.log.info('Create link %s to directory %s', linked_folder_name,
-                       folder_name)
+            command = f"ln -s {folder_name} {linked_folder_name}"
+            redant.execute_abstract_op_node(command, mount_obj['client'])
+
+            if not redant.path_exists(mount_obj['client'],
+                                      linked_folder_name):
+                raise Exception("Link does not exists")
 
             # Verify that hash layout values are set on each
             # bricks for the link to dir
-            g.log.debug("Verifying hash layout values")
-            ret = validate_files_in_dir(mount_point.client_system,
-                                        mount_point.mountpoint,
-                                        test_type=FILE_ON_HASHED_BRICKS,
-                                        file_type=FILETYPE_LINK)
-            self.assertTrue(ret, "Expected - Link to directory is stored "
-                                 "on hashed bricks")
-            g.log.info("Hash layout values are set on each bricks")
+            ret = (redant.validate_files_in_dir(
+                   mount_obj['client'], mount_obj['mountpath'],
+                   test_type=TEST_FILE_EXISTS_ON_HASHED_BRICKS,
+                   file_type=FILETYPE_LINK))
+            if not ret:
+                raise Exception("Expected - Directory is stored "
+                                "on hashed bricks")
 
             # Verify that mount point should not display xattr :
             # trusted.gfid and dht
-            g.log.debug("Loading extra attributes")
-            ret = get_fattr_list(mount_point.client_system, linked_folder_name)
+            ret = redant.get_fattr_list(linked_folder_name,
+                                        mount_obj['client'])
 
-            self.assertTrue('trusted.gfid' not in ret,
-                            "Extended attribute trudted.gfid is presented on "
-                            "mount point %s and folder %s"
-                            % (mount_point.mountpoint, linked_folder_name))
+            if 'trusted.gfid' in ret:
+                raise Exception("Unexpected: Extended attribute trusted.gfid"
+                                " is presented on mount point")
 
-            self.assertTrue('trusted.glusterfs.dht' not in ret,
-                            "Extended attribute trusted.glusterfs.dht is "
-                            "presented on mount point %s and folder %s"
-                            % (mount_point.mountpoint, linked_folder_name))
-
-            g.log.info('Extended attributes trusted.gfid and '
-                       'trusted.glusterfs.dht does not exists on '
-                       'mount point %s:%s ',
-                       mount_point.mountpoint, linked_folder_name)
+            if 'trusted.glusterfs.dht' in ret:
+                raise Exception("Unexpected: Extended attribute "
+                                "trusted.glusterfs.dht is present")
 
             # Verify that mount point shows pathinfo xattr
-            g.log.debug("Check if pathinfo is presented on %s:%s",
-                        mount_point.client_system, linked_folder_name)
-            self.assertIsNotNone(get_fattr(mount_point.client_system,
-                                           mount_point.mountpoint,
-                                           'trusted.glusterfs.pathinfo'),
-                                 "pathinfo is not displayed on mountpoint "
-                                 "%s:%s" % (mount_point.client_system,
-                                            linked_folder_name))
-            g.log.info('pathinfo value is displayed on mount point %s:%s',
-                       mount_point.client_system, linked_folder_name)
+            redant.get_fattr(mount_obj['mountpath'],
+                             'trusted.glusterfs.pathinfo',
+                             mount_obj['client'], encode="text")
 
             # Set custom Attribute to link
-            g.log.debug("Set custom xattribute user.foo to %s:%s",
-                        mount_point.client_system, linked_folder_name)
-            self.assertTrue(set_fattr(mount_point.client_system,
-                                      linked_folder_name, 'user.foo', 'bar2'))
-            g.log.info('Successful in set custom attribute to %s:%s',
-                       mount_point.client_system, linked_folder_name)
+            redant.set_fattr(linked_folder_name, 'user.foo',
+                             mount_obj['client'], 'bar2')
 
             # Verify that custom xattr for directory is displayed
             # on mount point and bricks
-            g.log.debug('Check mountpoint and bricks for custom xattribute')
-            self.assertEqual('bar2', get_fattr(mount_point.client_system,
-                                               linked_folder_name,
-                                               'user.foo', encode="text"),
-                             'Custom xattribute is not presented on '
-                             'mount point %s:%s' %
-                             (mount_point.client_system, linked_folder_name))
-            g.log.info("Custom xattribute is presented on mount point %s:%s",
-                       mount_point.client_system, linked_folder_name)
-            for brick in get_all_bricks(self.mnode, self.volname):
+            ret = redant.get_fattr(linked_folder_name, 'user.foo',
+                                   mount_obj['client'], encode="text")
+            val = ret[1].split('=')[1].strip()[1:-1]
+            if val != 'bar2':
+                raise Exception("Xattr attribute user.foo is not present "
+                                "on mount point")
+
+            brick_list = redant.get_all_bricks(self.vol_name,
+                                               self.server_list[0])
+            for brick in brick_list:
                 brick_server, brick_dir = brick.split(':')
-                brick_path = dir_prefix. \
-                    format(root=brick_dir,
-                           client_index="%s_linked" % mount_index)
-                cmd = '[ -f %s ] && echo "yes" || echo "no"' % brick_path
-                # Check if link exists
-                _, ret, _ = g.run(brick_server, cmd)
-                if 'no' in ret:
-                    g.log.info("Link %s:%s does not exists",
-                               brick_server, brick_path)
+                brick_path = (dir_prefix.format(root=brick_dir,
+                              client_index=f"{mount_index}_linked"))
+                cmd = f"[ -f {brick_path} ] && echo 'yes' || 'no'"
+                ret = redant.execute_abstract_op_node(cmd, brick_server)
+                if "no" in ret['msg'][0].strip():
+                    redant.logger.info("Link does not exists")
                     continue
 
-                self.assertEqual(get_fattr(brick_server, brick_path,
-                                           'user.foo', encode="text"),
-                                 'bar2',
-                                 "Actual: custom attribute not "
-                                 "found on brick %s:%s" % (
-                                     brick_server, brick_path))
-                g.log.info('Custom xattr for link found on brick %s:%s',
-                           brick, brick_path)
+                ret = redant.get_fattr(brick_path, 'user.foo', brick_server,
+                                       encode="text")
+                val = ret[1].split('=')[1].strip()[1:-1]
+                if val != 'bar2':
+                    raise Exception("Xattr attribute user.foo is not present"
+                                    " on brick")
 
             # Delete custom attribute
-            g.log.debug('Removing customer attribute on mount point %s:%s',
-                        mount_point.client_system, linked_folder_name)
-            self.assertTrue(delete_fattr(mount_point.client_system,
-                                         linked_folder_name, 'user.foo'),
-                            'Fail on delete xattr user.foo')
-            g.log.info('Deleted custom xattr from link %s:%s',
-                       mount_point.client_system, linked_folder_name)
+            redant.delete_fattr(linked_folder_name, 'user.foo',
+                                mount_obj['client'])
 
             # Verify that custom xattr is not displayed after delete
             # on mount point and on the bricks
-            g.log.debug("Check if custom xattr is presented on %s:%s "
-                        "after deletion", mount_point.client_system,
-                        linked_folder_name)
-            self.assertIsNone(get_fattr(mount_point.client_system,
-                                        linked_folder_name, 'user.foo',
-                                        encode="text"),
-                              "Expected: xattr user.foo to be not presented on"
-                              " %s:%s" % (mount_point.client_system,
-                                          linked_folder_name))
-            g.log.info("Custom xattr user.foo is not presented on %s:%s",
-                       mount_point.client_system, linked_folder_name)
-            for brick in get_all_bricks(self.mnode, self.volname):
+            ret = redant.get_fattr(linked_folder_name, 'user.foo',
+                                   mount_obj['client'], encode="text",
+                                   excep=False)
+            if ret['error_code'] == 0:
+                raise Exception("Xattr user.foo is present on mount point"
+                                " even after deletion")
+
+            brick_list = redant.get_all_bricks(self.vol_name,
+                                               self.server_list[0])
+            for brick in brick_list:
                 brick_server, brick_dir = brick.split(':')
-                brick_path = dir_prefix. \
-                    format(root=brick_dir,
-                           client_index="%s_linked" % mount_index)
-                cmd = '[ -f %s ] && echo "yes" || echo "no"' % brick_path
-                # Check if link exists
-                _, ret, _ = g.run(brick_server, cmd)
-                if 'no' in ret:
-                    g.log.info("Link %s:%s does not exists",
-                               brick_server, brick_path)
+                brick_path = (dir_prefix.format(root=brick_dir,
+                              client_index=f"{mount_index}_linked"))
+                cmd = f"[ -f {brick_path} ] && echo 'yes' || 'no'"
+                ret = redant.execute_abstract_op_node(cmd, brick_server)
+                if "no" in ret['msg'][0].strip():
+                    redant.logger.info("Link does not exists")
                     continue
 
-                self.assertIsNone(get_fattr(brick_server, brick_path,
-                                            'user.foo', encode="text"),
-                                  "Extended custom attribute is presented on "
-                                  "%s:%s after deletion" % (brick_server,
-                                                            brick_path))
-                g.log.info('Custom attribute is not presented after delete '
-                           'from link on brick %s:%s', brick_server,
-                           brick_path)
-
-        g.log.info('Directory - custom extended attribute validation getfattr,'
-                   ' setfattr is successful')
-
-    def tearDown(self):
-        # Unmount Volume and Cleanup Volume
-        g.log.info("Starting to Unmount Volume and Cleanup Volume")
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Unmount Volume and Cleanup Volume")
-        g.log.info("Successful in Unmount Volume and Cleanup Volume")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+                ret = redant.get_fattr(brick_path, 'user.foo', brick_server,
+                                       encode="text", excep=False)
+                if ret['error_code'] == 0:
+                    raise Exception("Xattr user.foo is present on brick"
+                                    " even after deletion")
