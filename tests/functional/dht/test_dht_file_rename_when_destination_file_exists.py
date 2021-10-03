@@ -88,7 +88,7 @@ class TestDhtFileRenameWithDestFile(DParentTest):
         """
         host, fqpath = brick_dir.split(":")
         cmd = f"[ -f {fqpath}{str(file_name)} ]"
-        ret = self.redant.execute_abstract_op_node(cmd, host)
+        ret = self.redant.execute_abstract_op_node(cmd, host, False)
         if ret['error_code'] != 0:
             return False
 
