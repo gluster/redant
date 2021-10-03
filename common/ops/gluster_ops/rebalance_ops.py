@@ -167,3 +167,34 @@ class RebalanceOps(AbstractOps):
         self.logger.error("Rebalance operation has not completed."
                           "Wait timeout.")
         return False
+
+    def set_rebalance_throttle(self, volname: str, node: str,
+                               throttle_type='normal',
+                               excep: bool = True) -> dict:
+        """
+        Sets rebalance throttle
+
+        Args:
+            volname (str): volume name
+            node (str): Node on which cmd has to be executed.
+
+        Optional:
+            throttle_type (str): throttling type (lazy|normal|aggressive)
+                                 Defaults to 'normal'
+            excep (bool): Optional parameter with default value as True. When
+                          set True, the exception handling is done at abstract
+                          ops. If this handling is not required, set it to
+                          False.
+
+        Returns:
+            ret: A dictionary consisting
+                - Flag : Flag to check if connection failed
+                - msg : message
+                - error_msg: error message
+                - error_code: error code returned
+                - cmd : command that got executed
+                - node : node on which the command got executed
+        """
+        cmd = f"gluster volume set {volname} rebal-throttle {throttle_type}"
+        ret = self.execute_abstract_op_node(cmd, node, excep)
+        return ret
