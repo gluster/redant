@@ -384,6 +384,48 @@ class DHTOps(AbstractOps):
             count = -1
         return None
 
+    def find_nonhashed_subvol(self, subvols: list, parent_path: str,
+                              name: str) -> tuple:
+        """
+        Args:
+            subvols: subvol list
+            parent_path: Immediate parent path of "name" relative from
+                         mount point
+                         e.g. if your mount is "/mnt" and the path from mount
+                         is "/mnt/directory" then just pass "directory" as
+                         parent_path
+
+            name: file or directory name
+
+        Return Values:
+            A tuple (nonhashed_subvol, subvol_count) where the values are
+                nonhashed_subvol representing the nonhashed subvolume
+                subvol_count: The subvol index in the subvol list
+        """
+        if subvols is None or parent_path is None or name is None:
+            self.logger.error("empty arguments")
+            return None
+
+        bricklist = self.create_brickpathlist(subvols, parent_path)
+        if not bricklist:
+            self.logger.error("Could not form brickpath list")
+            return None
+
+        host, _ = bricklist[0].split(':')
+        hash_num = self.calculate_hash(host, name)
+
+        count = -1
+        for brickdir in bricklist:
+            count += 1
+            ret = self.hashrange_contains_hash(brickdir, hash_num)
+            if ret:
+                continue
+
+            nonhashed_subvol = brickdir
+            break
+
+        return nonhashed_subvol, count
+
     def validate_files_in_dir(self, node: str, rootdir: str,
                               file_type: int = c.FILETYPE_ALL,
                               test_type: int = c.TEST_ALL) -> bool:
