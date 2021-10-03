@@ -255,7 +255,7 @@ class TestDhtFileRenameWithDestFile(DParentTest):
                             "have the expected linkto file")
 
         # Find a subvol (s3) other than S1 and S2
-        bricklist = redant.create_brickpathlist(self.subvols)
+        bricklist = redant.create_brickpathlist(self.subvols, "")
         br_count = -1
         subvol_new = None
         for brickdir in bricklist:
