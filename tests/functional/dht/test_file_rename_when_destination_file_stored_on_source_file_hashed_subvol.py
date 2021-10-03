@@ -61,6 +61,8 @@ class TestDhtFileRenameWithDestFileHashed(DParentTest):
         if source_hashed is None:
             raise Exception("Couldn't find hashed subvol for source file")
 
+        return source_hashed[0], source_hashed[1], source_file
+
     def _verify_link_file_exists(self, brickdir, file_name):
         """
         Verifies whether a file link is present in given subvol
@@ -89,7 +91,7 @@ class TestDhtFileRenameWithDestFileHashed(DParentTest):
         """
         host, fqpath = brick_dir.split(":")
         cmd = f"[ -f {fqpath}{str(file_name)} ]"
-        ret = self.redant.execute_abstract_op_node(cmd, host)
+        ret = self.redant.execute_abstract_op_node(cmd, host, False)
         if ret['error_code'] != 0:
             return False
 
@@ -442,13 +444,13 @@ class TestDhtFileRenameWithDestFileHashed(DParentTest):
 
         # Rename/Move the file
         dest_file2 = f"{self.mountpoint}/{str(new_hashed2[0])}"
-        ret = redant.move_file(self.client_list[0], dest_file, dest_file_2)
+        ret = redant.move_file(self.client_list[0], dest_file, dest_file2)
         if not ret:
             raise Exception(f"Failed to move files {dest_file} and"
                             f" {dest_file_2}")
 
         # Verify the Dest link file is stored on hashed sub volume(s1)
-        dest_link_subvol = new_hashed2[0]
+        dest_link_subvol = new_hashed2[1]
         ret = self._verify_link_file_exists(dest_link_subvol,
                                             str(new_hashed2[0]))
         if not ret:
