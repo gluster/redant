@@ -29,6 +29,19 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start in parent_run_test
+        """
+        # Skip test if not RHGS installation
+        self.redant.check_rhgs_installation(self.server_list)
+
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list, self.brick_roots,
+                                 force=True)
+
     def run_test(self, redant):
         """
         Steps:

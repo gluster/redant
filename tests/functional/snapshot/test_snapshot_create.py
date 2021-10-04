@@ -28,9 +28,33 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.validate_io_procs = False
+
+        # Skip test if not RHGS installation
+        self.redant.check_rhgs_installation(self.server_list)
+
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list, self.brick_roots,
+                                 force=True)
+
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0],
+                                     self.vol_name,
+                                     self.mountpoint, client)
+
     def terminate(self):
         try:
-            if not self.validate_io_procs:
+            if self.validate_io_procs:
                 ret = self.redant.wait_for_io_to_complete(self.all_mounts_proc,
                                                           self.mounts)
                 if not ret:
@@ -64,8 +88,6 @@ class TestCase(DParentTest):
         12. Arequal all the bricks in the snap volume
         13. Cleanup
         """
-        self.validate_io_procs = False
-
         # Creating snapshot with no option
         snap_name = f"{self.vol_name}-snap1"
         redant.snap_create(self.vol_name, snap_name, self.server_list[0],
@@ -104,6 +126,7 @@ class TestCase(DParentTest):
                                                       mount['client'])
             self.all_mounts_proc.append(proc)
             counter += 10
+        self.validate_io_procs = True
 
         for proc in self.all_mounts_proc:
             if redant.check_async_command_status(proc):
@@ -117,7 +140,7 @@ class TestCase(DParentTest):
         # Validate IO
         if not redant.validate_io_procs(self.all_mounts_proc, self.mounts):
             raise Exception("IO failed.")
-        self.validate_io_procs = True
+        self.validate_io_procs = False
 
         # Get stat of all the files/dirs created.
         if not redant.get_mounts_stat(self.mounts):

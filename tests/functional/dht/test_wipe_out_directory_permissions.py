@@ -29,6 +29,9 @@ class TestCase(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        # Skip test if not RHGS installation
+        self.redant.check_rhgs_installation(self.server_list)
+
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         conf_hash['dist_count'] = 1
         self.redant.setup_volume(self.vol_name, self.server_list[0],
