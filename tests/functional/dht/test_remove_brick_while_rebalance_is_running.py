@@ -39,7 +39,7 @@ class RebalanceValidation(DParentTest):
                 # Stop rebalance on the volume
                 ret = self.redant.rebalance_stop(self.vol_name,
                                                  self.server_list[0])
-                if ret['msg']['opRet'] != 0:
+                if ret['msg']['opRet'] != '0':
                     raise Exception("Rebalance stop failed")
         except Exception as error:
             tb = traceback.format_exc()
@@ -122,7 +122,7 @@ class RebalanceValidation(DParentTest):
             ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                       self.remove_brick_list, "start",
                                       excep=False)
-            if ret['msg']['opRet'] == 0:
+            if ret['msg']['opRet'] == '0':
                 raise Exception("Successfully removed bricks while volume "
                                 "rebalance is in-progress. "
                                 "Expected:Failed to start remove-brick as "
