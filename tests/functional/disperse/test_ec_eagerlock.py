@@ -22,6 +22,7 @@ Test Description:
 from random import choice
 from time import sleep
 from copy import deepcopy
+from datetime import datetime, timedelta
 from tests.d_parent_test import DParentTest
 
 
@@ -50,7 +51,7 @@ class TestCase(DParentTest):
             self.redant.execute_abstract_op_node("yum -y install time",
                                                  client)
 
-    def _filecreate(self, timeoutval):
+    def _filecreate_and_hashcheck(self, timeoutval):
         """Create a file and check on which subvol it is hashed to"""
         # Create and write to a file to test the eagerlock timeout behavior
         objectname = 'EagerLockTimeoutCheck-file-' + timeoutval
@@ -60,22 +61,32 @@ class TestCase(DParentTest):
                                                 'EagerLockTest')
         if not ret:
             raise Exception("Failed to append string to file")
-        return objectname
 
-    def _get_dirty_xattr_value(self, filename):
+        # Find the hashed subvol of the file created
+        ret = self.redant.get_subvols(self.vol_name, self.server_list[0])
+        if len(ret) > 1:
+            hashed_subvol = self.redant.find_hashed_subvol(ret, '',
+                                                           objectname)
+            if hashed_subvol is None:
+                self.redant.logger.error("Error in finding hash value")
+                return None
+
+            return (objectname, ret, hashed_subvol[1])
+
+        # Set subvol to 0 for plain(non-distributed) disperse volume
+        hashed_subvol = 0
+        return (objectname, ret, hashed_subvol)
+
+    def _get_dirty_xattr_value(self, subvol, hashed_subvol, filename):
         """Get trusted.ec.dirty xattr value to validate eagerlock behavior
         """
         # Collect ec.dirty xattr value from each brick
         result = []
-        bricks_list = self.redant.get_all_bricks(self.vol_name,
-                                                 self.server_list[0])
-        if not bricks_list:
-            raise Exception("Failed to get the brick list")
-
-        for brick in bricks_list:
+        for brick in subvol[hashed_subvol]:
             host, brickpath = brick.split(':')
             brickpath = f"{brickpath}/{filename}"
-            ret = self.redant.get_extended_attributes_info(host, brickpath)
+            ret = (self.redant.get_extended_attributes_info(host, brickpath,
+                   encoding='hex', attr_name='trusted.ec.dirty'))
             if not ret:
                 continue
             ret = ret[brickpath]['trusted.ec.dirty']
@@ -113,16 +124,17 @@ class TestCase(DParentTest):
         sleep(60)
         result = []
         for client in self.client_list:
-            cmd = (f"/usr/bin/time -f '%e' ls -lRt {self.mountpoint}"
-                   " >> /dev/null")
-            ret = self.redant.execute_abstract_op_node(cmd, client)
-            result.append(ret['msg'][0])
+            start_time = datetime.now().replace(microsecond=0)
+            cmd = f"ls -lRt {self.mountpoint} >> /dev/null"
+            end_time = datetime.now().replace(microsecond=0)
+            self.redant.execute_abstract_op_node(cmd, client)
+            result.append(end_time - start_time)
+
         # Checking the actual time taken for lookup
         for value in result:
-            calc = float(value.strip())
-            if calc > 2:
+            if value > timedelta(seconds=2):
                 raise Exception("lookups taking more than 2 seconds."
-                                " Actual time: {calc}")
+                                f" Actual time: {value}")
 
     def _rmdir_on_mountpoint(self):
         """ Perform rm of created files as part of Sanity Check """
@@ -162,10 +174,11 @@ class TestCase(DParentTest):
                                   self.server_list[0], True)
 
         # Test behavior with default timeout value of 1sec
-        objectname = self._filecreate('1sec')
+        objectname, subvol, hashed_subvol = \
+            self._filecreate_and_hashcheck('1sec')
         sleep(2)
 
-        ret = self._get_dirty_xattr_value(objectname)
+        ret = self._get_dirty_xattr_value(subvol, hashed_subvol, objectname)
         if ret != '0x00000000000000000000000000000000':
             raise Exception("Unexpected dirty xattr value is set: "
                             f"{ret} on {objectname}")
@@ -183,18 +196,16 @@ class TestCase(DParentTest):
 
         self._file_dir_create()
 
-        objectname = self._filecreate('60seconds')
+        objectname, subvol, hashed_subvol = \
+            self._filecreate_and_hashcheck('60seconds')
         # Check in all the bricks "trusted.ec.dirty" value
         # It should be "0x00000000000000010000000000000001"
-        ret = self._get_dirty_xattr_value(objectname)
-        if ret != '0x00000000000000010000000000000001':
-            raise Exception("Unexpected dirty xattr value is set: "
-                            f"{ret} on {objectname}")
+        ret = self._get_dirty_xattr_value(subvol, hashed_subvol, objectname)
 
         # Sleep 60sec after which dirty_val should reset to "0x00000..."
         sleep(62)
 
-        ret = self._get_dirty_xattr_value(objectname)
+        ret = self._get_dirty_xattr_value(subvol, hashed_subvol, objectname)
         if ret != '0x00000000000000000000000000000000':
             raise Exception("Unexpected dirty xattr value is set: "
                             f"{ret} on {objectname}")
@@ -215,11 +226,12 @@ class TestCase(DParentTest):
         self._file_dir_create()
 
         # Create a new file see the dirty flag getting unset immediately
-        objectname = self._filecreate('Eagerlock_Off')
+        objectname, subvol, hashed_subvol = \
+            self._filecreate_and_hashcheck('Eagerlock_Off')
 
         # Check in all the bricks "trusted.ec.dirty value"
         # It should be "0x00000000000000000000000000000000"
-        ret = self._get_dirty_xattr_value(objectname)
+        ret = self._get_dirty_xattr_value(subvol, hashed_subvol, objectname)
         if ret != '0x00000000000000000000000000000000':
             raise Exception("Unexpected dirty xattr value is set: "
                             f"{ret} on {objectname}")

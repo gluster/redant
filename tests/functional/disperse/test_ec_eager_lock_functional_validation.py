@@ -57,7 +57,7 @@ class TestCase(DParentTest):
         filename = 'f1_EagerLock_' + status
         cmd = (f"dd if=/dev/urandom of={self.mountpoint}/{filename} "
                "bs=100M count=10")
-        self.redant.execute_abstract_op_node(cmd, self.server_list[0])
+        self.redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Getting and checking output of profile info.
         cmd = (f"gluster v profile {self.vol_name} info | grep -i INODELK"

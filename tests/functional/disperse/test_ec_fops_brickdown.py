@@ -252,7 +252,7 @@ class TestFopsBrickdown(DParentTest):
         self.is_io_running = False
 
         # Check file exist for memory log
-        ret = redant.path_exists(self.server_list[0],
+        ret = redant.path_exists(self.client_list[0],
                                  self.log_file_mem_monitor)
         if not ret:
             raise Exception("Unexpected:Memory log file does not exist")
