@@ -34,8 +34,7 @@ class TestDhtFileRenameWithDestFile(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
-        if self.volume_type in ("dist-rep", "dist-disp", "dist-arb"):
-            conf_hash['dist_count'] = 4
+        conf_hash['dist_count'] = 4
 
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
@@ -480,7 +479,7 @@ class TestDhtFileRenameWithDestFile(DParentTest):
         subvol_new = None
         for brickdir in bricklist:
             br_count += 1
-            if br_count not in (src_count, new_hashed[0]):
+            if br_count not in (src_count, new_hashed[2]):
                 subvol_new = brickdir
                 break
 
@@ -784,7 +783,7 @@ class TestDhtFileRenameWithDestFile(DParentTest):
 
         # Verify Destination Link is present and points to new dest file
         ret = self._verify_link_file_exists(dest_hashed[1],
-                                            str(dest_hashed[1]))
+                                            str(dest_hashed[0]))
         if not ret:
             raise Exception("The Dest link file is not present in "
                             f"{dest_hashed[1]}")
@@ -827,7 +826,7 @@ class TestDhtFileRenameWithDestFile(DParentTest):
 
         # Create Dest file in S3
         dest_cached, dest_count, dest_file = (
-            self._create_file_and_get_hashed_subvol(str(new_hashed.newname)))
+            self._create_file_and_get_hashed_subvol(str(new_hashed[0])))
 
         # Verify S1 and S3 are not same
         if src_count == dest_count:
