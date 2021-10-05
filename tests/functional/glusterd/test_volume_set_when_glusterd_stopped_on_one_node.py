@@ -44,10 +44,11 @@ class TestCase(DParentTest):
                 raise Exception("Failed to start glusterd on node"
                                 f"{self.random_server}")
 
-            ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
-                                                      self.mnt_list)
-            if not ret:
-                raise Exception("IO failed on some of the clients")
+            if self.is_io_running:
+                ret = self.redant.wait_for_io_to_complete(self.list_of_procs,
+                                                          self.mnt_list)
+                if not ret:
+                    raise Exception("IO failed on some of the clients")
 
         except Exception as error:
             tb = traceback.format_exc()
@@ -66,6 +67,8 @@ class TestCase(DParentTest):
         6) Verify all the bricks are online after starting glusterd.
         7) Check if the volume info is synced across the cluster.
         """
+        self.is_io_running = False
+
         # Fetching the bricks list and storing it for later use
         list1 = redant.get_online_bricks_list(self.vol_name,
                                               self.server_list[0])
@@ -94,11 +97,13 @@ class TestCase(DParentTest):
 
             self.list_of_procs.append(proc)
             self.counter += 10
+        self.is_io_running = True
 
         # Validate IO
         ret = redant.validate_io_procs(self.list_of_procs, self.mnt_list)
         if not ret:
             raise Exception("IO validation failed")
+        self.is_io_running = False
 
         # set a option on volume, stat-prefetch on
         self.options = {"stat-prefetch": "on"}

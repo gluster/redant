@@ -63,7 +63,7 @@ class TestSelfHeal50kFiles(DParentTest):
             "client": self.client_list[0],
             "mountpath": self.mountpoint
         }
-        ret = self.redant.validate_io_procs(proc, mount_dict)
+        ret = self.redant.validate_io_procs(proc, mount_dict, timeout=7200)
         if not ret:
             raise Exception("IO validation failed")
 

@@ -27,6 +27,27 @@ from tests.d_parent_test import DParentTest
 
 class TestAddBrickRebalanceWithSelfHeal(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.is_copy_running = False
+
+        # Skip test if not RHGS installation
+        self.redant.check_rhgs_installation(self.server_list)
+
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 self.vol_type_inf[self.volume_type],
+                                 self.server_list, self.brick_roots,
+                                 force=True)
+
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
+
     def terminate(self):
         """
         Wait for IO to complete if the TC fails midway
@@ -58,7 +79,6 @@ class TestAddBrickRebalanceWithSelfHeal(DParentTest):
         9. Collect arequal checksum on mount point and compare
            it with the one taken in step 4.
         """
-        self.is_copy_running = False
         self.list_of_io_processes = []
         # Start I/O from mount point and wait for it to complete
         cmd = (f"cd {self.mountpoint}; for i in {{1..1000}} ; do "

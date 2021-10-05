@@ -33,6 +33,29 @@ class TestPeerProbeWithFirewallNotOpened(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        self.is_firewall_active = False
+
+        # Check if firewall is running
+        cmd = "firewall-cmd --state"
+        ret = self.redant.execute_command_multinode(cmd, self.server_list)
+        for each_ret in ret:
+            if each_ret['error_code'] != 0:
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires firewalld")
+            elif each_ret['msg'] == "not running":
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires firewalld to be "
+                                "running")
+
+        # Check if gluster is setup using firewall
+        cmd = "firewall-cmd --get-services | grep 'glusterfs'"
+        ret = self.redant.execute_command_multinode(cmd, self.server_list)
+        for each_ret in ret:
+            if each_ret['error_code'] != 0:
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires glusterfs setup to "
+                                "be done using firewalld")
+
         self.redant.delete_cluster(self.server_list)
 
     def terminate(self):
@@ -40,13 +63,14 @@ class TestPeerProbeWithFirewallNotOpened(DParentTest):
         Restore the firewall services in the node
         """
         try:
-            # Add the removed services in firewall
-            for service in ('glusterfs', 'rpc-bind'):
-                for option in ("", " --permanent"):
-                    cmd = ("firewall-cmd --zone=public --add-service="
-                           f"{service} {option}")
-                    self.redant.execute_abstract_op_node(cmd,
-                                                         self.node_to_probe)
+            if self.is_firewall_active:
+                # Add the removed services in firewall
+                for service in ('glusterfs', 'rpc-bind'):
+                    for option in ("", " --permanent"):
+                        cmd = ("firewall-cmd --zone=public --add-service="
+                               f"{service} {option}")
+                        self.redant.execute_abstract_op_node(cmd,
+                                                             self.nd_to_prbe)
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -59,7 +83,7 @@ class TestPeerProbeWithFirewallNotOpened(DParentTest):
             for option in ("", " --permanent"):
                 cmd = ("firewall-cmd --zone=public --remove-service="
                        f"{service} {option}")
-                self.redant.execute_abstract_op_node(cmd, self.node_to_probe)
+                self.redant.execute_abstract_op_node(cmd, self.nd_to_prbe)
 
     def run_test(self, redant):
         """
@@ -69,6 +93,8 @@ class TestPeerProbeWithFirewallNotOpened(DParentTest):
         3. Verify glusterd.log for Errors
         4. Check for core files created
         """
+        self.is_firewall_active = True
+
         # Timestamp of current test case of start time
         ret = redant.execute_abstract_op_node('date +%s', self.server_list[0])
         test_timestamp = ret['msg'][0].rstrip('\n')
@@ -79,11 +105,11 @@ class TestPeerProbeWithFirewallNotOpened(DParentTest):
         redant.execute_abstract_op_node(cmd, self.server_list[0])
 
         # Remove firewall service on the node to probe to
-        self.node_to_probe = choice(self.server_list[1:])
+        self.nd_to_prbe = choice(self.server_list[1:])
         self._remove_firewall_service()
 
         # Try peer probe from mnode to node
-        ret = redant.peer_probe(self.node_to_probe, self.server_list[0],
+        ret = redant.peer_probe(self.nd_to_prbe, self.server_list[0],
                                 False)
         if ret['msg']['opRet'] == '0':
             raise Exception("Peer probing the node should have failed")

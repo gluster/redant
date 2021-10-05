@@ -424,6 +424,35 @@ class MachineOps(AbstractOps):
                     raise Exception(f"The test case requires {bricks_count}"
                                     " bricks per node to run the test")
 
+    def check_rhgs_installation(self, servers: list):
+        """
+        Method to check if the RHGS is installed on the servers
+
+        Args:
+            servers (list): List of server nodes
+
+        NOTE: This might not be the best way to check for RHGS, but it works
+              for now
+        """
+        if not isinstance(servers, list):
+            servers = [servers]
+
+        # Check if rpms have gluster version as 6.0-*
+        cmd = "rpm -qa | grep 'gluster' | grep '6\.0-'"
+        ret = self.execute_command_multinode(cmd, servers)
+        for each_ret in ret:
+            if each_ret['error_code'] != 0:
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires RHGS Installation")
+
+        # Check for RHEL env
+        cmd = "rpm -qa | grep 'gluster' | grep '\.el'"
+        ret = self.execute_command_multinode(cmd, servers)
+        for each_ret in ret:
+            if each_ret['error_code'] != 0:
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires RHGS Installation")
+
     def delete_glusterfs_logs(self, server_list: list, client_list: list):
         """
         Delete all the log files under '/var/logs/glusterfs/' directory

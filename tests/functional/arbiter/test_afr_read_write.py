@@ -153,7 +153,7 @@ class TestCase(DParentTest):
 
         # Validating IO's
         for proc, mount in zip(self.list_of_procs, self.mnt_list):
-            if not redant.validate_io_procs(proc, mount):
+            if not redant.validate_io_procs(proc, mount, timeout=1800):
                 raise Exception("IO failed on some of the clients")
 
         self._bring_bricks_online_heal(self.server_list[0],
