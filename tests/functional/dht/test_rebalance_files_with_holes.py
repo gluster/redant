@@ -20,10 +20,28 @@
 """
 
 # disruptive;dist,rep,disp,arb,dist-rep,dist-disp,dist-arb
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
 class TestAddBrickRebalanceFilesWithHoles(DParentTest):
+
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.vol_name = f"testvol_{self.volume_type}"
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
     def run_test(self, redant):
         """
@@ -75,14 +93,14 @@ class TestAddBrickRebalanceFilesWithHoles(DParentTest):
             3. After the file creation is complete, remove-brick from volume.
             4. Wait for remove-brick to complete.
             """
-            self.redant.setup_volume(self.vol_name, self.server_list[0],
-                                     self.vol_type_inf[self.volume_type],
-                                     self.server_list, self.brick_roots)
+            redant.setup_volume(self.vol_name, self.server_list[0],
+                                self.vol_type_inf[self.volume_type],
+                                self.server_list, self.brick_roots)
             self.mountpoint = (f"/mnt/{self.vol_name}")
-            self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
-                                                 self.client_list[0])
-            self.redant.volume_mount(self.server_list[0], self.vol_name,
-                                     self.mountpoint, self.client_list[0])
+            redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                            self.client_list[0])
+            redant.volume_mount(self.server_list[0], self.vol_name,
+                                self.mountpoint, self.client_list[0])
 
             # On the volume root, create files with holes
             cmd = (f"cd {self.mountpoint}; for i in {{1..2000}}; do dd"
