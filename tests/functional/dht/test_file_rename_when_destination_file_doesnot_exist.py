@@ -14,6 +14,9 @@
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description: Tests to validate behaviour of different scenarios of file
+             rename cases, when destination file doesn't exist intially.
 """
 # disruptive;dist,dist-rep,dist-disp,dist-arb
 
