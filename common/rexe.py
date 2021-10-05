@@ -305,12 +305,15 @@ class Rexe:
         sftp.put(source_path, dest_path)
         sftp.close()
 
-    def reboot_node(self, node):
+    def reboot_node(self, node: str) -> bool:
         """
         Reboot of a node is a special case and we need to execute his using
         paramiko `exec_command` directly.
         Arg:
             node (str)
+        Returns:
+            bool: True in case command execution was success.
+                  False otherwise
         """
         self.logger.info(f"Rebooting node: {node} ...")
         cmd = "reboot"
@@ -320,3 +323,6 @@ class Rexe:
             # In case command execution fails, handle exception
             self.logger.error("Failed to execute 'reboot' command"
                               f"Error: {stderr}")
+            return False
+
+        return True

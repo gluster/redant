@@ -25,7 +25,9 @@ class MachineOps(AbstractOps):
             nodes = [nodes]
 
         for node in nodes:
-            self.reboot_node(node)
+            ret = self.reboot_node(node)
+            if not ret:
+                raise Exception(f"Failed to reboot node {node}")
             self.wait_node_power_down(node)
 
     def check_node_power_status(self, nodes: list) -> dict:
