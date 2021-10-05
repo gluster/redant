@@ -1,109 +1,69 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
-from glusto.core import Glusto as g
-from glustolibs.gluster.glusterfile import get_file_stat
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.dht_test_utils import (find_hashed_subvol,
-                                               create_brickobjectlist,
-                                               find_new_hashed,
-                                               find_specific_hashed)
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.gluster.glusterfile import move_file, is_linkto_file
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+# disruptive;dist,dist-rep,dist-disp,dist-arb
+
+from copy import deepcopy
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed', 'distributed-replicated',
-           'distributed-dispersed', 'distributed-arbiter'],
-          ['glusterfs']])
-class DhtFileRenameVerification(GlusterBaseClass):
+class DhtFileRenameVerification(DParentTest):
 
-    def setUp(self):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
         """
-        Setup Volume and Mount Volume
+        Override the volume create, start and mount in parent_run_test
         """
-        # Calling GlusterBaseClass setUp
-        self.get_super_method(self, 'setUp')()
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        if self.volume_type in ("dist-rep", "dist-disp", "dist-arb"):
+            conf_hash['dist_count'] = 4
 
-        # Change the dist count to 4 in case of 'distributed-replicated' ,
-        # 'distributed-dispersed' and 'distributed-arbiter'
-        if self.volume_type in ("distributed-replicated",
-                                "distributed-dispersed",
-                                "distributed-arbiter"):
-            self.volume['voltype']['dist_count'] = 4
-
-        # Setup Volume and Mount Volume
-        ret = self.setup_volume_and_mount_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to Setup_Volume and Mount_Volume")
-
-        mount_obj = self.mounts[0]
-        self.mount_point = mount_obj.mountpoint
-
-        self.subvols = (get_subvols(
-            self.mnode, self.volname))['volume_subvols']
-        self.assertIsNotNone(self.subvols, "failed to get subvols")
-
-    def tearDown(self):
-        """
-        Unmount Volume and Cleanup Volume
-        """
-        # Unmount Volume and Cleanup Volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Unmount Volume and Cleanup Volume: Fail")
-        g.log.info("Unmount Volume and Cleanup Volume: Success")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
 
     def _create_file_and_get_hashed_subvol(self, file_name):
         """ Creates a file and return its hashed subvol
-
         Args:
                file_name(str): name of the file to be created
         Returns:
                 hashed_subvol object: An object of type BrickDir type
                                     representing the hashed subvolume
-
                 subvol_count: The subvol index in the subvol list
-
                 source_file: Path to the file created
-
         """
-        # pylint: disable=unsubscriptable-object
-
         # Create Source File
-        source_file = "{}/{}".format(self.mount_point, file_name)
-        ret, _, err = g.run(self.clients[0], ("touch %s" % source_file))
-        self.assertEqual(ret, 0, ("Failed to create {} : err {}"
-                                  .format(source_file, err)))
-        g.log.info("Successfully created the source file")
+        source_file = f"{self.mountpoint}/{file_name}"
+        self.redant.execute_abstract_op_node(f"touch {source_file}",
+                                             self.client_list[0])
 
         # Find the hashed subvol for source file
-        source_hashed_subvol, count = find_hashed_subvol(self.subvols,
-                                                         "/",
-                                                         file_name)
-        self.assertIsNotNone(source_hashed_subvol, ("Couldn't find hashed "
-                                                    "subvol for the {}"
-                                                    .format(source_file)))
-        return source_hashed_subvol, count, source_file
+        srchashed = self.redant.find_hashed_subvol(self.subvols, "", file_name)
+        if not srchashed:
+            raise Exception("Could not find srchashed")
 
-    @staticmethod
-    def _verify_link_file_exists(brickdir, file_name):
+        return srchashed[0], srchashed[1], source_file
+
+    def _verify_link_file_exists(self, brickdir, file_name):
         """ Verifies whether a file link is present in given subvol
         Args:
                brickdir(Class Object): BrickDir object containing data about
@@ -111,26 +71,25 @@ class DhtFileRenameVerification(GlusterBaseClass):
         Returns:
                 True/False(bool): Based on existance of file link
         """
-        # pylint: disable=protected-access
-        # pylint: disable=unsubscriptable-object
-        file_path = brickdir._fqpath + file_name
-        file_stat = get_file_stat(brickdir._host, file_path)
-        if file_stat is None:
-            g.log.error("Failed to get File stat for %s", file_path)
+        brick_node, brick_path = brickdir.split(":")
+        file_path = brick_path + file_name
+        file_stat = self.redant.get_file_stat(brick_node, file_path)
+        if file_stat['error_code'] != 0:
+            self.redant.logger.error("Failed to get file stat")
             return False
-        if not file_stat['access'] == "1000":
-            g.log.error("Access value not 1000 for %s", file_path)
+        if file_stat['msg']['permission'] != 1000:
+            self.redant.logger.error(f"Access value not 1000 for {file_path}")
             return False
 
         # Check for file type to be'sticky empty', have size of 0 and
         # have the glusterfs.dht.linkto xattr set.
-        ret = is_linkto_file(brickdir._host, file_path)
+        ret = self.redant.is_linkto_file(brick_node, file_path)
         if not ret:
-            g.log.error("%s is not a linkto file", file_path)
+            self.redant.logger.error(f"{file_path} is not a linkto file")
             return False
         return True
 
-    def test_file_rename_when_source_and_dest_hash_diff_subvol(self):
+    def _test_file_rename_when_source_and_dest_hash_diff_subvol(self):
         """
         case 1 :
         - Destination file does not exist
@@ -141,40 +100,40 @@ class DhtFileRenameVerification(GlusterBaseClass):
         - Destination link file should be created on its hashed
           subvolume(s2)
         """
-        # pylint: disable=protected-access
-        # pylint: disable=unsubscriptable-object
-
         # Create soruce file and Get hashed subvol (s2)
         _, count, source_file = (
             self._create_file_and_get_hashed_subvol("test_source_file"))
 
         # Rename the file such that the new name hashes to a new subvol (S1)
-        new_hashed = find_new_hashed(self.subvols, "/", "test_source_file")
-        self.assertIsNotNone(new_hashed, ("could'nt find new hashed for {}"
-                                          .format(source_file)))
-        src_link_subvol = new_hashed.hashedbrickobject
+        newhash = self.redant.find_new_hashed(self.subvols, "",
+                                              "test_source_file")
+        if not newhash:
+            raise Exception("Could not find new hashed for srcfile")
+
+        dstname = str(newhash[0])
+        dstfile = f"{self.mountpoint}/{dstname}"
+        dsthashed = newhash[1]
+        dcount = newhash[2]
 
         # Verify the subvols are not same for source and destination files
-        self.assertNotEqual(count,
-                            new_hashed.subvol_count,
-                            "The subvols for src and dest are same.")
+        if count == dcount:
+            raise Exception("The subvols for src and dest are same.")
 
         # Rename the source file to the destination file
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, ("Failed to move files {} and {}"
-                              .format(source_file, dest_file)))
+        self.redant.execute_abstract_op_node(f"mv {source_file} {dstfile}",
+                                             self.client_list[0])
 
         # Verify the link file is found in new subvol
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertTrue(ret, ("The hashed subvol {} doesn't have the "
-                              "expected linkto file: {}"
-                              .format(src_link_subvol._fqpath,
-                                      str(new_hashed.newname))))
-        g.log.info("New hashed volume has the expected linkto file")
+        ret = self._verify_link_file_exists(dsthashed, dstname)
+        if not ret:
+            raise Exception(f"The hashed subvol {dsthashed} doesn't have the "
+                            "expected linkto file: {dstname}")
 
-    def test_file_rename_when_source_and_dest_hash_same_subvol(self):
+        # cleanup mount for next case
+        self.redant.execute_abstract_op_node(f"rm -rf {self.mountpoint}/*",
+                                             self.client_list[0])
+
+    def _test_file_rename_when_source_and_dest_hash_same_subvol(self):
         """
         Case 2:
         - Destination file does not exist
@@ -183,33 +142,33 @@ class DhtFileRenameVerification(GlusterBaseClass):
             mv <source_file> <destination_file>
         - Source file should be renamed to destination file
         """
-        # pylint: disable=protected-access
-        # pylint: disable=unsubscriptable-object
-
         # Create soruce file and Get hashed subvol (s1)
         source_hashed_subvol, count, source_file = (
             self._create_file_and_get_hashed_subvol("test_source_file"))
 
-        # Rename the file such that the new name hashes to a new subvol
-        new_hashed = find_specific_hashed(self.subvols,
-                                          "/",
-                                          source_hashed_subvol)
-        self.assertIsNotNone(new_hashed,
-                             "could not find new hashed for destination file")
+        # Rename the file such that the new name hashes to a same subvol
+        new_hashed = self.redant.find_specific_hashed(self.subvols, "",
+                                                      source_hashed_subvol)
+        if not new_hashed:
+            raise Exception("Could not find hashed for destfile")
 
         # Rename the source file to the destination file
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, "Failed to move files {} and {}".format(
-            source_file, dest_file))
+        dest_file = f"{self.mountpoint}/{new_hashed[0]}"
+        self.redant.execute_abstract_op_node(f"mv {source_file} {dest_file}",
+                                             self.client_list[0])
 
-        _, rename_count = find_hashed_subvol(self.subvols,
-                                             "/",
-                                             str(new_hashed.newname))
-        self.assertEqual(count, rename_count,
-                         "The hashed subvols for src and dest are not same.")
+        hashed = self.redant.find_hashed_subvol(self.subvols, "",
+                                                str(new_hashed[0]))
+        if not hashed:
+            raise Exception("Could not find srchashed")
+        if count != hashed[1]:
+            raise Exception("The subvols for src and dest are not same.")
 
-    def test_file_rename_when_dest_not_hash_to_src_or_src_link_subvol(self):
+        # cleanup mount for next case
+        self.redant.execute_abstract_op_node(f"rm -rf {self.mountpoint}/*",
+                                             self.client_list[0])
+
+    def _test_file_rename_when_dest_not_hash_to_src_or_src_link_subvol(self):
         """
         Case 3:
         - Destination file does not exist
@@ -223,85 +182,80 @@ class DhtFileRenameVerification(GlusterBaseClass):
         - Destination link file should be created on its hashed
           subvolume(s3)
         """
-        # pylint: disable=protected-access
-        # pylint: disable=too-many-locals
-        # pylint: disable=unsubscriptable-object
-
         # Find a non hashed subvolume(or brick)
         # Create soruce file and Get hashed subvol (s2)
         _, count, source_file = (
             self._create_file_and_get_hashed_subvol("test_source_file"))
 
         # Rename the file to create link in hashed subvol -(s1)
-        new_hashed = find_new_hashed(self.subvols, "/", "test_source_file")
-        self.assertIsNotNone(new_hashed,
-                             "could not find new hashed for dstfile")
-        count2 = new_hashed.subvol_count
+        src_link_hash = self.redant.find_new_hashed(self.subvols, "",
+                                                    "test_source_file")
+        if not src_link_hash:
+            raise Exception("Could not find new hashed for srcfile")
+
+        tmpfile = f"{self.mountpoint}/{src_link_hash[0]}"
+        scount = src_link_hash[2]
+
         # Rename the source file to the new file name
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, ("Failed to move file {} and {}"
-                              .format(source_file, dest_file)))
+        self.redant.execute_abstract_op_node(f"mv {source_file} {tmpfile}",
+                                             self.client_list[0])
 
         # Verify the Source link file is stored on hashed sub volume(s1)
-        src_link_subvol = new_hashed.hashedbrickobject
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertTrue(ret, ("The hashed subvol {} doesn't have the "
-                              "expected linkto file: {}"
-                              .format(src_link_subvol._fqpath,
-                                      str(new_hashed.newname))))
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(src_link_hash[0]))
+        if not ret:
+            raise Exception(f"The hashed subvol {src_link_hash[1]} doesn't "
+                            "have the "
+                            f"expected linkto file: {src_link_hash[0]}")
 
         # find a subvol (s3) other than S1 and S2
-        brickobject = create_brickobjectlist(self.subvols, "/")
-        self.assertIsNotNone(brickobject, "Failed to get brick object list")
+        brickobject = self.redant.create_brickpathlist(self.subvols, "")
         br_count = -1
         subvol_new = None
         for brickdir in brickobject:
             br_count += 1
-            if br_count not in (count, count2):
+            if br_count not in (count, scount):
                 subvol_new = brickdir
                 break
 
-        new_hashed2 = find_specific_hashed(self.subvols,
-                                           "/",
-                                           subvol_new)
-        self.assertIsNotNone(new_hashed2,
-                             "could not find new hashed for dstfile")
+        dest_hashed = self.redant.find_specific_hashed(self.subvols, "",
+                                                       subvol_new)
+        if not dest_hashed:
+            raise Exception("Could not find hashed for destfile")
 
         # Rename the source file to the destination file
-        source_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed2.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, ("Failed to move file {} and {}"
-                              .format(source_file, dest_file)))
+        source_file = f"{self.mountpoint}/{src_link_hash[0]}"
+        dest_file = f"{self.mountpoint}/{dest_hashed[0]}"
+        self.redant.execute_abstract_op_node(f"mv {source_file} {dest_file}",
+                                             self.client_list[0])
 
-        hashed_subvol_after_rename, rename_count = (
-            find_hashed_subvol(self.subvols,
-                               "/",
-                               str(new_hashed2.newname)))
-        self.assertNotEqual(count2, rename_count,
-                            "The subvols for src and dest are same.")
+        hashed_subvol = (self.redant.find_hashed_subvol(
+                         self.subvols, "", str(dest_hashed[0])))
+
+        if scount == hashed_subvol[1]:
+            raise Exception("The subvols for src and dest are same.")
 
         # check that the source link file is removed.
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertFalse(ret, ("The New hashed volume {} still have the "
-                               "expected linkto file {}"
-                               .format(src_link_subvol._fqpath,
-                                       str(new_hashed.newname))))
-        g.log.info("The source link file is removed")
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(src_link_hash[0]))
+        if ret:
+            raise Exception(f"The New hashed subvol {src_link_hash[1]} still "
+                            "have the expected linkto "
+                            f"file {src_link_hash[0]}")
 
         # Check Destination link file is created on its hashed sub-volume(s3)
-        ret = self._verify_link_file_exists(hashed_subvol_after_rename,
-                                            str(new_hashed2.newname))
-        self.assertTrue(ret, ("The New hashed volume {} doesn't have the "
-                              "expected linkto file {}"
-                              .format(hashed_subvol_after_rename._fqpath,
-                                      str(new_hashed2.newname))))
-        g.log.info("Destinaion link is created in desired subvol")
+        ret = self._verify_link_file_exists(hashed_subvol[0],
+                                            str(dest_hashed[0]))
+        if not ret:
+            raise Exception(f"The hashed subvol {hashed_subvol} doesn't "
+                            "have the expected linkto "
+                            f"file: {dest_hashed[0]}")
 
-    def test_file_rename_when_src_file_and_dest_file_hash_same_subvol(self):
+        # cleanup mount for next case
+        self.redant.execute_abstract_op_node(f"rm -rf {self.mountpoint}/*",
+                                             self.client_list[0])
+
+    def _test_file_rename_when_src_file_and_dest_file_hash_same_subvol(self):
         """
        Case 4:
        - Destination file does not exist
@@ -312,62 +266,60 @@ class DhtFileRenameVerification(GlusterBaseClass):
        - Source file should be ranamed to destination file
        - source link file should be removed.
         """
-        # pylint: disable=protected-access
-        # pylint: disable=unsubscriptable-object
-
         # Get hashed subvol (S2)
         source_hashed_subvol, count, source_file = (
             self._create_file_and_get_hashed_subvol("test_source_file"))
 
         # Rename the file to create link in hashed subvol -(s1)
-        new_hashed = find_new_hashed(self.subvols, "/", "test_source_file")
-        self.assertIsNotNone(new_hashed, ("could not find new hashed for {}"
-                                          .format(source_file)))
+        src_link_hash = self.redant.find_new_hashed(self.subvols, "",
+                                                    "test_source_file")
+        if not src_link_hash:
+            raise Exception("Could not find new hashed for srcfile")
+
+        tmpfile = f"{self.mountpoint}/{src_link_hash[0]}"
 
         # Rename the source file to the new file name
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, ("Failed to move file {} and {}"
-                              .format(source_file, dest_file)))
+        self.redant.execute_abstract_op_node(f"mv {source_file} {tmpfile}",
+                                             self.client_list[0])
 
         # Verify the Source link file is stored on hashed sub volume(s1)
-        src_link_subvol = new_hashed.hashedbrickobject
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertTrue(ret, ("The New hashed volume {} doesn't have the "
-                              "expected linkto file {}"
-                              .format(src_link_subvol._fqpath,
-                                      str(new_hashed.newname))))
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(src_link_hash[0]))
+        if not ret:
+            raise Exception(f"The hashed subvol {src_link_hash[1]} doesn't "
+                            "have the "
+                            f"expected linkto file: {src_link_hash[0]}")
 
         # Get a file name to hash to the subvol s2
-        new_hashed2 = find_specific_hashed(self.subvols,
-                                           "/",
-                                           source_hashed_subvol)
-        self.assertIsNotNone(new_hashed2, "Could not find a name hashed"
-                                          "to the given subvol")
+        new_hashed2 = self.redant.find_specific_hashed(self.subvols, "",
+                                                       source_hashed_subvol)
+        if not new_hashed2:
+            raise Exception("Could not find hashed for destfile")
 
-        _, rename_count = (
-            find_hashed_subvol(self.subvols, "/", str(new_hashed2.newname)))
-        self.assertEqual(count, rename_count,
-                         "The subvols for src and dest are not same.")
+        _, rename_count = (self.redant.find_hashed_subvol(
+                           self.subvols, "", str(new_hashed2[0])))
+
+        if count != rename_count:
+            raise Exception("The subvols for src and dest are not same.")
 
         # Move the source file to the new file name
-        source_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed2.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, ("Failed to move file {} and {}"
-                              .format(source_file, dest_file)))
+        dest_file = f"{self.mountpoint}/{new_hashed2[0]}"
+        self.redant.execute_abstract_op_node(f"mv {tmpfile} {dest_file}",
+                                             self.client_list[0])
 
         # check that the source link file is removed.
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertFalse(ret, ("The New hashed volume {} still have the "
-                               "expected linkto file {}"
-                               .format(src_link_subvol._fqpath,
-                                       str(new_hashed.newname))))
-        g.log.info("The source link file is removed")
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(src_link_hash[0]))
+        if ret:
+            raise Exception(f"The New hashed subvol {src_link_hash[1]} still "
+                            "have the expected linkto "
+                            f"file {src_link_hash[0]}")
 
-    def test_file_rename_when_src_link_and_dest_file_hash_same_subvol(self):
+        # cleanup mount for next case
+        self.redant.execute_abstract_op_node(f"rm -rf {self.mountpoint}/*",
+                                             self.client_list[0])
+
+    def _test_file_rename_when_src_link_and_dest_file_hash_same_subvol(self):
         """
         Case 5:
        - Destination file does not exist
@@ -380,71 +332,75 @@ class DhtFileRenameVerification(GlusterBaseClass):
        - Destination link file should be created on its
          hashed subvolume(s1)
         """
-        # pylint: disable=protected-access
-        # pylint: disable=unsubscriptable-object
-
         # Get hashed subvol s2)
         _, count, source_file = (
             self._create_file_and_get_hashed_subvol("test_source_file"))
 
         # Rename the file to create link in another subvol - (s1)
-        new_hashed = find_new_hashed(self.subvols, "/", "test_source_file")
-        self.assertIsNotNone(new_hashed, ("could not find new hashed subvol "
-                                          "for {}".format(source_file)))
+        src_link_hash = self.redant.find_new_hashed(self.subvols, "",
+                                                    "test_source_file")
+        if not src_link_hash:
+            raise Exception("Could not find new hashed for srcfile")
 
-        self.assertNotEqual(count,
-                            new_hashed.subvol_count,
-                            "New file should hash to different sub-volume")
+        tmpfile = f"{self.mountpoint}/{src_link_hash[0]}"
+        scount = src_link_hash[2]
+
+        if count == scount:
+            raise Exception("New file should hash to different sub-volume")
 
         # Rename the source file to the new file name
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, ("Failed to move file {} and {}"
-                              .format(source_file, dest_file)))
+        self.redant.execute_abstract_op_node(f"mv {source_file} {tmpfile}",
+                                             self.client_list[0])
 
         # Verify the Source link file is stored on hashed sub volume(s1)
-        src_link_subvol = new_hashed.hashedbrickobject
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertTrue(ret, ("The New hashed volume {} doesn't have the "
-                              "expected linkto file {}"
-                              .format(src_link_subvol._fqpath,
-                                      str(new_hashed.newname))))
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(src_link_hash[0]))
+        if not ret:
+            raise Exception(f"The hashed subvol {src_link_hash[1]} doesn't "
+                            "have the "
+                            f"expected linkto file: {src_link_hash[0]}")
 
         # Get a file name to hash to the subvol s1
-        new_hashed2 = find_specific_hashed(self.subvols,
-                                           "/",
-                                           src_link_subvol,
-                                           new_hashed.newname)
-        self.assertIsNotNone(new_hashed2, ("Couldn't find a name hashed to the"
-                                           " given subvol {}"
-                                           .format(src_link_subvol)))
+        new_hashed2 = self.redant.find_specific_hashed(self.subvols, "",
+                                                       src_link_hash[1],
+                                                       src_link_hash[0])
+        if not new_hashed2:
+            raise Exception("Could not find hashed for destfile")
 
-        _, rename_count = (
-            find_hashed_subvol(self.subvols, "/", str(new_hashed2.newname)))
-        self.assertEqual(new_hashed.subvol_count, rename_count,
-                         "The subvols for src and dest are not same.")
+        _, rename_count = (self.redant.find_hashed_subvol(
+                           self.subvols, "", str(new_hashed2[0])))
+
+        if scount != rename_count:
+            raise Exception("The subvols for src link and dest are not same.")
 
         # Move the source file to the new file name
-        source_file = "{}/{}".format(self.mount_point, str(new_hashed.newname))
-        dest_file = "{}/{}".format(self.mount_point, str(new_hashed2.newname))
-        ret = move_file(self.clients[0], source_file, dest_file)
-        self.assertTrue(ret, "Failed to move file")
+        dest_file = f"{self.mountpoint}/{new_hashed2[0]}"
+        self.redant.execute_abstract_op_node(f"mv {tmpfile} {dest_file}",
+                                             self.client_list[0])
 
         # check that the source link file is removed.
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed.newname))
-        self.assertFalse(ret, ("The hashed volume {} still have the "
-                               "expected linkto file {}"
-                               .format(src_link_subvol._fqpath,
-                                       str(new_hashed.newname))))
-        g.log.info("The source link file is removed")
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(src_link_hash[0]))
+        if ret:
+            raise Exception(f"The New hashed subvol {src_link_hash[1]} still "
+                            "have the expected linkto "
+                            f"file {src_link_hash[0]}")
 
         # Check Destination link file is created on its hashed sub-volume(s1)
-        ret = self._verify_link_file_exists(src_link_subvol,
-                                            str(new_hashed2.newname))
-        self.assertTrue(ret, ("The New hashed volume {} doesn't have the "
-                              "expected linkto file {}"
-                              .format(src_link_subvol._fqpath,
-                                      str(new_hashed2.newname))))
-        g.log.info("Destinaion link is created in desired subvol")
+        ret = self._verify_link_file_exists(src_link_hash[1],
+                                            str(new_hashed2[0]))
+        if not ret:
+            raise Exception(f"The New hashed subvol {src_link_hash[1]} doesn't"
+                            " have the expected linkto "
+                            f"file {new_hashed2[0]}")
+
+    def run_test(self, redant):
+        self.subvols = redant.get_subvols(self.vol_name, self.server_list[0])
+        if not self.subvols:
+            raise Exception("Failed to get the subvols")
+
+        self._test_file_rename_when_source_and_dest_hash_diff_subvol()
+        self._test_file_rename_when_source_and_dest_hash_same_subvol()
+        self._test_file_rename_when_dest_not_hash_to_src_or_src_link_subvol()
+        self._test_file_rename_when_src_file_and_dest_file_hash_same_subvol()
+        self._test_file_rename_when_src_link_and_dest_file_hash_same_subvol()
