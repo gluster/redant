@@ -259,7 +259,7 @@ class TestFops(DParentTest):
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Close connection and check file exist for memory log
-        ret = redant.path_exists(self.server_list[0],
+        ret = redant.path_exists(self.client_list[0],
                                  self.log_file_mem_monitor)
         if not ret:
             raise Exception("Unexpected:Memory log file does not exist")

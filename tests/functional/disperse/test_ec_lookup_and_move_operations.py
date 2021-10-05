@@ -115,7 +115,7 @@ class TestEcLookupAndMoveOperations(DParentTest):
         # Move the files created on client1 to dir from client3
         cmd = (f"for i in `seq 0 3999`; do mv {self.mounts[0]['mountpath']}"
                f"/file_from_client1_$i.txt {dir_on_mount}; ")
-        proc = redant.execute_command_async(cmd, self.mounts[2]['mountpath'])
+        proc = redant.execute_command_async(cmd, self.mounts[2]['client'])
         self.mount_procs.append(proc)
 
         # Perform a lookup in loop from client3 for 20 iterations
