@@ -14,16 +14,37 @@
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Description:
+    While remove-brick operation is in-progress on a volume, glusterd
+    should not allow rebalance on the same volume.
 """
 # disruptive;dist,dist-rep,dist-disp
 
 import traceback
+from copy import deepcopy
 from common.ops.gluster_ops.constants import (TEST_LAYOUT_IS_COMPLETE,
                                               FILETYPE_DIRS)
 from tests.d_parent_test import DParentTest
 
 
 class TestCase(DParentTest):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.vol_name = f"testvol_{self.volume_type}"
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
+
     def terminate(self):
         """
         Stop remove brick operation, if the status is 'in-progress'
@@ -34,7 +55,7 @@ class TestCase(DParentTest):
                                self.server_list[0], self.vol_name,
                                self.remove_brick_list))
                 if 'in progress' in status_info['aggregate']['statusStr']:
-                    # Shrink volume by removing bricks with option start
+                    # Stop remove-brick operation
                     self.redant.remove_brick(self.server_list[0],
                                              self.vol_name,
                                              self.remove_brick_list, "stop")
@@ -98,12 +119,12 @@ class TestCase(DParentTest):
                             self.remove_brick_list, "start")
 
         # Log remove-brick status
-        ret = redant.remove_brick(self.server_list[0], self.vol_name,
-                                  self.remove_brick_list, "status")
+        redant.remove_brick(self.server_list[0], self.vol_name,
+                            self.remove_brick_list, "status")
 
         # Start rebalance while volume shrink in-progress
         ret = redant.rebalance_start(self.vol_name, self.server_list[0],
-                                     False)
+                                     excep=False)
         if ret['error_code'] == 0:
             raise Exception("Unexpected:Rebalance started successfully"
                             " while volume shrink is in-progress")
