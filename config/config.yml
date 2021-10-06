@@ -54,7 +54,6 @@ volume_types:
         
 #excluded_tests - Tests which are excluded during the test run.
 excluded_tests:
-    - tests/functional/glusterd/test_shared_storage.py # Reboot hangs redant flow in this TC.
     - tests/functional/afr/test_brick_process_not_started_on_read_only_node_disks.py # Inactive TC.
     - tests/functional/afr/test_client_side_quorum_fixed_with_cross2.py # TC is bogus, as setting quorum count: 2 for replica 2 volume and bringing one brick down will give transport errors
     - tests/functional/afr/test_arb_to_repl_conversion_with_io.py # Heal not completing even after increasing the timeout and the IO is completed

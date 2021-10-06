@@ -305,15 +305,24 @@ class Rexe:
         sftp.put(source_path, dest_path)
         sftp.close()
 
-    def reboot_node(self, node):
+    def reboot_node(self, node: str) -> bool:
         """
-        Reboot of a node is a special case and the normal execute_command
-        will throw an error.
+        Reboot of a node is a special case and we need to execute his using
+        paramiko `exec_command` directly.
         Arg:
             node (str)
+        Returns:
+            bool: True in case command execution was success.
+                  False otherwise
         """
-        cmd = (f'ssh -t root@{node} "sleep 1;reboot > /dev/null 2>&1;"'
-               ' > /dev/null 2>&1;')
-        self.logger.info(f"Executing the command : {cmd}")
-        ret = os.system(cmd)
-        self.logger.info(f"Return value for the command {cmd} is {ret}")
+        self.logger.info(f"Rebooting node: {node} ...")
+        cmd = "reboot"
+        try:
+            _, _, stderr = self.node_dict[node].exec_command(cmd)
+        except Exception:
+            # In case command execution fails, handle exception
+            self.logger.error("Failed to execute 'reboot' command"
+                              f"Error: {stderr}")
+            return False
+
+        return True
