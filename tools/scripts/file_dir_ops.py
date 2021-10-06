@@ -495,9 +495,6 @@ def get_path_stats(args):
 
     file_stats = {}
 
-    if os.path.isfile(path):
-        file_stats[path] = _get_path_stats(path)
-
     if os.path.isdir(path):
         if recursive:
             for dirName, subdirList, fileList in os.walk(path, topdown=False):
@@ -509,6 +506,8 @@ def get_path_stats(args):
                         fname_abs_path)
         else:
             file_stats[path] = _get_path_stats(path)
+    else:
+        file_stats[path] = _get_path_stats(path)
 
     rc = 0
 
