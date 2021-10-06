@@ -1008,7 +1008,7 @@ class IoOps(AbstractOps):
         for brick in brick_list:
             brick_node, brick_path = brick.split(":")
             cmd = (f"find {brick_path} -mindepth 1 -type d | "
-                   f"grep -ve \".glusterfs\" | "
+                   f"grep -ve \"\.glusterfs\" | "
                    f"xargs -r stat -c '{statformat}'")
             ret = self.execute_abstract_op_node(cmd, brick_node)
             all_brick_dir_perm = ret['msg']
