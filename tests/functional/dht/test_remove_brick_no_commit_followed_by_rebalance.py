@@ -20,13 +20,29 @@ Description: Tests to check that there is no data loss when
              are added to the volume.
 """
 
-# disruptive;dist-rep
-# TODOdist,dist-rep,dist-disp,dist-arb
+# disruptive;dist-rep,dist-disp,dist-arb,dist
+from copy import deepcopy
 from time import sleep
 from tests.d_parent_test import DParentTest
 
 
 class TestRemoveBrickNoCommitFollowedByRebalance(DParentTest):
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.vol_name = f"testvol_{self.volume_type}"
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        self.redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
+                                             self.client_list[0])
+        self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                 self.mountpoint, self.client_list[0])
+
     def run_test(self, redant):
         """
          Steps :
@@ -48,8 +64,8 @@ class TestRemoveBrickNoCommitFollowedByRebalance(DParentTest):
         }
         file_dir_script = "/usr/share/redant/script/file_dir_ops.py"
         cmd = (f"python3 {file_dir_script} create_deep_dirs_with_files"
-               " --dir-length 2 --dir-depth 2 --max-num-of-dirs 2 "
-               " --num-of-files 10 --file-type empty-file"
+               " --dir-length 10 --dir-depth 2 --max-num-of-dirs 1 "
+               " --num-of-files 50 --file-type empty-file"
                f" {self.mountpoint}/")
         proc = redant.execute_command_async(cmd, self.client_list[0])
 
@@ -72,16 +88,20 @@ class TestRemoveBrickNoCommitFollowedByRebalance(DParentTest):
                             remove_brick_list, "start")
 
         # Log remove-brick status
-        ret = redant.remove_brick(self.server_list[0], self.vol_name,
-                                  remove_brick_list, "status")
+        ret = redant.get_remove_brick_status(self.server_list[0],
+                                             self.vol_name,
+                                             remove_brick_list)
+        if not ret:
+            raise Exception("Failed to get remove brick status")
+
         # Check if migration is in progress
-        if r'in progress' in ret:
+        if 'in progress' in ret['aggregate']['statusStr']:
             # Stop remove-brick process
             redant.remove_brick(self.server_list[0], self.vol_name,
                                 remove_brick_list, "stop")
             redant.logger.info("Stopped remove-brick process successfully")
         else:
-            redant.logger.error("Migration for remove-brick is complete")
+            redant.logger.error("Migration for remove-brick is completed")
 
         # Sleep for 30 secs so that any running remove-brick process stops
         sleep(30)
@@ -89,7 +109,7 @@ class TestRemoveBrickNoCommitFollowedByRebalance(DParentTest):
         # Add bricks to the volume
         ret = redant.expand_volume(self.server_list[0], self.vol_name,
                                    self.server_list, self.brick_roots,
-                                   distribute_count=3, force=True)
+                                   force=True)
         if not ret:
             raise Exception("Failed to add-brick to the volume")
 
@@ -98,7 +118,8 @@ class TestRemoveBrickNoCommitFollowedByRebalance(DParentTest):
 
         # Wait for rebalance to complete
         ret = redant.wait_for_rebalance_to_complete(self.vol_name,
-                                                    self.server_list[0])
+                                                    self.server_list[0],
+                                                    timeout=600)
         if not ret:
             raise Exception("Rebalace is not yet complete on the volume "
                             f"{self.vol_name}")
