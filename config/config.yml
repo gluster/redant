@@ -62,3 +62,5 @@ excluded_tests:
     - tests/functional/disperse/test_ec_file_rename_on_brick_down.py # Remove on fixing BZ 1596165
     - tests/functional/disperse/test_ec_brick_consumable_size.py # Excluded due to bz: 1883429
     - tests/functional/dht/test_rebalance_rename.py # Skipping due to bz 1755834
+    - tests/functional/arbiter/test_self_heal_50k_files.py # Taking a lot of time, needs to be debugged
+    - tests/functional/arbiter/test_self_heal_50k_files_heal_command_by_add_brick.py # Same as above
