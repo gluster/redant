@@ -687,6 +687,7 @@ class DHTOps(AbstractOps):
         hashed_bricks = self.get_hashed_bricks(node, fqpath, layout)
         for brickdir_path in hashed_bricks:
             (host, fqpath) = brickdir_path.split(':')
+            host = socket.gethostbyname(host)
             if not self.path_exists(host, fqpath):
                 flag = flag | 1
 
