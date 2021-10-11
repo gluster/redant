@@ -1411,9 +1411,10 @@ class VolumeOps(AbstractOps):
             No value if success or else ValueError will be raised.
         """
         for (opt, val) in options.items():
-            ret_val = self.get_volume_options(volname, opt, node)
-            if ret_val[opt] != val:
-                raise Exception(f"Option {opt} has value {ret_val[opt]}"
+            ret = self.get_volume_options(volname, opt, node)
+            ret_val = ret[opt].split()[0]
+            if ret_val != val:
+                raise Exception(f"Option {opt} has value {ret_val}"
                                 f" not {val}")
 
     def reset_volume_option(self, volname: str, option: str,

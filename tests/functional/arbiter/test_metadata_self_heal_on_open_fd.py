@@ -38,8 +38,8 @@ class TestCase(DParentTest):
                     raise Exception("Failed to delete user")
         except Exception as error:
             tb = traceback.format_exc
-            self.logger.error(error)
-            self.logger.error(tb)
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
         super().terminate()
 
     def _verify_stat_info(self, nodes_to_check: list, test_file: str):

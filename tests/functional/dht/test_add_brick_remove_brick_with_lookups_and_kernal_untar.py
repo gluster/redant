@@ -102,8 +102,8 @@ class TestAddBrickRemoveBrickWithlookupsAndKernaluntar(DParentTest):
         }]
 
         # Run script to create folders and files continuously
-        proc = redant.create_deep_dirs_with_files(self.mountpoint, 758, 2,
-                                                  100, 10, 105,
+        proc = redant.create_deep_dirs_with_files(self.mountpoint, 750, 2,
+                                                  10, 8, 15,
                                                   self.client_list[1])
         self.list_of_io_processes.append(proc)
         self.mounts.append({
@@ -112,7 +112,7 @@ class TestAddBrickRemoveBrickWithlookupsAndKernaluntar(DParentTest):
         })
 
         # Run lookup operations from 2 clients
-        cmd = (f"cd {self.mountpoint}; for i in `seq 1 10000`;"
+        cmd = (f"cd {self.mountpoint}; for i in `seq 1 10`;"
                "do find .; done")
         proc = redant.execute_command_async(cmd, self.client_list[2])
         self.list_of_io_processes.append(proc)
@@ -121,7 +121,7 @@ class TestAddBrickRemoveBrickWithlookupsAndKernaluntar(DParentTest):
             "mountpath": self.mountpoint
         })
 
-        cmd = f"cd {self.mountpoint}; for i in `seq 1 100000`;do ls -lRt;done"
+        cmd = f"cd {self.mountpoint}; for i in `seq 1 10`;do ls -lRt;done"
         proc = redant.execute_command_async(cmd, self.client_list[3])
         self.list_of_io_processes.append(proc)
         self.mounts.append({
@@ -149,7 +149,8 @@ class TestAddBrickRemoveBrickWithlookupsAndKernaluntar(DParentTest):
             raise Exception("Failed to remove-brick from volume")
 
         # Validate if I/O was successful or not.
-        ret = redant.validate_io_procs(self.list_of_io_processes, self.mounts)
+        ret = redant.validate_io_procs(self.list_of_io_processes, self.mounts,
+                                       timeout=4800)
         if not ret:
             raise Exception("IO failed on some of the clients")
         self.is_io_running = False
