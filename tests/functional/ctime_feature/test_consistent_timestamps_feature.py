@@ -21,7 +21,7 @@
 
 # disruptive;dist,rep,dist-rep,disp,dist-disp,arb,dist-arb
 from re import sub
-from tests.nd_parent_test import DParentTest
+from tests.d_parent_test import DParentTest
 
 
 class TestValidateCtimeFeatures(DParentTest):

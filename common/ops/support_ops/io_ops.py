@@ -1781,7 +1781,7 @@ class IoOps(AbstractOps):
 
         # Checking if random size is true or false.
         if random_size:
-            command = command + "--random "
+            command = command + " --random "
             if minfs > 10 or minfs < 10:
                 command = f"{command} --min {minfs}"
             if maxfs > 500 or maxfs < 500:
@@ -1797,13 +1797,13 @@ class IoOps(AbstractOps):
 
         # Checking if single or mutli is true.
         if single:
-            command = command + "--single "
+            command = command + " --single "
         if multi:
-            command = command + "--multi "
+            command = command + " --multi "
 
         # Checking if random_filename is false.
         if not random_filename:
-            command = command + "-R "
+            command = command + " -R "
 
         # Checking if print interval is greater than or less than 100.
         if interval > 100 or interval < 100:
