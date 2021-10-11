@@ -5,5 +5,5 @@ cd /tmp/crefi_repo
 git clone https://github.com/vijaykumar-koppad/Crefi.git
 cd Crefi
 python3 setup.py install
-cd .
+cd /
 rm -rf /tmp/crefi_repo
