@@ -42,5 +42,5 @@ class TestCase(NdParentTest):
         redant.reset_volume_option(self.vol_name, 'storage.reserve',
                                    self.server_list[0])
         redant.validate_volume_option(self.vol_name,
-                                      {'storage.reserve': '1 (DEFAULT)'},
+                                      {'storage.reserve': '1'},
                                       self.server_list[0])
