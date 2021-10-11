@@ -42,8 +42,9 @@ class TestValidateSnaps256(DParentTest):
                            f"-{i}")for i in range(0, 256)]
 
         # Start IO on all mounts
-        cmd = ("python3 /tmp/file_dir_ops.py create_files -f 10 "
-               f"--base-file-name firstfiles {self.mountpoint}")
+        cmd = ("python3 /usr/share/redant/script/file_dir_ops.py "
+               "create_files -f 10 --base-file-name firstfiles "
+               f"{self.mountpoint}")
         proc = redant.execute_command_async(cmd, self.client_list[0])
         self.all_mounts_procs.append(proc)
 
