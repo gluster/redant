@@ -22,6 +22,7 @@ using hostnames.
 """
 
 import socket
+import traceback
 from tests.d_parent_test import DParentTest
 
 # disruptive;
@@ -35,10 +36,16 @@ class TestCase(DParentTest):
         As the test plays around with IP and hostname, that might
         cause issues later in subsequent cases.
         """
-        self.redant.hard_terminate(self.server_list, self.client_list,
-                                   self.brick_roots)
+        try:
+            self.redant.hard_terminate(self.server_list, self.client_list,
+                                       self.brick_roots)
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def _vol_operations(self, redant, volname: str):
+    def _vol_operations(self, volname: str):
         """
         This function performs a
         set of colume operations like
@@ -47,27 +54,24 @@ class TestCase(DParentTest):
         """
 
         # Start a volume
-        redant.volume_start(volname, self.server_list[0])
-        redant.logger.info(f"Volume: {volname} started successfully")
+        self.redant.volume_start(volname, self.server_list[0])
 
         # Get volume info
-        volinfo = redant.get_volume_info(self.server_list[0], volname)
+        volinfo = self.redant.get_volume_info(self.server_list[0], volname)
         if volinfo is None:
             raise Exception(f"Failed to get volume info of {volname}")
-        redant.logger.info(f"Vol info: {volinfo}")
 
         # Get volume status
-        vol_status = redant.get_volume_status(volname,
-                                              self.server_list[0])
+        vol_status = self.redant.get_volume_status(volname,
+                                                   self.server_list[0])
         if vol_status is None:
             raise Exception(f"Failed to get volume status of {volname}")
-        redant.logger.info(f"Vol status: {vol_status}")
 
         # stop volume
-        redant.volume_stop(volname, self.server_list[0], True)
+        self.redant.volume_stop(volname, self.server_list[0], True)
 
         # delete the volume
-        redant.volume_delete(volname, self.server_list[0])
+        self.redant.volume_delete(volname, self.server_list[0])
 
     def run_test(self, redant):
         '''
@@ -99,11 +103,11 @@ class TestCase(DParentTest):
 
             redant.peer_probe(hostname, self.server_list[0], False)
 
-            if ret['error_code'] != 0:
+            if ret['msg']['opRet'] != '0':
                 ret = redant.execute_abstract_op_node("hostname",
                                                       server)
                 hostname = ret['msg'][0].rstrip('\n')
-                hostname = hostname.split(".")[0]+"."+hostname.split(".")[1]
+                hostname = f"{hostname.split('.')[0]}.{hostname.split('.')[1]}"
                 ret = redant.peer_probe(hostname, self.server_list[0],
                                         False)
 
@@ -111,17 +115,13 @@ class TestCase(DParentTest):
                     raise Exception(f"Unable to peer probe to"
                                     f" the server {hostname}")
 
-            redant.logger.info(f"Peer probe succeeded for {hostname}")
-
         # Create a volume
         redant.volume_create("test-vol", self.server_list[0],
                              self.vol_type_inf['dist'],
                              self.server_list, self.brick_roots, True)
 
-        redant.logger.info("Volume: test-vol created successfully")
-
         # perform the set of volume operations
-        self._vol_operations(redant, "test-vol")
+        self._vol_operations("test-vol")
 
         # Getting FQDN (Full qualified domain name) of each host and
         # replacing ip with FQDN name for each brick for example
@@ -141,9 +141,9 @@ class TestCase(DParentTest):
             fqdn_brick_cmd = f"{fqdn_brick_cmd} {fqdn}"
 
         # create a volume
-        cmd = f"gluster vol create test-vol-fqdn{fqdn_brick_cmd} force"
+        cmd = f"gluster vol create test-vol-fqdn {fqdn_brick_cmd} force"
         redant.execute_abstract_op_node(cmd, self.server_list[0])
         redant.es.set_new_volume("test-vol-fqdn", brick_dict)
 
         # perform the set of volume operations
-        self._vol_operations(redant, "test-vol-fqdn")
+        self._vol_operations("test-vol-fqdn")
