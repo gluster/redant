@@ -107,14 +107,16 @@ class BrickMuxOps(AbstractOps):
             cmd = "pgrep -x glusterfsd"
             ret = self.execute_abstract_op_node(cmd, brick_node, False)
             if ret['error_code'] != 0:
-                raise Exception(f"Failed to get glusterfsdpid on {brick_node}")
+                self.logger.error("Failed to get glusterfsdpid on "
+                                  f"{brick_node}")
                 _rc = False
             else:
                 glusterfsd_pid = ret['msg'][0].split()[0].strip()
 
             if brick_pid not in glusterfsd_pid:
-                raise Exception(f"Brick pid {brick_pid} doesn't match "
-                                "glusterfsd pid {glusterfsd_pid} of the node")
+                self.logger.error(f"Brick pid {brick_pid} doesn't match "
+                                  "glusterfsd pid {glusterfsd_pid} of "
+                                  "the node")
                 _rc = False
         return _rc
 
