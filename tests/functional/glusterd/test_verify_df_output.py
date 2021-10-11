@@ -72,8 +72,8 @@ class TestCase(DParentTest):
     def _get_mount_size_from_df_h_output(self):
         """ Extracts the mount size from the df -h output"""
 
-        split_cmd = " | awk '{split($0,a,\" \");print a[2]}' | sed 's/.$//'"
-        cmd = (f"cd {self.mounts[0]['mountpath']};df -h | grep "
+        split_cmd = " | awk '{split($0,a,\" \");print a[2]}'"
+        cmd = (f"cd {self.mounts[0]['mountpath']};df | grep "
                f"{self.vol_name} {split_cmd}")
         ret = self.redant.execute_abstract_op_node(cmd, self.client_list[0])
         return float(ret['msg'][0].split("\n")[0])

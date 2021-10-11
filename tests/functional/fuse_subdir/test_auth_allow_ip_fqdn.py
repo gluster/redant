@@ -51,7 +51,7 @@ class TestCase(DParentTest):
         try:
             if self.is_mounted:
                 cmd = f"umount {self.mountpoint}"
-                for client in self.client_list:
+                for client in self.client_list[:2]:
                     self.redant.execute_abstract_op_node(cmd, client, False)
 
         except Exception as error:
@@ -88,7 +88,7 @@ class TestCase(DParentTest):
 
         # Mount volume on client1 and client2
         self.mountpoint = f"/mnt/{self.vol_name}"
-        for client in self.client_list:
+        for client in self.client_list[:2]:
             self.redant.execute_abstract_op_node(f"mkdir -p "
                                                  f"{self.mountpoint}",
                                                  client)
@@ -100,7 +100,7 @@ class TestCase(DParentTest):
         redant.create_dir(self.mountpoint, 'd1', self.client_list[0])
 
         # Unmount volume from client1 and client2
-        for client in self.client_list:
+        for client in self.client_list[:2]:
             redant.volume_unmount(self.vol_name, self.mountpoint, client)
 
         # Setting authentication on d1 using ip of client1 and hostname of
