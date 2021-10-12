@@ -45,7 +45,10 @@ class TestSnapshotSelfheal(DParentTest):
 
         # Perform I/O
         all_mounts_procs = []
-        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
+        self.mounts = [{
+            "client": self.client_list[0],
+            "mountpath": self.mountpoint
+        }]
 
         # Create files
         for mount_obj in self.mounts:

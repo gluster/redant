@@ -21,6 +21,7 @@
 
 # disruptive;arb,dist-arb
 # TODO: nfs
+from time import sleep
 from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
@@ -104,6 +105,9 @@ class TestArbiterSelfHeal(DParentTest):
         if not (redant.verify_all_process_of_volume_are_online(self.vol_name,
                 self.server_list[0])):
             raise Exception("All process of volume are not online")
+
+        # Adding sleep to allow mounting of volume
+        sleep(5)
 
         # Get arequal after restoring snapshot
         arequal_after_restoring = redant.collect_mounts_arequal(mount_dict)
