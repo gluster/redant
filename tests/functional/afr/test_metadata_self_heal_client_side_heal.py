@@ -33,8 +33,8 @@ class TestAFRMetaDataSelfHealClientSideHeal(DParentTest):
         try:
             for mount_obj in self.mounts:
                 for user in self.users:
-                    if not self.redant.del_user(mount_obj['client'], user):
-                        raise Exception(f"Failed to delete user {user}")
+                    self.redant.del_user(mount_obj['client'], user)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

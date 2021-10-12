@@ -32,16 +32,11 @@ class TestCase(DParentTest):
             if self.user_group_created:
                 # Delete non-root users
                 for user in self.users:
-                    if not self.redant.del_user(self.client_list[0],
-                                                user):
-                        raise Exception(f"Unable to delete user {user}"
-                                        f"on {self.client_list[0]}")
+                    self.redant.del_user(self.client_list[0], user)
 
                 # Delete non-root group
-                if not self.redant.group_del(self.client_list[0],
-                                             'qa_all'):
-                    raise Exception(f"Unable to delete group 'qa_all'"
-                                    f"on {self.client_list[0]}")
+                self.redant.group_del(self.client_list[0], 'qa_all')
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
