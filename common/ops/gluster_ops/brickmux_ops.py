@@ -20,9 +20,11 @@ class BrickMuxOps(AbstractOps):
         Returns:
             str : Brick multiplex status. None otherwise
         """
-        cmd = ("gluster v get all all | grep cluster.brick-multiplex |"
+        cmd = ("gluster v get all all | grep 'cluster.brick-multiplex' |"
                "awk '{print $2}'")
-        ret = self.execute_abstract_op_node(cmd, server)
+        ret = self.execute_abstract_op_node(cmd, server, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to get brick multiplex option value")
         out = ret['msg'][0].split()[0].strip()
         return out
 
@@ -89,8 +91,8 @@ class BrickMuxOps(AbstractOps):
            the given volume
 
         Args:
-            node (str): Node on which cmd has to be executed.
             volname (str): Name of the volume.
+            node (str): Node on which cmd has to be executed.
 
         Returns:
             bool : True if pid's matches. False otherwise.
@@ -103,6 +105,7 @@ class BrickMuxOps(AbstractOps):
             for i in ret[volname]['node']:
                 if i['path'] == brick_path:
                     brick_pid = i['pid']
+                    break
 
             cmd = "pgrep -x glusterfsd"
             ret = self.execute_abstract_op_node(cmd, brick_node, False)
@@ -119,23 +122,3 @@ class BrickMuxOps(AbstractOps):
                                   "the node")
                 _rc = False
         return _rc
-
-    def get_brick_processes_count(self, node: str) -> int:
-        """
-        Get the brick process count for a given node.
-
-        Args:
-            node (str): Node on which brick process has to be counted.
-
-        Returns:
-            int: Number of brick processes running on the node.
-            None: If the command fails to execute.
-        """
-        cmd = "pgrep -x glusterfsd"
-        ret = self.execute_abstract_op_node(cmd, node, False)
-        if ret['error_code'] != 0:
-            return None
-        else:
-            list_of_pids = ret['msg'].split("\n")
-            list_of_pids.pop()
-            return len(list_of_pids)
