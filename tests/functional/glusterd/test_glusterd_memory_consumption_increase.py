@@ -45,14 +45,14 @@ class TestCase(DParentTest):
             volname = f"mult_vol_{self.test_name}{index}{i}"
             self.redant.volume_delete(volname, self.server_list[0])
 
-    def _memory_consumption_for_all_nodes(self, pid_list):
+    def _memory_consumption_for_all_nodes(self, pid_dict):
         """Fetch the memory consumption by glusterd process for
            all the nodes
         """
         memory_consumed_list = []
-        for i, server in enumerate(self.server_list):
+        for _, server in enumerate(self.server_list):
             # Get the memory consumption of glusterd in each node
-            cmd = (f"top -b -n 1 -p {pid_list[i]} | "
+            cmd = (f"top -b -n 1 -p {pid_dict[server]} | "
                    "awk 'FNR==8 {print $6}'")
             ret = self.redant.execute_abstract_op_node(cmd,
                                                        server,
@@ -95,16 +95,16 @@ class TestCase(DParentTest):
 
         cmd = "pidof glusterd"
         # Get the pidof of glusterd process
-        pid_list = []
+        pid_dict = {}
         ret = redant.execute_abstract_op_multinode(cmd,
                                                    self.server_list)
 
         for result in ret:
-            pid_list.append(int(result['msg'][0].rstrip("\n")))
+            pid_dict[result['node']] = int(result['msg'][0].rstrip("\n"))
 
         # Fetch the list of memory consumed in all the nodes
         mem_consumed_list = (self.
-                             _memory_consumption_for_all_nodes(pid_list))
+                             _memory_consumption_for_all_nodes(pid_dict))
 
         # Perform volume operations for 100 volumes for first time
         self._volume_operations_in_loop(1)
@@ -112,7 +112,7 @@ class TestCase(DParentTest):
         # Fetch the list of memory consumed in all
         # the nodes after 1 iteration
         mem_consumed_list_1 = (self.
-                               _memory_consumption_for_all_nodes(pid_list))
+                               _memory_consumption_for_all_nodes(pid_dict))
 
         for i, mem in enumerate(mem_consumed_list_1):
             if mem - mem_consumed_list[i] > 50:
@@ -126,7 +126,7 @@ class TestCase(DParentTest):
         # Fetch the list of memory consumed in all
         # the nodes after 2 iterations
         mem_consumed_list_2 = (self.
-                               _memory_consumption_for_all_nodes(pid_list))
+                               _memory_consumption_for_all_nodes(pid_dict))
 
         for i, mem in enumerate(mem_consumed_list_2):
             if mem - mem_consumed_list_1[i] > 10:
@@ -140,7 +140,7 @@ class TestCase(DParentTest):
         # Fetch the list of memory consumed in all
         # the nodes after 3 iterations
         mem_consumed_list_3 = (self.
-                               _memory_consumption_for_all_nodes(pid_list))
+                               _memory_consumption_for_all_nodes(pid_dict))
 
         for i, mem in enumerate(mem_consumed_list_3):
             if mem - mem_consumed_list_2[i] > 10:

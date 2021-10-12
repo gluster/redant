@@ -66,7 +66,7 @@ class TestTimeForls(NdParentTest):
                 '{1801..1900}', '{1901..2000}')
 
         self.proc_list, counter = [], 0
-        while counter < 18:
+        while counter < 18 and len(self.mounts) <= (18 - counter):
             for mount_obj in self.mounts:
                 cmd = ("cd %s; for i in %s;"
                        "do touch dir$i/file{1..10};done"

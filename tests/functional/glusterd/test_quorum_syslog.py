@@ -183,7 +183,7 @@ class TestCase(DParentTest):
         redant.start_glusterd(self.server_list[1])
 
         # Checking glusterd service running or not
-        ret = redant.is_glusterd_running(self.servers[1])
+        ret = redant.is_glusterd_running(self.server_list[1])
         if ret != 1:
             raise Exception("glusterd service should be running")
 

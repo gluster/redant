@@ -19,6 +19,7 @@
     Test glusterd behavior with the gluster volume create command
 """
 
+from copy import deepcopy
 import random
 from tests.d_parent_test import DParentTest
 
@@ -41,7 +42,7 @@ class TestCase(DParentTest):
 
         self.volume_type1 = 'dist'
         self.volume_name1 = f"{self.test_name}-{self.volume_type1}-1"
-        conf_dict = self.vol_type_inf[self.volume_type1]
+        conf_dict = deepcopy(self.vol_type_inf[self.volume_type1])
         brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
                                                       self.brick_roots,
                                                       self.volume_name1, 4)
@@ -73,7 +74,7 @@ class TestCase(DParentTest):
         # create volume with previously used bricks and different volume name
         self.volume_type2 = 'dist'
         self.volume_name2 = f"{self.test_name}-{self.volume_type2}-2"
-        conf_dict = self.vol_type_inf[self.volume_type2]
+        conf_dict = deepcopy(self.vol_type_inf[self.volume_type2])
         ret = redant.volume_create_with_custom_bricks(self.volume_name2,
                                                       self.server_list[0],
                                                       conf_dict, brick_cmd,
@@ -93,7 +94,7 @@ class TestCase(DParentTest):
         # creating a volume with non existing brick path should fail
         self.volume_type3 = 'dist'
         self.volume_name3 = f"{self.test_name}-{self.volume_type3}-3"
-        conf_dict = self.vol_type_inf[self.volume_type3]
+        conf_dict = deepcopy(self.vol_type_inf[self.volume_type3])
         brick_dict, brick_cmd = redant.form_brick_cmd(self.server_list,
                                                       self.brick_roots,
                                                       self.volume_name3, 2)
@@ -152,10 +153,11 @@ class TestCase(DParentTest):
 
         self.volume_type4 = 'dist'
         self.volume_name4 = f"{self.test_name}-{self.volume_type4}-4"
-        conf_dict = self.vol_type_inf[self.volume_type4]
+        conf_dict = deepcopy(self.vol_type_inf[self.volume_type4])
+        conf_dict['dist_count'] = 4
         ret = redant.setup_volume(self.volume_name4, self.server_list[0],
                                   conf_dict, self.server_list,
                                   self.brick_roots, excep=False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception("Unexpected: Successfully created the volume "
                             "with brick whose node is down")
