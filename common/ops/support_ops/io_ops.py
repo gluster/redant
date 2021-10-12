@@ -1699,3 +1699,129 @@ class IoOps(AbstractOps):
             return None
 
         return ret
+
+    def run_crefi(self, client: str, mountpoint: str, number: int,
+                  breadth: int, depth: int, thread: int = 5,
+                  random_size: bool = False, fop: str = 'create',
+                  filetype: str = 'text', minfs: int = 10, maxfs: int = 500,
+                  single: bool = False, multi: bool = False,
+                  size: int = 100, interval: int = 100, nameBytes: int = 10,
+                  random_filename: bool = True) -> bool:
+        """
+        Run crefi on a given mount point and generate I/O.
+
+        Args:
+            client(str): Client on which I/O has to be performed.
+            mountpoint(str): Mount point where the client is mounted.
+            number(int): Number of files to be created.
+            breadth(int): Number of directories in one level.
+            depth(int): Number of levels of directories.
+
+        Optional:
+            thread(int): Number of threads used to generate fop.
+            random_size(bool): Random size of the file between min and max.
+            fop(str): fop can be [create|rename|chmod|chown|chgrp|symlink
+                      |hardlink|truncate|setxattr] this specifies the type
+                      of fop to be executed by default it is create.
+            filetype(str): filetype can be [text|sparse|binary|tar] this
+                           specifie the type of file by default it is text.
+            minfs(int): If random is set to true then this value has to be
+                        altered to change minimum file size. (Value is in KB)
+            maxfs(int): If random is set to true then this value has to be
+                        altered to change maximum file size. (Value is in KB)
+            single(bool): Create files in a single directory.
+            multi(bool): Create files in sub-dir and sub-sub dir.
+            size(int): Size of the files to be created. (Value is in KB)
+            interval(int): Print number files created of interval.
+            nameBytes(int): Number of bytes for filename. (Value is in Bytes)
+            random_filename(bool): It creates files with random names, if set
+                                   to False it creates files with file name
+                                   file1, file2 and so on.
+
+        Returns:
+            bool: True if I/O was sucessfully otherwise False.
+        """
+        # pylint: disable=too-many-return-statements
+
+        # Checking value of fop.
+        list_of_fops = ["create", "rename", "chmod", "chown", "chgrp",
+                        "symlink", "hardlink", "truncate", "setxattr"]
+        if fop not in list_of_fops:
+            self.logger.error("fop value is not valid.")
+            return False
+
+        # Checking value of filetype.
+        list_of_filetypes = ["text", "sparse", "binary", "tar"]
+        if filetype not in list_of_filetypes:
+            self.logger.error("filetype is not a valid file type.")
+            return False
+
+        # Checking if single and multi both are set to true.
+        if single and multi:
+            self.logger.error("single and mutli both can't be true.")
+            return False
+
+        # Checking if file size and random size arguments are given together.
+        if (size > 100 or size < 100) and random_size:
+            self.logger.error("Size and Random size can't be used together.")
+            return False
+
+        # Checking if minfs is greater than or equal to maxfs.
+        if random_size and (minfs >= maxfs):
+            self.logger.error("minfs shouldn't be greater than or equal to "
+                              "maxfs.")
+            return False
+
+        # Creating basic command.
+        command = f"crefi {mountpoint} -n {number} -b {breadth} -d {depth} "
+
+        # Checking thread value and adding it, If greater or smaller than 5.
+        if thread > 5 or thread < 5:
+            command = f"{command} -T {thread}"
+
+        # Checking if random size is true or false.
+        if random_size:
+            command = command + " --random "
+            if minfs > 10 or minfs < 10:
+                command = f"{command} --min {minfs}"
+            if maxfs > 500 or maxfs < 500:
+                command = f"{command} --max {maxfs}"
+
+        # Checking fop and adding it if not create.
+        if fop != "create":
+            command = f"{command} --fop {fop}"
+
+        # Checking if size if greater than or less than 100.
+        if size > 100 or size < 100:
+            command = f"{command} --size {size}"
+
+        # Checking if single or mutli is true.
+        if single:
+            command = command + " --single "
+        if multi:
+            command = command + " --multi "
+
+        # Checking if random_filename is false.
+        if not random_filename:
+            command = command + " -R "
+
+        # Checking if print interval is greater than or less than 100.
+        if interval > 100 or interval < 100:
+            command = f"{command} -I {interval}"
+
+        # Checking if name Bytes is greater than or less than 10.
+        if nameBytes > 10 or nameBytes < 10:
+            command = f"{command} -l {nameBytes}"
+
+        # Checking filetype and setting it if not
+        # text.
+        if filetype != "text":
+            command = f"{command} -t {filetype}"
+
+        # Running the command on the client node.
+        ret = self.execute_abstract_op_node(command, client, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Failed to run crefi on {client}")
+            return False
+
+        return True

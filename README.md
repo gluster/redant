@@ -78,12 +78,14 @@ The Documentation index can be found at [Docs](./docs/README.md)
 3. Activate the virtual-env : `source <virtual_env_name>/bin/activate`
 4. cd `[the-fork]`
 5. Run `pip3 install -r requirements.txt`
-6. To run the sample TC, just run the below cmd after populating the
+6. Install the packages needed by some TCs by running the scripts under
+[`tools/pre-req_scripts`](./tools/pre-req_scripts)
+7. To run the sample TC, just run the below cmd after populating the
 config file with relevant values. The command has to be run from the main redant
 reository. The tests path should be given with respect to the redant directory.
 `python3 ./core/redant_main.py -c ./config/config.yml -t tests/example/`
 For more options, run `python3 ./core/redant_main.py --help`
-7. Log files can be found at /var/log/redant/ [ default path ].
+8. Log files can be found at /var/log/redant/ [ default path ].
 
 The logging is specific to a TC run. So when a user gives a specific base dir
 for logging when invoking `redant_main.py`, that directory will inturn

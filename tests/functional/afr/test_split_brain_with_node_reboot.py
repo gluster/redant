@@ -98,10 +98,21 @@ class TestSelfHeal(DParentTest):
         ret = redant.execute_command_async(cmd, self.client_list[2])
         self.procs_list.append(ret)
 
+        # Create a dir to start crefi tool
+        self.crefi_dir = f"{self.mountpoint}/crefi"
+        redant.create_dir(self.mountpoint, "crefi", self.client_list[3])
+
         # Create a deep-dirs on client 4
-        proc = redant.create_deep_dirs_with_files(self.mountpoint, 1, 4, 4, 5,
-                                                  4, self.client_list[3])
-        self.procs_list.append(proc)
+        list_of_fops = ("create", "rename", "chmod", "chown", "chgrp",
+                        "hardlink", "truncate", "setxattr")
+        for fops in list_of_fops:
+            ret = redant.run_crefi(self.client_list[3],
+                                   self.crefi_dir, 5, 2, 2, thread=4,
+                                   random_size=True, fop=fops, minfs=0,
+                                   maxfs=10240, multi=True,
+                                   random_filename=True)
+            if not ret:
+                raise Exception(f"crefi failed during {fops}")
 
         for server_num in (1, 2):
             # Perform node reboot for servers
