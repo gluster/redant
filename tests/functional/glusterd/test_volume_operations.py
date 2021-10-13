@@ -190,9 +190,9 @@ class TestVolumeCreate(DParentTest):
                                                 False)
 
         # Delete the volume
-        redant.volume_delete(self.volume1, self.server_list[0])
         brick_list = redant.get_all_bricks(self.volume1, self.server_list[0])
-        self.delete_bricks(brick_list)
+        redant.volume_delete(self.volume1, self.server_list[0])
+        redant.delete_bricks(brick_list)
 
         # Merged TC test_volume_op
 
@@ -288,9 +288,9 @@ class TestVolumeCreate(DParentTest):
                             "stopped a already stopped volume")
 
         # Deleting a volume should succeed
-        redant.volume_delete(self.volume3, self.server_list[0])
         brick_list = redant.get_all_bricks(self.volume3, self.server_list[0])
-        self.delete_bricks(brick_list)
+        redant.volume_delete(self.volume3, self.server_list[0])
+        redant.delete_bricks(brick_list)
 
         # Deleting an already deleted volume should fail
         ret = redant.volume_delete(self.volume3, self.server_list[0],
