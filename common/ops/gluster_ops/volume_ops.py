@@ -511,8 +511,9 @@ class VolumeOps(AbstractOps):
 
         ret = self.volume_stop(volname, node, force=True, excep=False)
         if ret['msg']['opRet'] != '0':
-            self.logger.error(f"Failed to stop volume {volname}")
-            return False
+            if "not in the started state" not in ret['msg']['opErrstr']:
+                self.logger.error(f"Failed to stop volume {volname}")
+                return False
 
         ret = self.volume_delete(volname, node, excep=False)
         if ret['msg']['opRet'] != '0':

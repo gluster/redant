@@ -77,7 +77,8 @@ class TestSharedStorage(DParentTest):
         """
         for brick in brick_details:
             node = brick.split(":")[0]
-            ret = self.redant.is_shared_volume_mounted(node, mounted)
+            ret = self.redant.is_shared_volume_mounted(node, mounted,
+                                                       timeout=75)
             if mounted and not ret:
                 raise Exception("Shared volume not mounted even after "
                                 "enabling it")
