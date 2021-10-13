@@ -25,6 +25,7 @@ class BrickMuxOps(AbstractOps):
         ret = self.execute_abstract_op_node(cmd, server, False)
         if ret['error_code'] != 0:
             self.logger.error("Failed to get brick multiplex option value")
+            return None
         out = ret['msg'][0].split()[0].strip()
         return out
 
