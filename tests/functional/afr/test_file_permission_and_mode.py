@@ -32,12 +32,10 @@ class TestCase(NdParentTest):
         """
         try:
             for mount_obj in self.mnt_list:
-                if not self.redant.del_user(mount_obj['client'], 'qa'):
-                    raise Exception("Failed to delete user in "
-                                    f"{mount_obj['client']}")
+                self.redant.del_user(mount_obj['client'], 'qa')
 
-            if not self.redant.del_user(self.server_list, 'qa'):
-                raise Exception(f"Failed to delete user in {self.server_list}")
+            self.redant.del_user(self.server_list, 'qa')
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

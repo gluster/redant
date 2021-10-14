@@ -33,9 +33,8 @@ class TestCase(DParentTest):
     def terminate(self):
         try:
             for node in self.nodes:
-                if not self.redant.del_user(node,
-                                            self.user):
-                    raise Exception("Failed to delete user")
+                self.redant.del_user(node, self.user)
+
         except Exception as error:
             tb = traceback.format_exc
             self.redant.logger.error(error)

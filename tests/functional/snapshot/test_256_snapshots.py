@@ -86,7 +86,7 @@ class TestValidateSnaps256(DParentTest):
         snap_257 = f"snap-test-validate-256-snapshots-{self.vol_name}-257"
         ret = redant.snap_create(self.vol_name, snap_257, self.server_list[0],
                                  excep=False)
-        if ret['error_code'] == 0:
+        if ret['msg']['opRet'] == '0':
             raise Exception(f"Unexpected: Successfully created {snap_257} for"
                             f" volume {self.vol_name}")
 

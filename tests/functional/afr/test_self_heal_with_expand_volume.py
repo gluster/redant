@@ -31,15 +31,8 @@ class TestHealWithExpandVolume(DParentTest):
         # Delete non-root users
         try:
             for user in self.users:
-                ret = self.redant.del_user(self.client_list[0], user)
-                if not ret:
-                    raise Exception(f"Failed to delette the user: {user}")
-                cmd = f"rm -rf /home/{user}"
-                node = self.client_list[0]
-                ret = self.redant.execute_abstract_op_node(cmd, node, False)
-                if ret['error_code'] != 0:
-                    raise Exception("Failed to delete the home directory of"
-                                    f" user: {user}")
+                self.redant.del_user(self.client_list[0], user)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

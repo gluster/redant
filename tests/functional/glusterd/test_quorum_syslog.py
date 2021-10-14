@@ -31,6 +31,32 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        self.is_glusterd_running = True
+        self.volume_name1 = ""
+
+        # Skip test on Fedora servers
+        if self.redant.check_os("fedora", nodes=self.server_list):
+            self.TEST_RES[0] = None
+            raise Exception("This test cannot be run on Fedora servers.")
+
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0],
+                                     self.vol_name,
+                                     self.mountpoint, client)
+
     def terminate(self):
         """
         In case the test fails midway and one of the nodes has
@@ -38,16 +64,18 @@ class TestCase(DParentTest):
         and then the terminate function in the DParentTest is called
         """
         try:
-            self.redant.start_glusterd(self.server_list[1])
+            if not self.is_glusterd_running:
+                self.redant.start_glusterd(self.server_list[1])
 
-            # In this test case performing quorum operations,
-            # deleting volumes immediately after glusterd services start,
-            # volume deletions are failing with quorum not met,
-            # that's the reason verifying peers are connected or not before
-            # deleting volumes
-            ret = self.redant.wait_till_all_peers_connected(self.server_list)
-            if not ret:
-                raise Exception("Servers are not in peer probed state")
+                # In this test case performing quorum operations,
+                # deleting volumes immediately after glusterd services start,
+                # volume deletions are failing with quorum not met,
+                # that's the reason verifying peers are connected or not
+                # before deleting volumes
+                ret = (self.redant.wait_till_all_peers_connected(
+                       self.server_list))
+                if not ret:
+                    raise Exception("Servers are not in peer probed state")
 
             # stopping the volume and Cleaning up the volume
             if self.volume_name1:
@@ -58,29 +86,23 @@ class TestCase(DParentTest):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
-
         super().terminate()
 
     def run_test(self, redant):
         """
-        create two volumes
-        Set server quorum to both the volumes
-        set server quorum ratio 90%
-        stop glusterd service any one of the node
-        quorum regain message should be recorded with message id - 106002
-        for both the volumes in /var/log/messages and
-        /var/log/glusterfs/glusterd.log
-        start the glusterd service of same node
-        quorum regain message should be recorded with message id - 106003
-        for both the volumes in /var/log/messages and
-        /var/log/glusterfs/glusterd.log
+        Steps:
+        - create two volumes
+        - Set server quorum to both the volumes
+        - set server quorum ratio 90%
+        - stop glusterd service any one of the node
+        - quorum regain message should be recorded with message id - 106002
+          for both the volumes in /var/log/messages and
+          /var/log/glusterfs/glusterd.log
+        - start the glusterd service of same node
+          quorum regain message should be recorded with message id - 106003
+          for both the volumes in /var/log/messages and
+          /var/log/glusterfs/glusterd.log
         """
-        self.volume_name1 = ""
-
-        if redant.check_os("fedora", nodes=self.server_list):
-            self.TEST_RES[0] = None
-            raise Exception("This test cannot be run on Fedora servers.")
-
         self.log_messages = "/var/log/messages"
         self.log_glusterd = "/var/log/glusterfs/glusterd.log"
 
@@ -119,6 +141,7 @@ class TestCase(DParentTest):
 
         # Stopping glusterd services
         redant.stop_glusterd(self.server_list[1])
+        self.is_glusterd_running = False
 
         # checking glusterd service stopped or not
         ret = redant.is_glusterd_running(self.server_list[1])
@@ -181,6 +204,7 @@ class TestCase(DParentTest):
 
         # Starting glusterd services
         redant.start_glusterd(self.server_list[1])
+        self.is_glusterd_running = True
 
         # Checking glusterd service running or not
         ret = redant.is_glusterd_running(self.server_list[1])

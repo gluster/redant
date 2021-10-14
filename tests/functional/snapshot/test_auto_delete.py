@@ -105,5 +105,5 @@ class TestCase(DParentTest):
         snaplist = redant.get_snap_list(self.server_list[0])
         for snapname in self.snapshots[-8:]:
             if snapname not in snaplist:
-                raise Exception(f"{snapname} is not expected to be in the"
-                                "snap list")
+                raise Exception(f"{snapname} is expected to be in the"
+                                " snap list")

@@ -30,7 +30,13 @@ class TestSelfHeal(DParentTest):
     def terminate(self):
         # Delete group and user names created as part of setup
         try:
-            self._dac_helper(host=self.client, option='delete')
+            # Delete user on client
+            self.redant.del_user(self.client_list[0], 'qa_all')
+
+            # Delete group on client
+            for group in ('qa_func', 'qa_system'):
+                self.redant.group_del(self.client_list[0], group)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -380,40 +386,24 @@ class TestSelfHeal(DParentTest):
                          testtype='metadata')
 
         # Test for test_data_heal_from_shd
-        self._dac_helper(host=self.client, option='create')
-
         self._test_driver(op_type='data', initial_io=self._initial_io)
         redant.logger.info("Pass: Verification of data heal after switching"
                            " on `self heal daemon` is complete")
 
-        self._dac_helper(host=self.client, option='delete')
-
         # Test for test_gfid_heal_from_shd
-        self._dac_helper(host=self.client, option='create')
-
         self._test_driver(op_type='gfid')
         redant.logger.info("Pass: Verification of gfid heal after switching"
                            " on `self heal daemon` is complete")
 
-        self._dac_helper(host=self.client, option='delete')
-
         # Test for test_file_type_differs_heal_from_shd
-        self._dac_helper(host=self.client, option='create')
-
         self._test_driver(op_type='file_type')
         redant.logger.info("Pass: Verification of gfid heal with "
                            "different file types after switching on "
                            "`self heal daemon` is complete")
 
-        self._dac_helper(host=self.client, option='delete')
-
         # Test for test_sym_link_heal_from_shd
-        self._dac_helper(host=self.client, option='create')
-
         self._test_driver(op_type='symlink', initial_io=self._initial_io)
         redant.logger.info("Pass: Verification of gfid heal with "
                            "different file types after switching on "
                            "`self heal daemon` is complete when "
                            "symlink operations are performed")
-
-        self._dac_helper(host=self.client, option='delete')
