@@ -62,12 +62,16 @@ class TestListBuilder:
         global valid_vol_types
         # Obtaining list of paths to the TCs under given directory.
         if not single_tc:
-            for root, _, files in os.walk(path, onerror=path_error_handler):
-                for tfile in files:
-                    if tfile.endswith(".py") and tfile.startswith("test"):
-                        test_case_path = os.path.join(root, tfile)
-                        if test_case_path not in excluded_tests:
-                            cls.tests_path_list.append(test_case_path)
+            if path not in excluded_tests:
+                for root, _, files in os.walk(path,
+                                              onerror=path_error_handler):
+                    if root not in excluded_tests:
+                        for tfile in files:
+                            if tfile.endswith(".py") and \
+                               tfile.startswith("test"):
+                                test_case_path = os.path.join(root, tfile)
+                                if test_case_path not in excluded_tests:
+                                    cls.tests_path_list.append(test_case_path)
 
         elif path not in excluded_tests:
             cls.tests_path_list.append(path)

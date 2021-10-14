@@ -170,7 +170,7 @@ class ParamsHandler:
         """
         ret = self.config_hashmap.get("excluded_tests", [])
         for paths in ret:
-            if not os.path.isfile(paths):
+            if not os.path.isfile(paths) and not os.path.isdir(paths):
                 return ([], False)
 
         return (ret, True)
