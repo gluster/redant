@@ -158,6 +158,6 @@ class TestCase(DParentTest):
         ret = redant.setup_volume(self.volume_name4, self.server_list[0],
                                   conf_dict, self.server_list,
                                   self.brick_roots, excep=False)
-        if ret['msg']['opRet'] == '0':
+        if ret['error_code'] == 0:
             raise Exception("Unexpected: Successfully created the volume "
                             "with brick whose node is down")

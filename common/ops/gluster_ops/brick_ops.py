@@ -1291,8 +1291,17 @@ class BrickOps(AbstractOps):
         _rc = True
         for brick in bricks_list:
             brick_node, brick_path = brick.split(":")
-            self.execute_abstract_op_node(f"rm -rf {brick_path}",
-                                          brick_node)
+            ret = self.execute_abstract_op_node(f"rm -rf {brick_path}",
+                                                brick_node, False)
+            if ret['error_code'] != 0:
+                root_brick = brick_path[0:brick_path.rfind("/")]
+                cmd = f"umount {root_brick}"
+                self.execute_abstract_op_node(cmd, brick_node, False)
+                cmd = f"mount {root_brick}"
+                self.execute_abstract_op_node(cmd, brick_node, False)
+                self.execute_abstract_op_node(f"rm -rf {brick_path}",
+                                              brick_node, False)
+
             ret = self.execute_abstract_op_node(f"ls {brick_path}",
                                                 brick_node,
                                                 False)
