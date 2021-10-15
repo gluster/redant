@@ -315,14 +315,19 @@ class Rexe:
             bool: True in case command execution was success.
                   False otherwise
         """
+        stdout = ""
         self.logger.info(f"Rebooting node: {node} ...")
         cmd = "reboot"
         try:
-            _, _, stderr = self.node_dict[node].exec_command(cmd)
-        except Exception:
+            _, stdout, _ = self.node_dict[node].exec_command(cmd)
+        except Exception as err:
             # In case command execution fails, handle exception
             self.logger.error("Failed to execute 'reboot' command"
-                              f"Error: {stderr}")
+                              f"Error: {err}")
             return False
+
+        # Close the channel, if the command executed successfully
+        if stdout:
+            stdout.close()
 
         return True
