@@ -62,8 +62,7 @@ def main():
     """
     # Setting up command line arguments
     parser = argparse.ArgumentParser(
-        description="A tool to log memory usage of a given process"
-        )
+        description="A tool to log memory usage of a given process")
     parser.add_argument(
         "-p", "--process_name", type=str, dest="process_name", required=True,
         help="Name of process for which cpu and memory is to be logged")
