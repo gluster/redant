@@ -102,42 +102,53 @@ class environ:
                                              f'{os.getcwd()}/{script}',
                                              scripts_dpath[ind])
 
-    def _list_of_machines_without_arequal(self, machines: list):
+    def _list_of_machines_without_package(self, nodes: list, package: str):
         """
         This function returns the list of machines without
-        arequal checksum installed on it.
+        arequal checksum/crefi installed on it.
         """
-        cmd = "arequal-checksum"
-        machines = set(machines)
-        arequal_machines = []
-        for machine in machines:
-            ret = self.redant.execute_abstract_op_node(cmd, machine,
-                                                       False)
+        nodes = set(nodes)
+        machines = []
+        for node in nodes:
+            ret = self.redant.execute_abstract_op_node(package, node, False)
             if ret['error_code'] != 64:
-                arequal_machines.append(machine)
-        return arequal_machines
+                machines.append(node)
+        return machines
 
-    def _check_and_install_arequal_checksum(self):
+    def _check_and_install_scripts(self):
         """
-        Checks if arequal checksum is present on
+        Checks if arequal checksum and crefi is present on
         the servers and clients and if not present
         installs it.
         """
+        total_nodes = list(set(self.client_list + self.server_list))
+
+        # check for arequal checksum
         arequal_dpath = '/usr/share/redant/script/arequal_install.sh'
-        arequal_spath = f'{os.getcwd()}/tools/pre-req_scripts/ \
-                arequal_install.sh'
-        arequal_machines = self._list_of_machines_without_arequal(
-            self.client_list + self.server_list
-        )
+        arequal_spath = (f'{os.getcwd()}/tools/pre-req_scripts/'
+                         'arequal_install.sh')
+
+        arequal_machines = self._list_of_machines_without_package(
+            total_nodes, "arequal-checksum")
         if len(arequal_machines) > 0:
-            self._transfer_files_to_machines(
-                arequal_machines,
-                arequal_spath,
-                arequal_dpath)
+            self._transfer_files_to_machines(arequal_machines, arequal_spath,
+                                             arequal_dpath)
 
             cmd = f"sh {arequal_dpath}"
-            self.redant.execute_abstract_op_multinode(cmd,
-                                                      arequal_machines)
+            self.redant.execute_abstract_op_multinode(cmd, arequal_machines)
+
+        # check for crefi
+        crefi_dpath = '/usr/share/redant/script/crefi_install.sh'
+        crefi_spath = f'{os.getcwd()}/tools/pre-req_scripts/crefi_install.sh'
+
+        crefi_machines = self._list_of_machines_without_package(total_nodes,
+                                                                "crefi")
+        if len(crefi_machines) > 0:
+            self._transfer_files_to_machines(crefi_machines, crefi_spath,
+                                             crefi_dpath)
+
+            cmd = f"sh {crefi_dpath}"
+            self.redant.execute_abstract_op_multinode(cmd, crefi_machines)
 
     def setup_env(self, keep_logs):
         """
@@ -157,7 +168,7 @@ class environ:
             self.redant.create_cluster(self.server_list)
             self.redant.wait_till_all_peers_connected(self.server_list)
             self._check_and_copy_scripts()
-            self._check_and_install_arequal_checksum()
+            self._check_and_install_scripts()
             self.redant.logger.info("Environment setup success.")
             self.spinner.succeed("Environment setup successful.")
         except Exception as error:
