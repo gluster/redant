@@ -13,7 +13,7 @@ class MemoryAndCpuOps(AbstractOps):
     """
     def _start_logging_processes(self, process: str, servers: list,
                                  test_name: str, interval: int,
-                                 count: int) -> dict:
+                                 count: int) -> list:
         """Start logging processes on all nodes for a given process
 
         Args:
@@ -26,24 +26,27 @@ class MemoryAndCpuOps(AbstractOps):
         Returns:
         list: A list of logging processes
         """
+        if not isinstance(servers, list):
+            servers = [servers]
+
         cmd = ("python3 /usr/share/redant/script/memory_and_cpu_logger.py"
                f" -p {process} -t {test_name} -i {interval} -c {count}")
         logging_process = []
         for server in servers:
+            self.logger.debug(f"Start logging for {process} on {server}")
             proc = self.execute_command_async(cmd, server)
             logging_process.append(proc)
         return logging_process
 
     def log_memory_and_cpu_usage_on_servers(self, servers: list,
-                                            test_name: str, interval=60,
-                                            count=100) -> dict:
+                                            test_name: str, interval: int = 60,
+                                            count: int = 100) -> dict:
         """Log memory and CPU usage of gluster server processes
 
         Args:
          servers(list): Servers on which CPU and memory usage has to be logged
          test_name(str): Name of the testcase for which logs to be collected
-
-        Kwargs:
+        Optional:
          interval(int): Time interval after which logs are to be collected
                         (Default:60)
          count(int): Number of samples to be captured (Default:100)
@@ -60,15 +63,14 @@ class MemoryAndCpuOps(AbstractOps):
         return logging_process_dict
 
     def log_memory_and_cpu_usage_on_clients(self, servers: list,
-                                            test_name: str, interval=60,
-                                            count=100) -> dict:
+                                            test_name: str, interval: int = 60,
+                                            count: int = 100) -> dict:
         """Log memory and CPU usage of gluster client processes
 
         Args:
          servers(list): Clients on which CPU and memory usage has to be logged
          test_name(str): Name of testcase for which logs are to be collected
-
-        Kwargs:
+        Optional:
          interval(int): Time interval after which logs are to be collected
                         (Defaults:60)
          count(int): Number of samples to be captured (Default:100)
@@ -84,16 +86,15 @@ class MemoryAndCpuOps(AbstractOps):
         return logging_process_dict
 
     def log_memory_and_cpu_usage_on_cluster(self, server: list, client: list,
-                                            test_name: str, interval=60,
-                                            count=100) -> dict:
+                                            test_name: str, interval: int = 60,
+                                            count: int = 100) -> dict:
         """Log memory and CPU usage on gluster cluster
 
         Args:
          server(list): Servers on which memory and CPU usage is to be logged
          client(list): Clients on which memory and CPU usage is to be logged
          test_name(str): Name of testcase for which logs are to be collected
-
-        Kwargs:
+        Optional:
          interval(int): Time interval after which logs are to be collected
                         (Default:60)
          count(int): Number of samples to be captured (Default:100)
@@ -125,13 +126,13 @@ class MemoryAndCpuOps(AbstractOps):
         return logging_process_dict
 
     def wait_for_logging_processes_to_stop(self, proc_dict: dict,
-                                           cluster=False) -> bool:
+                                           cluster: bool = False) -> bool:
         """Wait for all given logging processes to stop
 
         Args:
          proc_dict(dict): Dictionary of all the active logging processes
 
-        Kwargs:
+        Optional:
          cluster(bool): True if proc_dict is for the entire cluster else False
                         (Default:False)
 
@@ -143,11 +144,15 @@ class MemoryAndCpuOps(AbstractOps):
             for sub_dict in proc_dict:
                 for proc_name in proc_dict[sub_dict]:
                     for proc in proc_dict[sub_dict][proc_name]:
+                        self.logger.debug(f"Waiting for {proc} logging "
+                                          "process to stop")
                         self.wait_till_async_command_ends(proc)
                         flag.append(True)
         else:
             for proc_name in proc_dict:
                 for proc in proc_dict[proc_name]:
+                    self.logger.debug(f"Waiting for {proc} logging "
+                                      "process to stop")
                     self.wait_till_async_command_ends(proc)
                     flag.append(True)
         return all(flag)
@@ -162,12 +167,17 @@ class MemoryAndCpuOps(AbstractOps):
          oom_killer_list(list): A list in which the presence of
                                 OOM killer has to be noted
         """
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
         cmd = ("grep -i 'killed process' /var/log/messages* "
                f"| grep -w '{process}'")
+        self.logger.debug(f"Checking for oom killers for {process} process"
+                          " on {nodes}")
         ret_codes = self.execute_abstract_op_multinode(cmd, nodes, False)
         for ret in ret_codes:
             if ret['error_code'] == 0:
-                self.logger.error('OOM killer observed on node for {process}')
+                self.logger.error(f'OOM killer observed on node for {process}')
                 self.logger.error(ret['msg'])
                 oom_killer_list.append(True)
             else:
@@ -247,7 +257,7 @@ class MemoryAndCpuOps(AbstractOps):
 
     def _perform_three_point_check_for_memory_leak(self, dataframe, node: str,
                                                    process: str, gain: float,
-                                                   pid=None) -> bool:
+                                                   pid: str = None) -> bool:
         """Perform three point check
 
         Args:
@@ -256,7 +266,7 @@ class MemoryAndCpuOps(AbstractOps):
          process(str): Name of process for which check has to be done
          gain(float): Accepted amount of leak for a given testcase in MB
 
-        kwargs:
+        Optional:
          pid(str): pid of volume process for which 3 point check has to be done
 
         Returns:
@@ -319,20 +329,21 @@ class MemoryAndCpuOps(AbstractOps):
         return False
 
     def check_for_memory_leaks_in_glusterd(self, nodes: list, test_name: str,
-                                           gain=30.0) -> bool:
+                                           gain: int = 30.0) -> bool:
         """Check for memory leaks in glusterd
 
         Args:
          nodes(list): Servers on which memory leaks have to be checked
          test_name(str): Name of testcase for which memory leaks has to be
                          checked
-        Kwargs:
+        Optional:
          gain(float): Accepted amount of leak for a given testcase in MB
                       (Default:30)
 
         Returns:
           bool: True if memory leak was obsevred else False
         """
+        self.logger.debug("Checking for memory leak in glusterd")
         is_there_a_leak = []
         for node in nodes:
             dataframe = self.create_dataframe_from_csv(node, 'glusterd',
@@ -352,7 +363,8 @@ class MemoryAndCpuOps(AbstractOps):
         return any(is_there_a_leak)
 
     def check_for_memory_leaks_in_glusterfs(self, nodes: list, test_name: str,
-                                            vol_name: str, gain=30.0) -> bool:
+                                            vol_name: str,
+                                            gain: int = 30.0) -> bool:
         """Check for memory leaks in glusterfs
 
         Args:
@@ -360,7 +372,7 @@ class MemoryAndCpuOps(AbstractOps):
          test_name(str): Name of testcase for which memory leaks has to be
                          checked
          vol_name(str): Name of volume process according to volume status
-        Kwargs:
+        Optional:
          gain(float): Accepted amount of leak for a given testcase in MB
                       (Default:30)
 
@@ -371,6 +383,7 @@ class MemoryAndCpuOps(AbstractOps):
          This function should be executed with the volumes present on the
          cluster
         """
+        self.logger.debug("Checking for memory leak in glusterfs")
         is_there_a_leak = []
         for node in nodes:
             # Get the volume status on the node
@@ -404,7 +417,7 @@ class MemoryAndCpuOps(AbstractOps):
 
     def check_for_memory_leaks_in_glusterfsd(self, nodes: list,
                                              test_name: str, vol_name: str,
-                                             gain=30.0) -> bool:
+                                             gain: int = 30.0) -> bool:
         """Check for memory leaks in glusterfsd
 
         Args:
@@ -412,7 +425,7 @@ class MemoryAndCpuOps(AbstractOps):
          test_name(str): Name of testcase for which memory leaks has to be
                          checked
          vol_name(str): Name of volume process according to volume status
-        Kwargs:
+        Optional:
          gain(float): Accepted amount of leak for a given testcase in MB
                       (Default:30)
         Returns:
@@ -422,6 +435,7 @@ class MemoryAndCpuOps(AbstractOps):
          This function should be executed with the volumes present on the
          cluster.
         """
+        self.logger.debug("Checking for memory leak in glusterfsd")
         is_there_a_leak = []
         for node in nodes:
             # Get the volume status on the node
@@ -463,8 +477,8 @@ class MemoryAndCpuOps(AbstractOps):
         Args:
          test_id(str): ID of the test running fetched from self.id()
          nodes(list): Servers on which memory leaks have to be checked
-        Kwargs:
          vol_name(str): Name of volume process according to volume status
+        Optional:
          gain(float): Accepted amount of leak for a given testcase in MB
                       (Default:30)
 
@@ -502,7 +516,8 @@ class MemoryAndCpuOps(AbstractOps):
         return False
 
     def check_for_memory_leaks_in_glusterfs_fuse(self, nodes: list,
-                                                 test_name: str, gain=30.0):
+                                                 test_name: str,
+                                                 gain: int = 30.0):
         """Check for memory leaks in glusterfs fuse
 
         Args:
@@ -510,7 +525,7 @@ class MemoryAndCpuOps(AbstractOps):
          test_name(str): Name of testcase for which memory leaks has to be
                          checked
 
-        Kwargs:
+        Optional:
          gain(float): Accepted amount of leak for a given testcase in MB
                       (Default:30)
 
@@ -520,6 +535,7 @@ class MemoryAndCpuOps(AbstractOps):
         NOTE:
          This function should be executed when the volume is still mounted.
         """
+        self.logger.debug("Checking for memory leak in glusterfs_fuse")
         is_there_a_leak = []
         for node in nodes:
             # Get the volume status on the node
@@ -566,7 +582,7 @@ class MemoryAndCpuOps(AbstractOps):
         Args:
          test_id(str): ID of the test running fetched from self.id()
          nodes(list): Servers on which memory leaks have to be checked
-        Kwargs:
+        Optional:
          gain(float): Accepted amount of leak for a given testcase in MB
                       (Default:30)
 
