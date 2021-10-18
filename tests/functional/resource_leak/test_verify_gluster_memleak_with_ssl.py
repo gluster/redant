@@ -1,61 +1,53 @@
-#  Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program; if not, write to the Free Software Foundation, Inc.,
-#  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+Copyright (C) 2020 Red Hat, Inc. <http://www.redhat.com>
 
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along`
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+# disruptive;dist-rep
 
 from datetime import datetime, timedelta
-from glusto.core import Glusto as g
-from glustolibs.gluster.gluster_base_class import GlusterBaseClass, runs_on
-from glustolibs.gluster.lib_utils import get_usable_size_per_disk
-from glustolibs.gluster.volume_libs import get_subvols
-from glustolibs.io.memory_and_cpu_utils import (
-    wait_for_logging_processes_to_stop)
-from glustolibs.gluster.brick_libs import get_all_bricks
-from glustolibs.gluster.exceptions import ExecutionError
-from glustolibs.io.utils import validate_io_procs
+import traceback
+from tests.d_parent_test import DParentTest
 
 
-@runs_on([['distributed-replicated'], ['glusterfs']])
-class TestMemLeakAfterSSLEnabled(GlusterBaseClass):
+class TestMemLeakAfterSSLEnabled(DParentTest):
 
-    def setUp(self):
+    def terminate(self):
         """
-        Setup and mount volume or raise ExecutionError
+        Check if memory logging and cpu usage running and
+        If I/O processes are running wait from them to complete
         """
-        self.get_super_method(self, 'setUp')()
-        self.test_id = self.id()
-        # Setup Volume
-        self.volume['dist_count'] = 2
-        self.volume['replica_count'] = 3
-        ret = self.setup_volume_and_mount_volume(self.mounts)
-        if not ret:
-            g.log.error("Failed to Setup and Mount Volume")
-            raise ExecutionError("Failed to Setup and Mount Volume")
+        try:
+            if self.is_logging:
+                ret = (self.redant.wait_for_logging_processes_to_stop(
+                       self.monitor_proc_dict, cluster=True))
+                if not ret:
+                    raise Exception("ERROR: Failed to stop monitoring "
+                                    "processes")
+            if self.is_io_running:
+                if not self.redant.wait_for_io_to_complete(self.procs_list,
+                                                           self.mounts):
+                    raise Exception("Failed to wait for I/O to complete")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
-    def tearDown(self):
-
-        # Unmount and cleanup original volume
-        ret = self.unmount_volume_and_cleanup_volume(mounts=self.mounts)
-        if not ret:
-            raise ExecutionError("Failed to umount the vol & cleanup Volume")
-        g.log.info("Successful in umounting the volume and Cleanup")
-
-        # Calling GlusterBaseClass tearDown
-        self.get_super_method(self, 'tearDown')()
-
-    def test_mem_leak_on_gluster_procs_after_ssl_enabled(self):
+    def run_test(self, redant):
         """
         Steps:
         Scenario 1:
@@ -68,61 +60,76 @@ class TestMemLeakAfterSSLEnabled(GlusterBaseClass):
         6) Issue the command "# gluster v heal <volname> info" continuously
            in a loop.
         """
-
+        self.is_io_running = False
         # Fill the vol approx 88%
-        bricks = get_all_bricks(self.mnode, self.volname)
-        usable_size = int(get_usable_size_per_disk(bricks[0]) * 0.88)
+        bricks = redant.get_all_bricks(self.vol_name, self.server_list[0])
+        usable_size = int(redant.get_usable_size_per_disk(bricks[0]) * 0.88)
+        if not usable_size:
+            raise Exception("Failed to get the usable size of the brick")
 
-        procs = []
+        self.procs_list = []
         counter = 1
-        for _ in get_subvols(self.mnode, self.volname)['volume_subvols']:
-            filename = "{}/test_file_{}".format(self.mounts[0].mountpoint,
-                                                str(counter))
-            proc = g.run_async(self.mounts[0].client_system,
-                               "fallocate -l {}G {}".format(usable_size,
-                                                            filename))
-            procs.append(proc)
+        subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
+        if not subvols_list:
+            redant.logger.error("No Sub-Volumes available for the volume "
+                                f"{self.vol_name}")
+
+        for _ in subvols_list:
+            filename = f"{self.mountpoint}/test_file_{counter}"
+            cmd = f"fallocate -l {usable_size}G {filename}"
+            ret = redant.execute_command_async(cmd, self.client_list[0])
+            self.procs_list.append(ret)
             counter += 1
 
+        self.is_io_running = True
         # Start monitoring resource usage on servers and clients
         # default interval = 60 sec
         # count = 780 (60 *12)  => for 12 hrs
-        monitor_proc_dict = self.start_memory_and_cpu_usage_logging(
-            self.test_id, count=780)
-        self.assertIsNotNone(monitor_proc_dict,
-                             "Failed to start monitoring on servers and "
-                             "clients")
+        self.is_logging = False
+        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
-        ret = validate_io_procs(procs, self.mounts)
-        self.assertTrue(ret, "IO Failed")
+        # Start monitoring resource usage on servers and clients
+        self.test_id = f"{self.test_name}-{self.volume_type}-logusage"
+        self.monitor_proc_dict = (redant.log_memory_and_cpu_usage_on_cluster(
+                                  self.server_list, self.client_list,
+                                  self.test_id, count=780))
+        if not self.monitor_proc_dict:
+            raise Exception("Failed to start monitoring on servers and "
+                            "clients")
+        self.is_logging = True
+
+        # Wait for I/O to complete and validate I/O on mount points
+        if not redant.validate_io_procs(self.procs_list, self.mounts):
+            raise Exception("IO didn't complete or failed on client")
+        self.is_io_running = False
 
         # Perform gluster heal info for 12 hours
         end_time = datetime.now() + timedelta(hours=12)
         while True:
             curr_time = datetime.now()
-            cmd = "gluster volume heal %s info" % self.volname
-            ret, _, _ = g.run(self.mnode, cmd)
-            self.assertEqual(ret, 0, "Failed to execute heal info cmd")
+            cmd = f"gluster volume heal {self.vol_name} info"
+            redant.execute_abstract_op_node(cmd, self.server_list[0])
             if curr_time > end_time:
-                g.log.info("Successfully ran for 12 hours. Checking for "
-                           "memory leaks")
+                redant.logger.info("Successfully ran for 12 hours. Checking"
+                                   "for memory leaks")
                 break
 
         # Wait for monitoring processes to complete
-        ret = wait_for_logging_processes_to_stop(monitor_proc_dict,
-                                                 cluster=True)
-        self.assertTrue(ret,
-                        "ERROR: Failed to stop monitoring processes")
+        ret = redant.wait_for_logging_processes_to_stop(self.monitor_proc_dict,
+                                                        cluster=True)
+        if not ret:
+            raise Exception("ERROR: Failed to stop monitoring processes")
+        self.is_logging = False
 
         # Check if there are any memory leaks and OOM killers
-        ret = self.check_for_memory_leaks_and_oom_kills_on_servers(
-            self.test_id)
-        self.assertFalse(ret,
-                         "Memory leak and OOM kills check failed on servers")
+        ret = (redant.check_for_memory_leaks_and_oom_kills_on_servers(
+               self.test_id, self.server_list, self.vol_name))
+        if ret:
+            raise Exception("Memory leak and OOM kills check failed on"
+                            " servers")
 
-        ret = self.check_for_memory_leaks_and_oom_kills_on_clients(
-            self.test_id)
-        self.assertFalse(ret,
-                         "Memory leak and OOM kills check failed on clients")
-        g.log.info(
-            "No memory leaks/OOM kills found on serves and clients")
+        ret = (redant.check_for_memory_leaks_and_oom_kills_on_clients(
+               self.test_id, self.client_list))
+        if ret:
+            raise Exception("Memory leak and OOM kills check failed on"
+                            " clients")
