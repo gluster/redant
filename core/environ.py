@@ -102,7 +102,8 @@ class environ:
                                              f'{os.getcwd()}/{script}',
                                              scripts_dpath[ind])
 
-    def _list_of_machines_without_package(self, nodes: list, package: str):
+    def _list_of_machines_without_package(self, nodes: list, package: str,
+                                          error_code: int):
         """
         This function returns the list of machines without
         arequal checksum/crefi installed on it.
@@ -111,7 +112,7 @@ class environ:
         machines = []
         for node in nodes:
             ret = self.redant.execute_abstract_op_node(package, node, False)
-            if ret['error_code'] != 64:
+            if ret['error_code'] != error_code:
                 machines.append(node)
         return machines
 
@@ -129,7 +130,7 @@ class environ:
                          'arequal_install.sh')
 
         arequal_machines = self._list_of_machines_without_package(
-            total_nodes, "arequal-checksum")
+            total_nodes, "arequal-checksum", 64)
         if len(arequal_machines) > 0:
             self._transfer_files_to_machines(arequal_machines, arequal_spath,
                                              arequal_dpath)
@@ -142,7 +143,7 @@ class environ:
         crefi_spath = f'{os.getcwd()}/tools/pre-req_scripts/crefi_install.sh'
 
         crefi_machines = self._list_of_machines_without_package(total_nodes,
-                                                                "crefi")
+                                                                "crefi", 2)
         if len(crefi_machines) > 0:
             self._transfer_files_to_machines(crefi_machines, crefi_spath,
                                              crefi_dpath)
