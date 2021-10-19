@@ -95,10 +95,10 @@ class TestNodeRebootSubDirsMounted(DParentTest):
 
         # Mounting one sub directory on each client.
         volname = f"{self.vol_name}/d1"
-        redant.authenticated_mount(volname, self.server_list[0],
+        redant.authenticated_mount(volname, self.server_list[1],
                                    self.mountpoint, self.client_list[0])
         volname = f"{self.vol_name}/d2"
-        redant.authenticated_mount(volname, self.server_list[0],
+        redant.authenticated_mount(volname, self.server_list[1],
                                    self.mountpoint, self.client_list[1])
         self.is_mounted = True
 
@@ -120,8 +120,8 @@ class TestNodeRebootSubDirsMounted(DParentTest):
             count = count + 10
 
         # Reboot node and wait for node to come up.
-        redant.reboot_nodes(self.server_list[0])
-        if not redant.wait_node_power_up(self.server_list[0], 600):
+        redant.reboot_nodes(self.server_list[1])
+        if not redant.wait_node_power_up(self.server_list[1], 600):
             raise Exception("Node not yet rebooted")
 
         # Check whether peers are in connected state

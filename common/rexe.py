@@ -3,6 +3,7 @@ import time
 import random
 import concurrent.futures
 import json
+import socket
 import paramiko
 import xmltodict
 from multipledispatch import dispatch
@@ -316,18 +317,19 @@ class Rexe:
                   False otherwise
         """
         stdout = ""
+        node = socket.gethostbyname(node)
         self.logger.info(f"Rebooting node: {node} ...")
         cmd = "reboot"
         try:
             _, stdout, _ = self.node_dict[node].exec_command(cmd)
         except Exception as err:
             # In case command execution fails, handle exception
-            self.logger.error("Failed to execute 'reboot' command"
+            self.logger.error("Failed to execute 'reboot' command. "
                               f"Error: {err}")
             return False
 
         # Close the channel, if the command executed successfully
         if stdout:
-            stdout.close()
+            stdout.channel.close()
 
         return True
