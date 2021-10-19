@@ -33,7 +33,7 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
         conf_hash = self.vol_type_inf[self.volume_type]
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  conf_hash, self.server_list,
-                                 self.brick_roots)
+                                 self.brick_roots, force=True)
         self.mountpoint = (f"/mnt/{self.vol_name}")
         self.redant.execute_abstract_op_node(f"mkdir -p "
                                              f"{self.mountpoint}",
@@ -57,9 +57,10 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
                     raise Exception("ERROR: Failed to stop monitoring "
                                     "processes")
             if self.is_io_running:
-                if not self.redant.wait_for_io_to_complete(self.procs_list,
-                                                           self.mounts):
-                    raise Exception("Failed to wait for I/O to complete")
+                for proc in self.procs_list:
+                    ret = self.redant.wait_till_async_command_ends(proc)
+                    if ret['error_code'] != 0:
+                        raise Exception("Failed to wait for I/O to complete")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -158,7 +159,6 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
         # Start monitoring resource usage on servers and clients
         # default interval = 60 sec, count = 780 (60 *12)  => for 12 hrs
         self.is_logging = False
-        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Start monitoring resource usage on servers and clients
         self.test_id = f"{self.test_name}-{self.volume_type}-logusage"
@@ -171,8 +171,10 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
         self.is_logging = True
 
         # Wait for I/O to complete and validate I/O on mount points
-        if not redant.validate_io_procs(self.procs_list, self.mounts):
-            raise Exception("IO didn't complete or failed on client")
+        for proc in self.procs_list:
+            ret = redant.wait_till_async_command_ends(proc)
+            if ret['error_code'] != 0:
+                raise Exception("IO didn't complete or failed on client")
         self.is_io_running = False
 
         self._perform_gluster_v_heal_for_12_hrs()
@@ -194,7 +196,7 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
         conf_hash = self.vol_type_inf[self.volume_type]
         redant.setup_volume(self.vol_name, self.server_list[0],
                             conf_hash, self.server_list,
-                            self.brick_roots)
+                            self.brick_roots, force=True)
         self.mountpoint = (f"/mnt/{self.vol_name}")
         redant.execute_abstract_op_node(f"mkdir -p {self.mountpoint}",
                                         self.client_list[0])
@@ -241,8 +243,10 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
         self.is_logging = True
 
         # Wait for I/O to complete and validate I/O on mount points
-        if not redant.validate_io_procs(self.procs_list, self.mounts):
-            raise Exception("IO didn't complete or failed on client")
+        for proc in self.procs_list:
+            ret = redant.wait_till_async_command_ends(proc)
+            if ret['error_code'] != 0:
+                raise Exception("IO didn't complete or failed on client")
         self.is_io_running = False
 
         # Wait for monitoring processes to complete
