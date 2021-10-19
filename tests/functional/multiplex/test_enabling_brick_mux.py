@@ -92,8 +92,7 @@ class TestCase(DParentTest):
                                 "'/var/lib/glusterd/options' is incorrect")
 
         # Check brick multiplex with incorrect status
-        cmd = (f"gluster v set all cluster.brick-multiplex "
-               "incorrect")
+        cmd = ("gluster v set all cluster.brick-multiplex incorrect")
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0],
                                               False)
         if ret['error_code'] == 0:
