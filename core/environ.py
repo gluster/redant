@@ -89,12 +89,14 @@ class environ:
                          '/usr/share/redant/script/compute_hash.py',
                          '/usr/share/redant/script/file_lock.py',
                          '/usr/share/redant/script/fd_writes.py',
-                         '/usr/share/redant/script/walk_dir.py']
+                         '/usr/share/redant/script/walk_dir.py',
+                         '/usr/share/redant/script/memory_and_cpu_logger.py']
         scripts_spath = ['tools/scripts/file_dir_ops.py',
                          'tools/scripts/compute_hash.py',
                          'tools/scripts/file_lock.py',
                          'tools/scripts/fd_writes.py',
-                         'tools/scripts/walk_dir.py']
+                         'tools/scripts/walk_dir.py',
+                         'tools/scripts/memory_and_cpu_logger.py']
 
         total_nodes = list(set(self.client_list + self.server_list))
         for ind, script in enumerate(scripts_spath):
