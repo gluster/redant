@@ -162,6 +162,50 @@ class IoOps(AbstractOps):
 
         return True
 
+    def search_pattern_in_file(self, node: str, search_pattern: str,
+                               filename: str, start_str_to_parse: str,
+                               end_str_to_parse: str) -> bool:
+        """
+        checks if the given search pattern exists in the file
+        in between 'start_str_to_parse' and 'end_str_to_parse' string.
+
+        Example:
+            search_pattern = r'.*scrub.*'
+            search_log("abc.def.com", search_pattern, "/var/log/messages",
+                        "start_pattern", "end_pattern")
+
+        Args:
+            node (str): Node on which cmd has to be executed.
+            search_pattern (str): regex string to be matched in the file
+            filename (str): absolute file path to search given string
+            start_str_to_parse (str): this will be as start string in the
+                file from which this method will check
+                if the given search string is present.
+            end_str_to_parse (str): this will be as end string in the
+                file within which this method will check
+                if the given search string is present.
+
+        Returns:
+            True, if search_pattern is present in the file
+            False, otherwise
+        """
+
+        cmd = ("awk '{a[NR]=$0}/" + start_str_to_parse + "/{s=NR}/"
+               + end_str_to_parse + "/{e=NR}END{for(i=s;i<=e;++i)print "
+               "a[i]}' " + filename)
+        ret = self.execute_abstract_op_node(cmd, node, False)
+        if ret['error_code'] != 0:
+            self.logger.error("Failed to match start and end pattern in file"
+                              f" {filename}")
+            return False
+
+        if not re.search(search_pattern, ret['msg'][0], re.S):
+            self.logger.error(f"file {filename} did not have the expected"
+                              " message")
+            return False
+
+        return True
+
     def get_dir_contents(self, path: str, node: str,
                          recursive: bool = False) -> list:
         """
