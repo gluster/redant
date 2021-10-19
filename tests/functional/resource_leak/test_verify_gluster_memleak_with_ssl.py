@@ -38,9 +38,10 @@ class TestMemLeakAfterSSLEnabled(DParentTest):
                     raise Exception("ERROR: Failed to stop monitoring "
                                     "processes")
             if self.is_io_running:
-                if not self.redant.wait_for_io_to_complete(self.procs_list,
-                                                           self.mounts):
-                    raise Exception("Failed to wait for I/O to complete")
+                for proc in self.procs_list:
+                    ret = self.redant.wait_till_async_command_ends(proc)
+                    if ret['error_code'] != 0:
+                        raise Exception("Failed to wait for I/O to complete")
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)
@@ -66,7 +67,6 @@ class TestMemLeakAfterSSLEnabled(DParentTest):
         usable_size = int(redant.get_usable_size_per_disk(bricks[0]) * 0.88)
         if not usable_size:
             raise Exception("Failed to get the usable size of the brick")
-
         self.procs_list = []
         counter = 1
         subvols_list = redant.get_subvols(self.vol_name, self.server_list[0])
@@ -86,7 +86,6 @@ class TestMemLeakAfterSSLEnabled(DParentTest):
         # default interval = 60 sec
         # count = 780 (60 *12)  => for 12 hrs
         self.is_logging = False
-        self.mounts = redant.es.get_mnt_pts_dict_in_list(self.vol_name)
 
         # Start monitoring resource usage on servers and clients
         self.test_id = f"{self.test_name}-{self.volume_type}-logusage"
@@ -99,8 +98,10 @@ class TestMemLeakAfterSSLEnabled(DParentTest):
         self.is_logging = True
 
         # Wait for I/O to complete and validate I/O on mount points
-        if not redant.validate_io_procs(self.procs_list, self.mounts):
-            raise Exception("IO didn't complete or failed on client")
+        for proc in self.procs_list:
+            ret = redant.wait_till_async_command_ends(proc)
+            if ret['error_code'] != 0:
+                raise Exception("IO didn't complete or failed on client")
         self.is_io_running = False
 
         # Perform gluster heal info for 12 hours
