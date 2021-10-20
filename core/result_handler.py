@@ -235,6 +235,21 @@ def _transform_to_percent(statDict: dict) -> dict:
     return tStatDict
 
 
+def _adjust_column_width_in_excel_sheet(sheet: dict, data_list: list):
+    """
+    Function to adjust width of columns in the sheet
+
+    Args:
+        sheet (dict): The excel sheet for which the columen width needs
+                      to be updated
+        data (list): List of data in the row
+    """
+    for col_ind, row_data in enumerate(data_list):
+        cwidth = sheet.col(col_ind).width
+        if (len(row_data)*256) > cwidth:
+            sheet.col(col_ind).width = len(row_data)*256
+
+
 def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
                  totalRTime: str, logger):
     """
@@ -276,6 +291,10 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
             for key, val in subDict.items():
                 tR.write(row, 0, val, style)
                 tR.write(row, 1, tDict[key])
+
+                # Adjust width of columns in the sheet
+                _adjust_column_width_in_excel_sheet(tR, [val, tDict[key]])
+
             row += 1
 
     # Writing total runtime in the Total sheet.
@@ -283,6 +302,8 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
     timeVal = _time_rollover_conversion(totalRTime, True)
     tR.write(row, 0, "Total Time", style)
     tR.write(row, 1, timeVal)
+    # Adjust width of columns in the sheet
+    _adjust_column_width_in_excel_sheet(tR, ["Total Time", timeVal])
 
     rowDiff = row+2
     # Populating the test data to the sheets.
@@ -308,6 +329,9 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
                     timeVal = _time_rollover_conversion(volData['timeTaken'])
                     tR.write(row, 4, timeVal)
                     tR.write(row, 5, volData['skipReason'])
+                    (_adjust_column_width_in_excel_sheet(tR, [test, nature,
+                     volType, volData['testResult'], timeVal,
+                     volData['skipReason']]))
                     row += 1
 
     # Push the changes to the file.
