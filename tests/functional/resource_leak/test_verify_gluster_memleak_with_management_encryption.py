@@ -31,16 +31,9 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         conf_hash = self.vol_type_inf[self.volume_type]
-        self.redant.setup_volume(self.vol_name, self.server_list[0],
-                                 conf_hash, self.server_list,
-                                 self.brick_roots, force=True)
-        self.mountpoint = (f"/mnt/{self.vol_name}")
-        self.redant.execute_abstract_op_node(f"mkdir -p "
-                                             f"{self.mountpoint}",
-                                             self.client_list[0])
-        self.redant.volume_mount(self.server_list[0], self.vol_name,
-                                 self.mountpoint, self.client_list[0])
-
+        self.redant.volume_create(self.vol_name, self.server_list[0],
+                                  conf_hash, self.server_list,
+                                  self.brick_roots, force=True)
         # Disable I/O encryption
         self._disable_io_encryption()
 
@@ -118,13 +111,6 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
 
     def _disable_io_encryption(self):
         """ Disables IO encryption """
-        # UnMount Volume
-        self.redant.volume_unmount(self.vol_name, self.mountpoint,
-                                   self.client_list[0])
-
-        # Stop Volume
-        self.redant.volume_stop(self.vol_name, self.server_list[0])
-
         # Disable server and client SSL usage
         options = {"server.ssl": "off",
                    "client.ssl": "off"}
