@@ -65,7 +65,7 @@ excluded_tests:
     - tests/functional/afr/test_multiple_clients_dd_on_same_file_default.py # Excluded in RHGS CI test
     - tests/functional/afr/test_replace_brick_self_heal_io_in_progress.py # Excluded in RHGS CI test
     - tests/functional/afr/test_metadata_self_heal_client_side_heal.py # Excluded in RHGS CI test
-    - tests/functional/afr/test_manual_heal_should_trigger_heal # Excluded in RHGS CI test
+    - tests/functional/afr/test_manual_heal_should_trigger_heal.py # Excluded in RHGS CI test
     - tests/functional/afr/test_conservative_merge_of_files_heal_command.py # Excluded in RHGS CI test
     - tests/functional/afr/test_add_brick_followed_by_remove_brick.py # Excluded in RHGS CI test
     - tests/functional/disperse/test_ec_uss_snapshot.py # Excluded due to bz: 1828820
