@@ -507,5 +507,9 @@ class TestCase(DParentTest):
         redant.logger.info("Test for add remove brick successful")
         self._test_glustershd_with_restarting_glusterd()
         redant.logger.info("Test for restart glusterd successful")
+
+        # This situation is no more valid in gluster
+        """
         self._test_brick_process_not_started_on_read_only_node_disks()
         redant.logger.info("Test for brick process successful")
+        """

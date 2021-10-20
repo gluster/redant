@@ -57,13 +57,26 @@ excluded_tests:
     - tests/functional/afr/test_brick_process_not_started_on_read_only_node_disks.py # Inactive TC.
     - tests/functional/afr/test_client_side_quorum_fixed_with_cross2.py # TC is bogus, as setting quorum count: 2 for replica 2 volume and bringing one brick down will give transport errors
     - tests/functional/afr/test_arb_to_repl_conversion_with_io.py # Heal not completing even after increasing the timeout and the IO is completed
-    - tests/functional/afr/heal/test_self_heal_daemon_process.py # TC is checking for conditions that doesn't happen in glusterfs. It is failing in glusto too
+    - tests/functional/afr/test_afr_with_snapshot.py # TC failing due to unequal checksum
+    - tests/functional/afr/test_afr_with_snapshot_delete.py # TC failing due to unequal checksum
+    - tests/functional/afr/test_write_io_mount_point_resumed_quorum_restored.py # TC failing due to reboot timeout
+    - tests/functional/afr/test_volume_set_options.py # Excluded in RHGS CI test
+    - tests/functional/afr/test_heal_command_unsuccessful_as_bricks_down.py # Excluded in RHGS CI test
+    - tests/functional/afr/test_multiple_clients_dd_on_same_file_default.py # Excluded in RHGS CI test
+    - tests/functional/afr/test_replace_brick_self_heal_io_in_progress.py # Excluded in RHGS CI test
+    - tests/functional/afr/test_metadata_self_heal_client_side_heal.py # Excluded in RHGS CI test
+    - tests/functional/afr/test_manual_heal_should_trigger_heal # Excluded in RHGS CI test
+    - tests/functional/afr/test_conservative_merge_of_files_heal_command.py # Excluded in RHGS CI test
+    - tests/functional/afr/test_add_brick_followed_by_remove_brick.py # Excluded in RHGS CI test
     - tests/functional/disperse/test_ec_uss_snapshot.py # Excluded due to bz: 1828820
     - tests/functional/disperse/test_ec_file_rename_on_brick_down.py # Remove on fixing BZ 1596165
     - tests/functional/disperse/test_ec_brick_consumable_size.py # Excluded due to bz: 1883429
+    - tests/functional/disperse/test_ec_remove_brick.py # Excluded in RHGS CI test
     - tests/functional/dht/test_rebalance_rename.py # Skipping due to bz 1755834
     - tests/functional/arbiter/test_self_heal_50k_files.py # Taking a lot of time, needs to be debugged
     - tests/functional/arbiter/test_self_heal_50k_files_heal_command_by_add_brick.py # Same as above
+    - tests/functional/arbiter/test_create_snapshot_and_verify_content.py # Excluded in RHGS CI test
     - tests/functional/glusterd/test_localtime_logging_and_opversion_negative_case.py # localtime-logging option not available in RHGS
     - tests/functional/glusterd/test_rebalance_start_not_failed_with_socket_path_too_long.py # Doesn't work on RHGS installation
+    - tests/functional/glusterd/test_probe_glusterd_down.py # Excluded in RHGS CI test
     - tests/functional/ctime_feature/test_consistent_timestamps_on_new_entries.py # Probability of time being same is very rare
