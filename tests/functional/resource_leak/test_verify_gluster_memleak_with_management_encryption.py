@@ -58,6 +58,7 @@ class TestMemLeakAfterMgmntEncrypEnabled(DParentTest):
             tb = traceback.format_exc()
             self.redant.logger.error(error)
             self.redant.logger.error(tb)
+        super().terminate()
 
     def _run_io(self):
         """ Run IO and fill vol upto ~88%"""
