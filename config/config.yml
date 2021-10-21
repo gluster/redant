@@ -80,3 +80,5 @@ excluded_tests:
     - tests/functional/glusterd/test_rebalance_start_not_failed_with_socket_path_too_long.py # Doesn't work on RHGS installation
     - tests/functional/glusterd/test_probe_glusterd_down.py # Excluded in RHGS CI test
     - tests/functional/ctime_feature/test_consistent_timestamps_on_new_entries.py # Probability of time being same is very rare
+    - tests/functional/resource_leak/test_verify_gluster_memleak_with_ssl.py # Takes more than 12hrs to completely run the TC
+    - tests/functional/resource_leak/test_verify_gluster_memleak_with_management_encryption.py # Takes more than 12hrs to completely run the TC
