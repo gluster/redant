@@ -101,7 +101,7 @@ class TestCase(DParentTest):
             ret = redant.execute_abstract_op_node("hostname -s", server)
             hostname = ret['msg'][0].rstrip('\n')
 
-            redant.peer_probe(hostname, self.server_list[0], False)
+            ret = redant.peer_probe(hostname, self.server_list[0], False)
 
             if ret['msg']['opRet'] != '0':
                 ret = redant.execute_abstract_op_node("hostname",
