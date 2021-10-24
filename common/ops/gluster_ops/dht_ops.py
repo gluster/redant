@@ -6,7 +6,7 @@ hashing, layout and so on.
 # pylint: disable=no-name-in-module
 
 import os
-import ctypes
+# import ctypes
 import socket
 import common.ops.gluster_ops.constants as c
 from common.ops.abstract_ops import AbstractOps
@@ -223,24 +223,26 @@ class DHTOps(AbstractOps):
               Creating comparison hash from same library we are testing
               may not be best practice here. (Holloway)
         """
-        try:
-            # Check if libglusterfs.so.0 is available locally
-            glusterfs = ctypes.cdll.LoadLibrary("libglusterfs.so.0")
-            self.logger.debug("Library libglusterfs.so.0 loaded locally")
-            computed_hash = (ctypes.c_uint32(glusterfs.gf_dm_hashfn(filename,
-                             len(filename))))
-            hash_value = int(computed_hash.value)
-        except OSError:
-            cmd = ("python3 /usr/share/redant/script/compute_hash.py "
-                   f"{filename}")
-            host = socket.gethostbyname(host)
-            ret = self.execute_abstract_op_node(cmd, host, False)
-            if ret['error_code'] != 0:
-                self.logger.error(f"Unable to run the script on node: {host}")
-                return 0
+        # Avoiding check in local machine, due to conflicts with tcmalloc in
+        # upstream gluster installation
+        # try:
+        #     # Check if libglusterfs.so.0 is available locally
+        #     glusterfs = ctypes.cdll.LoadLibrary("libglusterfs.so.0")
+        #     self.logger.debug("Library libglusterfs.so.0 loaded locally")
+        #     computed_hash = (ctypes.c_uint32(glusterfs.gf_dm_hashfn(filename,
+        #                      len(filename))))
+        #     hash_value = int(computed_hash.value)
+        # except OSError:
+        cmd = ("python3 /usr/share/redant/script/compute_hash.py "
+               f"{filename}")
+        host = socket.gethostbyname(host)
+        ret = self.execute_abstract_op_node(cmd, host, False)
+        if ret['error_code'] != 0:
+            self.logger.error(f"Unable to run the script on node: {host}")
+            return 0
 
-            out = " ".join(ret['msg'])
-            hash_value = int(out.split('\n')[0])
+        out = " ".join(ret['msg'])
+        hash_value = int(out.split('\n')[0])
         return hash_value
 
     def find_specific_hashed(self, subvols_list: list, parent_path: str,
