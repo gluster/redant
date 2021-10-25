@@ -39,7 +39,7 @@ class TestCase(DParentTest):
         counter = 1
         for mount in self.mounts:
             proc = redant.create_deep_dirs_with_files(mount['mountpath'],
-                                                      counter, 2, 5, 5, 10,
+                                                      counter, 3, 5, 5, 20,
                                                       mount['client'])
             self.all_mounts_procs.append(proc)
             counter += 10
@@ -57,8 +57,6 @@ class TestCase(DParentTest):
         redant.remove_brick(self.server_list[0], self.vol_name,
                             remove_brick_list, 'start', 3)
         redant.restart_glusterd(self.server_list)
-        if not redant.wait_for_glusterd_to_start(self.server_list):
-            raise Exception(f"Failed to start glusterd on {self.server_list}")
 
         ret = redant.remove_brick(self.server_list[0], self.vol_name,
                                   remove_brick_list, 'commit', 3, False)
