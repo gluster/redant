@@ -235,6 +235,30 @@ def _transform_to_percent(statDict: dict) -> dict:
     return tStatDict
 
 
+def _adjust_column_width_in_excel_sheet(sheet: dict, data_list: list,
+                                        max_col_width_list: list):
+    """
+    Function to adjust width of columns in the sheet
+
+    Args:
+        sheet (dict): The excel sheet for which the columen width needs
+                      to be updated
+        data (list): List of data in the row
+        max_col_width_list (list): Maximum width of each column in the sheet
+    """
+    for col_ind, row_data in enumerate(data_list):
+        cwidth = sheet.col(col_ind).width
+        new_width = len(str(row_data))*256
+
+        # Check if the new_width is greater than default column width
+        # and also greater than the previously set column width
+        if (new_width > cwidth) and (new_width > max_col_width_list[col_ind]):
+            sheet.col(col_ind).width = new_width
+            max_col_width_list[col_ind] = new_width
+        elif cwidth < max_col_width_list[col_ind]:
+            sheet.col(col_ind).width = max_col_width_list[col_ind]
+
+
 def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
                  totalRTime: str, logger):
     """
@@ -268,6 +292,10 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
 
     # Populate the stats
     style = xlwt.easyxf('font: bold 1')
+    style_center = xlwt.easyxf('align: horiz center')
+    style_bold_center = xlwt.easyxf('font: bold 1; align: horiz center')
+    max_col_width_list = [2962] * 6     # As we have only 6 columns at max
+
     for component in statDict:
         row = 0
         tR = wb.add_sheet(component)
@@ -275,16 +303,24 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
         for subDict in rMap:
             for key, val in subDict.items():
                 tR.write(row, 0, val, style)
-                tR.write(row, 1, tDict[key])
+                tR.write(row, 1, tDict[key], style_center)
+
+                # Adjust width of columns in the sheet
+                _adjust_column_width_in_excel_sheet(tR, [val, tDict[key]],
+                                                    max_col_width_list)
+
             row += 1
 
     # Writing total runtime in the Total sheet.
     tR = wb.get_sheet('Total')
     timeVal = _time_rollover_conversion(totalRTime, True)
     tR.write(row, 0, "Total Time", style)
-    tR.write(row, 1, timeVal)
+    tR.write(row, 1, timeVal, style_center)
+    # Adjust width of columns in the sheet
+    tR.col(0).width = max_col_width_list[0]
+    tR.col(1).width = len(str(timeVal))*256
 
-    rowDiff = row+2
+    rowDiff = row + 2
     # Populating the test data to the sheets.
     for component in resultDict:
         tR = wb.get_sheet(component)
@@ -292,7 +328,15 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
         # Add the topics.
         col = 0
         for topic in topicList:
-            tR.write(row, col, topic, style)
+            tR.write(row, col, topic, style_bold_center)
+
+            new_width = (len(str(topic)) + 2) * 256
+            if new_width > max_col_width_list[col]:
+                tR.col(col).width = len(str(topic))*256
+                max_col_width_list[col] = new_width
+            else:
+                tR.col(col).width = max_col_width_list[col]
+
             col += 1
 
         row += 1
@@ -301,15 +345,17 @@ def _data_to_xls(statDict: dict, resultDict: dict, filePath: str,
             for test in testsDict:
                 for volType in testsDict[test]:
                     volData = testsDict[test][volType]
-                    tR.write(row, 0, test)
-                    tR.write(row, 1, nature)
-                    tR.write(row, 2, volType)
-                    tR.write(row, 3, volData['testResult'])
+                    tR.write(row, 0, test, style_center)
+                    tR.write(row, 1, nature, style_center)
+                    tR.write(row, 2, volType, style_center)
+                    tR.write(row, 3, volData['testResult'], style_center)
                     timeVal = _time_rollover_conversion(volData['timeTaken'])
-                    tR.write(row, 4, timeVal)
-                    tR.write(row, 5, volData['skipReason'])
+                    tR.write(row, 4, timeVal, style_center)
+                    tR.write(row, 5, volData['skipReason'], style_center)
+                    (_adjust_column_width_in_excel_sheet(tR, [test, nature,
+                     volType, volData['testResult'], timeVal,
+                     volData['skipReason']], max_col_width_list))
                     row += 1
-
     # Push the changes to the file.
     try:
         wb.save(filePath)
