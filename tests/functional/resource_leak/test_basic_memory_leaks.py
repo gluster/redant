@@ -92,7 +92,7 @@ class TestBasicMemoryleak(DParentTest):
         self.is_io_running = True
         self.procs_list = []
         cmd = (f"cd {self.mountpoint};for i in `seq 1 100`; do mkdir dir.$i;"
-               "for j in `seq 1 1000`; do dd if=/dev/random "
+               "for j in `seq 1 100`; do dd if=/dev/random "
                "of=dir.$i/testfile.$j bs=1k count=10;done;done")
         ret = redant.execute_command_async(cmd, self.client_list[0])
         self.procs_list.append(ret)
