@@ -20,10 +20,24 @@
 """
 
 # disruptive;dist,dist-rep
+import traceback
 from tests.d_parent_test import DParentTest
 
 
 class TestRebalancePreserveUserPermissions(DParentTest):
+
+    def terminate(self):
+        """
+        Delete the test_user created in the TC
+        """
+        try:
+            if not self.redant.del_user(self.client_list[0], self.user):
+                raise Exception("Failed to delete user 'test_user'")
+        except Exception as error:
+            tb = traceback.format_exc()
+            self.redant.logger.error(error)
+            self.redant.logger.error(tb)
+        super().terminate()
 
     def _logged_vol_info(self):
         """Log volume info and status"""

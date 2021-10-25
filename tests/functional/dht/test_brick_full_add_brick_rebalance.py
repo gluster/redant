@@ -76,7 +76,7 @@ class TestBrickFullAddBrickRebalance(DParentTest):
                 raise Exception("Failed to fill disk to min free limit")
 
         # Try to perfrom I/O from mount point(This should fail)
-        ret = redant.execute_abstract_op_node("fallocate -l 5G "
+        ret = redant.execute_abstract_op_node("fallocate -l 50G "
                                               f"{self.mountpoint}/mfile",
                                               self.client_list[0], False)
         if ret['error_code'] == 0:
