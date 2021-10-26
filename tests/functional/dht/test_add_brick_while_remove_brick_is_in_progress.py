@@ -78,8 +78,8 @@ class TestRemoveBrickValidation(DParentTest):
         all_mounts_procs = []
         for index, mount_obj in enumerate(self.mounts, start=1):
             proc = redant.create_deep_dirs_with_files(mount_obj['mountpath'],
-                                                      index + 10, 2, 2, 2,
-                                                      10, mount_obj['client'])
+                                                      index + 10, 2, 4, 4,
+                                                      25, mount_obj['client'])
             all_mounts_procs.append(proc)
 
         # Wait for IO to complete

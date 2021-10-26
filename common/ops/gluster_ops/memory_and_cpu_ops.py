@@ -144,14 +144,14 @@ class MemoryAndCpuOps(AbstractOps):
             for sub_dict in proc_dict:
                 for proc_name in proc_dict[sub_dict]:
                     for proc in proc_dict[sub_dict][proc_name]:
-                        self.logger.debug(f"Waiting for {proc} logging "
+                        self.logger.debug("Waiting for logging "
                                           "process to stop")
                         self.wait_till_async_command_ends(proc)
                         flag.append(True)
         else:
             for proc_name in proc_dict:
                 for proc in proc_dict[proc_name]:
-                    self.logger.debug(f"Waiting for {proc} logging "
+                    self.logger.debug("Waiting for logging "
                                       "process to stop")
                     self.wait_till_async_command_ends(proc)
                     flag.append(True)

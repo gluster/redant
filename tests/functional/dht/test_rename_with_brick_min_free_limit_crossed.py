@@ -64,7 +64,7 @@ class TestCase(DParentTest):
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Try to perfrom I/O from mount point(This should fail)
-        cmd = f"fallocate -l 5G {self.mountpoint}/mfile"
+        cmd = f"fallocate -l 50G {self.mountpoint}/mfile"
         ret = redant.execute_abstract_op_node(cmd, self.client_list[0], False)
         if ret['error_code'] == 0:
             raise Exception("Unexpected: Able to do I/O even when disks are "
