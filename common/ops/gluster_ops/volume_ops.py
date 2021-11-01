@@ -262,8 +262,9 @@ class VolumeOps(AbstractOps):
 
         ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        if not excep and ret['msg']['opRet'] != '0':
-            return ret
+        if not excep and (ret['error_code'] != 0
+            or ret['msg']['opRet'] != '0'):
+                return ret
 
         self.es.set_volume_start_status(volname, True)
 

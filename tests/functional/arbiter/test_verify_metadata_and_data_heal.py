@@ -22,6 +22,7 @@
 
 # disruptive;arb,rep
 import traceback
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -254,6 +255,9 @@ class TestSelfHeal(DParentTest):
             if not self.redant.are_bricks_online(self.vol_name, brick,
                                                  self.server_list[0]):
                 raise Exception(f"Brick {brick} is not online")
+
+            # Buffer to allow volume to be mounted
+            sleep(4)
 
         # Confirm metadata/data operations resulted in pending heals
         if self.redant.is_heal_complete(self.server_list[0], self.vol_name):

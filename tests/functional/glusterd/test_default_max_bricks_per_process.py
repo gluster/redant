@@ -42,7 +42,7 @@ class TestCase(DParentTest):
         """
         # Fetch the max bricks per process value
         ret = redant.get_volume_options(node=self.server_list[0])
-        initial_value = ret['cluster.max-bricks-per-process']
+        initial_value = ret['cluster.max-bricks-per-process'].split()[0]
 
         # Reset the volume options
         redant.reset_volume_option('all', 'all', self.server_list[0])

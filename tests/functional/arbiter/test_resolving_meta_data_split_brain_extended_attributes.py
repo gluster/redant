@@ -24,6 +24,7 @@ Description:
 # TODO: nfs, cifs
 
 import traceback
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -129,6 +130,9 @@ class TestCase(DParentTest):
         # Bring arbiter brick offline
         bricks_to_bring_offline = [brick_list_with_file[-1]]
         self._brick_and_io(bricks_to_bring_offline, "600")
+
+        # Buffer to allow volume to be mounted
+        sleep(4)
 
         # Bring 1-st data brick offline
         bricks_to_bring_offline = [brick_list_with_file[0]]
