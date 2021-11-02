@@ -127,6 +127,11 @@ class TestSelfHeal(DParentTest):
                                               list(bricks)):
                 raise Exception("Failed to bring bricks online")
 
+            # Confirm if the bricks are online
+            if not redant.are_bricks_online(self.vol_name, list(bricks),
+                                            self.server_list[0]):
+                raise Exception("Bricks are not yet online")
+
         # Enable self-heal daemon, trigger heal and assert volume is in split
         # brain condition
         if not redant.enable_self_heal_daemon(self.vol_name,

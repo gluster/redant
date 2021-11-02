@@ -21,7 +21,7 @@ Description:
 """
 
 # disruptive;dist-rep
-
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -47,6 +47,9 @@ class TestCase(DParentTest):
         if not self.redant.are_bricks_online(self.vol_name, [brick],
                                              self.server_list[0]):
             raise Exception(f"Brick {brick} is not online.")
+
+        # Adding sleep to allow volume to mount on client after brick is up
+        sleep(2)
 
     def run_test(self, redant):
         """

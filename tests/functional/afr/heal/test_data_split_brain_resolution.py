@@ -23,6 +23,7 @@ Description:
 
 # disruptive;rep
 from copy import deepcopy
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -113,6 +114,9 @@ class TestCase(DParentTest):
         if not redant.are_bricks_offline(self.vol_name, bricks_list[1],
                                          self.server_list[1]):
             raise Exception(f"Brick {bricks_list[1]} is not offline")
+
+        # Allow volume to mount after the bricks are up
+        sleep(5)
 
         # Modify the contents of the files
         cmd = ("for i in `seq 1 10`; do for j in `seq 1 5`;"

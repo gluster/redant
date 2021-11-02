@@ -102,6 +102,10 @@ class TestCase(DParentTest):
                                           [all_bricks[0]]):
             raise Exception(f"unable to bring {all_bricks[0]} online")
 
+        if not redant.are_bricks_online(self.vol_name, [all_bricks[0]],
+                                        self.server_list[0]):
+            raise Exception("Bricks are not yet online")
+
         if not redant.bring_bricks_offline(self.vol_name, all_bricks[1]):
             raise Exception(f"unable to bring {all_bricks[1]} offline")
 
