@@ -132,6 +132,11 @@ class TestSplitBrain(DParentTest):
                                               list(bricks)):
                 raise Exception(f'Unable to bring {bricks} online')
 
+            # Confirm if the bricks are online
+            if not redant.are_bricks_online(self.vol_name, list(bricks),
+                                            self.server_list[0]):
+                raise Exception("Bricks are not yet online")
+
         # Validate volume is in split-brain
         if not redant.is_volume_in_split_brain(self.server_list[0],
                                                self.vol_name):

@@ -99,8 +99,10 @@ class HealOps:
         failure_msg = ("Verifying all self-heal-daemons are online failed for "
                        f"volume {volname}")
         # Get volume status
-        vol_status = self.get_volume_status(volname, node, service)
-        if vol_status is None:
+        vol_status = self.get_volume_status(volname, node, service,
+                                            excep=False)
+        if vol_status is None or ('msg' in vol_status
+           and vol_status['msg']['opRet'] != '0'):
             self.logger.error(failure_msg)
             return None
 

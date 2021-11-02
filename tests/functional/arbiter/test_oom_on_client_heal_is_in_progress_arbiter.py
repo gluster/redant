@@ -23,6 +23,7 @@ Description:
 # TODO: add nfs and cifs
 
 import traceback
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -103,6 +104,9 @@ class TestCase(DParentTest):
         # Bring brick 3 offline and then online
         bricks_to_bring_offline = [bricks_list[-1]]
         self._brick_operations(bricks_to_bring_offline)
+
+        # Buffer to allow volume to be mounted
+        sleep(4)
 
         # Get file list from mountpoint
         for mount_obj in self.mnt_list:

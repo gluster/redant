@@ -22,7 +22,7 @@ Description:
 
 """
 
-# disruptive;rep,dist-rep,dist
+# disruptive;rep,dist-rep
 from time import sleep
 from tests.d_parent_test import DParentTest
 

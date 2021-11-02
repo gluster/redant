@@ -21,7 +21,7 @@ Description:
 """
 
 # disruptive;arb
-
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -118,6 +118,12 @@ class TestCase(DParentTest):
         bricks_to_bring_online = [bricks_list[0]]
         redant.bring_bricks_online(self.vol_name, self.server_list,
                                    bricks_to_bring_online)
+        if not redant.are_bricks_online(self.vol_name, bricks_to_bring_online,
+                                        self.server_list[0]):
+            raise Exception("Bricks are not yet online")
+
+        # Buffer to allow volume to be mounted
+        sleep(4)
 
         # Rename file under test_dir
         if not (redant.
