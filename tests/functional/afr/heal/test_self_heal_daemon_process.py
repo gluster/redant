@@ -101,12 +101,9 @@ class TestCase(DParentTest):
                             "file for details")
 
         # expanding volume
-        force = False
-        if self.volume_type == "dist-disp":
-            force = True
         if not self.redant.expand_volume(self.server_list[0], self.vol_name,
                                          self.server_list,
-                                         self.brick_roots, force):
+                                         self.brick_roots):
             raise Exception("Failed to add bricks to volume "
                             f"{self.vol_name}")
 
@@ -156,7 +153,7 @@ class TestCase(DParentTest):
                             f" found : {pid_after_add}")
 
         # Compare before and after pids
-        if glustershd_pids != pid_after_add:
+        if glustershd_pids == pid_after_add:
             raise Exception("Self Daemon process is same before and"
                             " after adding bricks")
 
@@ -212,7 +209,7 @@ class TestCase(DParentTest):
                             f" found : {pid_after_shrink}")
 
         # Compare before and after pids
-        if pid_after_shrink != pid_after_add:
+        if pid_after_shrink == pid_after_add:
             raise Exception("Self Daemon process is same before and"
                             " after adding bricks")
 
@@ -503,6 +500,7 @@ class TestCase(DParentTest):
         2.Test shd with restart glusterd
         3.Test brick process not started on read only node
         """
+        self.io_validation_complete = True
         self._test_glustershd_with_add_remove_brick()
         redant.logger.info("Test for add remove brick successful")
         self._test_glustershd_with_restarting_glusterd()

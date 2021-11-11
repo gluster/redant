@@ -130,8 +130,8 @@ class TestCase(DParentTest):
                                 f"found : {pid_after_replace}")
 
             # Compare the glustershd pids
-            if glustershd_pids != pid_after_replace:
-                raise Exception("Self heal Daemon process is different before "
+            if glustershd_pids == pid_after_replace:
+                raise Exception("Self heal Daemon process is same before "
                                 "and after replacing bricks")
 
             # Get the bricks for the volume

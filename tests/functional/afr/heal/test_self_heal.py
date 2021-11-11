@@ -85,7 +85,7 @@ class TestCase(DParentTest):
 
         # validating options are off
         for opt in options:
-            if options_dict[opt] != 'off (DEFAULT)':
+            if options_dict[opt].split()[0] != 'off':
                 raise Exception("Options are not set to off")
 
         # Creating files on client side

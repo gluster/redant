@@ -150,7 +150,7 @@ class TestCase(DParentTest):
         if not (redant.
                 monitor_heal_completion(self.server_list[0],
                                         self.vol_name,
-                                        timeout_period=120)):
+                                        timeout_period=360)):
             raise Exception("Heal not completed")
 
         # checking if file is in split-brain
