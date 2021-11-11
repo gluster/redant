@@ -128,14 +128,14 @@ class TestCase(DParentTest):
                             f"{offline_brick_list} online")
 
         # Issue heal
-        if not redant.trigger_heal_full(self.vol_name,
-                                        self.server_list[0]):
-            raise Exception("Starting full heal failed")
+        if redant.trigger_heal_full(self.vol_name, self.server_list[0]):
+            raise Exception("Unexpected: Able to trigger heal when self heal"
+                            " daemon is not running")
 
         # Wait for 130 sec to heal
-        if not redant.monitor_heal_completion(self.server_list[0],
-                                              self.vol_name, 130):
-            raise Exception("Heal has completed")
+        if redant.monitor_heal_completion(self.server_list[0],
+                                          self.vol_name, 130):
+            raise Exception("Unexpected: Heal completed on volume")
 
         # Check the heal info
         heal_info = redant.get_heal_info_summary(self.server_list[0],
