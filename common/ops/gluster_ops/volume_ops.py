@@ -989,22 +989,23 @@ class VolumeOps(AbstractOps):
                 self.logger.error("Failed to get the brick list for volume")
                 return None
 
-            brick_paths = [brick.split(':')[1] for brick in brick_list]
-            if path_info in brick_paths:
-                ret = self.get_volume_info(host, volume)
-                if not ret:
-                    self.logger.error("Failed to get volume type for "
-                                      f"{volume}")
-                    return None
-                list_of_replica = ('Replicate', 'Distributed-Replicate')
-                if (ret[volume]['typeStr'] in list_of_replica
-                   and int(ret[volume]['arbiterCount']) == 1):
-                    if int(ret[volume]['distCount']) >= 2:
-                        return 'Distributed-Arbiter'
+            for brick in brick_list:
+                brick_path = brick.split(':')[1]
+                if brick_path in path_info:
+                    ret = self.get_volume_info(host, volume)
+                    if not ret:
+                        self.logger.error("Failed to get volume type for "
+                                          f"{volume}")
+                        return None
+                    list_of_replica = ('Replicate', 'Distributed-Replicate')
+                    if (ret[volume]['typeStr'] in list_of_replica
+                       and int(ret[volume]['arbiterCount']) == 1):
+                        if int(ret[volume]['distCount']) >= 2:
+                            return 'Distributed-Arbiter'
+                        else:
+                            return 'Arbiter'
                     else:
-                        return 'Arbiter'
-                else:
-                    return ret[volume]['typeStr']
+                        return ret[volume]['typeStr']
 
         self.logger.error("Failed to find volume type for brick-path "
                           f"{brickdir_path}")
