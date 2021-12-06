@@ -16,21 +16,23 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    TC to check glusterfind functionality with deleting of files
+    Tc to test rename operation with glusterfind"
+
+ *Flaky Test*
+ Reason: The operation is not logged in the outfile
 """
 
-# disruptive;rep,dist-rep,disp,dist-disp
+# disruptive;dist
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest
 
 
-class TestGlusterFindDeletes(DParentTest):
+class TestGlusterFindRenames(DParentTest):
 
     def terminate(self):
         """
-        Delete the glusterfind session and remove the outfiles created during
-        the test
+        Delete glusterfind session and cleanup outfiles
         """
         try:
             self.redant.gfind_delete(self.server_list[0], self.vol_name,
@@ -48,7 +50,7 @@ class TestGlusterFindDeletes(DParentTest):
 
     def run_test(self, redant):
         """
-        Verifying the glusterfind functionality with deletion of files.
+        Verifying the glusterfind functionality with renames of files.
 
         * Create a volume
         * Create a session on the volume
@@ -56,14 +58,13 @@ class TestGlusterFindDeletes(DParentTest):
         * Perform glusterfind pre
         * Perform glusterfind post
         * Check the contents of outfile
-        * Delete the files created from mount point
+        * Rename the files created from mount point
         * Perform glusterfind pre
         * Perform glusterfind post
         * Check the contents of outfile
-          Files deleted must be listed
+          Files renamed must be listed
         """
-
-        self.session = 'test-session-%s' % self.vol_name
+        self.session = f'test-session-{self.vol_name}'
         self.outfiles = [f"/tmp/test-outfile-{self.vol_name}-{i}.txt"
                          for i in range(0, 2)]
 
@@ -91,6 +92,9 @@ class TestGlusterFindDeletes(DParentTest):
             if not ret:
                 raise Exception("File doesn't exist")
 
+        # Wait for changelog to get updated
+        sleep(2)
+
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
                          self.outfiles[0], full=True, noencode=True,
@@ -112,19 +116,13 @@ class TestGlusterFindDeletes(DParentTest):
         # Perform glusterfind post for the session
         redant.gfind_post(self.server_list[0], self.vol_name, self.session)
 
-        # Delete the files created from mount point
+        # Rename the files created from mount point
         for i in range(1, 11):
-            path = f"{self.mountpoint}/file{i}"
-            ret = redant.remove_file(self.client_list[0], path)
+            src_path = f"{self.mountpoint}/file{i}"
+            dst_path = f"{self.mountpoint}/renamed-file{i}"
+            ret = redant.move_file(self.client_list[0], src_path, dst_path)
             if not ret:
-                raise Exception("Failed to delete file")
-
-        # Check if the files deleted exist from mount point
-        for i in range(1, 11):
-            path = f"{self.mountpoint}/file{i}"
-            ret = redant.path_exists(self.client_list[0], path)
-            if ret:
-                raise Exception("Unexpected: File still exist")
+                raise Exception(f"Failed to rename file{i}")
 
         # Wait for changelog to be updated
         sleep(2)
@@ -136,11 +134,11 @@ class TestGlusterFindDeletes(DParentTest):
         # Check if the outfile exists
         ret = redant.path_exists(self.server_list[0], self.outfiles[1])
         if not ret:
-            raise Exception("Path doesn't exist")
+            raise Exception("File doesn't exist")
 
         # Check if all the files are listed in the outfile
         for i in range(1, 11):
-            pattern = f"DELETE file{i}"
+            pattern = f'RENAME file{i} renamed-file{i}'
             ret = redant.check_if_pattern_in_file(self.server_list[0],
                                                   pattern, self.outfiles[1])
             if ret != 0:

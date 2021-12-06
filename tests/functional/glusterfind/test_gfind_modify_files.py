@@ -19,7 +19,7 @@
     TC to check modified files using glusterfind
 """
 
-# disruptive;dist,rep,dist-rep,disp,dist-disp
+# disruptive;rep,dist-rep,disp,dist-disp
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest

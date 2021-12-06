@@ -17,9 +17,13 @@
  Description:
     Test to verufy the df -h value for various brick and volume
     operations.
+
+*Flaky Test*
+Reason: Calculation of disk size is failing in CI for dist-disp volume,
+        as the size of disks are in TB.
 """
 
-# disruptive;rep,dist-rep,disp,arb,dist-arb
+# disruptive;dist-disp
 from tests.d_parent_test import DParentTest
 
 

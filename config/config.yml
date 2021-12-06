@@ -81,6 +81,7 @@ excluded_tests:
     - tests/functional/glusterd/test_glusterd_selinux.py # Issue with SELinux in CI
     - tests/functional/glusterd/test_glusterd_memory_consumption_increase.py # Memory consumption not consistent
     - tests/functional/glusterd/test_shared_storage.py # Fails in CI, because of a known issue with shared_storage mounting after reboot in env having ipv6 enabled
+    - tests/functional/glusterd/test_probe_hostname.py # Probing using hostnames fail in CI.
     - tests/functional/ctime_feature/test_consistent_timestamps_on_new_entries.py # Probability of time being same is very rare
     - tests/functional/resource_leak/test_verify_gluster_memleak_with_ssl.py # Takes more than 12hrs to completely run the TC
     - tests/functional/resource_leak/test_verify_gluster_memleak_with_management_encryption.py # Takes more than 12hrs to completely run the TC

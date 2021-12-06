@@ -18,6 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Arbiter Test cases related to
     healing in default configuration of the volume
+
+*Flaky Test*
+Reason: arequal-checksum is not equal for all mountpoints
 """
 
 # disruptive;arb

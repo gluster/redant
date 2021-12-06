@@ -17,9 +17,12 @@
 
  Description:
     TC to verify full-heal
+
+ *Flaky Test*
+ Reason: Triggering heal is failing
 """
 
-# nonDisruptive;dist-disp
+# nonDisruptive;disp
 from tests.nd_parent_test import NdParentTest
 
 

@@ -18,6 +18,9 @@
  Description:
     Test Cases in this module tests the failover operation when sub-dir
     is mounted
+
+*Flaky Test*
+Reason: Sometimes node reboot takes a lot of time
 """
 
 # disruptive;rep,dist-rep,disp,dist-disp

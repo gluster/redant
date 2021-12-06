@@ -18,6 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     This test case verifies the gfid self-heal on a 1x3
     replicate volume.
+
+*Flaky Test*
+Reason: arequal-checksum is not equal on mounts and bricks
 """
 
 # disruptive;rep

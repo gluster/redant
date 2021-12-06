@@ -16,7 +16,10 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    TC to check truncate while brick is down
+    TC to check truncate while brick is down.
+
+ *Flaky Test*
+ Reason: Sometimes reboot node takes a lot of time in CI.
 """
 
 # disruptive;disp,dist-disp
