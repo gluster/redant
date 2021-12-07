@@ -17,9 +17,12 @@
 
  Description:
     TC to check glusterfind functionality with deleting of files
+
+ *Flaky Test*
+ Reason: The operation is not logged in the outfile
 """
 
-# disruptive;rep,dist-rep,disp,dist-disp
+# disruptive;dist
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest

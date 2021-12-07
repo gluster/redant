@@ -1,5 +1,5 @@
 """
- Copyright (C) 2019  Red Hat, Inc. <http://www.redhat.com>
+ Copyright (C) 2019-2020  Red Hat, Inc. <http://www.redhat.com>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,21 +16,23 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  Description:
-    TC to check glusterfind functionality with deleting of files
+    TC to check modified files using glusterfind
+
+ *Flaky Test*
+ Reason: The operation is not logged in the outfile
 """
 
-# disruptive;rep,dist-rep,disp,dist-disp
+# disruptive;dist
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest
 
 
-class TestGlusterFindDeletes(DParentTest):
+class TestGlusterFindModify(DParentTest):
 
     def terminate(self):
         """
-        Delete the glusterfind session and remove the outfiles created during
-        the test
+        Delete glusterfind session and cleanup outfiles
         """
         try:
             self.redant.gfind_delete(self.server_list[0], self.vol_name,
@@ -56,13 +58,12 @@ class TestGlusterFindDeletes(DParentTest):
         * Perform glusterfind pre
         * Perform glusterfind post
         * Check the contents of outfile
-        * Delete the files created from mount point
+        * Modify the contents of the files from mount point
         * Perform glusterfind pre
         * Perform glusterfind post
         * Check the contents of outfile
-          Files deleted must be listed
+          Files modified must be listed
         """
-
         self.session = 'test-session-%s' % self.vol_name
         self.outfiles = [f"/tmp/test-outfile-{self.vol_name}-{i}.txt"
                          for i in range(0, 2)]
@@ -78,18 +79,24 @@ class TestGlusterFindDeletes(DParentTest):
         redant.gfind_list(self.server_list[0], self.vol_name, self.session)
 
         # Starting IO on the mounts
-        redant.logger.info("Creating Files on "
-                           f"{self.mountpoint}:{self.client_list[0]}")
-        cmd = (f"cd {self.mountpoint} ; for i in `seq 1 10` ; "
-               "do dd if=/dev/urandom of=file$i bs=1M count=1;done")
+        cmd = (f"cd {self.mountpoint};"
+               "touch file{1..10}")
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
+        # Gather the list of files from the mount point
+        files = redant.list_files(self.client_list[0], self.mountpoint)
+        if files is None:
+            raise Exception("Failed to get the list of files")
+
         # Check if the files exist
-        for i in range(1, 11):
-            path = f"{self.mountpoint}/file{i}"
-            ret = redant.path_exists(self.client_list[0], path)
+        for filename in files:
+            ret = redant.path_exists(self.client_list[0],
+                                     filename.rstrip('\n'))
             if not ret:
-                raise Exception("File doesn't exist")
+                raise Exception(f"Unexpected: File {filename} does not exist")
+
+        # Wait for changelog to get updated
+        sleep(2)
 
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
@@ -112,19 +119,22 @@ class TestGlusterFindDeletes(DParentTest):
         # Perform glusterfind post for the session
         redant.gfind_post(self.server_list[0], self.vol_name, self.session)
 
-        # Delete the files created from mount point
-        for i in range(1, 11):
-            path = f"{self.mountpoint}/file{i}"
-            ret = redant.remove_file(self.client_list[0], path)
+        # Modify the files created from mount point
+        mod_string = "this is a test string\n"
+        for filename in files:
+            ret = redant.append_string_to_file(self.client_list[0],
+                                               filename.rstrip('\n'),
+                                               mod_string)
             if not ret:
-                raise Exception("Failed to delete file")
+                raise Exception("Failed to append string to file")
 
-        # Check if the files deleted exist from mount point
-        for i in range(1, 11):
-            path = f"{self.mountpoint}/file{i}"
-            ret = redant.path_exists(self.client_list[0], path)
-            if ret:
-                raise Exception("Unexpected: File still exist")
+        # Check if the files modified exist from mount point
+        for filename in files:
+            ret = redant.check_if_pattern_in_file(self.client_list[0],
+                                                  mod_string,
+                                                  filename.rstrip('\n'))
+            if ret != 0:
+                raise Exception("Pattern not found in file")
 
         # Wait for changelog to be updated
         sleep(2)
@@ -136,11 +146,11 @@ class TestGlusterFindDeletes(DParentTest):
         # Check if the outfile exists
         ret = redant.path_exists(self.server_list[0], self.outfiles[1])
         if not ret:
-            raise Exception("Path doesn't exist")
+            raise Exception("File doesn't exist")
 
         # Check if all the files are listed in the outfile
-        for i in range(1, 11):
-            pattern = f"DELETE file{i}"
+        for num in range(1, 11):
+            pattern = "MODIFY file%s" % num
             ret = redant.check_if_pattern_in_file(self.server_list[0],
                                                   pattern, self.outfiles[1])
             if ret != 0:

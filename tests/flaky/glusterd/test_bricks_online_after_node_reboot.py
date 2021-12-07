@@ -18,6 +18,9 @@
   Description:
   Test Cases in this module related to gluster bricks are online
   after node reboot or not
+
+  *Flaky Test*
+  Reason: Sometimes reboot of nodes takes a lot of time in the CI
 """
 from random import choice
 from tests.d_parent_test import DParentTest

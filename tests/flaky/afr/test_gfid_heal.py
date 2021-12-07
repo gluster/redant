@@ -18,6 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Description:
     Verify that files created from the backend without gfid gets assigned one
     and are healed when accessed from the client.
+
+*Flaky Test*
+Reason: Triggering heal is failing
 """
 # disruptive;rep
 

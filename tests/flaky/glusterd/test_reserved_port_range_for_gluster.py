@@ -17,6 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 Description:
   Setting reserved port range for gluster
+
+*Flaky Test*
+Reason: Sometimes expected number of free ports are not available in the CI
 """
 
 # disruptive;

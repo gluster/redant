@@ -146,9 +146,9 @@ class TestCase(DParentTest):
         # Compare with heal pending with the files wrote
         for node in online_bricks:
             num_files_to_heal = int(heal_info[node]['numberOfEntries'])
-            if num_files_to_heal >= 100:
+            if num_files_to_heal < 100:
                 raise Exception("Some of the files are healed from "
-                                "source bricks {node} where self heal"
+                                f"source bricks {node} where self heal"
                                 "daemon is not running")
 
         # Unmount and Mount volume again as volume options were set
