@@ -44,10 +44,10 @@ class TestCase(DParentTest):
             temp_val = self.get_random_string(char_type)
             temp_val = temp_val.replace("'", "").replace("&", "")
             value = "{}".format(temp_val)
-            ret = self.redant.set_volume_options(self.vol_name, {key: value},
+            ret = self.redant.set_volume_options('all', {key: value},
                                                  self.server_list[0],
                                                  excep=False)
-            if ret['error_code'] == '0':
+            if 'opRet' in ret['msg'] and ret['msg']['opRet'] == '0':
                 raise Exception("Unexpected: Successfully set wrong value for"
                                 " a volume")
 
@@ -66,11 +66,42 @@ class TestCase(DParentTest):
         if redant.is_brick_mux_enabled(self.server_list[0]):
             raise Exception("Brick multiplex is not disable by default")
 
+        # Check for warning message while changing status
+        warning_message = ("Brick-multiplexing is supported only for "
+                           "OCS converged or independent mode. Also it is "
+                           "advised to make sure that either all volumes are "
+                           "in stopped state or no bricks are running before "
+                           "this option is modified."
+                           "Do you still want to continue? (y/n)")
+
+        # Checking warning message on enabling multiplex
+        cmd = "gluster v set all cluster.brick-multiplex enable"
+        ret = redant.execute_command_async(cmd, self.server_list[0])
+        ret['stdin'].write("n\n")
+        ret = redant.collect_async_result(ret)
+        msg = ret['msg'][0]
+
+        if "volume set: success" not in msg:
+            if warning_message not in msg:
+                raise Exception('There is no warning message in '
+                                'output or message is incorrect.')
+
+        else:
+            # If brick-mux is enabled then disabling it.
+            if redant.is_brick_mux_enabled(self.server_list[0]):
+                if not redant.disable_brick_mux(self.server_list[0]):
+                    raise Exception("Failed to disable brick multiplexing")
+
+        # Check if brickmux is still disabled
+        if redant.is_brick_mux_enabled(self.server_list[0]):
+            raise Exception("Brick multiplex is not disable")
+
         # Enable brick multiplex with all possible statuses
         statuses = ['on', 'enable', '1', 'true',
                     'off', 'disable', '0', 'false']
         for status in statuses:
-            cmd = (f'gluster v set all cluster.brick-multiplex {status}')
+            cmd = ('yes | gluster v set all cluster.brick-multiplex '
+                   f'{status}')
             ret = redant.execute_abstract_op_node(cmd, self.server_list[0],
                                                   False)
             if ret['error_code'] != 0:
@@ -92,7 +123,7 @@ class TestCase(DParentTest):
                                 "'/var/lib/glusterd/options' is incorrect")
 
         # Check brick multiplex with incorrect status
-        cmd = ("gluster v set all cluster.brick-multiplex incorrect")
+        cmd = ("yes | gluster v set all cluster.brick-multiplex incorrect")
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0],
                                               False)
         if ret['error_code'] == 0:
@@ -169,8 +200,8 @@ class TestCase(DParentTest):
         cmd = "gluster v set all cluster.max-bricks-per-process 1"
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
         if ret['error_code'] == 0:
-            raise Exception('Able to set max-bricks-per-process'
-                            'with enabling brick mux')
+            raise Exception('Able to set max-bricks-per-process to 1,'
+                            'after enabling brick mux')
         err_msg = ("volume set: failed: Brick-multiplexing is enabled."
                    " Please set this option to a value other than 1 to"
                    " make use of the brick-multiplexing feature.")
