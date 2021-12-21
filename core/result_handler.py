@@ -442,7 +442,8 @@ def handle_results(resultQueue, totalTime: float, logger,
 
     # Check for exclude test run.
     if statDict == {'Total': {}}:
-        print("Requested test is in exclude list.")
+        print("Either no tests to run or the requested test is in "
+              "exclude list.")
         return
 
     # Convert the pass values to percentage.

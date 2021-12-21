@@ -102,7 +102,7 @@ def main():
                  and args.test_dir.split("/")[-1].startswith("test"))
     try:
         TestListBuilder.create_test_dict(args.test_dir, excluded_tests,
-                                         spec_test)
+                                         param_obj.volume_types, spec_test)
     except FileNotFoundError as e:
         spinner.fail("FileNotFoundError in test list builder")
         errer(e, "Error: Can't find the file")
