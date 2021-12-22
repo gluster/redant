@@ -46,4 +46,6 @@ Example format of excluded_tests list:<br>
 
 excluded_tests:<br>
     &nbsp;&nbsp;&nbsp;&nbsp; - tests/functional/glusterd/test1<br>
-    &nbsp;&nbsp;&nbsp;&nbsp; - tests/functional/glusterd/test2<br>
+    &nbsp;&nbsp;&nbsp;&nbsp; - tests/functional/afr/test2<br>
+    *To exclude a complete directory or it's subdirectories*
+    &nbsp;&nbsp;&nbsp;&nbsp; - tests/functional/afr<br>

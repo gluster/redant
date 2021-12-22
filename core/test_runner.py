@@ -70,6 +70,7 @@ class TestRunner:
         special_test_dict = cls.get_snd_test_fn()
 
         if special_test_dict != []:
+            # When a single test is ran
             if spec_test:
                 spec_vols = cls.get_spec_vol_types_fn()
                 if spec_vols == []:
@@ -155,9 +156,10 @@ class TestRunner:
                 proc.join()
 
         # Stage 2
-        cls.logger.info("Starting Disruptive test case runs.")
-        for test in cls.get_dtest_fn():
-            cls._run_test(test)
+        if cls.get_dtest_fn():
+            cls.logger.info("Starting Disruptive test case runs.")
+            for test in cls.get_dtest_fn():
+                cls._run_test(test)
 
         # Because of the infinitesimal delay in value being reflected in Queue
         # it was found that sometimes the Queue which was empty had been given

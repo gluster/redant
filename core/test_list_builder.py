@@ -45,7 +45,7 @@ class TestListBuilder:
 
     @classmethod
     def create_test_dict(cls, path: str, excluded_tests: list,
-                         single_tc: bool = False):
+                         volume_types_config: dict, single_tc: bool = False):
         """
         This method creates a dict of TCs wrt the given directory
         path.
@@ -62,6 +62,8 @@ class TestListBuilder:
         global valid_vol_types
         # Obtaining list of paths to the TCs under given directory.
         if not single_tc:
+            if path.endswith("/"):
+                path = path[:-1]
             if path not in excluded_tests:
                 for root, _, files in os.walk(path,
                                               onerror=path_error_handler):
@@ -91,16 +93,20 @@ class TestListBuilder:
                     if vol_type not in valid_vol_types:
                         raise Exception(f"{test_dict['modulePath']} has"
                                         f" invalid volume type {vol_type}")
-                    temp_test_dict = copy.deepcopy(test_dict)
-                    temp_test_dict["volType"] = copy.deepcopy(vol_type)
-                    cls.dtest_list.append(temp_test_dict)
+                    if ((vol_type != "Generic")
+                       and (vol_type in volume_types_config)):
+                        temp_test_dict = copy.deepcopy(test_dict)
+                        temp_test_dict["volType"] = copy.deepcopy(vol_type)
+                        cls.dtest_list.append(temp_test_dict)
             elif test_flags["tcNature"] == "nonDisruptive":
                 for vol_type in test_flags["volType"]:
                     if vol_type not in valid_vol_types:
                         raise Exception(f"{test_dict['modulePath']} has"
                                         f" invalid volume type {vol_type}")
-                    temp_test_dict = copy.deepcopy(test_dict)
-                    cls.nd_category[vol_type].append(temp_test_dict)
+                    if ((vol_type != "Generic")
+                       and (vol_type in volume_types_config)):
+                        temp_test_dict = copy.deepcopy(test_dict)
+                        cls.nd_category[vol_type].append(temp_test_dict)
             else:
                 raise Exception(f"Invalid test nature : "
                                 f" {test_flags['tcNature']}")
