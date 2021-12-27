@@ -17,9 +17,12 @@
 
  Description:
     Test File creation with hashed and cached subvol down scenarios
+
+ *Flaky Test*
+ Reason: Difference in file permissions due to SELinux context missing in CI
 """
 
-# disruptive;dist,dist-disp
+# disruptive;dist-rep
 import socket
 from tests.d_parent_test import DParentTest
 

@@ -123,8 +123,7 @@ class TestGlusterfindTypeOption(DParentTest):
         # Perform glusterfind full query with the --type option
         for gftype in ('f', 'd', 'both'):
             redant.gfind_query(self.server_list[0], self.vol_name,
-                               self.session, self.outfile, full=True,
-                               gftype=gftype)
+                               self.outfile, full=True, gftype=gftype)
 
             # Check the contents of the outfile
             self._check_contents_of_outfile(gftype)

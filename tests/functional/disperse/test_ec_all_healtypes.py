@@ -66,16 +66,16 @@ class TestCase(DParentTest):
 
         # Rename all files inside dir1
         cmd = (f"cd {mpoint}/dir1/; "
-               "for FILENAME in *; do mv $FILENAME Unix_$FILENAME; cd ~;done;")
+               "for FILENAME in *; do mv $FILENAME Unix_$FILENAME; done;")
         redant.execute_abstract_op_node(cmd, client)
 
         # Create softlink and hardlink of files in mountpoint
         cmd = (f"cd {mpoint}/dir1/; for FILENAME in *; "
-               "do ln -s $FILENAME softlink_$FILENAME; cd ~; done;")
+               "do ln -s $FILENAME softlink_$FILENAME; done;")
         redant.execute_abstract_op_node(cmd, client)
 
         cmd = (f"cd {mpoint}/dir1/; for FILENAME in *; "
-               "do ln $FILENAME hardlink_$FILENAME; cd ~;done;")
+               "do ln $FILENAME hardlink_$FILENAME; done;")
         redant.execute_abstract_op_node(cmd, client)
 
         # Create tiny, small, medium and large file

@@ -34,6 +34,12 @@ class TestCase(DParentTest):
                 if not ret:
                     raise Exception("ERROR: Failed to stop monitoring "
                                     "processes")
+
+            # Remove any csv files, generated from memory_logger script
+            cmd = "rm -f *.csv"
+            for node in [self.server_list + self.client_list]:
+                self.redant.execute_abstract_op_node(cmd, node)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

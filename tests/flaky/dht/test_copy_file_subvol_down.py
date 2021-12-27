@@ -17,9 +17,11 @@
 
  Description:
     TC to check copy of a file when a subvol is down
+ *Flaky Test*
+ Reason: Client connectivity issue
 """
 
-# disruptive;dist-rep,dist-arb,dist-disp
+# disruptive;dist,dist-rep,dist-arb,dist-disp
 from copy import deepcopy
 from time import sleep
 from tests.d_parent_test import DParentTest
@@ -202,7 +204,7 @@ class TestCopyFileSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(3)
+        sleep(5)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
@@ -241,7 +243,7 @@ class TestCopyFileSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(3)
+        sleep(5)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
@@ -284,7 +286,7 @@ class TestCopyFileSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(3)
+        sleep(5)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
@@ -322,7 +324,7 @@ class TestCopyFileSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(3)
+        sleep(5)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])

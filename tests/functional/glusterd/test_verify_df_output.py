@@ -20,6 +20,7 @@
 """
 
 # disruptive;rep,dist-rep,disp,arb,dist-arb
+from time import sleep
 from tests.d_parent_test import DParentTest
 
 
@@ -107,6 +108,7 @@ class TestCase(DParentTest):
         self._replace_bricks_and_wait_for_heal_completion()
 
         # Get df -h output after brick replace
+        sleep(3)
         mount_size_after_replace = self._get_mount_size_from_df_h_output()
         # Verify the mount point size remains the same after brick replace
         if initial_mount_size != mount_size_after_replace:
@@ -121,6 +123,7 @@ class TestCase(DParentTest):
             raise Exception("Failed to expand volume")
 
         # Get df -h output after volume expand
+        sleep(3)
         mount_size_after_expand = self._get_mount_size_from_df_h_output()
 
         # Verify df -h output returns greater value
