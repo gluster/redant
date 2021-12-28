@@ -17,9 +17,11 @@
 
  Description:
     TC to check copy of a dir when a subvol is down
+ *Flaky Test*
+ Reason: Client connectivity issue
 """
 
-# disruptive;dist-rep,dist-arb,dist-disp
+# disruptive;dist,dist-rep,dist-arb,dist-disp
 from copy import deepcopy
 from time import sleep
 from tests.d_parent_test import DParentTest
@@ -143,7 +145,7 @@ class TestCopyDirSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(3)
+        sleep(5)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
@@ -195,7 +197,7 @@ class TestCopyDirSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(3)
+        sleep(5)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])
@@ -247,7 +249,7 @@ class TestCopyDirSubvolDown(DParentTest):
         redant.volume_start(self.vol_name, self.server_list[0], force=True)
 
         # Add sleep to allow the clients to get back up
-        sleep(5)
+        sleep(8)
 
         cmd = f"rm -rf {self.mountpoint}/*"
         redant.execute_abstract_op_node(cmd, self.client_list[0])

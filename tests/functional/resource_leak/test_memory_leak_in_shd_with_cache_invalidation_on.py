@@ -16,7 +16,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# disruptive;arb,rep,disp,dist-arb,dist-rep,dist-disp
+# disruptive;disp,dist-disp
+# cache-invalidation causes heal issues for other volume types
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -38,6 +39,12 @@ class TestMemoryLeakInShdWithCacheInvalidationOn(DParentTest):
                 if not self.redant.wait_for_io_to_complete(self.procs_list,
                                                            self.mounts):
                     raise Exception("Failed to wait for I/O to complete")
+
+            # Remove any csv files, generated from memory_logger script
+            cmd = "rm -f *.csv"
+            for node in [self.server_list + self.client_list]:
+                self.redant.execute_abstract_op_node(cmd, node)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

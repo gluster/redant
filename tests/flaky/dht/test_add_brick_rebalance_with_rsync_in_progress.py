@@ -17,9 +17,11 @@
 
  Description:
     TC to check rebalance after add-brick with rsync in progress
+ *Flaky Test*
+ Reason: IO error
 """
 
-# disruptive;dist,dist-rep,dist-arb
+# disruptive;dist-disp
 from copy import deepcopy
 import traceback
 from tests.d_parent_test import DParentTest

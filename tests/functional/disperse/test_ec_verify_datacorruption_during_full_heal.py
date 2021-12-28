@@ -116,7 +116,8 @@ class TestHealFullNodeReboot(DParentTest):
 
         # Monitor heal completion
         if not redant.monitor_heal_completion(self.server_list[0],
-                                              self.vol_name):
+                                              self.vol_name,
+                                              timeout_period=1800):
             raise Exception("Heal not completed")
 
         # Check if heal is completed

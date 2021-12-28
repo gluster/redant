@@ -18,9 +18,11 @@
  Description:
     Test case validates fuse subdir functionality when replace-brick
     operation is performed
+ *Flaky Test*
+ Reason: Heal doesn't complete
 """
 
-# disruptive;rep,dist-rep
+# disruptive;disp,dist-disp
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -166,7 +168,8 @@ class TestSubdirWithReplaceBrick(DParentTest):
 
         # Wait for self-heal to complete
         if not redant.monitor_heal_completion(self.server_list[0],
-                                              self.vol_name):
+                                              self.vol_name,
+                                              timeout_period=1800):
             raise Exception("Heal has not yet completed")
 
         # Again validate if subdirectories are still mounted post replace-brick

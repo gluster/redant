@@ -18,9 +18,11 @@
  Description:
     TC to check checksum mismatch if huge file is copied while remove-brick
     in progress
+ *Flaky Test*
+ Reason: IO error while copying
 """
 
-# disruptive;dist-rep,dist-arb,dist
+# disruptive;dist-disp
 import traceback
 from tests.d_parent_test import DParentTest
 
@@ -78,7 +80,7 @@ class TestCopyHugeFileWithRemoveBrickInProgress(DParentTest):
             "client": self.client_list[0],
             "mountpath": self.mountpoint
         }
-        cmd = f"sleep 15; cd {self.mountpoint}; cp ../huge_file.txt ."
+        cmd = f"sleep 20; cd {self.mountpoint}; cp ../huge_file.txt ."
         self.io_proc = redant.execute_command_async(cmd, self.client_list[0])
         self.cp_running = True
 

@@ -42,6 +42,12 @@ class TestMemLeakAfterSSLEnabled(DParentTest):
                     ret = self.redant.wait_till_async_command_ends(proc)
                     if ret['error_code'] != 0:
                         raise Exception("Failed to wait for I/O to complete")
+
+            # Remove any csv files, generated from memory_logger script
+            cmd = "rm -f *.csv"
+            for node in [self.server_list + self.client_list]:
+                self.redant.execute_abstract_op_node(cmd, node)
+
         except Exception as error:
             tb = traceback.format_exc()
             self.redant.logger.error(error)

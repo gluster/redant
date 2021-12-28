@@ -77,7 +77,7 @@ class TestCase(DParentTest):
         # Rename all files inside dir1 at mountpoint on dir1
         cmd = (f'cd {self.mountpoint}/dir1/dir1/; '
                'for FILENAME in *; do mv $FILENAME Unix_$FILENAME;'
-               'cd ~;done;')
+               'done;')
         redant.execute_abstract_op_node(cmd, self.client_list[0])
 
         # Truncate at any dir in mountpoint inside dir1
@@ -86,7 +86,7 @@ class TestCase(DParentTest):
         start = 1
         for mount_obj in self.mounts:
             cmd = (f'cd {self.mountpoint}/dir1/dir{start}/; '
-                   'for FILENAME in *; do echo > $FILENAME; cd ~;done;')
+                   'for FILENAME in *; do echo > $FILENAME; done;')
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 5
 
@@ -95,13 +95,13 @@ class TestCase(DParentTest):
         for mount_obj in self.mounts:
             cmd = (f'cd {self.mountpoint}/dir1/dir{start}; '
                    'for FILENAME in *; '
-                   'do ln -s $FILENAME softlink_$FILENAME; cd ~;'
+                   'do ln -s $FILENAME softlink_$FILENAME;'
                    'done;')
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 1
             cmd = (f'cd {self.mountpoint}/dir1/dir{start + 1}; '
                    'for FILENAME in *; '
-                   'do ln $FILENAME hardlink_$FILENAME; cd ~;'
+                   'do ln $FILENAME hardlink_$FILENAME;'
                    'done;')
             redant.execute_abstract_op_node(cmd, mount_obj['client'])
             start += 4
