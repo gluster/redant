@@ -161,7 +161,7 @@ class TestCase(DParentTest):
 
         all_mounts_procs = []
         for mount_obj in self.mnt_list:
-            cmd = (f"cd {mount_obj['mountpoint']}; for i in `seq 1 5`; "
+            cmd = (f"cd {mount_obj['mountpath']}; for i in `seq 1 5`; "
                    "do ls -l; cat *; stat *; sleep 5; done")
             proc = redant.execute_command_async(cmd, mount_obj['client'])
             all_mounts_procs.append(proc)

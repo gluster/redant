@@ -18,8 +18,6 @@ class BrickOps(AbstractOps):
                   force: bool = False, excep: bool = True,
                   **kwargs) -> dict:
         """
-        # TODO: Function has to designed for dispersed, distributed-dispersed,
-                arbiter and distributed-arbiter.
         This function adds bricks to the volume volname.
 
         Args:
@@ -244,7 +242,6 @@ class BrickOps(AbstractOps):
                     - cmd : command that got executed
                     - node : node on which the command got executed
         """
-        # TODO:server val to modify the new brick path
         cmd = (f"gluster volume replace-brick "
                f"{volname} {src_brick} {dest_brick} "
                f"commit force --xml")
@@ -416,8 +413,6 @@ class BrickOps(AbstractOps):
                        volname: str, mul_fac: int,
                        add_flag: bool = False) -> tuple:
         """
-        # TODO: Function has to designed for dispersed, distributed-dispersed,
-                arbiter and distributed-arbiter.
         This function helps in forming
         the brick command
 
