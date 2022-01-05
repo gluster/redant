@@ -22,7 +22,7 @@
  Reason: The operation is not logged in the outfile
 """
 
-# disruptive;dist
+# disruptive;dist,rep
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest
@@ -130,11 +130,14 @@ class TestGlusterFindDeletes(DParentTest):
                 raise Exception("Unexpected: File still exist")
 
         # Wait for changelog to be updated
-        sleep(2)
+        sleep(5)
 
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
                          self.outfiles[1], debug=True)
+
+        # Wait for changelog to be updated
+        sleep(5)
 
         # Check if the outfile exists
         ret = redant.path_exists(self.server_list[0], self.outfiles[1])

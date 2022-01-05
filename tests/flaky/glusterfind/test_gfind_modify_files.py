@@ -96,7 +96,7 @@ class TestGlusterFindModify(DParentTest):
                 raise Exception(f"Unexpected: File {filename} does not exist")
 
         # Wait for changelog to get updated
-        sleep(2)
+        sleep(5)
 
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
@@ -137,7 +137,7 @@ class TestGlusterFindModify(DParentTest):
                 raise Exception("Pattern not found in file")
 
         # Wait for changelog to be updated
-        sleep(2)
+        sleep(5)
 
         # Perform glusterfind pre for the session
         redant.gfind_pre(self.server_list[0], self.vol_name, self.session,
