@@ -19,7 +19,7 @@
     operations.
 """
 
-# disruptive;rep,dist-rep,disp,arb,dist-arb
+# disruptive;rep,dist-rep,arb,dist-arb
 from time import sleep
 from tests.d_parent_test import DParentTest
 

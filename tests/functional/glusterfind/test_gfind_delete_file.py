@@ -19,7 +19,7 @@
     TC to check glusterfind functionality with deleting of files
 """
 
-# disruptive;rep,dist-rep,disp,dist-disp
+# disruptive;dist-rep,disp,dist-disp
 import traceback
 from time import sleep
 from tests.d_parent_test import DParentTest

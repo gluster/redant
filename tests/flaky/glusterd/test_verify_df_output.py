@@ -19,11 +19,11 @@
     operations.
 
 *Flaky Test*
-Reason: Calculation of disk size is failing in CI for dist-disp volume,
+Reason: Calculation of disk size is failing in CI for disp* volume,
         as the size of disks are in TB.
 """
 
-# disruptive;dist-disp
+# disruptive;disp,dist-disp
 from tests.d_parent_test import DParentTest
 
 
