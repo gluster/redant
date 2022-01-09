@@ -172,5 +172,5 @@ class TestCase(DParentTest):
 
         # Wait for heal to complete
         if not redant.monitor_heal_completion(self.server_list[0],
-                                              self.vol_name):
+                                              self.vol_name, 2400):
             raise Exception("Heal has not yet completed")

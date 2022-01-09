@@ -54,7 +54,8 @@ def pars_args():
                         dest="show_backtrace", action='store_true')
     parser.add_argument("-kold", "--keep-old-logs",
                         help="Don't clear the old glusterfs logs directory "
-                        "during environment setup",
+                        "during environment setup. Default behavior is to "
+                        "clear the logs directory on each run.",
                         dest="keep_logs", action='store_true')
     return parser.parse_args()
 

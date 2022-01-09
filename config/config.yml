@@ -12,7 +12,7 @@ servers_info:
         brick_root: ["/bricks"]
     "4.4.4.4":
         brick_root: ["/bricks"]
-        
+
 #clients_info - All the relevant information about the clients
 clients_info:
     "5.5.5.5":
