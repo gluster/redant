@@ -80,6 +80,8 @@ some packages which are required by external tools used in some test cases:
   5. automake
   6. cronie
   7. rsync
+  8. numpy
+  9. sh
 
 ### To start Working:
 
