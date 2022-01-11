@@ -200,11 +200,6 @@ class MachineOps(AbstractOps):
 
         self.remove_snap_lv(lv_dict)
 
-        # Flush the IP tables
-        cmd = "iptables --flush"
-        for node in server_list:
-            self.execute_abstract_op_node(cmd, node, False)
-
         self.es.reset_ds()
 
     def check_os(self, os_name: str, nodes: str,
