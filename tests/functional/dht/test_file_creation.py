@@ -19,6 +19,7 @@ Description : check creation of different types of files.
 """
 
 # disruptive;dist-disp,dist-arb,dist-rep,dist
+from socket import gethostbyname
 from tests.d_parent_test import DParentTest
 
 
@@ -53,6 +54,7 @@ class TestFileCreation(DParentTest):
 
         for brick in brick_list['brickdir_paths']:
             host, path = brick.split(':')
+            host = gethostbyname(host)
             ret = self._file_exists(host, path)
             if not ret:
                 raise Exception(f"File {file_name} is not present on {brick}")
