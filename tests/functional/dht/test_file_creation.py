@@ -73,6 +73,7 @@ class TestFileCreation(DParentTest):
             file_info_brick = []
             for brick in brick_list['brickdir_paths']:
                 host, path = brick.split(':')
+                host = gethostbyname(host)
                 info_brick = self.redant.get_file_stat(host, path)
                 file_info_brick.append(info_brick['msg']['permission'])
 
@@ -95,6 +96,7 @@ class TestFileCreation(DParentTest):
         brick_mtime = []
         for brick in brick_list['brickdir_paths']:
             host, path = brick.split(':')
+            host = gethostbyname(host)
             cmd = f"ls -lR {path}"
             self.redant.execute_abstract_op_node(cmd, host)
             file_ctime_brick = self.redant.get_file_stat(host, path)
@@ -143,6 +145,7 @@ class TestFileCreation(DParentTest):
         md5sum_list_test_file = []
         for brick in brick_list_test_file['brickdir_paths']:
             host, path = brick.split(':')
+            host = gethostbyname(host)
             md5sum_test_file = self.redant.get_md5sum(host, path).split()[0]
             md5sum_list_test_file.append(md5sum_test_file)
 
@@ -152,6 +155,7 @@ class TestFileCreation(DParentTest):
         md5sum_list_link_file = []
         for brick in brick_list_link_file['brickdir_paths']:
             host, path = brick.split(':')
+            host = gethostbyname(host)
             md5sum_link_file = self.redant.get_md5sum(host, path).split()[0]
             md5sum_list_link_file.append(md5sum_link_file)
 
@@ -169,6 +173,7 @@ class TestFileCreation(DParentTest):
         xattr_list_test_file = []
         for brick in brick_list_test_file['brickdir_paths']:
             host, path = brick.split(':')
+            host = gethostbyname(host)
             xattr_test_file = self.redant.get_fattr(path, "trusted.gfid", host)
             xattr_test_file = xattr_test_file[1].split('=')[1].strip()
             xattr_list_test_file.append(xattr_test_file[1:-1])
@@ -179,6 +184,7 @@ class TestFileCreation(DParentTest):
         xattr_list_link_file = []
         for brick in brick_list_link_file['brickdir_paths']:
             host, path = brick.split(':')
+            host = gethostbyname(host)
             xattr_link_file = self.redant.get_fattr(path, "trusted.gfid", host)
             xattr_link_file = xattr_link_file[1].split('=')[1].strip()
             xattr_list_link_file.append(xattr_link_file[1:-1])
