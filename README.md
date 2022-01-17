@@ -10,8 +10,8 @@
 /_/ |_/_____/_____/_/  |_/_/ |_/ /_/     
                                          
 
-usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-l LOG_DIR]
-                      [-ll LOG_LEVEL] [-cc CONCUR_COUNT] [-xls EXCEL_SHEET][--show-backtrace]
+usage: redant_main.py [-h] -c CONFIG_FILE -t TEST_DIR [-l LOG_DIR] [-ll LOG_LEVEL]
+                      [-cc CONCUR_COUNT] [-xls EXCEL_SHEET][--show-backtrace] [-kold]
 
 Redant test framework main script.
 
@@ -30,6 +30,9 @@ optional arguments:
   -xls EXCEL_SHEET, --excel-sheet EXCEL_SHEET
                         Spreadsheet for result. Default value is NULL
   --show-backtrace      Show full backtrace on error
+  -kold, --keep-old-logs
+                        Don't clear the old glusterfs logs directory during environment setup.
+                        Default behavior is to clear the logs directory on each run.
 ```
 
 ## Tested and Supported Distros
@@ -39,6 +42,7 @@ optional arguments:
  |Fedora 32| :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
  |Fedora 34|:heavy_check_mark: | :heavy_multiplication_x: | ✖️ |
  |RHEL 7.9| :heavy_multiplication_x: | :heavy_check_mark: | :heavy_check_mark:|
+ |RHEL 8.4| :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 
 The architects of any project won't be there forever with it 
 ( not everyone has the luxury to be a BDFL ), hence it is important to have 
@@ -63,11 +67,26 @@ The Documentation index can be found at [Docs](./docs/README.md)
 
 ## Set up
 
+### Pre requisites:
+1. Passwordless ssh between all (to self as well) the nodes in the cluster.
+2. Gluster installed on all the nodes and the bricks which would be used in the volumes,
+are created on all the servers.
+3. The following packages should be installed on all the nodes in the cluster, it includes
+some packages which are required by external tools used in some test cases:
+  1. git
+  2. make
+  3. gcc
+  4. autoconf
+  5. automake
+  6. cronie
+  7. rsync
+  8. numpy
+  9. sh
+
 ### To start Working:
 
 1. Clone redant repo.
-
-2. Populate the conf.yaml with relevant server and client details..
+2. Populate the [config.yml](./config/config.yml) with relevant server and client details.
 
 
 ### STEP-BY-STEP procedure to run:
