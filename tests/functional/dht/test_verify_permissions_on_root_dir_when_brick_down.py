@@ -18,10 +18,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 # disruptive;dist,dist-rep,dist-disp,dist-arb
 import traceback
-from tests.nd_parent_test import NdParentTest
+from tests.d_parent_test import DParentTest
 
 
-class TestCase(NdParentTest):
+class TestCase(DParentTest):
     def terminate(self):
         """
         Wait for IO to complete if the TC fails midway
@@ -135,4 +135,4 @@ class TestCase(NdParentTest):
         self._verify_mount_dir_and_brick_dir_permissions("755")
 
         redant.logger.info("Test to verify permission changes made on"
-                           " mount dir i succesful")
+                           " mount dir is succesful")
