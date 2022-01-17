@@ -16,7 +16,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# nonDisruptive;dist,dist-rep,dist-disp,dist-arb
+# disruptive;dist,dist-rep,dist-disp,dist-arb
 import traceback
 from tests.nd_parent_test import NdParentTest
 
