@@ -51,9 +51,12 @@ class TestListBuilder:
         path.
         Args:
             path (str): The directory path which contains the TCs
-            to be run.
+                        to be run.
+            excluded_tests (list): List of excluded TCs in the config file
+            volume_types_config (dict): Dict of volume types added in the
+                                        config file
             single_tc (bool): If the user wants to run a single TC instead
-            of the complete suite.
+                              of the complete suite.
         Returns:
         """
         def path_error_handler(exception_instance):
@@ -93,8 +96,8 @@ class TestListBuilder:
                     if vol_type not in valid_vol_types:
                         raise Exception(f"{test_dict['modulePath']} has"
                                         f" invalid volume type {vol_type}")
-                    if ((vol_type != "Generic")
-                       and (vol_type in volume_types_config)):
+                    if ((vol_type == "Generic")
+                       or (vol_type in volume_types_config)):
                         temp_test_dict = copy.deepcopy(test_dict)
                         temp_test_dict["volType"] = copy.deepcopy(vol_type)
                         cls.dtest_list.append(temp_test_dict)
@@ -103,8 +106,8 @@ class TestListBuilder:
                     if vol_type not in valid_vol_types:
                         raise Exception(f"{test_dict['modulePath']} has"
                                         f" invalid volume type {vol_type}")
-                    if ((vol_type != "Generic")
-                       and (vol_type in volume_types_config)):
+                    if ((vol_type == "Generic")
+                       or (vol_type in volume_types_config)):
                         temp_test_dict = copy.deepcopy(test_dict)
                         cls.nd_category[vol_type].append(temp_test_dict)
             else:
