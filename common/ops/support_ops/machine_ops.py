@@ -428,14 +428,15 @@ class MachineOps(AbstractOps):
                     raise Exception(f"The test case requires {bricks_count}"
                                     " bricks per node to run the test")
 
-    def check_rhgs_installation(self, servers: list):
+    def check_gluster_installation(self, servers: list, inst_type: str):
         """
-        Method to check if the RHGS is installed on the servers
+        Method to check if the type of gluster installation on the servers
+        That is upstream/downstream.
 
         Args:
             servers (list): List of server nodes
 
-        NOTE: This might not be the best way to check for RHGS, but it works
+        NOTE: This might not be the best way to check, but it works
               for now
         """
         if not isinstance(servers, list):
@@ -445,7 +446,12 @@ class MachineOps(AbstractOps):
         cmd = "rpm -qa | grep 'gluster' | grep '6\.0-'"
         ret = self.execute_command_multinode(cmd, servers)
         for each_ret in ret:
-            if each_ret['error_code'] != 0:
+            if inst_type == "upstream" and each_ret['error_code'] == 0:
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires Upstream "
+                                "installation")
+
+            elif inst_type == "downstream" and each_ret['error_code'] != 0:
                 self.TEST_RES[0] = None
                 raise Exception("The test case requires RHGS Installation")
 
@@ -453,7 +459,12 @@ class MachineOps(AbstractOps):
         cmd = "rpm -qa | grep 'gluster' | grep '\.el'"
         ret = self.execute_command_multinode(cmd, servers)
         for each_ret in ret:
-            if each_ret['error_code'] != 0:
+            if inst_type == "upstream" and each_ret['error_code'] == 0:
+                self.TEST_RES[0] = None
+                raise Exception("The test case requires Upstream "
+                                "installation")
+
+            elif inst_type == "downstream" and each_ret['error_code'] != 0:
                 self.TEST_RES[0] = None
                 raise Exception("The test case requires RHGS Installation")
 

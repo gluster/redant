@@ -32,7 +32,7 @@ class TestRebalanceWithAddBrickAndLookup(DParentTest):
         Override the volume create, start and mount in parent_run_test
         """
         # Run TC only on RHGS installation
-        self.redant.check_rhgs_installation(self.server_list)
+        self.redant.check_gluster_installation(self.server_list, "downstream")
 
         conf_hash = self.vol_type_inf[self.volume_type]
         self.redant.setup_volume(self.vol_name, self.server_list[0],

@@ -36,6 +36,9 @@ class TestCase(DParentTest):
            glusterd was running
         3. Check friend updates between rejoined node to each other node
         """
+        # Skip if not RHGS installation
+        redant.check_gluster_installation(self.server_list, "downstream")
+
         # Restart glusterd on one of the node
         redant.restart_glusterd(self.server_list[0])
 

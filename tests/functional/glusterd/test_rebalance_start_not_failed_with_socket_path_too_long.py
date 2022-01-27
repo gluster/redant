@@ -54,6 +54,9 @@ class TestLookupDir(DParentTest):
         6. Perform add-brick for disperse volume 6 bricks
         7. Start rebalance of disperse volume
         """
+        # Skip if RHGS installation
+        self.redant.check_gluster_installation(self.server_list, "upstream")
+
         cmd = ("sed -i 's/end-volume/option transport.socket.bind-address"
                f" {self.server_list[0]}\\n&/g' /etc/glusterfs/glusterd.vol")
 
