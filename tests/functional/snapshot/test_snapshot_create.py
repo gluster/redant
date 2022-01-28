@@ -36,7 +36,7 @@ class TestCase(DParentTest):
         self.validate_io_procs = False
 
         # Skip test if not RHGS installation
-        self.redant.check_rhgs_installation(self.server_list)
+        self.redant.check_gluster_installation(self.server_list, "downstream")
 
         self.redant.setup_volume(self.vol_name, self.server_list[0],
                                  self.vol_type_inf[self.volume_type],

@@ -37,10 +37,11 @@ class TestCase(NdParentTest):
         5. Fetch the pid of glusterd
         6. Check epoll thread count of glusterd should be 1
         """
+        # Skip if not RHGS installation
+        redant.check_gluster_installation(self.server_list, "downstream")
+
         # Fetch the ping timeout value from glusterd.vol file
-        # TODO: this path might change as per the installation
-        cmd = "cat /etc/glusterfs/glusterd.vol |\
-               grep -i ping-timeout"
+        cmd = "cat /etc/glusterfs/glusterd.vol | grep -i ping-timeout"
 
         ret = redant.execute_command(cmd, self.server_list[0])
         out = ret['msg'][0]

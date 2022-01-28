@@ -35,7 +35,7 @@ class TestArbiterSelfHeal(DParentTest):
         """
         # Check for RHGS installation, as snapshot restore throws
         # error in upstream devel code
-        self.redant.check_rhgs_installation(self.server_list)
+        self.redant.check_gluster_installation(self.server_list, "downstream")
 
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         self.redant.setup_volume(self.vol_name, self.server_list[0],
