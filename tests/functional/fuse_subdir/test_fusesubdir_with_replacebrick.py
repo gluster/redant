@@ -51,6 +51,9 @@ class TestSubdirWithReplaceBrick(DParentTest):
 
     @DParentTest.setup_custom_enable
     def setup_test(self):
+        # Skip if upstream installation
+        self.redant.check_gluster_installation(self.server_list, "downstream")
+
         # Check server requirements
         self.redant.check_hardware_requirements(clients=self.client_list,
                                                 clients_count=2)

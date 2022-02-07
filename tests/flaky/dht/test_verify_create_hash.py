@@ -22,7 +22,7 @@
  Reason: Difference in file permissions due to SELinux context missing in CI
 """
 
-# disruptive;dist-rep
+# disruptive;dist-rep,dist-disp
 import socket
 from tests.d_parent_test import DParentTest
 
