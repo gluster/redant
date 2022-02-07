@@ -19,7 +19,7 @@
     Test File creation with hashed and cached subvol down scenarios
 """
 
-# disruptive;dist,dist-disp
+# disruptive;dist
 import socket
 from tests.d_parent_test import DParentTest
 
