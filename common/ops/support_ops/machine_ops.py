@@ -435,6 +435,8 @@ class MachineOps(AbstractOps):
 
         Args:
             servers (list): List of server nodes
+            inst_type (str): Type of gluster installation for which
+                             the TC works
 
         NOTE: This might not be the best way to check, but it works
               for now
