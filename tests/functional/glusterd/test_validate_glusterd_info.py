@@ -38,6 +38,9 @@ class TestGlusterdInfo(NdParentTest):
                 ls  /var/run/ | grep -i glusterd.socket
             6. systemctl is-enabled glusterd -> enabled
         """
+        # Skip if upstream installation
+        self.redant.check_gluster_installation(self.server_list, "downstream")
+
         for server in self.server_list:
 
             # Getting UUID from glusterd.info

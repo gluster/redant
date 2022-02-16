@@ -27,6 +27,24 @@ from tests.d_parent_test import DParentTest
 
 class TestCase(DParentTest):
 
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        # Skip if upstream installation
+        self.redant.check_gluster_installation(self.server_list, "downstream")
+
+        # Create and start the volume
+        conf_hash = self.vol_type_inf[self.volume_type]
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots, force=True)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node("mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, client)
+
     def _perform_io(self, passed: bool):
         # Write IO's
         self.proc = (self.redant.

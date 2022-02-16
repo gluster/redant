@@ -32,6 +32,9 @@ class TestCase(NdParentTest):
         3. Check that the heal should complete via client side heal and it
         should not hang any IO.
         """
+        # Skip if upstream installation
+        redant.check_gluster_installation(self.server_list, "downstream")
+
         # disable server side heal
         ret = redant.disable_heal(self.server_list[0], self.vol_name)
         if not ret:
