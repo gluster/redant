@@ -38,6 +38,11 @@ class TestRebalanceValidation(DParentTest):
         self.redant.check_hardware_requirements(clients=self.client_list,
                                                 clients_count=2)
 
+        # Skip for upstream installation for dist-disp vol
+        if self.volume_type == "dist-disp":
+            self.redant.check_gluster_installation(self.server_list,
+                                                   "downstream")
+
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         if conf_hash['dist_count'] <= 2:
             conf_hash['dist_count'] = 4

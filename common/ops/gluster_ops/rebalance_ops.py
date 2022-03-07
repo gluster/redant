@@ -87,21 +87,29 @@ class RebalanceOps(AbstractOps):
 
         return ret
 
-    def get_rebalance_status(self, volname: str, node: str) -> dict:
+    def get_rebalance_status(self, volname: str, node: str,
+                             excep: bool = True) -> dict:
         """
         Parse the output of 'gluster vol rebalance status' command
         for the given volume
         Args:
             volname (str): volume name
             node (str): Node on which command has to be executed.
+            excep (bool): Optional parameter with default value as True. When
+                          set True, the exception handling is done at abstract
+                          ops. If this handling is not required, set it to
+                          False.
         Returns:
             dict: rebalance status will be in dict format
         """
 
         cmd = f"gluster volume rebalance {volname} status --xml"
-        ret = self.execute_abstract_op_node(cmd, node)
+        ret = self.execute_abstract_op_node(cmd, node, excep)
 
-        return ret['msg']['volRebalance']
+        if not excep and ret['error_code'] != 0:
+            return ret
+        else:
+            return ret['msg']['volRebalance']
 
     def wait_for_fix_layout_to_complete(self, node: str, volname: str,
                                         timeout=300) -> bool:
@@ -119,16 +127,18 @@ class RebalanceOps(AbstractOps):
 
         count = 0
         while count < timeout:
-            status_info = self.get_rebalance_status(volname, node)
+            status_info = self.get_rebalance_status(volname, node, False)
 
-            status = status_info['aggregate']['statusStr']
-            if status == 'fix-layout completed':
-                self.logger.info("Fix-layout is successfully completed")
-                return True
-            if status == 'fix-layout failed':
-                self.logger.error("Fix-layout failed on one or more nodes."
-                                  "Check rebalance status for more details")
-                return False
+            if "error_code" not in status_info:
+                status = status_info['aggregate']['statusStr']
+                if status == 'fix-layout completed':
+                    self.logger.info("Fix-layout is successfully completed")
+                    return True
+                if status == 'fix-layout failed':
+                    self.logger.error("Fix-layout failed on one or more nodes."
+                                      "Check rebalance status for more "
+                                      "details")
+                    return False
 
             time.sleep(5)
             count += 5
@@ -151,16 +161,17 @@ class RebalanceOps(AbstractOps):
 
         count = 0
         while count < timeout:
-            status_info = self.get_rebalance_status(volname, node)
-
-            status = status_info['aggregate']['statusStr']
-            if status == 'completed':
-                self.logger.info("Rebalance is successfully completed")
-                return True
-            if status == 'failed':
-                self.logger.error("Rebalance failed on one or more nodes."
-                                  "Check rebalance status for more details")
-                return False
+            status_info = self.get_rebalance_status(volname, node, False)
+            if "error_code" not in status_info:
+                status = status_info['aggregate']['statusStr']
+                if status == 'completed':
+                    self.logger.info("Rebalance is successfully completed")
+                    return True
+                if status == 'failed':
+                    self.logger.error("Rebalance failed on one or more nodes."
+                                      "Check rebalance status for more "
+                                      "details")
+                    return False
 
             time.sleep(5)
             count += 5

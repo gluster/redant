@@ -81,8 +81,10 @@ class TestExerciseAddbrickCommand(DParentTest):
         ret = redant.execute_abstract_op_node(cmd, self.server_list[0], False)
         if ret['error_code'] == 0:
             raise Exception("Unexpected: Add-brick is successfull")
-        err_msg = "does not exist"
-        if err_msg not in ret['error_msg']:
+        err_msg1 = "does not exist"
+        err_msg2 = "Unable to get volinfo for volume name novolume"
+        if err_msg1 not in ret['error_msg'] \
+           or err_msg2 not in ret['error_msg']:
             raise Exception("Unexpected: add-brick is successful without any"
                             " error")
 
