@@ -21,7 +21,7 @@
 
 # disruptive;dist-rep,dist-disp,dist-arb
 # TODO: NFS
-from copyy import deepcopy
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
