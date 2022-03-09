@@ -20,6 +20,7 @@
 """
 
 # disruptive;rep
+from copy import deepcopy
 from tests.d_parent_test import DParentTest
 
 
@@ -27,6 +28,26 @@ class TestCase(DParentTest):
     """
     verifies the self-heal daemon process on a single volume
     """
+
+    @DParentTest.setup_custom_enable
+    def setup_test(self):
+        """
+        Override the volume create, start and mount in parent_run_test
+        """
+        # Check for RHGS installation
+        self.redant.check_gluster_installation(self.server_list, "downstream")
+
+        conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
+        self.redant.setup_volume(self.vol_name, self.server_list[0],
+                                 conf_hash, self.server_list,
+                                 self.brick_roots)
+        self.mountpoint = (f"/mnt/{self.vol_name}")
+        for client in self.client_list:
+            self.redant.execute_abstract_op_node(f"mkdir -p "
+                                                 f"{self.mountpoint}",
+                                                 client)
+            self.redant.volume_mount(self.server_list[0], self.vol_name,
+                                     self.mountpoint, client)
 
     def run_test(self, redant):
         """

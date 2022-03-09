@@ -32,6 +32,9 @@ class TestAfrDirEntryCreationWithSubvolDown(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        # Check for RHGS installation
+        self.redant.check_gluster_installation(self.server_list, "downstream")
+
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         conf_hash['dist_count'] = 3
         self.redant.setup_volume(self.vol_name, self.server_list[0],

@@ -36,6 +36,9 @@ class TestCase(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        # Check for RHGS installation
+        self.redant.check_gluster_installation(self.server_list, "downstream")
+
         default_volume_type_config = {
             'rep': {
                 'dist_count': 1,

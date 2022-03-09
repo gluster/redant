@@ -33,6 +33,11 @@ class TestRebalanceValidation(DParentTest):
         """
         Override the volume create, start and mount in parent_run_test
         """
+        # Skip for upstream installation for dist-disp vol
+        if self.volume_type == "dist-disp":
+            self.redant.check_gluster_installation(self.server_list,
+                                                   "downstream")
+
         conf_hash = deepcopy(self.vol_type_inf[self.volume_type])
         if self.volume_type == "dist-rep":
             conf_hash['dist_count'] = 4
